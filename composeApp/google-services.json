@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674755208954",
+    "project_id": "genesys21-32035",
+    "storage_bucket": "genesys21-32035.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674755208954:android:a6ae9318957618d2dc4b43",
+        "android_client_info": {
+          "package_name": "com.itbenevides.genesys21"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbu1KXdqTk2wEPdlIncIkQbJVtiFT2YhU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

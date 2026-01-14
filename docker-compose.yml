@@ -1,0 +1,24 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - genesys-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    networks:
+      - genesys-network
+
+networks:
+  genesys-network:
+    driver: bridge
