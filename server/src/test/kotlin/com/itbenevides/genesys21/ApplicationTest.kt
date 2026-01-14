@@ -15,17 +15,27 @@ class ApplicationTest {
         }
         val response = client.get("/")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertTrue(response.bodyAsText().contains("Firebase Admin: Ativo"))
+        assertTrue(response.bodyAsText().contains("Genesys21 API Online"))
     }
 
     @Test
-    fun testValidateTokenInvalid() = testApplication {
+    fun testPagesListPublic() = testApplication {
         application {
             module()
         }
-        // Testamos enviando um token inválido, o servidor deve retornar Unauthorized (401)
-        val response = client.post("/validate-token") {
-            setBody("invalid-token")
+        val response = client.get("/pages")
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
+    fun testCreatePageRequiresAuth() = testApplication {
+        application {
+            module()
+        }
+        // Tentar criar sem token deve retornar 401
+        val response = client.post("/pages") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            setBody("{\"id\":\"test\", \"title\":\"Test\"}")
         }
         assertEquals(HttpStatusCode.Unauthorized, response.status)
     }
