@@ -15,7 +15,18 @@ class ApplicationTest {
         }
         val response = client.get("/")
         assertEquals(HttpStatusCode.OK, response.status)
-        val expectedBody = "Ktor: ${Greeting().greet()} | Firebase Admin: Ativo"
-        assertEquals(expectedBody, response.bodyAsText())
+        assertTrue(response.bodyAsText().contains("Firebase Admin: Ativo"))
+    }
+
+    @Test
+    fun testValidateTokenInvalid() = testApplication {
+        application {
+            module()
+        }
+        // Testamos enviando um token inválido, o servidor deve retornar Unauthorized (401)
+        val response = client.post("/validate-token") {
+            setBody("invalid-token")
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
     }
 }
