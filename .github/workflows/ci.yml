@@ -22,6 +22,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Decode Google Services JSON (Android)
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON_ANDROID }}' > composeApp/google-services.json
+
+      - name: Decode Firebase Admin JSON (Server)
+        run: |
+          mkdir -p server/src/main/resources
+          echo '${{ secrets.FIREBASE_ADMIN_JSON }}' > server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json
+
       - name: Build Android
         run: ./gradlew :composeApp:assembleDebug -Pandroid.useAndroidX=true
 
@@ -46,8 +54,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Decode Google Service Info Plist (iOS)
+        run: echo '${{ secrets.GOOGLE_SERVICES_PLIST_IOS }}' > iosApp/iosApp/GoogleService-Info.plist
+
       - name: Build iOS Framework
-        run: ./gradlew :composeApp:assembleDebugAppleFrameworkForXcodeIosSimulatorArm64 -Pandroid.useAndroidX=true
+        # Usando a task genérica de link para o simulador
+        run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -Pandroid.useAndroidX=true
 
       - name: Build Xcode Project
         working-directory: iosApp
