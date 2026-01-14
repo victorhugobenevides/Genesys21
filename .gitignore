@@ -57,3 +57,4 @@ server/src/main/resources/*.json
 # macOS
 .DS_Store
 /iosApp/iosApp/GoogleService-Info.plist
+/composeApp/google-services.json
