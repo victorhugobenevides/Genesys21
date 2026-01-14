@@ -1,17 +1,11 @@
-# Build Stage
-FROM gradle:8-jdk17 AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-# Aumentamos a memória do Gradle para o backend também
-RUN ./gradlew :server:installDist --no-daemon \
-    -Pandroid.useAndroidX=true \
-    -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
-
 # Runtime Stage
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
+
 EXPOSE 8080
 RUN mkdir /app
-COPY --from=build /home/gradle/src/server/build/install/server /app/
-WORKDIR /app/bin
 
+# Copiamos da pasta deploy que criamos no up.sh
+COPY deploy/server /app/
+
+WORKDIR /app/bin
 ENTRYPOINT ["./server"]
