@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.domain.usecase.DeletePageUseCase
 import com.itbenevides.genesys21.domain.usecase.GetPagesUseCase
 import com.itbenevides.genesys21.domain.usecase.SavePageUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 class PageViewModel(
     private val getPagesUseCase: GetPagesUseCase,
     private val savePageUseCase: SavePageUseCase,
+    private val deletePageUseCase: DeletePageUseCase,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -44,6 +46,18 @@ class PageViewModel(
             _isLoading.value = true
             val token = authRepository.getCurrentUserToken() ?: ""
             savePageUseCase(page, token, isEditing).onSuccess {
+                loadPages()
+                onComplete()
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun deletePage(id: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val token = authRepository.getCurrentUserToken() ?: ""
+            deletePageUseCase(id, token).onSuccess {
                 loadPages()
                 onComplete()
             }

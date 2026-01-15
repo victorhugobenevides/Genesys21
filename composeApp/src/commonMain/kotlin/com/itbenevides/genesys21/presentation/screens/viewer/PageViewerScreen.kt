@@ -1,61 +1,47 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Title
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.presentation.PageViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageViewerScreen(viewModel: PageViewModel, page: Page, onBack: () -> Unit) {
-    var currentPage by remember { mutableStateOf(page) }
-    val isLoading by viewModel.isLoading.collectAsState()
-
+fun PageViewerScreen(page: Page, onBack: () -> Unit) {
+    // Visualizador Público: Sem botões de edição, apenas o design puro.
     Scaffold(
         topBar = {
+            // Barra de navegação minimalista apenas para voltar ao app
             TopAppBar(
-                title = { Text(currentPage.title, fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                actions = {
-                    IconButton(onClick = { viewModel.savePage(currentPage, true) {} }) { Icon(Icons.Default.Save, null) }
+                title = { },
+                navigationIcon = { 
+                    IconButton(onClick = onBack) { 
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) 
+                    } 
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
-        },
-        bottomBar = {
-            BottomAppBar(containerColor = Color.White) {
-                IconButton(onClick = { currentPage = currentPage.copy(components = currentPage.components + PageComponent.Header("Novo Título")) }) {
-                    Icon(Icons.Default.Title, null)
-                }
-                IconButton(onClick = { currentPage = currentPage.copy(components = currentPage.components + PageComponent.Text("Novo Texto")) }) {
-                    Icon(Icons.AutoMirrored.Filled.Notes, null)
-                }
-            }
         }
     ) { padding ->
-        LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            items(currentPage.components) { component ->
-                // CORREÇÃO: Tornando o 'when' exaustivo para os novos componentes de Loja
-                when (component) {
-                    is PageComponent.Header -> Text(component.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    is PageComponent.Text -> Text(component.content)
-                    is PageComponent.Image -> Text("[Imagem]")
-                    is PageComponent.Logo -> Text("[Logo: ${component.url}]")
-                    is PageComponent.ProductList -> Text("[Lista de ${component.products.size} Produtos]")
-                }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(page.components) { component ->
+                // Renderiza o componente final sem molduras de editor
+                PageComponentRenderer(component)
             }
         }
     }

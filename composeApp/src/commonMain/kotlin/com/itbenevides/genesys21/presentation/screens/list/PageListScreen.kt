@@ -9,7 +9,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +31,7 @@ fun PageListScreen(
     onAddPage: () -> Unit,
     onEditPage: (Page) -> Unit,
     onViewPage: (Page) -> Unit,
+    onSharePage: (Page) -> Unit,
     onLogout: () -> Unit
 ) {
     val pages by viewModel.pages.collectAsState()
@@ -97,7 +100,9 @@ fun PageListScreen(
                                 PageItem(
                                     page = page,
                                     onClick = { onViewPage(page) },
-                                    onEdit = { onEditPage(page) }
+                                    onEdit = { onEditPage(page) },
+                                    onShare = { onSharePage(page) },
+                                    onDelete = { viewModel.deletePage(page.id) {} }
                                 )
                                 if (index < pages.size - 1) {
                                     HorizontalDivider(
@@ -118,7 +123,7 @@ fun PageListScreen(
 }
 
 @Composable
-fun PageItem(page: Page, onClick: () -> Unit, onEdit: () -> Unit) {
+fun PageItem(page: Page, onClick: () -> Unit, onEdit: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -139,25 +144,27 @@ fun PageItem(page: Page, onClick: () -> Unit, onEdit: () -> Unit) {
             )
         }
         
-        IconButton(
-            onClick = onEdit, 
-            modifier = Modifier.size(36.dp)
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onShare, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Default.Link, "Compartilhar", tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+            }
+
+            IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+            }
+
+            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Default.Delete, "Excluir", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+            }
+            
+            Spacer(Modifier.width(4.dp))
+            
             Icon(
-                Icons.Default.Edit,
-                contentDescription = "Editar",
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                modifier = Modifier.size(20.dp)
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                null,
+                tint = Color(0xFFC4C4C6),
+                modifier = Modifier.size(18.dp)
             )
         }
-        
-        Spacer(Modifier.width(4.dp))
-        
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color(0xFFC4C4C6),
-            modifier = Modifier.size(18.dp)
-        )
     }
 }
