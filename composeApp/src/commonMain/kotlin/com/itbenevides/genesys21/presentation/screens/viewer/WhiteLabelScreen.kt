@@ -5,7 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
@@ -16,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -73,7 +77,7 @@ fun WhiteLabelScreen(viewModel: PageViewModel, page: Page, onBack: () -> Unit) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         "Página vazia.\nAdicione componentes para começar.", 
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center, 
+                        textAlign = TextAlign.Center, 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -142,7 +146,49 @@ fun WhiteLabelScreen(viewModel: PageViewModel, page: Page, onBack: () -> Unit) {
 }
 
 @Composable
-fun ComponentWrapper(component: PageComponent, onDelete: () -> Unit, onEdit: () -> Unit) {
+fun PageComponentRenderer(component: PageComponent) {
+    when (component) {
+        is PageComponent.Header -> Text(
+            text = component.title.ifBlank { "Título do Cabeçalho" }, 
+            style = MaterialTheme.typography.headlineMedium, 
+            color = if (component.title.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+        )
+        is PageComponent.Text -> Text(
+            text = component.content.ifBlank { "Conteúdo do Texto" }, 
+            style = MaterialTheme.typography.bodyMedium, 
+            color = if (component.content.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+        )
+        is PageComponent.Image -> {
+            Column {
+                Box(
+                    Modifier.fillMaxWidth().height(180.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), RoundedCornerShape(8.dp)), 
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (component.url.isNotEmpty()) {
+                        Text("[Imagem: ${component.url}]", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    } else {
+                        Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(48.dp))
+                    }
+                }
+                if (component.string.isNotEmpty()) {
+                    Text(
+                        component.string, 
+                        style = MaterialTheme.typography.labelSmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, 
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ComponentWrapper(
+    component: PageComponent, 
+    onDelete: () -> Unit, 
+    onEdit: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -151,7 +197,6 @@ fun ComponentWrapper(component: PageComponent, onDelete: () -> Unit, onEdit: () 
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                // SÓ EXIBE O LABEL SE FOR PREENCHIDO (OPCIONAL)
                 if (!component.customLabel.isNullOrBlank()) {
                     Text(
                         component.customLabel!!, 
@@ -159,7 +204,11 @@ fun ComponentWrapper(component: PageComponent, onDelete: () -> Unit, onEdit: () 
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    Spacer(Modifier.width(1.dp)) // Espaçador mínimo para manter botões à direita
+                    Text(
+                        component::class.simpleName ?: "", 
+                        style = MaterialTheme.typography.labelSmall, 
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 }
                 
                 Row {
@@ -172,37 +221,8 @@ fun ComponentWrapper(component: PageComponent, onDelete: () -> Unit, onEdit: () 
                 }
             }
             
-            if (!component.customLabel.isNullOrBlank()) {
-                Spacer(Modifier.height(8.dp))
-            }
-
-            when (component) {
-                is PageComponent.Header -> Text(component.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface)
-                is PageComponent.Text -> Text(component.content, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                is PageComponent.Image -> {
-                    Column {
-                        Box(
-                            Modifier.fillMaxWidth().height(150.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), RoundedCornerShape(8.dp)), 
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (component.url.isNotEmpty()) {
-                                Text("[Imagem: ${component.url}]", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            } else {
-                                Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.outline)
-                            }
-                        }
-                        // SÓ EXIBE A LEGENDA SE EXISTIR
-                        if (component.string.isNotEmpty()) {
-                            Text(
-                                component.string, 
-                                style = MaterialTheme.typography.labelSmall, 
-                                color = MaterialTheme.colorScheme.onSurfaceVariant, 
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                    }
-                }
-            }
+            Spacer(Modifier.height(8.dp))
+            PageComponentRenderer(component)
         }
     }
 }
@@ -216,76 +236,136 @@ fun EditComponentModal(
     onDeleteRequest: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 32.dp).fillMaxWidth().navigationBarsPadding()) {
+    // Força o preenchimento total da tela
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(top = 8.dp, bottom = 16.dp)
+                .navigationBarsPadding()
+        ) {
             Text(
-                if (isNew) "Configurar Novo Componente" else "Editar Componente", 
+                if (isNew) "Novo Componente" else "Editar Componente", 
                 style = MaterialTheme.typography.titleLarge, 
                 fontWeight = FontWeight.Bold
             )
             
             Spacer(Modifier.height(24.dp))
 
-            var customLabel by remember { mutableStateOf(component.customLabel ?: "") }
-            OutlinedTextField(
-                value = customLabel, 
-                onValueChange = { customLabel = it }, 
-                label = { Text("Nome de Identificação (Opcional)") }, 
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ex: Banner Principal") },
-                shape = RoundedCornerShape(12.dp)
-            )
-            
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-            Spacer(Modifier.height(16.dp))
+            // Estado para o preview e campos
+            var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
+            var headerTitle by remember { mutableStateOf(if (component is PageComponent.Header) component.title else "") }
+            var textContent by remember { mutableStateOf(if (component is PageComponent.Text) component.content else "") }
+            var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
+            var imageDesc by remember { mutableStateOf(if (component is PageComponent.Image) component.string else "") }
 
-            when (component) {
-                is PageComponent.Header -> {
-                    var title by remember { mutableStateOf(component.title) }
-                    OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Título do Cabeçalho") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    
-                    ActionButtons(
-                        isNew = isNew,
-                        enabled = title.isNotBlank(),
-                        onConfirm = { onComponentUpdated(component.copy(title = title, customLabel = customLabel.ifBlank { null })) },
-                        onCancel = onDeleteRequest
-                    )
+            // ÁREA DE ROLAGEM (Formulário e Miniatura)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text("Visualização em miniatura", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(8.dp))
+                
+                Surface(
+                    modifier = Modifier.fillMaxWidth().widthIn(max = 300.dp).align(Alignment.CenterHorizontally),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 2.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                ) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(
+                            text = currentCustomLabel.ifBlank { component::class.simpleName ?: "Componente" },
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                            color = if (currentCustomLabel.isBlank()) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+                            fontWeight = if (currentCustomLabel.isNotBlank()) FontWeight.Bold else FontWeight.Normal
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        
+                        val previewComp = when (component) {
+                            is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null })
+                            is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null })
+                            is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, currentCustomLabel.ifBlank { null })
+                        }
+
+                        Box(modifier = Modifier.padding(top = 4.dp)) {
+                            PageComponentRenderer(previewComp)
+                        }
+                    }
                 }
-                is PageComponent.Text -> {
-                    var content by remember { mutableStateOf(component.content) }
-                    OutlinedTextField(value = content, onValueChange = { content = it }, label = { Text("Conteúdo do Texto") }, modifier = Modifier.fillMaxWidth(), minLines = 3, shape = RoundedCornerShape(12.dp))
-                    
-                    ActionButtons(
-                        isNew = isNew,
-                        enabled = content.isNotBlank(),
-                        onConfirm = { onComponentUpdated(component.copy(content = content, customLabel = customLabel.ifBlank { null })) },
-                        onCancel = onDeleteRequest
-                    )
+
+                Spacer(Modifier.height(24.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                Spacer(Modifier.height(24.dp))
+
+                OutlinedTextField(
+                    value = currentCustomLabel, 
+                    onValueChange = { currentCustomLabel = it }, 
+                    label = { Text("Nome de Identificação (Opcional)") }, 
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Ex: Banner Principal") },
+                    shape = RoundedCornerShape(12.dp)
+                )
+                
+                Spacer(Modifier.height(16.dp))
+
+                when (component) {
+                    is PageComponent.Header -> {
+                        OutlinedTextField(value = headerTitle, onValueChange = { headerTitle = it }, label = { Text("Título do Cabeçalho") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    }
+                    is PageComponent.Text -> {
+                        OutlinedTextField(value = textContent, onValueChange = { textContent = it }, label = { Text("Conteúdo do Texto") }, modifier = Modifier.fillMaxWidth(), minLines = 3, shape = RoundedCornerShape(12.dp))
+                    }
+                    is PageComponent.Image -> {
+                        OutlinedTextField(value = imageUrl, onValueChange = { imageUrl = it }, label = { Text("URL da Imagem") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda (Opcional)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+                    }
                 }
-                is PageComponent.Image -> {
-                    var url by remember { mutableStateOf(component.url) }
-                    var description by remember { mutableStateOf(component.string) }
-                    OutlinedTextField(value = url, onValueChange = { url = it }, label = { Text("URL da Imagem") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Legenda/Descrição (Opcional)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
-                    
-                    ActionButtons(
-                        isNew = isNew,
-                        enabled = url.isNotBlank(),
-                        onConfirm = { onComponentUpdated(component.copy(url = url, string = description, customLabel = customLabel.ifBlank { null })) },
-                        onCancel = onDeleteRequest
-                    )
-                }
+                Spacer(Modifier.height(16.dp))
             }
+
+            // BOTÕES FIXOS NA BASE
+            val isDataValid = when (component) {
+                is PageComponent.Header -> headerTitle.isNotBlank()
+                is PageComponent.Text -> textContent.isNotBlank()
+                is PageComponent.Image -> imageUrl.isNotBlank()
+            }
+
+            ActionButtons(
+                isNew = isNew,
+                enabled = isDataValid,
+                onConfirm = {
+                    val finalComp = when (component) {
+                        is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null })
+                        is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null })
+                        is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, currentCustomLabel.ifBlank { null })
+                    }
+                    onComponentUpdated(finalComp)
+                },
+                onCancel = onDeleteRequest
+            )
         }
     }
 }
 
 @Composable
 fun ActionButtons(isNew: Boolean, enabled: Boolean, onConfirm: () -> Unit, onCancel: () -> Unit) {
-    Spacer(Modifier.height(24.dp))
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         OutlinedButton(
             onClick = onCancel, 
             modifier = Modifier.weight(1f), 
