@@ -9,7 +9,7 @@ sealed class PageComponent {
     @Serializable
     data class Header(val title: String) : PageComponent()
     @Serializable
-    data class Image(val url: String) : PageComponent()
+    data class Image(val url: String, val string: String) : PageComponent()
 }
 
 @Serializable
