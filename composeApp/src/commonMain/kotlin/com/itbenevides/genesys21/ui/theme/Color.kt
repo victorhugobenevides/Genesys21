@@ -2,18 +2,20 @@ package com.itbenevides.genesys21.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Primary = Color(0xFF101828)
+// iOS-inspired "Comfort" Palette (Deep Slate & Charcoal)
+val iOSSlate = Color(0xFF1C1C1E) // Cor de label primária no iOS (confortável)
+val iOSIndigo = Color(0xFF5856D6)
+val iOSGray = Color(0xFF8E8E93)
+val iOSBackground = Color(0xFFF2F2F7)
+val iOSSurface = Color(0xFFFFFFFF)
+val iOSSeparator = Color(0xFFC6C6C8).copy(alpha = 0.4f)
+
+val Primary = iOSSlate // Mudando para um tom grafite mais confortável que o azul/indigo vibrante
 val OnPrimary = Color.White
-val Background = Color(0xFFF2F4F7)
-val Surface = Color.White
-val OnSurface = Color(0xFF101828)
-val OnSurfaceVariant = Color(0xFF667085)
-val Border = Color(0xFFE4E7EC)
-val Error = Color(0xFFD92D20)
-val Success = Color(0xFF039855)
-val Gray50 = Color(0xFFF9FAFB)
-val Gray100 = Color(0xFFF2F4F7)
-val Gray200 = Color(0xFFEAECF0)
-val Gray300 = Color(0xFFD0D5DD)
-val Gray400 = Color(0xFF98A2B3)
-val Gray500 = Color(0xFF667085)
+val Background = iOSBackground
+val Surface = iOSSurface
+val OnSurface = iOSSlate
+val OnSurfaceVariant = iOSGray
+val Border = iOSSeparator
+val Error = Color(0xFFFF3B30)
+val Success = Color(0xFF34C759)

@@ -4,19 +4,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.ui.theme.iOSSeparator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,41 +38,126 @@ fun PageListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Páginas", style = MaterialTheme.typography.titleLarge) }, actions = {
-                IconButton(onClick = onLogout) { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-            })
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddPage, 
-                shape = RoundedCornerShape(16.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) { Icon(Icons.Default.Add, null) }
+            CenterAlignedTopAppBar(
+                title = { 
+                    Text(
+                        "Páginas", 
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    ) 
+                },
+                navigationIcon = {
+                    TextButton(onClick = onLogout) {
+                        Text("Sair", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onAddPage) {
+                        Icon(Icons.Default.Add, contentDescription = "Adicionar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+                )
+            )
         }
     ) { padding ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(30.dp))
+            }
         } else {
-            LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item { Spacer(Modifier.height(16.dp)) }
-                items(pages) { page ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                item {
+                    Text(
+                        "Minhas Páginas",
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontSize = 34.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        ),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    )
+                }
+
+                item {
                     Surface(
-                        modifier = Modifier.fillMaxWidth().clickable { onViewPage(page) },
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White,
+                        tonalElevation = 0.dp
                     ) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(page.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                                Text(page.id, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column {
+                            pages.forEachIndexed { index, page ->
+                                PageItem(
+                                    page = page,
+                                    onClick = { onViewPage(page) },
+                                    onEdit = { onEditPage(page) }
+                                )
+                                if (index < pages.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 16.dp),
+                                        thickness = 0.5.dp,
+                                        color = iOSSeparator
+                                    )
+                                }
                             }
-                            IconButton(onClick = { onEditPage(page) }) { Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                     }
                 }
+                
+                item { Spacer(Modifier.height(40.dp)) }
             }
         }
+    }
+}
+
+@Composable
+fun PageItem(page: Page, onClick: () -> Unit, onEdit: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                page.title,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
+                fontWeight = FontWeight.Normal
+            )
+            Text(
+                "ID: ${page.id}",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        IconButton(
+            onClick = onEdit, 
+            modifier = Modifier.size(36.dp)
+        ) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "Editar",
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        
+        Spacer(Modifier.width(4.dp))
+        
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color(0xFFC4C4C6),
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
