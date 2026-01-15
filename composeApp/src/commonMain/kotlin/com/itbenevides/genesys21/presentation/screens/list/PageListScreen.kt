@@ -8,14 +8,12 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,135 +34,146 @@ fun PageListScreen(
 ) {
     val pages by viewModel.pages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var newPageTitle by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) { viewModel.loadPages() }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Páginas", 
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    ) 
-                },
+                title = { Text("Páginas", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     TextButton(onClick = onLogout) {
                         Text("Sair", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
                     }
                 },
                 actions = {
-                    IconButton(onClick = onAddPage) {
-                        Icon(Icons.Default.Add, contentDescription = "Adicionar", tint = MaterialTheme.colorScheme.primary)
+                    IconButton(onClick = { showCreateDialog = true }) {
+                        Icon(Icons.Default.Add, "Novo", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
-                )
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(30.dp))
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
+        Box(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
                 item {
                     Text(
                         "Minhas Páginas",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 34.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
+                        style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, fontWeight = FontWeight.ExtraBold),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                     )
                 }
 
                 item {
                     Surface(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .fillMaxWidth(),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         color = Color.White,
                         tonalElevation = 0.dp
                     ) {
                         Column {
+                            if (pages.isEmpty() && !isLoading) {
+                                Text("Nenhuma página criada", modifier = Modifier.padding(24.dp).align(Alignment.CenterHorizontally), color = Color.Gray)
+                            }
                             pages.forEachIndexed { index, page ->
-                                PageItem(
+                                PageItemRow(
                                     page = page,
                                     onClick = { onViewPage(page) },
-                                    onEdit = { onEditPage(page) },
+                                    onEditTitle = { onEditPage(page) },
                                     onShare = { onSharePage(page) },
-                                    onDelete = { viewModel.deletePage(page.id) {} }
+                                    onDelete = { viewModel.deletePage(page.id) { viewModel.loadPages() } }
                                 )
                                 if (index < pages.size - 1) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(start = 16.dp),
-                                        thickness = 0.5.dp,
-                                        color = iOSSeparator
-                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(start = 16.dp), thickness = 0.5.dp, color = iOSSeparator)
                                 }
                             }
                         }
                     }
                 }
-                
-                item { Spacer(Modifier.height(40.dp)) }
+            }
+
+            if (isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter), color = MaterialTheme.colorScheme.primary)
             }
         }
+    }
+
+    // DIALOG SIMPLIFICADO DE CRIAÇÃO
+    if (showCreateDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreateDialog = false },
+            title = { Text("Nova Página", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = newPageTitle,
+                    onValueChange = { newPageTitle = it },
+                    label = { Text("Título da página") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = newPageTitle.isNotBlank(),
+                    onClick = {
+                        val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+                        viewModel.savePage(Page(id, newPageTitle), false) {
+                            showCreateDialog = false
+                            newPageTitle = ""
+                            viewModel.loadPages()
+                        }
+                    }
+                ) { Text("Criar", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateDialog = false }) { Text("Cancelar") }
+            }
+        )
     }
 }
 
 @Composable
-fun PageItem(page: Page, onClick: () -> Unit, onEdit: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+fun PageItemRow(page: Page, onClick: () -> Unit, onEditTitle: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                page.title,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
-                fontWeight = FontWeight.Normal
-            )
-            Text(
-                "ID: ${page.id}",
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(page.title, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp))
+            Text("ID: ${page.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onShare, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Default.Link, "Compartilhar", tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
-            }
-
-            IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
-            }
-
-            IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
-                Icon(Icons.Default.Delete, "Excluir", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
+        Box {
+            IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.MoreHoriz, "Opções", tint = Color(0xFFC4C4C6))
             }
             
-            Spacer(Modifier.width(4.dp))
-            
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                null,
-                tint = Color(0xFFC4C4C6),
-                modifier = Modifier.size(18.dp)
-            )
+            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                DropdownMenuItem(
+                    text = { Text("Compartilhar") },
+                    leadingIcon = { Icon(Icons.Default.Link, null, modifier = Modifier.size(18.dp)) },
+                    onClick = { showMenu = false; onShare() }
+                )
+                DropdownMenuItem(
+                    text = { Text("Renomear") },
+                    leadingIcon = { Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp)) },
+                    onClick = { showMenu = false; onEditTitle() }
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                DropdownMenuItem(
+                    text = { Text("Excluir", color = Color.Red) },
+                    leadingIcon = { Icon(Icons.Default.Delete, null, tint = Color.Red, modifier = Modifier.size(18.dp)) },
+                    onClick = { showMenu = false; onDelete() }
+                )
+            }
         }
+
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color(0xFFC4C4C6), modifier = Modifier.size(18.dp))
     }
 }

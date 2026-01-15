@@ -94,7 +94,7 @@ fun WhiteLabelScreen(viewModel: PageViewModel, page: Page, onBack: () -> Unit) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 100.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.dp) // Espaçamento controlado pelo Wrapper
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     itemsIndexed(currentPage.components) { index, component ->
                         ComponentWrapper(
@@ -251,61 +251,42 @@ fun ComponentWrapper(
     onDelete: () -> Unit, 
     onEdit: () -> Unit
 ) {
-    // CONTAINER DE AGRUPAMENTO (Visualização de seção no Editor)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .border(
-                width = 1.dp, 
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f), 
-                shape = RoundedCornerShape(16.dp)
-            )
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f), 
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(8.dp)
-    ) {
-        // TOOLBAR DE CONTROLE (AGORA CLARAMENTE LIGADA AO COMPONENTE)
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        // TOOLBAR DE CONTROLE - TOTALMENTE EXTERNA AO DESIGN
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp, start = 8.dp, end = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(6.dp)
+                shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
                     text = component.customLabel ?: component::class.simpleName ?: "Componente",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            Row {
+                IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                 }
             }
         }
 
-        // ÁREA DO DESIGN (PURISTA)
+        // ÁREA DO COMPONENTE - LIMPA E PURA
         val shape = if (component.isRounded && component !is PageComponent.ProductList) CircleShape else RoundedCornerShape(12.dp)
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = shape,
             color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
-            border = if (component.isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-            shadowElevation = if (component.isTransparent) 0.dp else 1.dp
+            border = if (component.isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
         ) {
             Box(Modifier.padding(if (component.isTransparent) 0.dp else 16.dp)) {
                 PageComponentRenderer(component)
@@ -340,6 +321,7 @@ fun EditComponentModal(
             
             Spacer(Modifier.height(16.dp))
 
+            // Estados locais
             var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
             var isTransparent by remember { mutableStateOf(component.isTransparent) }
             var isRounded by remember { mutableStateOf(component.isRounded) }
@@ -352,6 +334,7 @@ fun EditComponentModal(
             var productList by remember { mutableStateOf(if (component is PageComponent.ProductList) component.products else emptyList()) }
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                // MINIATURA REALISTA NO MODAL
                 val previewComp = when (component) {
                     is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
