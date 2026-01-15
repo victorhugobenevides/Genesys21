@@ -31,6 +31,14 @@ class PageViewModel(
         }
     }
 
+    suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()
+
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+        }
+    }
+
     fun savePage(page: Page, isEditing: Boolean, onComplete: () -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
