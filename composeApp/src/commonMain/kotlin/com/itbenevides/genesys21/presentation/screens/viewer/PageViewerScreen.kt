@@ -48,10 +48,13 @@ fun PageViewerScreen(viewModel: PageViewModel, page: Page, onBack: () -> Unit) {
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             items(currentPage.components) { component ->
+                // CORREÇÃO: Tornando o 'when' exaustivo para os novos componentes de Loja
                 when (component) {
                     is PageComponent.Header -> Text(component.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     is PageComponent.Text -> Text(component.content)
                     is PageComponent.Image -> Text("[Imagem]")
+                    is PageComponent.Logo -> Text("[Logo: ${component.url}]")
+                    is PageComponent.ProductList -> Text("[Lista de ${component.products.size} Produtos]")
                 }
             }
         }
