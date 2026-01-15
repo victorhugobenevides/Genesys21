@@ -1,10 +1,16 @@
 # Runtime Stage (Nginx)
 FROM nginx:stable-alpine
 
+# Remove a configuração padrão do Nginx
+RUN rm /etc/nginx/conf.d/default.conf
+
 # Copiamos o nosso arquivo de configuração customizado
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiamos os arquivos da pasta developmentExecutable em vez de productionExecutable
+# Limpa a pasta padrão de HTML do Nginx para evitar conflitos
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copiamos os arquivos da nossa pasta deploy/web (gerada pelo up.sh)
 COPY deploy/web /usr/share/nginx/html
 
 EXPOSE 80

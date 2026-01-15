@@ -8,4 +8,13 @@ plugins {
     alias(libs.plugins.ktor) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    id("idea")
+}
+
+idea {
+    module {
+        // Exclui a pasta de deploy e outras pastas geradas da indexação do IDE
+        excludeDirs.add(file("deploy"))
+        excludeDirs.add(file("kotlin-js-store"))
+    }
 }

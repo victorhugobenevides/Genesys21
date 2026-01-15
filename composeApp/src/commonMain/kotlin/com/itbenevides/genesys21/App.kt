@@ -1,79 +1,40 @@
 package com.itbenevides.genesys21
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.launch
+import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.presentation.PageViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.KoinContext
+import org.koin.compose.viewmodel.koinViewModel
 import kotlin.random.Random
 
-enum class Screen {
-    Login, List, Editor
-}
-
-val client = HttpClient {
-    install(ContentNegotiation) { json() }
-    install(HttpTimeout) { requestTimeoutMillis = 15000 }
-}
-const val API_URL = "http://localhost:8080" 
-
-fun generateRandomId(length: Int = 8): String {
-    val charPool = "abcdefghijklmnopqrstuvwxyz0123456789"
-    return (1..length).map { charPool[Random.nextInt(0, charPool.length)] }.joinToString("")
-}
+enum class Screen { Login, List, Editor, Viewer }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun App() {
-    val pureWhite = Color(0xFFFFFFFF)
-    val softGray = Color(0xFFF2F4F7)
-    val textPrimary = Color(0xFF101828)
-    val textSecondary = Color(0xFF667085)
-    val brandColor = Color(0xFF101828) // Preto minimalista
-
-    MaterialTheme(
-        colorScheme = lightColorScheme(
-            primary = brandColor,
-            onPrimary = pureWhite,
-            background = softGray,
-            surface = pureWhite,
-            secondary = textSecondary
-        ),
-        typography = Typography(
-            headlineLarge = MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = (-1).sp,
-                color = textPrimary
-            )
-        )
-    ) {
+    KoinContext {
+        val viewModel: PageViewModel = koinViewModel()
         var currentScreen by remember { mutableStateOf(Screen.Login) }
         var selectedPage by remember { mutableStateOf<Page?>(null) }
 
@@ -81,22 +42,21 @@ fun App() {
             syncUrlWithScreen(currentScreen, selectedPage?.id)
         }
 
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            AnimatedContent(
-                targetState = currentScreen,
-                transitionSpec = { fadeIn() togetherWith fadeOut() }
-            ) { screen ->
-                when (screen) {
-                    Screen.Login -> LoginScreen(onLoginSuccess = { currentScreen = Screen.List })
-                    Screen.List -> PageListScreen(
-                        onAddPage = { selectedPage = null; currentScreen = Screen.Editor },
-                        onEditPage = { page -> selectedPage = page; currentScreen = Screen.Editor },
-                        onLogout = { currentScreen = Screen.Login }
-                    )
-                    Screen.Editor -> PageEditorScreen(
-                        page = selectedPage,
-                        onBack = { currentScreen = Screen.List }
-                    )
+        MaterialTheme(colorScheme = lightColorScheme(primary = Color(0xFF101828), background = Color(0xFFF2F4F7))) {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                AnimatedContent(targetState = currentScreen) { screen ->
+                    when (screen) {
+                        Screen.Login -> LoginScreen(viewModel = viewModel, onLoginSuccess = { currentScreen = Screen.List })
+                        Screen.List -> PageListScreen(
+                            viewModel = viewModel,
+                            onAddPage = { selectedPage = null; currentScreen = Screen.Editor },
+                            onEditPage = { page -> selectedPage = page; currentScreen = Screen.Editor },
+                            onViewPage = { page -> selectedPage = page; currentScreen = Screen.Viewer },
+                            onLogout = { currentScreen = Screen.Login }
+                        )
+                        Screen.Editor -> PageEditorScreen(viewModel = viewModel, page = selectedPage, onBack = { currentScreen = Screen.List })
+                        Screen.Viewer -> PageViewerScreen(viewModel = viewModel, page = selectedPage!!, onBack = { currentScreen = Screen.List })
+                    }
                 }
             }
         }
@@ -104,116 +64,75 @@ fun App() {
 }
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
-    val authRepository = remember { getAuthRepository() }
-    val scope = rememberCoroutineScope()
+fun LoginScreen(viewModel: PageViewModel, onLoginSuccess: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 360.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text("Login", style = MaterialTheme.typography.headlineLarge)
-            Text("Acesse sua conta para continuar", color = MaterialTheme.colorScheme.secondary)
-            
+        Column(modifier = Modifier.fillMaxWidth().widthIn(max = 360.dp)) {
+            Text("Login", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(48.dp))
-            
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(
-                    value = email, 
-                    onValueChange = { email = it }, 
-                    placeholder = { Text("E-mail") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Color.LightGray)
-                )
-                OutlinedTextField(
-                    value = password, 
-                    onValueChange = { password = it }, 
-                    placeholder = { Text("Senha") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Color.LightGray)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-            
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Senha") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = {
-                    scope.launch {
-                        isLoading = true
-                        authRepository.signIn(email, password).onSuccess { onLoginSuccess() }
-                        isLoading = false
-                    }
+                    isLoading = true
+                    viewModel.signIn(email, password, 
+                        onSuccess = { onLoginSuccess(); isLoading = false },
+                        onFailure = { errorMessage = it; isLoading = false }
+                    )
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(12.dp),
                 enabled = !isLoading,
-                elevation = ButtonDefaults.buttonElevation(0.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
-                if (isLoading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
-                else Text("Entrar", fontWeight = FontWeight.SemiBold)
+                if (isLoading) CircularProgressIndicator(Modifier.size(24.dp), color = Color.White) else Text("Entrar")
             }
+            if (errorMessage.isNotEmpty()) Text(errorMessage, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageListScreen(onAddPage: () -> Unit, onEditPage: (Page) -> Unit, onLogout: () -> Unit) {
-    var pages by remember { mutableStateOf(emptyList<Page>()) }
-    var isLoading by remember { mutableStateOf(true) }
+fun PageListScreen(viewModel: PageViewModel, onAddPage: () -> Unit, onEditPage: (Page) -> Unit, onViewPage: (Page) -> Unit, onLogout: () -> Unit) {
+    val pages by viewModel.pages.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
-    LaunchedEffect(Unit) {
-        try {
-            pages = client.get("$API_URL/pages").body()
-        } catch (e: Exception) { } finally { isLoading = false }
-    }
+    LaunchedEffect(Unit) { viewModel.loadPages() }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Páginas", fontWeight = FontWeight.Bold) },
-                actions = { IconButton(onClick = onLogout) { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.Gray) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
+            TopAppBar(title = { Text("Páginas", fontWeight = FontWeight.Bold) }, actions = {
+                IconButton(onClick = onLogout) { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color.Gray) }
+            })
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddPage, 
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp),
-                elevation = FloatingActionButtonDefaults.elevation(0.dp)
-            ) { Icon(Icons.Default.Add, null) }
+            FloatingActionButton(onClick = onAddPage, shape = RoundedCornerShape(16.dp)) { Icon(Icons.Default.Add, null) }
         }
     ) { padding ->
         if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(strokeWidth = 2.dp) }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         } else {
-            LazyColumn(
-                modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { Spacer(Modifier.height(16.dp)) }
                 items(pages) { page ->
                     Surface(
-                        modifier = Modifier.fillMaxWidth().clickable { onEditPage(page) },
+                        modifier = Modifier.fillMaxWidth().clickable { onViewPage(page) },
                         shape = RoundedCornerShape(16.dp),
                         color = Color.White,
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE4E7EC))
                     ) {
                         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text(page.title, fontWeight = FontWeight.Bold, color = Color(0xFF101828))
+                                Text(page.title, fontWeight = FontWeight.Bold)
                                 Text(page.id, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                             }
-                            Icon(Icons.Default.KeyboardArrowRight, null, tint = Color.LightGray)
+                            IconButton(onClick = { onEditPage(page) }) { Icon(Icons.Default.Edit, null, tint = Color.Gray) }
                         }
                     }
                 }
@@ -224,69 +143,70 @@ fun PageListScreen(onAddPage: () -> Unit, onEditPage: (Page) -> Unit, onLogout: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageEditorScreen(page: Page?, onBack: () -> Unit) {
-    val authRepository = remember { getAuthRepository() }
-    var id by remember { mutableStateOf(page?.id ?: generateRandomId()) }
+fun PageEditorScreen(viewModel: PageViewModel, page: Page?, onBack: () -> Unit) {
     var title by remember { mutableStateOf(page?.title ?: "") }
-    val scope = rememberCoroutineScope()
-    var isSaving by remember { mutableStateOf(false) }
-    val isEditing = page != null
+    val id = remember { page?.id ?: (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789"[Random.nextInt(36)] }.joinToString("") }
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditing) "Editar" else "Novo", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                title = { Text(if (page != null) "Editar" else "Novo", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(32.dp).fillMaxSize()) {
-            Text(if (isEditing) "Altere os detalhes" else "Crie um novo item", color = Color.Gray)
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            Text("Título", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-            TextField(
-                value = title, 
-                onValueChange = { title = it },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.LightGray
-                ),
-                textStyle = MaterialTheme.typography.headlineSmall
-            )
-            
+        Column(modifier = Modifier.padding(padding).padding(32.dp)) {
+            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Título") }, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(24.dp))
-            Text("ID: $id", style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
-            
-            Spacer(modifier = Modifier.height(48.dp))
             Button(
                 onClick = {
-                    scope.launch {
-                        try {
-                            isSaving = true
-                            val token = authRepository.getCurrentUserToken()
-                            val newPage = Page(id, title)
-                            val response = if (isEditing) client.put("$API_URL/pages") {
-                                header(HttpHeaders.Authorization, "Bearer $token")
-                                contentType(ContentType.Application.Json); setBody(newPage)
-                            } else client.post("$API_URL/pages") {
-                                header(HttpHeaders.Authorization, "Bearer $token")
-                                contentType(ContentType.Application.Json); setBody(newPage)
-                            }
-                            if (response.status.isSuccess()) onBack()
-                        } catch (e: Exception) { } finally { isSaving = false }
-                    }
+                    val newPage = (page ?: Page(id, title)).copy(title = title)
+                    viewModel.savePage(newPage, isEditing = page != null) { onBack() }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                enabled = title.isNotBlank() && !isSaving,
-                elevation = ButtonDefaults.buttonElevation(0.dp)
+                enabled = title.isNotBlank() && !isLoading
             ) {
-                if (isSaving) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White) 
-                else Text("Salvar Alterações", fontWeight = FontWeight.Bold)
+                if (isLoading) CircularProgressIndicator(Modifier.size(24.dp)) else Text("Salvar")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PageViewerScreen(viewModel: PageViewModel, page: Page, onBack: () -> Unit) {
+    var currentPage by remember { mutableStateOf(page) }
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(currentPage.title, fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
+                actions = {
+                    IconButton(onClick = { viewModel.savePage(currentPage, true) {} }) { Icon(Icons.Default.Save, null) }
+                }
+            )
+        },
+        bottomBar = {
+            BottomAppBar {
+                IconButton(onClick = { currentPage = currentPage.copy(components = currentPage.components + PageComponent.Header("Novo Título")) }) {
+                    Icon(Icons.Default.Title, null)
+                }
+                IconButton(onClick = { currentPage = currentPage.copy(components = currentPage.components + PageComponent.Text("Novo Texto")) }) {
+                    Icon(Icons.AutoMirrored.Filled.Notes, null)
+                }
+            }
+        }
+    ) { padding ->
+        LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            items(currentPage.components) { component ->
+                when (component) {
+                    is PageComponent.Header -> Text(component.title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    is PageComponent.Text -> Text(component.content)
+                    is PageComponent.Image -> Text("[Imagem]")
+                }
             }
         }
     }

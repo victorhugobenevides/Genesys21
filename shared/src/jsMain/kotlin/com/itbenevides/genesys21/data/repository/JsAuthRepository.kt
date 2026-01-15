@@ -1,24 +1,21 @@
-package com.itbenevides.genesys21
+package com.itbenevides.genesys21.data.repository
 
+import com.itbenevides.genesys21.domain.repository.AuthRepository
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.FirebaseOptions
 import dev.gitlive.firebase.auth.auth
 import dev.gitlive.firebase.initialize
-import dev.gitlive.firebase.FirebaseApp
 import dev.gitlive.firebase.apps
 
 class JsAuthRepository : AuthRepository {
     
     init {
-        println("JsAuthRepository: Inicializando...")
         ensureFirebaseInitialized()
     }
 
     private fun ensureFirebaseInitialized() {
         try {
-            // Corrigido: apps é uma função no JS
             if (Firebase.apps().isEmpty()) {
-                println("JsAuthRepository: Nenhum app encontrado. Inicializando Firebase...")
                 Firebase.initialize(
                     options = FirebaseOptions(
                         apiKey = "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
@@ -28,27 +25,18 @@ class JsAuthRepository : AuthRepository {
                         storageBucket = "genesys21-32035.firebasestorage.app"
                     )
                 )
-                println("JsAuthRepository: Firebase inicializado com sucesso.")
-            } else {
-                println("JsAuthRepository: Firebase já estava inicializado.")
             }
-        } catch (e: Exception) {
-            println("JsAuthRepository: Erro crítico na inicialização: ${e.message}")
-        }
+        } catch (e: Exception) { }
     }
 
     private val auth get() = Firebase.auth
 
     override suspend fun signIn(email: String, password: String): Result<String?> {
-        println("JsAuthRepository: Iniciando signIn para $email")
         ensureFirebaseInitialized() 
         return try {
             auth.signInWithEmailAndPassword(email, password)
-            val token = getCurrentUserToken()
-            println("JsAuthRepository: signIn sucesso.")
-            Result.success(token)
+            Result.success(getCurrentUserToken())
         } catch (e: Exception) {
-            println("JsAuthRepository: signIn falha: ${e.message}")
             Result.failure(e)
         }
     }
@@ -56,24 +44,16 @@ class JsAuthRepository : AuthRepository {
     override suspend fun getCurrentUserToken(): String? {
         ensureFirebaseInitialized()
         return try {
-            val token = auth.currentUser?.getIdToken(false)
-            println("JsAuthRepository: Token recuperado.")
-            token
+            auth.currentUser?.getIdToken(false)
         } catch (e: Exception) {
-            println("JsAuthRepository: Erro ao recuperar token: ${e.message}")
             null
         }
     }
 
     override suspend fun signOut() {
-        println("JsAuthRepository: Executando signOut")
         ensureFirebaseInitialized()
         try {
             auth.signOut()
-        } catch (e: Exception) {
-            println("JsAuthRepository: Erro no signOut: ${e.message}")
-        }
+        } catch (e: Exception) { }
     }
 }
-
-actual fun getAuthRepository(): AuthRepository = JsAuthRepository()
