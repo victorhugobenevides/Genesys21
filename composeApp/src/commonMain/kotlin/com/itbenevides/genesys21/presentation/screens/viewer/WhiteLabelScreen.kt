@@ -31,22 +31,21 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
-import kotlin.random.Random
 
 @Composable
 fun WhiteLabelScreen(
     viewModel: PageViewModel,
     page: Page,
+    onPageChange: (Page) -> Unit,
     onBack: () -> Unit,
     onEditProduct: (Product?, Int?) -> Unit
 ) {
-    var currentPage by remember { mutableStateOf(page) }
     val isLoading by viewModel.isLoading.collectAsState()
     val serverProducts by viewModel.allAvailableProducts.collectAsState()
 
-    val liveInventory by remember(serverProducts, currentPage) {
+    val liveInventory by remember(serverProducts, page) {
         derivedStateOf {
-            val sessionProducts = currentPage.components
+            val sessionProducts = page.components
                 .filterIsInstance<PageComponent.ProductList>()
                 .flatMap { it.products }
             (serverProducts + sessionProducts).distinctBy { it.id }
@@ -54,11 +53,13 @@ fun WhiteLabelScreen(
     }
 
     WhiteLabelContent(
-        page = currentPage,
+        page = page,
         availableProducts = liveInventory,
         isLoading = isLoading,
-        onPageUpdate = { currentPage = it },
-        onPublish = { viewModel.savePage(currentPage, true) { onBack() } },
+        onPageUpdate = onPageChange,
+        onPublish = { 
+            viewModel.savePage(page, true) { onBack() } 
+        },
         onBack = onBack,
         onEditProduct = onEditProduct
     )
@@ -115,7 +116,14 @@ fun WhiteLabelContent(
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             if (page.components.isEmpty()) {
-                EmptyStateMessage()
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        "Comece a montar sua página\nclicando no botão +",
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -126,7 +134,8 @@ fun WhiteLabelContent(
                         ComponentWrapper(
                             component = component,
                             onDelete = {
-                                onPageUpdate(page.copy(components = page.components.toMutableList().apply { removeAt(index) }))
+                                val newList = page.components.toMutableList().apply { removeAt(index) }
+                                onPageUpdate(page.copy(components = newList))
                             },
                             onEdit = { editingComponentIndex = index }
                         )
@@ -134,7 +143,6 @@ fun WhiteLabelContent(
                 }
             }
 
-            // Modais de Gerenciamento
             if (showCatalog) {
                 ComponentCatalogModal(
                     onComponentSelected = { newComponent ->
@@ -177,10 +185,12 @@ fun WhiteLabelContent(
                         onAddProduct = { onEditProduct(null, index) },
                         onEditProduct = { onEditProduct(it, index) },
                         onComponentUpdated = { updated ->
-                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { set(index, updated) }))
+                            val newList = page.components.toMutableList().apply { set(index, updated) }
+                            onPageUpdate(page.copy(components = newList))
                         },
                         onDeleteComponent = {
-                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { removeAt(index) }))
+                            val newList = page.components.toMutableList().apply { removeAt(index) }
+                            onPageUpdate(page.copy(components = newList))
                             editingComponentIndex = null
                         },
                         onDismiss = { editingComponentIndex = null }
@@ -190,11 +200,13 @@ fun WhiteLabelContent(
                         component = component,
                         isNew = false,
                         onComponentUpdated = { updated ->
-                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { set(index, updated) }))
+                            val newList = page.components.toMutableList().apply { set(index, updated) }
+                            onPageUpdate(page.copy(components = newList))
                             editingComponentIndex = null
                         },
                         onDeleteRequest = {
-                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { removeAt(index) }))
+                            val newList = page.components.toMutableList().apply { removeAt(index) }
+                            onPageUpdate(page.copy(components = newList))
                             editingComponentIndex = null
                         },
                         onDismiss = { editingComponentIndex = null }
@@ -202,18 +214,6 @@ fun WhiteLabelContent(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun EmptyStateMessage() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            "Comece a montar sua página\nclicando no botão +",
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyLarge
-        )
     }
 }
 
@@ -234,7 +234,7 @@ fun ComponentWrapper(
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
-                    text = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
+                    text = (component.customLabel ?: component::class.simpleName ?: "Componente").uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -296,6 +296,7 @@ fun ProductListManagementModal(
             var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
             var isTransparent by remember { mutableStateOf(component.isTransparent) }
             var isRounded by remember { mutableStateOf(component.isRounded) }
+            var isHorizontal by remember { mutableStateOf(component.isHorizontal) }
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
@@ -321,6 +322,14 @@ fun ProductListManagementModal(
                         onComponentUpdated(component.copy(isRounded = it))
                     })
                     Text("Redondo", fontSize = 14.sp)
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                    Checkbox(checked = isHorizontal, onCheckedChange = { 
+                        isHorizontal = it
+                        onComponentUpdated(component.copy(isHorizontal = it))
+                    })
+                    Text("Exibir Horizontalmente (Carrossel)", fontSize = 14.sp)
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
@@ -427,7 +436,7 @@ fun EditComponentModal(
                 .navigationBarsPadding()
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(if (isNew) "Novo Item" else "Editar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
@@ -466,7 +475,7 @@ fun EditComponentModal(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome do Bloco") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                     Checkbox(checked = isTransparent, onCheckedChange = { isTransparent = it })

@@ -3,14 +3,19 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
+import kotlinx.coroutines.launch
 
 @Composable
 fun PageComponentRenderer(
@@ -47,36 +53,79 @@ fun PageComponentRenderer(
         }
         is PageComponent.ProductList -> {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Produtos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 if (component.products.isEmpty()) {
                     Text("Sem produtos", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                } else if (component.isHorizontal) {
+                    // CARROUSEL COM BOTÕES DE NAVEGAÇÃO
+                    val listState = rememberLazyListState()
+                    val coroutineScope = rememberCoroutineScope()
+                    
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        LazyRow(
+                            state = listState,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            items(component.products) { product ->
+                                ProductCard(
+                                    product = product,
+                                    shape = commonShape,
+                                    isTransparent = component.isTransparent,
+                                    modifier = Modifier.width(160.dp),
+                                    onClick = onProductClick
+                                )
+                            }
+                        }
+
+                        // Botões de indicação/navegação
+                        if (component.products.size > 1) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                if (listState.firstVisibleItemIndex > 0) {
+                                    FilledIconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                listState.animateScrollToItem(maxOf(0, listState.firstVisibleItemIndex - 1))
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp).padding(start = 4.dp),
+                                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White.copy(alpha = 0.8f))
+                                    ) {
+                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, modifier = Modifier.size(16.dp))
+                                    }
+                                } else { Spacer(Modifier.width(32.dp)) }
+
+                                if (listState.canScrollForward) {
+                                    FilledIconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+                                            }
+                                        },
+                                        modifier = Modifier.size(32.dp).padding(end = 4.dp),
+                                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White.copy(alpha = 0.8f))
+                                    ) {
+                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, modifier = Modifier.size(16.dp))
+                                    }
+                                } else { Spacer(Modifier.width(32.dp)) }
+                            }
+                        }
+                    }
                 } else {
+                    // GRADE PADRÃO
                     component.products.chunked(2).forEach { rowProducts ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             rowProducts.forEach { product ->
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .let { m -> 
-                                            if (onProductClick != null) m.clickable { onProductClick(product) } 
-                                            else m 
-                                        },
+                                ProductCard(
+                                    product = product,
                                     shape = commonShape,
-                                    color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
-                                    border = if (component.isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
-                                ) {
-                                    Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Box(
-                                            Modifier.fillMaxWidth().aspectRatio(1f).clip(commonShape).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(24.dp))
-                                        }
-                                        Spacer(Modifier.height(8.dp))
-                                        Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
+                                    isTransparent = component.isTransparent,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = onProductClick
+                                )
                             }
                             if (rowProducts.size == 1) Spacer(Modifier.weight(1f))
                         }
@@ -111,6 +160,37 @@ fun PageComponentRenderer(
                     Text(component.string, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp).fillMaxWidth(), textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ProductCard(
+    product: Product,
+    shape: androidx.compose.ui.graphics.Shape,
+    isTransparent: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: ((Product) -> Unit)? = null
+) {
+    Surface(
+        modifier = modifier.let { m -> 
+            if (onClick != null) m.clickable { onClick(product) } 
+            else m 
+        },
+        shape = shape,
+        color = if (isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
+        border = if (isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+    ) {
+        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                Modifier.fillMaxWidth().aspectRatio(1f).clip(shape).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         }
     }
 }

@@ -16,6 +16,7 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 
 fun main() {
@@ -30,7 +31,13 @@ fun Application.module() {
     val pageRepository = InMemoryPageRepository()
 
     // 1. Plugins
-    install(ContentNegotiation) { json() }
+    install(ContentNegotiation) { 
+        json(Json {
+            ignoreUnknownKeys = true // Evita erros ao adicionar novos campos de UI no App
+            isLenient = true
+            encodeDefaults = true
+        }) 
+    }
     
     install(CORS) {
         anyHost()

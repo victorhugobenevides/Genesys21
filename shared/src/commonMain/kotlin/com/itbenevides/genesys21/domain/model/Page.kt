@@ -57,6 +57,7 @@ sealed class PageComponent {
     @Serializable
     data class ProductList(
         val products: List<Product>,
+        val isHorizontal: Boolean = false,
         override val customLabel: String? = null,
         override val isTransparent: Boolean = false,
         override val isRounded: Boolean = false

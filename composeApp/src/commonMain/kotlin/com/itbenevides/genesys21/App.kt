@@ -54,13 +54,8 @@ fun App() {
             }
 
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                // Centralização Horizontal Global para Web/Desktop
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    // Limita a largura para um aspecto de APP mobile (600dp)
-                    val maxWidth = if (currentScreen == Screen.Login || currentScreen == Screen.Splash) 600.dp else 800.dp
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    val maxWidth = if (currentScreen == Screen.Login || currentScreen == Screen.Splash) 600.dp else 900.dp
                     
                     Box(modifier = Modifier.fillMaxHeight().widthIn(max = maxWidth)) {
                         AnimatedContent(targetState = currentScreen) { screen ->
@@ -89,6 +84,7 @@ fun App() {
                                 Screen.WhiteLabel -> WhiteLabelScreen(
                                     viewModel = viewModel, 
                                     page = selectedPage!!, 
+                                    onPageChange = { selectedPage = it }, // SINCRONIZA MUDANÇAS
                                     onBack = { currentScreen = Screen.List },
                                     onEditProduct = { product, compIndex ->
                                         productToEdit = product
@@ -121,7 +117,7 @@ fun App() {
                                                         val newProducts = if (productToEdit == null) {
                                                             component.products + updatedProduct
                                                         } else {
-                                                            component.products.map { if (it.id == productToEdit?.id) updatedProduct else it }
+                                                            component.products.map { if (it.id == updatedProduct.id) updatedProduct else it }
                                                         }
                                                         newComponents[idx] = component.copy(products = newProducts)
                                                     }
