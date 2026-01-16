@@ -490,7 +490,12 @@ fun EditComponentModal(
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = imageSize, onValueChange = { if(it.all { c -> c.isDigit() }) imageSize = it }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        OutlinedTextField(value = imageSize, onValueChange = { 
+                            // Sanitização: Aceita apenas números para o tamanho da imagem
+                            if (it.isEmpty() || it.all { c -> c.isDigit() }) {
+                                imageSize = it 
+                            }
+                        }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                     }
                     else -> {}
                 }

@@ -55,10 +55,12 @@ fun PageListScreen(
             onDismiss = { showCreateDialog = false; newPageTitle = "" },
             onConfirm = {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                viewModel.savePage(Page(id, newPageTitle), false) {
+                val newPage = Page(id, newPageTitle)
+                viewModel.savePage(newPage, false) {
                     showCreateDialog = false
                     newPageTitle = ""
-                    viewModel.loadPages()
+                    // REDIRECIONAMENTO DIRETO APÓS CRIAR
+                    onEditPage(newPage)
                 }
             }
         )

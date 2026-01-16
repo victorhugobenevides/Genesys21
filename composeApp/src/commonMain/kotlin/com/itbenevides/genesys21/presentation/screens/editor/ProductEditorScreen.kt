@@ -88,7 +88,12 @@ fun ProductEditorScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = price,
-                    onValueChange = { price = it },
+                    onValueChange = { input ->
+                        // Sanitização: Aceita apenas números e um ponto decimal
+                        if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) {
+                            price = input
+                        }
+                    },
                     label = { Text("Preço") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -96,7 +101,12 @@ fun ProductEditorScreen(
                 )
                 OutlinedTextField(
                     value = stock,
-                    onValueChange = { stock = it },
+                    onValueChange = { input ->
+                        // Sanitização: Aceita apenas números inteiros
+                        if (input.isEmpty() || input.all { it.isDigit() }) {
+                            stock = input
+                        }
+                    },
                     label = { Text("Estoque") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

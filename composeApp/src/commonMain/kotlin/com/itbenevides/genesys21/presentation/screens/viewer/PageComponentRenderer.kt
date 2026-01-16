@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import kotlinx.coroutines.launch
@@ -162,7 +163,6 @@ fun PageComponentRenderer(
             }
         }
         is PageComponent.Unknown -> {
-            // Renderiza algo simples para não quebrar a UI
             Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.QuestionMark, null, tint = Color.LightGray)
             }
@@ -196,7 +196,16 @@ fun ProductCard(
             }
             Spacer(Modifier.height(8.dp))
             Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                if (product.stock > 0) {
+                    Text("${product.stock} un", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color.Gray)
+                } else {
+                    Text("Esgotado", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color.Red)
+                }
+            }
         }
     }
 }
