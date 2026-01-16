@@ -68,5 +68,6 @@ sealed class PageComponent {
 data class Page(
     val id: String,
     val title: String,
+    val ownerId: String? = null, // ID do usuário que criou a página
     val components: List<PageComponent> = emptyList()
 )

@@ -31,6 +31,7 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
+import kotlin.random.Random
 
 @Composable
 fun WhiteLabelScreen(
@@ -57,9 +58,7 @@ fun WhiteLabelScreen(
         availableProducts = liveInventory,
         isLoading = isLoading,
         onPageUpdate = onPageChange,
-        onPublish = { 
-            viewModel.savePage(page, true) { onBack() } 
-        },
+        onPublish = { viewModel.savePage(page, true) { onBack() } },
         onBack = onBack,
         onEditProduct = onEditProduct
     )
@@ -224,6 +223,7 @@ fun ComponentWrapper(
     onEdit: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        // TOOLBAR EXTERNA - 100% FORA DO DESIGN
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp, start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -234,7 +234,7 @@ fun ComponentWrapper(
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text(
-                    text = (component.customLabel ?: component::class.simpleName ?: "Componente").uppercase(),
+                    text = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -251,6 +251,7 @@ fun ComponentWrapper(
             }
         }
 
+        // CARD DO DESIGN - LIMPO E ISOLADO
         val shape = if (component.isRounded && component !is PageComponent.ProductList) CircleShape else RoundedCornerShape(12.dp)
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -335,23 +336,26 @@ fun ProductListManagementModal(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 
                 if (availableProducts.isNotEmpty()) {
-                    Spacer(Modifier.height(16.dp))
-                    Text("Aproveitar do Inventário", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(availableProducts.filter { p -> component.products.none { it.id == p.id } }) { product ->
-                            Surface(
-                                modifier = Modifier
-                                    .width(140.dp)
-                                    .clickable { onComponentUpdated(component.copy(products = component.products + product)) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray.copy(alpha = 0.5f))
-                            ) {
-                                Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
-                                    Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
-                                    Text("R$ ${product.price}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    val filteredSuggestions = availableProducts.filter { p -> component.products.none { it.id == p.id } }
+                    if (filteredSuggestions.isNotEmpty()) {
+                        Spacer(Modifier.height(16.dp))
+                        Text("Aproveitar do Inventário", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(filteredSuggestions) { product ->
+                                Surface(
+                                    modifier = Modifier
+                                        .width(140.dp)
+                                        .clickable { onComponentUpdated(component.copy(products = component.products + product)) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray.copy(alpha = 0.5f))
+                                ) {
+                                    Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
+                                        Text("R$ ${product.price}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }

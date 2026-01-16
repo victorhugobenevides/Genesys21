@@ -1,28 +1,38 @@
 package com.itbenevides.genesys21.di
 
 import com.itbenevides.genesys21.data.repository.KtorPageRepository
-import com.itbenevides.genesys21.domain.repository.PageRepository
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.domain.repository.PageRepository
 import io.ktor.client.*
-import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 
-// Helpers para DI de plataforma
-expect fun getBaseUrl(): String
-expect fun getAuthRepository(): AuthRepository
-
 val dataModule = module {
+    // Definimos uma instância única de Json configurada para ser resiliente
     single {
-        HttpClient {
-            install(ContentNegotiation) { json() }
-            install(HttpTimeout) { requestTimeoutMillis = 15000 }
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            encodeDefaults = true
+            prettyPrint = true
+            coerceInputValues = true
         }
     }
 
-    single<PageRepository> { KtorPageRepository(get(), getBaseUrl()) }
+    single {
+        HttpClient {
+            install(ContentNegotiation) {
+                // Usamos a instância de Json definida acima
+                json(get<Json>())
+            }
+        }
+    }
     
-    // Registra o AuthRepository conforme a plataforma
-    single { getAuthRepository() }
+    single<AuthRepository> { getAuthRepository() }
+    single<PageRepository> { KtorPageRepository(get(), getBaseUrl()) }
 }
+
+expect fun getAuthRepository(): AuthRepository
+expect fun getBaseUrl(): String

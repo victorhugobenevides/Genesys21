@@ -11,15 +11,10 @@ import io.ktor.server.routing.*
 
 fun Route.pageRoutes(pageRepository: PageRepository) {
     
-    // Rotas Públicas (sem autenticação)
+    // Rotas Públicas
     route("/api/public/pages") {
         get("/{id}") {
-            val id = call.parameters["id"]
-            if (id == null) {
-                call.respond(HttpStatusCode.BadRequest, "ID da página não fornecido")
-                return@get
-            }
-            
+            val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             pageRepository.getPublicPage(id)
                 .onSuccess { page -> call.respond(page) }
                 .onFailure { call.respond(HttpStatusCode.NotFound) }
@@ -30,50 +25,32 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
     authenticate("firebase") {
         route("/pages") {
             get {
-                val principal = call.principal<UserIdPrincipal>()
-                if (principal == null) {
-                    call.respond(HttpStatusCode.Unauthorized)
-                    return@get
-                }
-                val pages = pageRepository.getPages(principal.name)
-                call.respond(pages)
+                val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                call.respond(pageRepository.getPages(principal.name))
             }
 
             post {
-                val principal = call.principal<UserIdPrincipal>()
-                if (principal == null) {
-                    call.respond(HttpStatusCode.Unauthorized)
-                    return@post
-                }
+                val principal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
                 val page = call.receive<Page>()
                 pageRepository.savePage(page, principal.name, isEditing = false)
-                call.respond(HttpStatusCode.Created)
+                    .onSuccess { call.respond(HttpStatusCode.Created) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao criar") }
             }
 
             put {
-                val principal = call.principal<UserIdPrincipal>()
-                if (principal == null) {
-                    call.respond(HttpStatusCode.Unauthorized)
-                    return@put
-                }
+                val principal = call.principal<UserIdPrincipal>() ?: return@put call.respond(HttpStatusCode.Unauthorized)
                 val page = call.receive<Page>()
                 pageRepository.savePage(page, principal.name, isEditing = true)
-                call.respond(HttpStatusCode.OK)
+                    .onSuccess { call.respond(HttpStatusCode.OK) }
+                    .onFailure { call.respond(HttpStatusCode.Forbidden, it.message ?: "Sem permissão") }
             }
 
             delete("/{id}") {
-                val principal = call.principal<UserIdPrincipal>()
-                if (principal == null) {
-                    call.respond(HttpStatusCode.Unauthorized)
-                    return@delete
-                }
-                val id = call.parameters["id"]
-                if (id == null) {
-                    call.respond(HttpStatusCode.BadRequest, "ID da página não fornecido")
-                    return@delete
-                }
+                val principal = call.principal<UserIdPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
+                val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 pageRepository.deletePage(id, principal.name)
-                call.respond(HttpStatusCode.OK)
+                    .onSuccess { call.respond(HttpStatusCode.OK) }
+                    .onFailure { call.respond(HttpStatusCode.NotFound) }
             }
         }
     }
