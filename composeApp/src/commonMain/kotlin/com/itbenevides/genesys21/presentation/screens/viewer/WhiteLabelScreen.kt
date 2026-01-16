@@ -78,6 +78,9 @@ fun WhiteLabelContent(
     var showCatalog by remember { mutableStateOf(false) }
     var editingComponentIndex by remember { mutableStateOf<Int?>(null) }
     var pendingNewComponent by remember { mutableStateOf<PageComponent?>(null) }
+    
+    // Estado global de filtro para o editor
+    var filterQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -136,7 +139,23 @@ fun WhiteLabelContent(
                                 val newList = page.components.toMutableList().apply { removeAt(index) }
                                 onPageUpdate(page.copy(components = newList))
                             },
-                            onEdit = { editingComponentIndex = index }
+                            onEdit = { editingComponentIndex = index },
+                            onMoveUp = if (index > 0) { {
+                                val newList = page.components.toMutableList()
+                                val temp = newList[index]
+                                newList[index] = newList[index - 1]
+                                newList[index - 1] = temp
+                                onPageUpdate(page.copy(components = newList))
+                            } } else null,
+                            onMoveDown = if (index < page.components.size - 1) { {
+                                val newList = page.components.toMutableList()
+                                val temp = newList[index]
+                                newList[index] = newList[index + 1]
+                                newList[index + 1] = temp
+                                onPageUpdate(page.copy(components = newList))
+                            } } else null,
+                            filterQuery = filterQuery,
+                            onFilterQueryChange = { filterQuery = it }
                         )
                     }
                 }
@@ -220,7 +239,11 @@ fun WhiteLabelContent(
 fun ComponentWrapper(
     component: PageComponent,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null,
+    filterQuery: String = "",
+    onFilterQueryChange: (String) -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         // TOOLBAR EXTERNA
@@ -241,7 +264,18 @@ fun ComponentWrapper(
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onMoveUp != null) {
+                    IconButton(onClick = onMoveUp, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.ArrowUpward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                if (onMoveDown != null) {
+                    IconButton(onClick = onMoveDown, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.ArrowDownward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
                 IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
                     Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                 }
@@ -263,7 +297,11 @@ fun ComponentWrapper(
             shadowElevation = if (component.isTransparent || isImage) 0.dp else 1.dp
         ) {
             Box(Modifier.padding(if (component.isTransparent || isImage) 0.dp else 16.dp)) {
-                PageComponentRenderer(component)
+                PageComponentRenderer(
+                    component = component,
+                    filterQuery = filterQuery,
+                    onFilterQueryChange = onFilterQueryChange
+                )
             }
         }
     }
@@ -456,17 +494,24 @@ fun EditComponentModal(
             var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
             var imageDesc by remember { mutableStateOf(if (component is PageComponent.Image) component.string else "") }
             var imageSize by remember { mutableStateOf(if (component is PageComponent.Image) component.size.toString() else "200") }
+            var filterPlaceholder by remember { mutableStateOf(if (component is PageComponent.Filter) component.placeholder else "Filtrar conteúdo...") }
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 val previewComp = when (component) {
                     is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
                     is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     else -> component
                 }
 
                 Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
-                    PageComponentRenderer(previewComp)
+                    // Na preview, o filtro não precisa de interatividade, por isso passamos lambdas vazios
+                    PageComponentRenderer(
+                        component = previewComp,
+                        filterQuery = "",
+                        onFilterQueryChange = {}
+                    )
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
@@ -491,11 +536,13 @@ fun EditComponentModal(
                         OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(value = imageSize, onValueChange = { 
-                            // Sanitização: Aceita apenas números para o tamanho da imagem
                             if (it.isEmpty() || it.all { c -> c.isDigit() }) {
                                 imageSize = it 
                             }
                         }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                    }
+                    is PageComponent.Filter -> {
+                        OutlinedTextField(value = filterPlaceholder, onValueChange = { filterPlaceholder = it }, label = { Text("Texto de Orientação (Placeholder)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                     }
                     else -> {}
                 }
@@ -514,6 +561,7 @@ fun EditComponentModal(
                     is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
                     is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     else -> component
                 }
                 onComponentUpdated(finalComp)
@@ -554,6 +602,7 @@ fun ComponentCatalogModal(
             
             Text("Componentes", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             val catalogItems = listOf(
+                Triple("Barra de Busca", PageComponent.Filter(), Icons.Default.Search),
                 Triple("Título", PageComponent.Header(""), Icons.Default.Title),
                 Triple("Texto", PageComponent.Text(""), Icons.AutoMirrored.Filled.Notes),
                 Triple("Imagem", PageComponent.Image("", ""), Icons.Default.Image),
@@ -576,6 +625,7 @@ fun ComponentCatalogModal(
                     onTemplateSelected(listOf(
                         PageComponent.Image("", "", 80, isTransparent = true, isRounded = true), 
                         PageComponent.Header("Bem-vindo à Loja!", isTransparent = true), 
+                        PageComponent.Filter("Buscar na loja...", isRounded = true),
                         PageComponent.ProductList(mockCarouselProducts, isHorizontal = true, customLabel = "Destaques", isTransparent = true),
                         PageComponent.ProductList(mockListProducts, isHorizontal = false, customLabel = "Nossos Produtos", isTransparent = true)
                     )) 

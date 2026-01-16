@@ -60,7 +60,15 @@ sealed class PageComponent {
         override val isRounded: Boolean = false
     ) : PageComponent()
 
-    // Fallback para evitar crash com componentes antigos (como Logo)
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Filter")
+    data class Filter(
+        val placeholder: String = "Filtrar conteúdo...",
+        override val customLabel: String? = null,
+        override val isTransparent: Boolean = false,
+        override val isRounded: Boolean = false
+    ) : PageComponent()
+
     @Serializable
     @SerialName("unknown")
     data class Unknown(

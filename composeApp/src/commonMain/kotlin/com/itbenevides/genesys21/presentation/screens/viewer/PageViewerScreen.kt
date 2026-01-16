@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,6 +19,9 @@ fun PageViewerScreen(
     onBack: () -> Unit,
     onProductClick: (Product) -> Unit
 ) {
+    // Gerenciamento de estado do filtro para a visualização pública
+    var filterQuery by remember { mutableStateOf("") }
+
     Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
@@ -33,7 +34,9 @@ fun PageViewerScreen(
             items(page.components) { component ->
                 PageComponentRenderer(
                     component = component,
-                    onProductClick = onProductClick
+                    onProductClick = onProductClick,
+                    filterQuery = filterQuery,
+                    onFilterQueryChange = { filterQuery = it }
                 )
             }
         }
