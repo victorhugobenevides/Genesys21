@@ -7,7 +7,10 @@ data class Product(
     val id: String,
     val name: String,
     val price: Double,
-    val imageUrl: String
+    val imageUrl: String,
+    val description: String = "",
+    val category: String = "",
+    val stock: Int = 0
 )
 
 @Serializable

@@ -8,16 +8,16 @@ import kotlinx.browser.document
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
+    // Garante que o Koin e o Firebase iniciem antes da UI
     try {
         initKoin(additionalModules = listOf(viewModelModule))
         initializeFirebase()
-
-        val body = document.body ?: return
-
-        ComposeViewport(body) {
-            App()
-        }
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+
+    // O ComposeViewport gerencia o Canvas automaticamente
+    ComposeViewport(document.body!!) {
+        App()
     }
 }

@@ -101,7 +101,6 @@ fun PageListScreen(
         }
     }
 
-    // DIALOG SIMPLIFICADO DE CRIAÇÃO
     if (showCreateDialog) {
         AlertDialog(
             onDismissRequest = { showCreateDialog = false },
@@ -165,6 +164,7 @@ fun PageItemRow(page: Page, onClick: () -> Unit, onEditTitle: () -> Unit, onShar
                     leadingIcon = { Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp)) },
                     onClick = { showMenu = false; onEditTitle() }
                 )
+                // CORREÇÃO: Removido parâmetro 'alpha' inexistente no HorizontalDivider
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 DropdownMenuItem(
                     text = { Text("Excluir", color = Color.Red) },

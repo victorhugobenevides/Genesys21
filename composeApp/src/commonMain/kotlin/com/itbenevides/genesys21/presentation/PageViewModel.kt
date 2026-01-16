@@ -3,13 +3,13 @@ package com.itbenevides.genesys21.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.usecase.DeletePageUseCase
 import com.itbenevides.genesys21.domain.usecase.GetPagesUseCase
 import com.itbenevides.genesys21.domain.usecase.SavePageUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class PageViewModel(
@@ -24,6 +24,13 @@ class PageViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
+
+    // Inventário Global de Produtos extraído de todas as páginas
+    val allAvailableProducts: StateFlow<List<Product>> = _pages.map { allPages ->
+        allPages.flatMap { page -> 
+            page.components.filterIsInstance<PageComponent.ProductList>().flatMap { it.products }
+        }.distinctBy { it.id }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun loadPages() {
         viewModelScope.launch {

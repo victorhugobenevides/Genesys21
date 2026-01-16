@@ -12,14 +12,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageViewerScreen(page: Page, onBack: () -> Unit) {
-    // Visualizador Público: Sem botões de edição, apenas o design puro.
+fun PageViewerScreen(
+    page: Page, 
+    onBack: () -> Unit,
+    onProductClick: (Product) -> Unit
+) {
     Scaffold(
         topBar = {
-            // Barra de navegação minimalista apenas para voltar ao app
             TopAppBar(
                 title = { },
                 navigationIcon = { 
@@ -40,8 +43,10 @@ fun PageViewerScreen(page: Page, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(page.components) { component ->
-                // Renderiza o componente final sem molduras de editor
-                PageComponentRenderer(component)
+                PageComponentRenderer(
+                    component = component,
+                    onProductClick = onProductClick
+                )
             }
         }
     }
