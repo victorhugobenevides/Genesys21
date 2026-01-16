@@ -37,19 +37,37 @@ fun PageComponentRenderer(
 ) {
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
     
+    // Verificamos se o componente deve ser filtrado
+    val shouldShow = if (filterQuery.isBlank() || !component.isFilterable) {
+        true
+    } else {
+        when (component) {
+            is PageComponent.Header -> component.title.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Text -> component.content.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Image -> component.string.contains(filterQuery, ignoreCase = true)
+            is PageComponent.ProductList -> component.products.any { 
+                it.name.contains(filterQuery, ignoreCase = true) || 
+                it.category.contains(filterQuery, ignoreCase = true) 
+            }
+            else -> true
+        }
+    }
+
+    if (!shouldShow && component !is PageComponent.Filter) return
+
     when (component) {
         is PageComponent.Filter -> {
             OutlinedTextField(
                 value = filterQuery,
                 onValueChange = onFilterQueryChange,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                textStyle = TextStyle(fontSize = 14.sp),
-                placeholder = { Text(component.placeholder, fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp)) },
+                textStyle = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface),
+                placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
                 trailingIcon = {
                     if (filterQuery.isNotEmpty()) {
                         IconButton(onClick = { onFilterQueryChange("") }) {
-                            Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 },
@@ -57,22 +75,24 @@ fun PageComponentRenderer(
                 shape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface
+                    unfocusedContainerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
             )
         }
         is PageComponent.ProductList -> {
-            val filteredProducts = if (filterQuery.isBlank()) {
+            // Filtramos os produtos individualmente apenas se o componente for filtrável
+            val productsToDisplay = if (filterQuery.isBlank() || !component.isFilterable) {
                 component.products
             } else {
                 component.products.filter { 
                     it.name.contains(filterQuery, ignoreCase = true) || 
-                    it.description.contains(filterQuery, ignoreCase = true) ||
                     it.category.contains(filterQuery, ignoreCase = true)
                 }
             }
 
-            if (filteredProducts.isNotEmpty()) {
+            if (productsToDisplay.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (component.isHorizontal) {
                         val listState = rememberLazyListState()
@@ -85,7 +105,7 @@ fun PageComponentRenderer(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                                 contentPadding = PaddingValues(horizontal = 4.dp)
                             ) {
-                                items(filteredProducts) { product ->
+                                items(productsToDisplay) { product ->
                                     ProductCard(
                                         product = product,
                                         shape = commonShape,
@@ -96,7 +116,7 @@ fun PageComponentRenderer(
                                 }
                             }
 
-                            if (filteredProducts.size > 1) {
+                            if (productsToDisplay.size > 1) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().align(Alignment.Center),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -109,9 +129,9 @@ fun PageComponentRenderer(
                                                 }
                                             },
                                             modifier = Modifier.size(32.dp).padding(start = 4.dp),
-                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White.copy(alpha = 0.8f))
+                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
                                         ) {
-                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
                                         }
                                     } else { Spacer(Modifier.width(32.dp)) }
 
@@ -123,16 +143,16 @@ fun PageComponentRenderer(
                                                 }
                                             },
                                             modifier = Modifier.size(32.dp).padding(end = 4.dp),
-                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White.copy(alpha = 0.8f))
+                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
                                         ) {
-                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
                                         }
                                     } else { Spacer(Modifier.width(32.dp)) }
                                 }
                             }
                         }
                     } else {
-                        filteredProducts.chunked(2).forEach { rowProducts ->
+                        productsToDisplay.chunked(2).forEach { rowProducts ->
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 rowProducts.forEach { product ->
                                     ProductCard(
@@ -151,63 +171,57 @@ fun PageComponentRenderer(
             }
         }
         is PageComponent.Header -> {
-            if (filterQuery.isBlank() || component.title.contains(filterQuery, ignoreCase = true)) {
-                Text(
-                    text = component.title.ifBlank { "Título" }, 
-                    style = MaterialTheme.typography.headlineMedium, 
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            Text(
+                text = component.title.ifBlank { "Título" }, 
+                style = MaterialTheme.typography.headlineMedium, 
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         is PageComponent.Text -> {
-            if (filterQuery.isBlank() || component.content.contains(filterQuery, ignoreCase = true)) {
-                Text(
-                    text = component.content.ifBlank { "Conteúdo..." }, 
-                    style = MaterialTheme.typography.bodyMedium, 
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            Text(
+                text = component.content.ifBlank { "Conteúdo..." }, 
+                style = MaterialTheme.typography.bodyMedium, 
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
         is PageComponent.Image -> {
-            if (filterQuery.isBlank() || component.string.contains(filterQuery, ignoreCase = true)) {
-                val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp)
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    modifier = Modifier.wrapContentSize(),
+                    shape = imgShape,
+                    color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                 ) {
-                    Surface(
-                        modifier = Modifier.wrapContentSize(),
-                        shape = imgShape,
-                        color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                    ) {
-                        Box(Modifier.padding(20.dp), contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.size(component.size.dp)
-                            )
-                        }
-                    }
-                    if (component.string.isNotEmpty()) {
-                        Text(
-                            text = component.string,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                            textAlign = TextAlign.Center
+                    Box(Modifier.padding(20.dp), contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            modifier = Modifier.size(component.size.dp)
                         )
                     }
+                }
+                if (component.string.isNotEmpty()) {
+                    Text(
+                        text = component.string,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
         is PageComponent.Unknown -> {
             Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.QuestionMark, null, tint = Color.LightGray)
+                Icon(Icons.Default.QuestionMark, null, tint = MaterialTheme.colorScheme.outline)
             }
         }
     }
@@ -228,6 +242,7 @@ fun ProductCard(
         },
         shape = shape,
         color = if (isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         border = if (isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -235,18 +250,18 @@ fun ProductCard(
                 Modifier.fillMaxWidth().aspectRatio(1f).clip(shape).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
             }
             Spacer(Modifier.height(8.dp))
-            Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
             
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
                 if (product.stock > 0) {
-                    Text("${product.stock} un", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color.Gray)
+                    Text("${product.stock} un", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    Text("Esgotado", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color.Red)
+                    Text("Esgotado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
                 }
             }
         }

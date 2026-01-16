@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.ui.theme.AppTheme
 import kotlin.random.Random
 
 @Composable
@@ -53,15 +55,17 @@ fun WhiteLabelScreen(
         }
     }
 
-    WhiteLabelContent(
-        page = page,
-        availableProducts = liveInventory,
-        isLoading = isLoading,
-        onPageUpdate = onPageChange,
-        onPublish = { viewModel.savePage(page, true) { onBack() } },
-        onBack = onBack,
-        onEditProduct = onEditProduct
-    )
+    AppTheme(themeConfig = page.theme) {
+        WhiteLabelContent(
+            page = page,
+            availableProducts = liveInventory,
+            isLoading = isLoading,
+            onPageUpdate = onPageChange,
+            onPublish = { viewModel.savePage(page, true) { onBack() } },
+            onBack = onBack,
+            onEditProduct = onEditProduct
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,10 +80,10 @@ fun WhiteLabelContent(
     onEditProduct: (Product?, Int?) -> Unit
 ) {
     var showCatalog by remember { mutableStateOf(false) }
+    var showThemeSelector by remember { mutableStateOf(false) }
     var editingComponentIndex by remember { mutableStateOf<Int?>(null) }
     var pendingNewComponent by remember { mutableStateOf<PageComponent?>(null) }
     
-    // Estado global de filtro para o editor
     var filterQuery by remember { mutableStateOf("") }
 
     Scaffold(
@@ -97,6 +101,9 @@ fun WhiteLabelContent(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showThemeSelector = true }) {
+                        Icon(Icons.Default.Palette, "Temas", tint = MaterialTheme.colorScheme.primary)
+                    }
                     TextButton(onClick = onPublish, enabled = !isLoading) {
                         if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                         else Text("Publicar", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -109,7 +116,7 @@ fun WhiteLabelContent(
             FloatingActionButton(
                 onClick = { showCatalog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Add, null)
@@ -159,6 +166,17 @@ fun WhiteLabelContent(
                         )
                     }
                 }
+            }
+
+            if (showThemeSelector) {
+                ThemeSelectorModal(
+                    currentTheme = page.theme,
+                    onThemeSelected = { 
+                        onPageUpdate(page.copy(theme = it))
+                        showThemeSelector = false 
+                    },
+                    onDismiss = { showThemeSelector = false }
+                )
             }
 
             if (showCatalog) {
@@ -230,6 +248,68 @@ fun WhiteLabelContent(
                         onDismiss = { editingComponentIndex = null }
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ThemeSelectorModal(
+    currentTheme: PageThemeConfig,
+    onThemeSelected: (PageThemeConfig) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Cores Harmonizadas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
+            }
+            
+            Spacer(Modifier.height(20.dp))
+            
+            val themes = listOf(
+                Triple(PageThemeConfig.DEFAULT, "Royal", Color(0xFF2D3142)),
+                Triple(PageThemeConfig.OCEAN, "Soft Ocean", Color(0xFF4A90E2)),
+                Triple(PageThemeConfig.FOREST, "Eco Forest", Color(0xFF386641)),
+                Triple(PageThemeConfig.CANDY, "Rose Gold", Color(0xFFB08968)),
+                Triple(PageThemeConfig.DARK, "Midnight", Color(0xFFE0E1DD)),
+                Triple(PageThemeConfig.SUNSET, "Sunset", Color(0xFFF4A261)),
+                Triple(PageThemeConfig.BERRY, "Berry", Color(0xFF9D0208)),
+                Triple(PageThemeConfig.MINIMAL, "Minimal", Color(0xFF000000)),
+                Triple(PageThemeConfig.VINTAGE, "Vintage", Color(0xFF6D597A)),
+                Triple(PageThemeConfig.NEON, "Neon", Color(0xFF39FF14))
+            )
+            
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                themes.forEach { (config, label, color) ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .clickable { onThemeSelected(config) },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (currentTheme == config) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = if (currentTheme == config) androidx.compose.foundation.BorderStroke(2.dp, color) else null
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(24.dp).clip(CircleShape).background(color))
+                            Spacer(Modifier.width(16.dp))
+                            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = if (currentTheme == config) FontWeight.Bold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(Modifier.weight(1f))
+                            if (currentTheme == config) Icon(Icons.Default.Check, null, tint = color)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(100.dp))
             }
         }
     }
@@ -324,11 +404,11 @@ fun ProductListManagementModal(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Gerenciar Produtos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Gerenciar Produtos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
@@ -338,6 +418,7 @@ fun ProductListManagementModal(
             var isTransparent by remember { mutableStateOf(component.isTransparent) }
             var isRounded by remember { mutableStateOf(component.isRounded) }
             var isHorizontal by remember { mutableStateOf(component.isHorizontal) }
+            var isFilterable by remember { mutableStateOf(component.isFilterable) }
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
@@ -356,13 +437,13 @@ fun ProductListManagementModal(
                         isTransparent = it
                         onComponentUpdated(component.copy(isTransparent = it))
                     })
-                    Text("Transparente", fontSize = 14.sp)
+                    Text("Transparente", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.width(16.dp))
                     Checkbox(checked = isRounded, onCheckedChange = { 
                         isRounded = it
                         onComponentUpdated(component.copy(isRounded = it))
                     })
-                    Text("Redondo", fontSize = 14.sp)
+                    Text("Redondo", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
@@ -370,7 +451,15 @@ fun ProductListManagementModal(
                         isHorizontal = it
                         onComponentUpdated(component.copy(isHorizontal = it))
                     })
-                    Text("Exibir Horizontalmente (Carrossel)", fontSize = 14.sp)
+                    Text("Exibir Horizontalmente (Carrossel)", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                    Checkbox(checked = isFilterable, onCheckedChange = { 
+                        isFilterable = it
+                        onComponentUpdated(component.copy(isFilterable = it))
+                    })
+                    Text("Permitir Filtragem", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
@@ -379,7 +468,7 @@ fun ProductListManagementModal(
                     val filteredSuggestions = availableProducts.filter { p -> component.products.none { it.id == p.id } }
                     if (filteredSuggestions.isNotEmpty()) {
                         Spacer(Modifier.height(16.dp))
-                        Text("Aproveitar do Inventário", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text("Aproveitar do Inventário", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(8.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(filteredSuggestions) { product ->
@@ -393,8 +482,8 @@ fun ProductListManagementModal(
                                 ) {
                                     Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                         Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
-                                        Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
-                                        Text("R$ ${product.price}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                        Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                                        Text("R$ ${product.price}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }
@@ -403,21 +492,21 @@ fun ProductListManagementModal(
                 }
 
                 Spacer(Modifier.height(24.dp))
-                Text("Produtos nesta Lista", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Produtos nesta Lista", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Spacer(Modifier.height(8.dp))
 
                 component.products.forEach { product ->
                     Surface(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onEditProduct(product) },
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray.copy(alpha = 0.5f)),
-                        color = Color.White
+                        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                        color = MaterialTheme.colorScheme.surface
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(40.dp))
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(product.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                                Text(product.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                                 Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             IconButton(onClick = {
@@ -445,7 +534,7 @@ fun ProductListManagementModal(
                     onClick = onDeleteComponent,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Remover Todo o Bloco")
                 }
@@ -470,7 +559,7 @@ fun EditComponentModal(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
@@ -480,7 +569,7 @@ fun EditComponentModal(
                 .navigationBarsPadding()
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
@@ -489,6 +578,7 @@ fun EditComponentModal(
             var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
             var isTransparent by remember { mutableStateOf(component.isTransparent) }
             var isRounded by remember { mutableStateOf(component.isRounded) }
+            var isFilterable by remember { mutableStateOf(component.isFilterable) }
             var headerTitle by remember { mutableStateOf(if (component is PageComponent.Header) component.title else "") }
             var textContent by remember { mutableStateOf(if (component is PageComponent.Text) component.content else "") }
             var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
@@ -498,15 +588,14 @@ fun EditComponentModal(
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 val previewComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
-                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
-                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
-                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
+                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
                     else -> component
                 }
 
                 Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
-                    // Na preview, o filtro não precisa de interatividade, por isso passamos lambdas vazios
                     PageComponentRenderer(
                         component = previewComp,
                         filterQuery = "",
@@ -521,10 +610,15 @@ fun EditComponentModal(
                 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                     Checkbox(checked = isTransparent, onCheckedChange = { isTransparent = it })
-                    Text("Fundo Transparente", style = MaterialTheme.typography.bodyMedium)
+                    Text("Fundo Transparente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.width(16.dp))
                     Checkbox(checked = isRounded, onCheckedChange = { isRounded = it })
-                    Text("Redondo", style = MaterialTheme.typography.bodyMedium)
+                    Text("Redondo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                    Checkbox(checked = isFilterable, onCheckedChange = { isFilterable = it })
+                    Text("Permitir Filtragem", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 when (component) {
@@ -558,10 +652,10 @@ fun EditComponentModal(
 
             ActionButtons(isNew, isDataValid, {
                 val finalComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
-                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
-                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
-                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
+                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
                     else -> component
                 }
                 onComponentUpdated(finalComp)
@@ -573,7 +667,7 @@ fun EditComponentModal(
 @Composable
 fun ActionButtons(isNew: Boolean, enabled: Boolean, onConfirm: () -> Unit, onCancel: () -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text(if (isNew) "Descartar" else "Remover", color = Color.Red) }
+        OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) { Text(if (isNew) "Descartar" else "Remover", color = MaterialTheme.colorScheme.error) }
         Button(onClick = onConfirm, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), enabled = enabled) { Text(if (isNew) "Adicionar" else "Salvar") }
     }
 }
@@ -591,11 +685,11 @@ fun ComponentCatalogModal(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize(),
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Adicionar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Adicionar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = onDismiss) { Text("Fechar") }
             }
             Spacer(Modifier.height(16.dp))
@@ -636,7 +730,7 @@ fun ComponentCatalogModal(
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Dashboard, null, tint = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.width(16.dp))
-                    Text("Loja Completa", style = MaterialTheme.typography.titleSmall)
+                    Text("Loja Completa", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
         }
@@ -649,7 +743,7 @@ fun CatalogItemRow(name: String, icon: androidx.compose.ui.graphics.vector.Image
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(12.dp))
-            Text(name, style = MaterialTheme.typography.bodyMedium)
+            Text(name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }

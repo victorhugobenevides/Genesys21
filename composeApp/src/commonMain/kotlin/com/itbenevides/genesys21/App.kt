@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
@@ -30,44 +31,42 @@ enum class Screen { Splash, Login, List, Editor, WhiteLabel, PublicViewer, Produ
 @Preview
 fun App() {
     KoinContext {
-        AppTheme {
-            val viewModel: PageViewModel = koinViewModel()
-            var currentScreen by remember { mutableStateOf(Screen.Splash) }
-            var selectedPage by remember { mutableStateOf<Page?>(null) }
-            var selectedProduct by remember { mutableStateOf<Product?>(null) }
-            var productToEdit by remember { mutableStateOf<Product?>(null) }
-            
-            var activeComponentIndex by remember { mutableStateOf<Int?>(null) }
-            var previousScreen by remember { mutableStateOf<Screen?>(null) }
-            val coroutineScope = rememberCoroutineScope()
+        val viewModel: PageViewModel = koinViewModel()
+        var currentScreen by remember { mutableStateOf(Screen.Splash) }
+        var selectedPage by remember { mutableStateOf<Page?>(null) }
+        var selectedProduct by remember { mutableStateOf<Product?>(null) }
+        var productToEdit by remember { mutableStateOf<Product?>(null) }
+        
+        var activeComponentIndex by remember { mutableStateOf<Int?>(null) }
+        var previousScreen by remember { mutableStateOf<Screen?>(null) }
+        val coroutineScope = rememberCoroutineScope()
 
+        // Determina o tema com base na tela atual
+        // Login, Splash e Lista sempre usam o tema DEFAULT (Padrão do App)
+        val currentTheme = when (currentScreen) {
+            Screen.Splash, Screen.Login, Screen.List -> PageThemeConfig.DEFAULT
+            else -> selectedPage?.theme ?: PageThemeConfig.DEFAULT
+        }
+
+        AppTheme(themeConfig = currentTheme) {
             LaunchedEffect(Unit) {
                 val urlPath = getInitialUrlPath() ?: ""
-                println("DEBUG: Iniciando App. URL Path: $urlPath")
-
                 if (urlPath.contains("/p/")) {
                     val pageId = urlPath.substringAfter("/p/").split("/").firstOrNull()
-                    println("DEBUG: Detectada rota pública. PageID: $pageId")
-                    
                     if (!pageId.isNullOrBlank()) {
                         try {
                             val page = viewModel.loadPublicPage(pageId)
                             if (page != null) {
-                                println("DEBUG: Página pública carregada com sucesso!")
                                 selectedPage = page
                                 currentScreen = Screen.PublicViewer
                                 return@LaunchedEffect
-                            } else {
-                                println("DEBUG: Falha ao carregar página: loadPublicPage retornou null")
                             }
                         } catch (e: Exception) {
-                            println("DEBUG: Erro crítico ao carregar página: ${e.message}")
                             e.printStackTrace()
                         }
                     }
                 }
 
-                println("DEBUG: Seguindo para fluxo normal de Login/Lista")
                 val token = viewModel.getCurrentUserToken()
                 delay(500)
                 if (token != null) {
@@ -83,7 +82,7 @@ fun App() {
 
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    val maxWidth = if (currentScreen == Screen.Login || currentScreen == Screen.Splash) 400.dp else 640.dp
+                    val maxWidth = if (currentScreen == Screen.Login || currentScreen == Screen.Splash) 400.dp else 1200.dp
                     
                     Box(modifier = Modifier.fillMaxHeight().widthIn(max = maxWidth)) {
                         AnimatedContent(targetState = currentScreen) { screen ->

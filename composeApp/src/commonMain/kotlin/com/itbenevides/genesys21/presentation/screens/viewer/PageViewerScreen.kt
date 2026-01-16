@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,25 +20,27 @@ fun PageViewerScreen(
     onBack: () -> Unit,
     onProductClick: (Product) -> Unit
 ) {
-    // Gerenciamento de estado do filtro para a visualização pública
-    var filterQuery by remember { mutableStateOf("") }
+    // Aplicamos o tema configurado na página para a visualização pública
+    AppTheme(themeConfig = page.theme) {
+        var filterQuery by remember { mutableStateOf("") }
 
-    Scaffold { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(page.components) { component ->
-                PageComponentRenderer(
-                    component = component,
-                    onProductClick = onProductClick,
-                    filterQuery = filterQuery,
-                    onFilterQueryChange = { filterQuery = it }
-                )
+        Scaffold { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(page.components) { component ->
+                    PageComponentRenderer(
+                        component = component,
+                        onProductClick = onProductClick,
+                        filterQuery = filterQuery,
+                        onFilterQueryChange = { filterQuery = it }
+                    )
+                }
             }
         }
     }
