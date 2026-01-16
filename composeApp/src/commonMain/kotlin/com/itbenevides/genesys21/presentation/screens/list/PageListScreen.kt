@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,7 +21,6 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.theme.iOSSeparator
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageListScreen(
     viewModel: PageViewModel,
@@ -34,22 +32,63 @@ fun PageListScreen(
 ) {
     val pages by viewModel.pages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPageTitle by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) { viewModel.loadPages() }
 
+    PageListContent(
+        pages = pages,
+        isLoading = isLoading,
+        onAddClick = { showCreateDialog = true },
+        onLogoutClick = onLogout,
+        onPageClick = onViewPage,
+        onEditTitleClick = onEditPage,
+        onShareClick = onSharePage,
+        onDeleteClick = { viewModel.deletePage(it) { viewModel.loadPages() } }
+    )
+
+    if (showCreateDialog) {
+        CreatePageDialog(
+            title = newPageTitle,
+            onTitleChange = { newPageTitle = it },
+            onDismiss = { showCreateDialog = false; newPageTitle = "" },
+            onConfirm = {
+                val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+                viewModel.savePage(Page(id, newPageTitle), false) {
+                    showCreateDialog = false
+                    newPageTitle = ""
+                    viewModel.loadPages()
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PageListContent(
+    pages: List<Page>,
+    isLoading: Boolean,
+    onAddClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onPageClick: (Page) -> Unit,
+    onEditTitleClick: (Page) -> Unit,
+    onShareClick: (Page) -> Unit,
+    onDeleteClick: (String) -> Unit
+) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Páginas", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
-                    TextButton(onClick = onLogout) {
+                    TextButton(onClick = onLogoutClick) {
                         Text("Sair", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showCreateDialog = true }) {
+                    IconButton(onClick = onAddClick) {
                         Icon(Icons.Default.Add, "Novo", tint = MaterialTheme.colorScheme.primary)
                     }
                 },
@@ -76,18 +115,26 @@ fun PageListScreen(
                     ) {
                         Column {
                             if (pages.isEmpty() && !isLoading) {
-                                Text("Nenhuma página criada", modifier = Modifier.padding(24.dp).align(Alignment.CenterHorizontally), color = Color.Gray)
+                                Text(
+                                    "Nenhuma página criada", 
+                                    modifier = Modifier.padding(24.dp).align(Alignment.CenterHorizontally), 
+                                    color = Color.Gray
+                                )
                             }
                             pages.forEachIndexed { index, page ->
                                 PageItemRow(
                                     page = page,
-                                    onClick = { onViewPage(page) },
-                                    onEditTitle = { onEditPage(page) },
-                                    onShare = { onSharePage(page) },
-                                    onDelete = { viewModel.deletePage(page.id) { viewModel.loadPages() } }
+                                    onClick = { onPageClick(page) },
+                                    onEditTitle = { onEditTitleClick(page) },
+                                    onShare = { onShareClick(page) },
+                                    onDelete = { onDeleteClick(page.id) }
                                 )
                                 if (index < pages.size - 1) {
-                                    HorizontalDivider(modifier = Modifier.padding(start = 16.dp), thickness = 0.5.dp, color = iOSSeparator)
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 16.dp), 
+                                        thickness = 0.5.dp, 
+                                        color = iOSSeparator
+                                    )
                                 }
                             }
                         }
@@ -96,47 +143,23 @@ fun PageListScreen(
             }
 
             if (isLoading) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter), color = MaterialTheme.colorScheme.primary)
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter), 
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
-    }
-
-    if (showCreateDialog) {
-        AlertDialog(
-            onDismissRequest = { showCreateDialog = false },
-            title = { Text("Nova Página", fontWeight = FontWeight.Bold) },
-            text = {
-                OutlinedTextField(
-                    value = newPageTitle,
-                    onValueChange = { newPageTitle = it },
-                    label = { Text("Título da página") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = newPageTitle.isNotBlank(),
-                    onClick = {
-                        val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                        viewModel.savePage(Page(id, newPageTitle), false) {
-                            showCreateDialog = false
-                            newPageTitle = ""
-                            viewModel.loadPages()
-                        }
-                    }
-                ) { Text("Criar", fontWeight = FontWeight.Bold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCreateDialog = false }) { Text("Cancelar") }
-            }
-        )
     }
 }
 
 @Composable
-fun PageItemRow(page: Page, onClick: () -> Unit, onEditTitle: () -> Unit, onShare: () -> Unit, onDelete: () -> Unit) {
+fun PageItemRow(
+    page: Page, 
+    onClick: () -> Unit, 
+    onEditTitle: () -> Unit, 
+    onShare: () -> Unit, 
+    onDelete: () -> Unit
+) {
     var showMenu by remember { mutableStateOf(false) }
 
     Row(
@@ -145,7 +168,7 @@ fun PageItemRow(page: Page, onClick: () -> Unit, onEditTitle: () -> Unit, onShar
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(page.title, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp))
-            Text("ID: ${page.id}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("ID: ${page.id}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         
         Box {
@@ -164,7 +187,6 @@ fun PageItemRow(page: Page, onClick: () -> Unit, onEditTitle: () -> Unit, onShar
                     leadingIcon = { Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp)) },
                     onClick = { showMenu = false; onEditTitle() }
                 )
-                // CORREÇÃO: Removido parâmetro 'alpha' inexistente no HorizontalDivider
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 DropdownMenuItem(
                     text = { Text("Excluir", color = Color.Red) },
@@ -176,4 +198,36 @@ fun PageItemRow(page: Page, onClick: () -> Unit, onEditTitle: () -> Unit, onShar
 
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color(0xFFC4C4C6), modifier = Modifier.size(18.dp))
     }
+}
+
+@Composable
+fun CreatePageDialog(
+    title: String,
+    onTitleChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nova Página", fontWeight = FontWeight.Bold) },
+        text = {
+            OutlinedTextField(
+                value = title,
+                onValueChange = onTitleChange,
+                label = { Text("Título da página") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp)
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = title.isNotBlank(),
+                onClick = onConfirm
+            ) { Text("Criar", fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }

@@ -33,20 +33,14 @@ import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import kotlin.random.Random
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WhiteLabelScreen(
-    viewModel: PageViewModel, 
-    page: Page, 
+    viewModel: PageViewModel,
+    page: Page,
     onBack: () -> Unit,
     onEditProduct: (Product?, Int?) -> Unit
 ) {
     var currentPage by remember { mutableStateOf(page) }
-    var showCatalog by remember { mutableStateOf(false) }
-    
-    var editingComponentIndex by remember { mutableStateOf<Int?>(null) }
-    var pendingNewComponent by remember { mutableStateOf<PageComponent?>(null) }
-    
     val isLoading by viewModel.isLoading.collectAsState()
     val serverProducts by viewModel.allAvailableProducts.collectAsState()
 
@@ -55,17 +49,42 @@ fun WhiteLabelScreen(
             val sessionProducts = currentPage.components
                 .filterIsInstance<PageComponent.ProductList>()
                 .flatMap { it.products }
-            
             (serverProducts + sessionProducts).distinctBy { it.id }
         }
     }
 
+    WhiteLabelContent(
+        page = currentPage,
+        availableProducts = liveInventory,
+        isLoading = isLoading,
+        onPageUpdate = { currentPage = it },
+        onPublish = { viewModel.savePage(currentPage, true) { onBack() } },
+        onBack = onBack,
+        onEditProduct = onEditProduct
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WhiteLabelContent(
+    page: Page,
+    availableProducts: List<Product>,
+    isLoading: Boolean,
+    onPageUpdate: (Page) -> Unit,
+    onPublish: () -> Unit,
+    onBack: () -> Unit,
+    onEditProduct: (Product?, Int?) -> Unit
+) {
+    var showCatalog by remember { mutableStateOf(false) }
+    var editingComponentIndex by remember { mutableStateOf<Int?>(null) }
+    var pendingNewComponent by remember { mutableStateOf<PageComponent?>(null) }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(currentPage.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(page.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("Editor White Label", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -75,14 +94,12 @@ fun WhiteLabelScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { viewModel.savePage(currentPage, true) { onBack() } }, enabled = !isLoading) {
+                    TextButton(onClick = onPublish, enabled = !isLoading) {
                         if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                         else Text("Publicar", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
-                )
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         },
         floatingActionButton = {
@@ -97,49 +114,41 @@ fun WhiteLabelScreen(
         }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            if (currentPage.components.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        "Comece a montar sua página\nclicando no botão +", 
-                        textAlign = TextAlign.Center, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
+            if (page.components.isEmpty()) {
+                EmptyStateMessage()
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(32.dp)
                 ) {
-                    itemsIndexed(currentPage.components) { index, component ->
+                    itemsIndexed(page.components) { index, component ->
                         ComponentWrapper(
                             component = component,
                             onDelete = {
-                                currentPage = currentPage.copy(components = currentPage.components.toMutableList().apply { removeAt(index) })
+                                onPageUpdate(page.copy(components = page.components.toMutableList().apply { removeAt(index) }))
                             },
-                            onEdit = {
-                                editingComponentIndex = index
-                            }
+                            onEdit = { editingComponentIndex = index }
                         )
                     }
                 }
             }
 
+            // Modais de Gerenciamento
             if (showCatalog) {
                 ComponentCatalogModal(
                     onComponentSelected = { newComponent ->
                         if (newComponent is PageComponent.ProductList) {
-                            val newList = currentPage.components + newComponent
-                            currentPage = currentPage.copy(components = newList)
+                            val newList = page.components + newComponent
+                            onPageUpdate(page.copy(components = newList))
                             editingComponentIndex = newList.size - 1
                         } else {
                             pendingNewComponent = newComponent
                         }
                         showCatalog = false
                     },
-                    onTemplateSelected = { templateComponents ->
-                        currentPage = currentPage.copy(components = currentPage.components + templateComponents)
+                    onTemplateSelected = {
+                        onPageUpdate(page.copy(components = page.components + it))
                         showCatalog = false
                     },
                     onDismiss = { showCatalog = false }
@@ -151,7 +160,7 @@ fun WhiteLabelScreen(
                     component = component,
                     isNew = true,
                     onComponentUpdated = { updated ->
-                        currentPage = currentPage.copy(components = currentPage.components + updated)
+                        onPageUpdate(page.copy(components = page.components + updated))
                         pendingNewComponent = null
                     },
                     onDeleteRequest = { pendingNewComponent = null },
@@ -160,22 +169,18 @@ fun WhiteLabelScreen(
             }
 
             editingComponentIndex?.let { index ->
-                val component = currentPage.components[index]
+                val component = page.components[index]
                 if (component is PageComponent.ProductList) {
                     ProductListManagementModal(
                         component = component,
-                        availableProducts = liveInventory,
+                        availableProducts = availableProducts,
                         onAddProduct = { onEditProduct(null, index) },
                         onEditProduct = { onEditProduct(it, index) },
                         onComponentUpdated = { updated ->
-                            currentPage = currentPage.copy(
-                                components = currentPage.components.toMutableList().apply { set(index, updated) }
-                            )
+                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { set(index, updated) }))
                         },
                         onDeleteComponent = {
-                            currentPage = currentPage.copy(
-                                components = currentPage.components.toMutableList().apply { removeAt(index) }
-                            )
+                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { removeAt(index) }))
                             editingComponentIndex = null
                         },
                         onDismiss = { editingComponentIndex = null }
@@ -185,15 +190,11 @@ fun WhiteLabelScreen(
                         component = component,
                         isNew = false,
                         onComponentUpdated = { updated ->
-                            currentPage = currentPage.copy(
-                                components = currentPage.components.toMutableList().apply { set(index, updated) }
-                            )
+                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { set(index, updated) }))
                             editingComponentIndex = null
                         },
                         onDeleteRequest = {
-                            currentPage = currentPage.copy(
-                                components = currentPage.components.toMutableList().apply { removeAt(index) }
-                            )
+                            onPageUpdate(page.copy(components = page.components.toMutableList().apply { removeAt(index) }))
                             editingComponentIndex = null
                         },
                         onDismiss = { editingComponentIndex = null }
@@ -205,9 +206,21 @@ fun WhiteLabelScreen(
 }
 
 @Composable
+private fun EmptyStateMessage() {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(
+            "Comece a montar sua página\nclicando no botão +",
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
 fun ComponentWrapper(
-    component: PageComponent, 
-    onDelete: () -> Unit, 
+    component: PageComponent,
+    onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -414,7 +427,7 @@ fun EditComponentModal(
                 .navigationBarsPadding()
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(if (isNew) "Novo Item" else "Editar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
@@ -453,7 +466,7 @@ fun EditComponentModal(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome do Bloco") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                     Checkbox(checked = isTransparent, onCheckedChange = { isTransparent = it })

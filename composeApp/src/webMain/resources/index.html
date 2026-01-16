@@ -11,11 +11,11 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Compose gerencia o scroll interno */
+            overflow: hidden; /* Compose gerencia o scroll interno via Skiko */
             background-color: #F2F2F7;
         }
 
-        /* Barra de Scroll Estilizada para o Canvas (Chrome/Safari) */
+        /* Estilização da barra de scroll dentro do Canvas (Chrome/Safari) */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -25,6 +25,7 @@
         ::-webkit-scrollbar-thumb {
             background: #000000;
             border-radius: 10px;
+            border: 2px solid #F2F2F7;
         }
 
         canvas {
