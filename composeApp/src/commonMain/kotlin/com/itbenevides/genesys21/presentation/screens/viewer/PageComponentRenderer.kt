@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
@@ -36,27 +37,11 @@ fun PageComponentRenderer(
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
     
     when (component) {
-        is PageComponent.Logo -> {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Surface(
-                    modifier = Modifier.size(component.size.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                ) {
-                    if (component.url.isNotEmpty()) {
-                        Box(contentAlignment = Alignment.Center) { Text("LOGO", style = MaterialTheme.typography.labelSmall) }
-                    } else {
-                        Icon(Icons.Default.Store, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(12.dp))
-                    }
-                }
-            }
-        }
         is PageComponent.ProductList -> {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (component.products.isEmpty()) {
                     Text("Sem produtos", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                 } else if (component.isHorizontal) {
-                    // CARROUSEL COM BOTÕES DE NAVEGAÇÃO
                     val listState = rememberLazyListState()
                     val coroutineScope = rememberCoroutineScope()
                     
@@ -78,7 +63,6 @@ fun PageComponentRenderer(
                             }
                         }
 
-                        // Botões de indicação/navegação
                         if (component.products.size > 1) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().align(Alignment.Center),
@@ -115,7 +99,6 @@ fun PageComponentRenderer(
                         }
                     }
                 } else {
-                    // GRADE PADRÃO
                     component.products.chunked(2).forEach { rowProducts ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             rowProducts.forEach { product ->
@@ -149,16 +132,39 @@ fun PageComponentRenderer(
         )
         is PageComponent.Image -> {
             val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp)
-            Column(horizontalAlignment = if (component.isRounded) Alignment.CenterHorizontally else Alignment.Start) {
-                Box(
-                    Modifier.fillMaxWidth().aspectRatio(if (component.isRounded) 1f else 1.7f).clip(imgShape).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
-                    contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    modifier = Modifier.wrapContentSize(),
+                    shape = imgShape,
+                    color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                 ) {
-                    Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(48.dp))
+                    Box(Modifier.padding(20.dp), contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(component.size.dp)
+                        )
+                    }
                 }
                 if (component.string.isNotEmpty()) {
-                    Text(component.string, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp).fillMaxWidth(), textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start)
+                    Text(
+                        text = component.string,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                 }
+            }
+        }
+        is PageComponent.Unknown -> {
+            // Renderiza algo simples para não quebrar a UI
+            Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.QuestionMark, null, tint = Color.LightGray)
             }
         }
     }

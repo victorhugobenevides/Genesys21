@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.theme.iOSSeparator
 
@@ -122,8 +123,8 @@ fun PageListContent(
                                     onClick = { onPageClick(page) },
                                     onEditTitle = { onEditTitleClick(page) },
                                     onShare = { 
-                                        // AÇÃO DE COMPARTILHAR: Abrir URL no Navegador
-                                        uriHandler.openUri("http://localhost:8081/p/${page.id}")
+                                        val baseUrl = getWebBaseUrl()
+                                        uriHandler.openUri("$baseUrl/p/${page.id}")
                                     },
                                     onDelete = { onDeleteClick(page.id) }
                                 )

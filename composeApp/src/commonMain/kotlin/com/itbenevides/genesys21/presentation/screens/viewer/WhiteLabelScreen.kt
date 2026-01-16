@@ -223,7 +223,7 @@ fun ComponentWrapper(
     onEdit: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        // TOOLBAR EXTERNA - 100% FORA DO DESIGN
+        // TOOLBAR EXTERNA
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp, start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -251,16 +251,18 @@ fun ComponentWrapper(
             }
         }
 
-        // CARD DO DESIGN - LIMPO E ISOLADO
+        // CARD DO DESIGN
+        val isImage = component is PageComponent.Image
         val shape = if (component.isRounded && component !is PageComponent.ProductList) CircleShape else RoundedCornerShape(12.dp)
+        
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = shape,
-            color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
-            border = if (component.isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-            shadowElevation = if (component.isTransparent) 0.dp else 1.dp
+            color = if (component.isTransparent || isImage) Color.Transparent else MaterialTheme.colorScheme.surface,
+            border = if (component.isTransparent || isImage) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+            shadowElevation = if (component.isTransparent || isImage) 0.dp else 1.dp
         ) {
-            Box(Modifier.padding(if (component.isTransparent) 0.dp else 16.dp)) {
+            Box(Modifier.padding(if (component.isTransparent || isImage) 0.dp else 16.dp)) {
                 PageComponentRenderer(component)
             }
         }
@@ -453,27 +455,18 @@ fun EditComponentModal(
             var textContent by remember { mutableStateOf(if (component is PageComponent.Text) component.content else "") }
             var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
             var imageDesc by remember { mutableStateOf(if (component is PageComponent.Image) component.string else "") }
-            var logoUrl by remember { mutableStateOf(if (component is PageComponent.Logo) component.url else "") }
-            var logoSize by remember { mutableStateOf(if (component is PageComponent.Logo) component.size.toString() else "64") }
+            var imageSize by remember { mutableStateOf(if (component is PageComponent.Image) component.size.toString() else "200") }
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 val previewComp = when (component) {
                     is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
-                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
-                    is PageComponent.Logo -> PageComponent.Logo(logoUrl, logoSize.toIntOrNull() ?: 64, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     else -> component
                 }
 
                 Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().widthIn(max = 280.dp),
-                        shape = if (isRounded) CircleShape else RoundedCornerShape(12.dp),
-                        color = if (isTransparent) Color.Transparent else Color(0xFFF9FAFB),
-                        border = if (isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray)
-                    ) {
-                        Box(Modifier.padding(12.dp)) { PageComponentRenderer(previewComp) }
-                    }
+                    PageComponentRenderer(previewComp)
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
@@ -496,11 +489,8 @@ fun EditComponentModal(
                         OutlinedTextField(value = imageUrl, onValueChange = { imageUrl = it }, label = { Text("URL da Imagem") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                    }
-                    is PageComponent.Logo -> {
-                        OutlinedTextField(value = logoUrl, onValueChange = { logoUrl = it }, label = { Text("URL do Logo") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = logoSize, onValueChange = { if(it.all { c -> c.isDigit() }) logoSize = it }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        OutlinedTextField(value = imageSize, onValueChange = { if(it.all { c -> c.isDigit() }) imageSize = it }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                     }
                     else -> {}
                 }
@@ -511,7 +501,6 @@ fun EditComponentModal(
                 is PageComponent.Header -> headerTitle.isNotBlank()
                 is PageComponent.Text -> textContent.isNotBlank()
                 is PageComponent.Image -> imageUrl.isNotBlank()
-                is PageComponent.Logo -> logoUrl.isNotBlank()
                 else -> true
             }
 
@@ -519,8 +508,7 @@ fun EditComponentModal(
                 val finalComp = when (component) {
                     is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded)
-                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
-                    is PageComponent.Logo -> PageComponent.Logo(logoUrl, logoSize.toIntOrNull() ?: 64, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded)
                     else -> component
                 }
                 onComponentUpdated(finalComp)
@@ -561,7 +549,6 @@ fun ComponentCatalogModal(
             
             Text("Componentes", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             val catalogItems = listOf(
-                Triple("Logo", PageComponent.Logo(""), Icons.Default.Store),
                 Triple("Título", PageComponent.Header(""), Icons.Default.Title),
                 Triple("Texto", PageComponent.Text(""), Icons.AutoMirrored.Filled.Notes),
                 Triple("Imagem", PageComponent.Image("", ""), Icons.Default.Image),
@@ -571,7 +558,26 @@ fun ComponentCatalogModal(
 
             Spacer(Modifier.height(24.dp))
             Text("Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-            Surface(modifier = Modifier.fillMaxWidth().clickable { onTemplateSelected(listOf(PageComponent.Logo("", 80, isTransparent = true, isRounded = true), PageComponent.Header("Bem-vindo!", isTransparent = true), PageComponent.ProductList(listOf(Product("1", "Item", 99.0, "")), isTransparent = true))) }, shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)) {
+            
+            val mockCarouselProducts = (1..10).map { 
+                Product(id = "c$it", name = "Produto Carrossel $it", price = 10.0 * it, imageUrl = "") 
+            }
+            val mockListProducts = (1..10).map { 
+                Product(id = "l$it", name = "Produto Lista $it", price = 15.0 * it, imageUrl = "") 
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth().clickable { 
+                    onTemplateSelected(listOf(
+                        PageComponent.Image("", "", 80, isTransparent = true, isRounded = true), 
+                        PageComponent.Header("Bem-vindo à Loja!", isTransparent = true), 
+                        PageComponent.ProductList(mockCarouselProducts, isHorizontal = true, customLabel = "Destaques", isTransparent = true),
+                        PageComponent.ProductList(mockListProducts, isHorizontal = false, customLabel = "Nossos Produtos", isTransparent = true)
+                    )) 
+                }, 
+                shape = RoundedCornerShape(12.dp), 
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+            ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Dashboard, null, tint = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.width(16.dp))

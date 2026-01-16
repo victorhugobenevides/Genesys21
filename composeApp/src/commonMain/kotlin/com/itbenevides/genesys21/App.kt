@@ -43,18 +43,31 @@ fun App() {
 
             LaunchedEffect(Unit) {
                 val urlPath = getInitialUrlPath() ?: ""
+                println("DEBUG: Iniciando App. URL Path: $urlPath")
+
                 if (urlPath.contains("/p/")) {
                     val pageId = urlPath.substringAfter("/p/").split("/").firstOrNull()
+                    println("DEBUG: Detectada rota pública. PageID: $pageId")
+                    
                     if (!pageId.isNullOrBlank()) {
-                        val page = viewModel.loadPublicPage(pageId)
-                        if (page != null) {
-                            selectedPage = page
-                            currentScreen = Screen.PublicViewer
-                            return@LaunchedEffect
+                        try {
+                            val page = viewModel.loadPublicPage(pageId)
+                            if (page != null) {
+                                println("DEBUG: Página pública carregada com sucesso!")
+                                selectedPage = page
+                                currentScreen = Screen.PublicViewer
+                                return@LaunchedEffect
+                            } else {
+                                println("DEBUG: Falha ao carregar página: loadPublicPage retornou null")
+                            }
+                        } catch (e: Exception) {
+                            println("DEBUG: Erro crítico ao carregar página: ${e.message}")
+                            e.printStackTrace()
                         }
                     }
                 }
 
+                println("DEBUG: Seguindo para fluxo normal de Login/Lista")
                 val token = viewModel.getCurrentUserToken()
                 delay(500)
                 if (token != null) {
@@ -85,7 +98,7 @@ fun App() {
                                     onAddPage = { selectedPage = null; currentScreen = Screen.Editor },
                                     onEditPage = { page -> 
                                         selectedPage = page
-                                        currentScreen = Screen.WhiteLabel // Vai direto pro editor visual
+                                        currentScreen = Screen.WhiteLabel 
                                     },
                                     onViewPage = { page -> 
                                         selectedPage = page
@@ -104,7 +117,7 @@ fun App() {
                                 Screen.WhiteLabel -> WhiteLabelScreen(
                                     viewModel = viewModel, 
                                     page = selectedPage!!, 
-                                    onPageChange = { selectedPage = it }, // CRUCIAL: Atualiza selectedPage sempre
+                                    onPageChange = { selectedPage = it }, 
                                     onBack = { currentScreen = Screen.List },
                                     onEditProduct = { product, compIndex ->
                                         productToEdit = product

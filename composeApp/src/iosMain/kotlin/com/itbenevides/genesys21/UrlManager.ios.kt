@@ -1,7 +1,9 @@
 package com.itbenevides.genesys21
 
-actual fun syncUrlWithScreen(screen: Screen, pageId: String?) {
-    // No iOS, não há uma barra de endereços para sincronizar.
-}
+actual fun syncUrlWithScreen(screen: Screen, pageId: String?) { }
 
 actual fun getInitialUrlPath(): String? = null
+
+actual fun getWebBaseUrl(): String {
+    return "http://localhost:8081" 
+}

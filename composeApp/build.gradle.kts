@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.net.InetAddress
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,6 +9,15 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlin.serialization)
+}
+
+// Função para obter o IP local do Mac/PC
+fun getLocalIp(): String {
+    return try {
+        InetAddress.getLocalHost().hostAddress
+    } catch (e: Exception) {
+        "localhost"
+    }
 }
 
 kotlin {
@@ -110,6 +120,12 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
+        // Voltando para localhost para o Android
+        buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {
@@ -119,6 +135,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            buildConfigField("String", "WEB_BASE_URL", "\"https://sua-url-producao.com\"")
         }
     }
     compileOptions {

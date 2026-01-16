@@ -19,3 +19,7 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?) {
 actual fun getInitialUrlPath(): String? {
     return window.location.pathname
 }
+
+actual fun getWebBaseUrl(): String {
+    return "${window.location.protocol}//${window.location.host}"
+}
