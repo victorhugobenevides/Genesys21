@@ -55,10 +55,27 @@ fun WhiteLabelScreen(
         }
     }
 
+    // Categorias do servidor
+    val savedCategories by viewModel.allAvailableCategories.collectAsState()
+    
+    // Categorias em tempo real (extraídas de todos os blocos de produtos da página)
+    val allCategories by remember(savedCategories, page) {
+        derivedStateOf {
+            val currentSessionCategories = page.components
+                .filterIsInstance<PageComponent.ProductList>()
+                .flatMap { it.products }
+                .map { it.category }
+                .filter { it.isNotBlank() }
+            
+            (savedCategories + currentSessionCategories).distinct().sorted()
+        }
+    }
+
     AppTheme(themeConfig = page.theme) {
         WhiteLabelContent(
             page = page,
             availableProducts = liveInventory,
+            allAvailableCategories = allCategories, // PASSAMOS AS CATEGORIAS PARA O CONTEÚDO
             isLoading = isLoading,
             onPageUpdate = onPageChange,
             onPublish = { viewModel.savePage(page, true) { onBack() } },
@@ -73,6 +90,7 @@ fun WhiteLabelScreen(
 fun WhiteLabelContent(
     page: Page,
     availableProducts: List<Product>,
+    allAvailableCategories: List<String>, // RECEBEMOS AS CATEGORIAS AQUI
     isLoading: Boolean,
     onPageUpdate: (Page) -> Unit,
     onPublish: () -> Unit,
@@ -162,7 +180,9 @@ fun WhiteLabelContent(
                                 onPageUpdate(page.copy(components = newList))
                             } } else null,
                             filterQuery = filterQuery,
-                            onFilterQueryChange = { filterQuery = it }
+                            onFilterQueryChange = { filterQuery = it },
+                            onProductClick = { product -> onEditProduct(product, index) },
+                            allAvailableCategories = allAvailableCategories // REPASSAMOS PARA O WRAPPER
                         )
                     }
                 }
@@ -323,7 +343,9 @@ fun ComponentWrapper(
     onMoveUp: (() -> Unit)? = null,
     onMoveDown: (() -> Unit)? = null,
     filterQuery: String = "",
-    onFilterQueryChange: (String) -> Unit = {}
+    onFilterQueryChange: (String) -> Unit = {},
+    onProductClick: (Product) -> Unit,
+    allAvailableCategories: List<String> = emptyList() // RECEBEMOS AQUI
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         // TOOLBAR EXTERNA
@@ -380,7 +402,9 @@ fun ComponentWrapper(
                 PageComponentRenderer(
                     component = component,
                     filterQuery = filterQuery,
-                    onFilterQueryChange = onFilterQueryChange
+                    onFilterQueryChange = onFilterQueryChange,
+                    onProductClick = onProductClick,
+                    allAvailableCategories = allAvailableCategories // REPASSAMOS PARA O RENDERER
                 )
             }
         }
@@ -592,6 +616,7 @@ fun EditComponentModal(
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
                     is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
                     is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
                     else -> component
                 }
 
@@ -599,7 +624,8 @@ fun EditComponentModal(
                     PageComponentRenderer(
                         component = previewComp,
                         filterQuery = "",
-                        onFilterQueryChange = {}
+                        onFilterQueryChange = {},
+                        onProductClick = {}
                     )
                 }
 
@@ -656,6 +682,7 @@ fun EditComponentModal(
                     is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
                     is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
                     is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
                     else -> component
                 }
                 onComponentUpdated(finalComp)
@@ -697,6 +724,7 @@ fun ComponentCatalogModal(
             Text("Componentes", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             val catalogItems = listOf(
                 Triple("Barra de Busca", PageComponent.Filter(), Icons.Default.Search),
+                Triple("Filtro de Categorias", PageComponent.CategoryFilter(), Icons.Default.Category),
                 Triple("Título", PageComponent.Header(""), Icons.Default.Title),
                 Triple("Texto", PageComponent.Text(""), Icons.AutoMirrored.Filled.Notes),
                 Triple("Imagem", PageComponent.Image("", ""), Icons.Default.Image),
@@ -708,10 +736,10 @@ fun ComponentCatalogModal(
             Text("Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             
             val mockCarouselProducts = (1..10).map { 
-                Product(id = "c$it", name = "Produto Carrossel $it", price = 10.0 * it, imageUrl = "") 
+                Product(id = "c$it", name = "Produto Carrossel $it", price = 10.0 * it, imageUrl = "", category = "template") 
             }
             val mockListProducts = (1..10).map { 
-                Product(id = "l$it", name = "Produto Lista $it", price = 15.0 * it, imageUrl = "") 
+                Product(id = "l$it", name = "Produto Lista $it", price = 15.0 * it, imageUrl = "", category = "template") 
             }
 
             Surface(
@@ -720,6 +748,7 @@ fun ComponentCatalogModal(
                         PageComponent.Image("", "", 80, isTransparent = true, isRounded = true), 
                         PageComponent.Header("Bem-vindo à Loja!", isTransparent = true), 
                         PageComponent.Filter("Buscar na loja...", isRounded = true),
+                        PageComponent.CategoryFilter(isRounded = true),
                         PageComponent.ProductList(mockCarouselProducts, isHorizontal = true, customLabel = "Destaques", isTransparent = true),
                         PageComponent.ProductList(mockListProducts, isHorizontal = false, customLabel = "Nossos Produtos", isTransparent = true)
                     )) 

@@ -33,6 +33,11 @@ class PageViewModel(
         }.distinctBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Obtém todas as categorias únicas cadastradas em todos os produtos do usuário
+    val allAvailableCategories: StateFlow<List<String>> = allAvailableProducts.map { products ->
+        products.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun loadPages() {
         viewModelScope.launch {
             _isLoading.value = true

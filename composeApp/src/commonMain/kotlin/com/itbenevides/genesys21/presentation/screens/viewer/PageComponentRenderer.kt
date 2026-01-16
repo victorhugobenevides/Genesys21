@@ -28,34 +28,83 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PageComponentRenderer(
     component: PageComponent,
     onProductClick: ((Product) -> Unit)? = null,
     filterQuery: String = "",
-    onFilterQueryChange: (String) -> Unit = {}
+    onFilterQueryChange: (String) -> Unit = {},
+    allAvailableCategories: List<String> = emptyList()
 ) {
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
     
-    // Verificamos se o componente deve ser filtrado
+    // Verificamos se o componente deve ser filtrado.
+    // Agora diferenciamos se é um filtro de texto (Filter) ou de categoria (CategoryFilter).
+    // Para simplificar, se a filterQuery for exatamente uma das categorias, tratamos como filtro de categoria.
+    val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
+
     val shouldShow = if (filterQuery.isBlank() || !component.isFilterable) {
         true
     } else {
         when (component) {
-            is PageComponent.Header -> component.title.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Text -> component.content.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Image -> component.string.contains(filterQuery, ignoreCase = true)
-            is PageComponent.ProductList -> component.products.any { 
-                it.name.contains(filterQuery, ignoreCase = true) || 
-                it.category.contains(filterQuery, ignoreCase = true) 
+            is PageComponent.ProductList -> {
+                if (isCategoryFilterActive) {
+                    // Filtro de Categoria: Só mostra se algum produto do bloco tiver a categoria exata
+                    component.products.any { it.category.equals(filterQuery, ignoreCase = true) }
+                } else {
+                    // Filtro de Texto: Busca no nome ou categoria
+                    component.products.any { 
+                        it.name.contains(filterQuery, ignoreCase = true) || 
+                        it.category.contains(filterQuery, ignoreCase = true) 
+                    }
+                }
             }
+            is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Image -> !isCategoryFilterActive && component.string.contains(filterQuery, ignoreCase = true)
             else -> true
         }
     }
 
-    if (!shouldShow && component !is PageComponent.Filter) return
+    if (!shouldShow && component !is PageComponent.Filter && component !is PageComponent.CategoryFilter) return
 
     when (component) {
+        is PageComponent.CategoryFilter -> {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Categorias",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Opção "Todos"
+                    FilterChip(
+                        selected = filterQuery.isEmpty(),
+                        onClick = { onFilterQueryChange("") },
+                        label = { Text("Todos") },
+                        shape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
+                    )
+                    
+                    allAvailableCategories.forEach { category ->
+                        FilterChip(
+                            selected = filterQuery.equals(category, ignoreCase = true),
+                            onClick = { 
+                                if (filterQuery.equals(category, ignoreCase = true)) onFilterQueryChange("")
+                                else onFilterQueryChange(category)
+                            },
+                            label = { Text(category) },
+                            shape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
+                        )
+                    }
+                }
+            }
+        }
         is PageComponent.Filter -> {
             OutlinedTextField(
                 value = filterQuery,
@@ -82,13 +131,19 @@ fun PageComponentRenderer(
             )
         }
         is PageComponent.ProductList -> {
-            // Filtramos os produtos individualmente apenas se o componente for filtrável
+            // Filtramos os produtos individualmente
             val productsToDisplay = if (filterQuery.isBlank() || !component.isFilterable) {
                 component.products
             } else {
-                component.products.filter { 
-                    it.name.contains(filterQuery, ignoreCase = true) || 
-                    it.category.contains(filterQuery, ignoreCase = true)
+                if (isCategoryFilterActive) {
+                    // Filtro por categoria: Busca exata no campo categoria
+                    component.products.filter { it.category.equals(filterQuery, ignoreCase = true) }
+                } else {
+                    // Filtro por texto: Busca no nome ou categoria
+                    component.products.filter { 
+                        it.name.contains(filterQuery, ignoreCase = true) || 
+                        it.category.contains(filterQuery, ignoreCase = true)
+                    }
                 }
             }
 

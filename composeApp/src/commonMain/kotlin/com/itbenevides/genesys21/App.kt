@@ -41,8 +41,22 @@ fun App() {
         var previousScreen by remember { mutableStateOf<Screen?>(null) }
         val coroutineScope = rememberCoroutineScope()
 
-        // Determina o tema com base na tela atual
-        // Login, Splash e Lista sempre usam o tema DEFAULT (Padrão do App)
+        // Categorias do servidor
+        val savedCategories by viewModel.allAvailableCategories.collectAsState()
+        
+        // Categorias em tempo real da página sendo editada
+        val allCategories by remember(savedCategories, selectedPage) {
+            derivedStateOf {
+                val currentSessionCategories = selectedPage?.components
+                    ?.filterIsInstance<com.itbenevides.genesys21.domain.model.PageComponent.ProductList>()
+                    ?.flatMap { it.products }
+                    ?.map { it.category }
+                    ?.filter { it.isNotBlank() } ?: emptyList()
+                
+                (savedCategories + currentSessionCategories).distinct().sorted()
+            }
+        }
+
         val currentTheme = when (currentScreen) {
             Screen.Splash, Screen.Login, Screen.List -> PageThemeConfig.DEFAULT
             else -> selectedPage?.theme ?: PageThemeConfig.DEFAULT
@@ -131,7 +145,8 @@ fun App() {
                                         selectedProduct = product
                                         previousScreen = Screen.PublicViewer
                                         currentScreen = Screen.ProductDetails
-                                    }
+                                    },
+                                    allAvailableCategories = allCategories
                                 )
                                 Screen.ProductDetails -> ProductDetailsScreen(
                                     product = selectedProduct!!,
@@ -139,6 +154,7 @@ fun App() {
                                 )
                                 Screen.ProductEditor -> ProductEditorScreen(
                                     product = productToEdit,
+                                    existingCategories = allCategories,
                                     onSave = { updatedProduct ->
                                         selectedPage = selectedPage?.let { page ->
                                             val newComponents = page.components.toMutableList()

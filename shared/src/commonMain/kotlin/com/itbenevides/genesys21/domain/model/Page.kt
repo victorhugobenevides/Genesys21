@@ -82,6 +82,15 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
+    data class CategoryFilter(
+        override val customLabel: String? = null,
+        override val isTransparent: Boolean = false,
+        override val isRounded: Boolean = false,
+        override val isFilterable: Boolean = false
+    ) : PageComponent()
+
+    @Serializable
     @SerialName("unknown")
     data class Unknown(
         override val customLabel: String? = "Componente Antigo",

@@ -18,7 +18,8 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 fun PageViewerScreen(
     page: Page, 
     onBack: () -> Unit,
-    onProductClick: (Product) -> Unit
+    onProductClick: (Product) -> Unit,
+    allAvailableCategories: List<String> = emptyList()
 ) {
     // Aplicamos o tema configurado na página para a visualização pública
     AppTheme(themeConfig = page.theme) {
@@ -38,7 +39,8 @@ fun PageViewerScreen(
                         component = component,
                         onProductClick = onProductClick,
                         filterQuery = filterQuery,
-                        onFilterQueryChange = { filterQuery = it }
+                        onFilterQueryChange = { filterQuery = it },
+                        allAvailableCategories = allAvailableCategories
                     )
                 }
             }

@@ -8,7 +8,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -22,6 +24,7 @@ import kotlin.random.Random
 @Composable
 fun ProductEditorScreen(
     product: Product?,
+    existingCategories: List<String>,
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
@@ -31,6 +34,8 @@ fun ProductEditorScreen(
     var description by remember { mutableStateOf(product?.description ?: "") }
     var category by remember { mutableStateOf(product?.category ?: "") }
     var stock by remember { mutableStateOf(product?.stock?.toString() ?: "0") }
+
+    var expanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -89,7 +94,6 @@ fun ProductEditorScreen(
                 OutlinedTextField(
                     value = price,
                     onValueChange = { input ->
-                        // Sanitização: Aceita apenas números e um ponto decimal
                         if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) {
                             price = input
                         }
@@ -102,7 +106,6 @@ fun ProductEditorScreen(
                 OutlinedTextField(
                     value = stock,
                     onValueChange = { input ->
-                        // Sanitização: Aceita apenas números inteiros
                         if (input.isEmpty() || input.all { it.isDigit() }) {
                             stock = input
                         }
@@ -117,13 +120,53 @@ fun ProductEditorScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Text("Detalhes", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
 
-            OutlinedTextField(
-                value = category,
-                onValueChange = { category = it },
-                label = { Text("Categoria") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { 
+                        category = it
+                        expanded = true
+                    },
+                    label = { Text("Categoria") },
+                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        Row {
+                            if (category.isNotEmpty()) {
+                                IconButton(onClick = { category = ""; expanded = true }) {
+                                    Icon(Icons.Default.Clear, "Limpar")
+                                }
+                            }
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        }
+                    },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                )
+
+                val filteredOptions = existingCategories.filter { it.contains(category, ignoreCase = true) }
+                
+                if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        val optionsToShow = if (category.isEmpty()) existingCategories else filteredOptions
+                        optionsToShow.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption) },
+                                onClick = {
+                                    category = selectionOption
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = imageUrl,
