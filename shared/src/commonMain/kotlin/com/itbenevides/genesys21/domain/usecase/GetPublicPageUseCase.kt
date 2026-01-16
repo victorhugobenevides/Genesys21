@@ -3,8 +3,8 @@ package com.itbenevides.genesys21.domain.usecase
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.repository.PageRepository
 
-class GetPagesUseCase(private val repository: PageRepository) {
-    suspend operator fun invoke(token: String): List<Page> {
-        return repository.getPages(token)
+class GetPublicPageUseCase(private val repository: PageRepository) {
+    suspend operator fun invoke(id: String): Result<Page> {
+        return repository.getPublicPage(id)
     }
 }

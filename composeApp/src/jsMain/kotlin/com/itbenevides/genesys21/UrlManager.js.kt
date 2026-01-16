@@ -10,8 +10,12 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?) {
         Screen.Editor -> if (pageId != null) "/editor/$pageId" else "/editor/new"
         Screen.WhiteLabel -> if (pageId != null) "/view/$pageId" else "/view"
         Screen.PublicViewer -> if (pageId != null) "/p/$pageId" else "/p"
-        Screen.ProductDetails -> "/product"
-        Screen.ProductEditor -> "/product/edit"
+        Screen.ProductDetails -> "/product" // Supondo que precise de um ID no futuro
+        Screen.ProductEditor -> if (pageId != null) "/product/edit/$pageId" else "/product/new"
     }
     window.history.pushState(null, "", path)
+}
+
+actual fun getInitialUrlPath(): String? {
+    return window.location.pathname
 }

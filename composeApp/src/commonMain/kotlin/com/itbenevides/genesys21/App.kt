@@ -19,6 +19,7 @@ import com.itbenevides.genesys21.presentation.screens.viewer.ProductDetailsScree
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
 import org.koin.compose.viewmodel.koinViewModel
@@ -38,8 +39,26 @@ fun App() {
             
             var activeComponentIndex by remember { mutableStateOf<Int?>(null) }
             var previousScreen by remember { mutableStateOf<Screen?>(null) }
+            val coroutineScope = rememberCoroutineScope()
 
+            // Lógica de Inicialização e Deep Linking
             LaunchedEffect(Unit) {
+                val urlPath = getInitialUrlPath() ?: ""
+                
+                // 1. Verifica se é um Deep Link Público
+                if (urlPath.contains("/p/")) {
+                    val pageId = urlPath.substringAfter("/p/").split("/").firstOrNull()
+                    if (!pageId.isNullOrBlank()) {
+                        val page = viewModel.loadPublicPage(pageId)
+                        if (page != null) {
+                            selectedPage = page
+                            currentScreen = Screen.PublicViewer
+                            return@LaunchedEffect
+                        }
+                    }
+                }
+
+                // 2. Fluxo Normal: Verifica Login
                 val token = viewModel.getCurrentUserToken()
                 delay(500)
                 if (token != null) {
@@ -55,7 +74,7 @@ fun App() {
 
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    val maxWidth = if (currentScreen == Screen.Login || currentScreen == Screen.Splash) 600.dp else 900.dp
+                    val maxWidth = if (currentScreen == Screen.Login || currentScreen == Screen.Splash) 400.dp else 600.dp
                     
                     Box(modifier = Modifier.fillMaxHeight().widthIn(max = maxWidth)) {
                         AnimatedContent(targetState = currentScreen) { screen ->
@@ -70,7 +89,6 @@ fun App() {
                                     onAddPage = { selectedPage = null; currentScreen = Screen.Editor },
                                     onEditPage = { page -> selectedPage = page; currentScreen = Screen.Editor },
                                     onViewPage = { page -> selectedPage = page; currentScreen = Screen.WhiteLabel },
-                                    onSharePage = { page -> selectedPage = page; currentScreen = Screen.PublicViewer },
                                     onLogout = { 
                                         viewModel.signOut()
                                         currentScreen = Screen.Login 
@@ -84,7 +102,7 @@ fun App() {
                                 Screen.WhiteLabel -> WhiteLabelScreen(
                                     viewModel = viewModel, 
                                     page = selectedPage!!, 
-                                    onPageChange = { selectedPage = it }, // SINCRONIZA MUDANÇAS
+                                    onPageChange = { selectedPage = it },
                                     onBack = { currentScreen = Screen.List },
                                     onEditProduct = { product, compIndex ->
                                         productToEdit = product

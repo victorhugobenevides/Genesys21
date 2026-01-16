@@ -68,7 +68,7 @@ fun Application.module() {
     // 3. Roteamento
     routing {
         get("/") {
-            val total = pageRepository.getPages().size
+            val total = pageRepository.getPages("").size
             call.respondText("Genesys21 API Online. Pages in memory: $total")
         }
         

@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.usecase.DeletePageUseCase
 import com.itbenevides.genesys21.domain.usecase.GetPagesUseCase
+import com.itbenevides.genesys21.domain.usecase.GetPublicPageUseCase
 import com.itbenevides.genesys21.domain.usecase.SavePageUseCase
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -16,6 +17,7 @@ class PageViewModel(
     private val getPagesUseCase: GetPagesUseCase,
     private val savePageUseCase: SavePageUseCase,
     private val deletePageUseCase: DeletePageUseCase,
+    private val getPublicPageUseCase: GetPublicPageUseCase,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -25,7 +27,6 @@ class PageViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    // Inventário Global de Produtos extraído de todas as páginas
     val allAvailableProducts: StateFlow<List<Product>> = _pages.map { allPages ->
         allPages.flatMap { page -> 
             page.components.filterIsInstance<PageComponent.ProductList>().flatMap { it.products }
@@ -35,9 +36,17 @@ class PageViewModel(
     fun loadPages() {
         viewModelScope.launch {
             _isLoading.value = true
-            _pages.value = getPagesUseCase()
+            val token = authRepository.getCurrentUserToken() ?: ""
+            _pages.value = getPagesUseCase(token)
             _isLoading.value = false
         }
+    }
+    
+    suspend fun loadPublicPage(id: String): Page? {
+        _isLoading.value = true
+        val result = getPublicPageUseCase(id)
+        _isLoading.value = false
+        return result.getOrNull()
     }
 
     suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()

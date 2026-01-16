@@ -7,14 +7,12 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 
-class KtorPageRepository(
-    private val client: HttpClient,
-    private val baseUrl: String = "http://localhost:8080"
-) : PageRepository {
+class KtorPageRepository(private val httpClient: HttpClient) : PageRepository {
+    private val baseUrl = "http://localhost:8080"
 
     override suspend fun getPages(token: String): List<Page> {
         return try {
-            client.get("$baseUrl/pages") {
+            httpClient.get("$baseUrl/pages") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }.body()
         } catch (e: Exception) {
@@ -25,13 +23,10 @@ class KtorPageRepository(
 
     override suspend fun getPublicPage(id: String): Result<Page> {
         return try {
-            val response = client.get("$baseUrl/api/public/pages/$id")
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                Result.failure(Exception("Page not found"))
-            }
+            val page = httpClient.get("$baseUrl/api/public/pages/$id").body<Page>()
+            Result.success(page)
         } catch (e: Exception) {
+            e.printStackTrace()
             Result.failure(e)
         }
     }
@@ -39,33 +34,37 @@ class KtorPageRepository(
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
         return try {
             val response = if (isEditing) {
-                client.put("$baseUrl/pages") {
+                httpClient.put("$baseUrl/pages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(page)
                 }
             } else {
-                client.post("$baseUrl/pages") {
+                httpClient.post("$baseUrl/pages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(page)
                 }
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Failed to save: ${response.status}"))
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to save page: ${response.status}"))
+            }
         } catch (e: Exception) {
+            e.printStackTrace()
             Result.failure(e)
         }
     }
 
     override suspend fun deletePage(id: String, token: String): Result<Unit> {
         return try {
-            val response = client.delete("$baseUrl/pages/$id") {
+            httpClient.delete("$baseUrl/pages/$id") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Failed to delete: ${response.status}"))
+            Result.success(Unit)
         } catch (e: Exception) {
+            e.printStackTrace()
             Result.failure(e)
         }
     }

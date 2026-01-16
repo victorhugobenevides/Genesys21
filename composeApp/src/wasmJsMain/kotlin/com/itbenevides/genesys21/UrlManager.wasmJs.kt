@@ -15,3 +15,7 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?) {
     }
     window.history.pushState(null, "", path)
 }
+
+actual fun getInitialUrlPath(): String? {
+    return window.location.pathname
+}

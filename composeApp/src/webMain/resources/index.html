@@ -4,39 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Genesys21</title>
-    <link type="text/css" rel="stylesheet" href="styles.css">
+    <link type="text/css" rel="stylesheet" href="/styles.css">
     <style>
         html, body {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Compose gerencia o scroll interno via Skiko */
+            overflow: hidden;
             background-color: #F2F2F7;
         }
-
-        /* Estilização da barra de scroll dentro do Canvas (Chrome/Safari) */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #000000;
-            border-radius: 10px;
-            border: 2px solid #F2F2F7;
-        }
-
         canvas {
             outline: none;
             width: 100% !important;
             height: 100% !important;
         }
+        /* Barra de Scroll Preta */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
     </style>
 </head>
 <body>
-    <script src="skiko.js"></script>
-    <script src="composeApp.js"></script>
+    <!-- Scripts com caminhos absolutos para suportar Deep Linking -->
+    <script src="/skiko.js"></script>
+    <script src="/composeApp.js"></script>
 </body>
 </html>

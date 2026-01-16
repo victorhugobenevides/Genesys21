@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,12 +28,10 @@ fun PageListScreen(
     onAddPage: () -> Unit,
     onEditPage: (Page) -> Unit,
     onViewPage: (Page) -> Unit,
-    onSharePage: (Page) -> Unit,
     onLogout: () -> Unit
 ) {
     val pages by viewModel.pages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    
     var showCreateDialog by remember { mutableStateOf(false) }
     var newPageTitle by remember { mutableStateOf("") }
 
@@ -45,7 +44,6 @@ fun PageListScreen(
         onLogoutClick = onLogout,
         onPageClick = onViewPage,
         onEditTitleClick = onEditPage,
-        onShareClick = onSharePage,
         onDeleteClick = { viewModel.deletePage(it) { viewModel.loadPages() } }
     )
 
@@ -75,9 +73,10 @@ fun PageListContent(
     onLogoutClick: () -> Unit,
     onPageClick: (Page) -> Unit,
     onEditTitleClick: (Page) -> Unit,
-    onShareClick: (Page) -> Unit,
     onDeleteClick: (String) -> Unit
 ) {
+    val uriHandler = LocalUriHandler.current
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -115,26 +114,21 @@ fun PageListContent(
                     ) {
                         Column {
                             if (pages.isEmpty() && !isLoading) {
-                                Text(
-                                    "Nenhuma página criada", 
-                                    modifier = Modifier.padding(24.dp).align(Alignment.CenterHorizontally), 
-                                    color = Color.Gray
-                                )
+                                Text("Nenhuma página criada", modifier = Modifier.padding(24.dp).align(Alignment.CenterHorizontally), color = Color.Gray)
                             }
                             pages.forEachIndexed { index, page ->
                                 PageItemRow(
                                     page = page,
                                     onClick = { onPageClick(page) },
                                     onEditTitle = { onEditTitleClick(page) },
-                                    onShare = { onShareClick(page) },
+                                    onShare = { 
+                                        // AÇÃO DE COMPARTILHAR: Abrir URL no Navegador
+                                        uriHandler.openUri("http://localhost:8081/p/${page.id}")
+                                    },
                                     onDelete = { onDeleteClick(page.id) }
                                 )
                                 if (index < pages.size - 1) {
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(start = 16.dp), 
-                                        thickness = 0.5.dp, 
-                                        color = iOSSeparator
-                                    )
+                                    HorizontalDivider(modifier = Modifier.padding(start = 16.dp), thickness = 0.5.dp, color = iOSSeparator)
                                 }
                             }
                         }
@@ -143,10 +137,7 @@ fun PageListContent(
             }
 
             if (isLoading) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter), 
-                    color = MaterialTheme.colorScheme.primary
-                )
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter), color = MaterialTheme.colorScheme.primary)
             }
         }
     }
