@@ -1,7 +1,13 @@
 package com.itbenevides.genesys21
 
-expect fun syncUrlWithScreen(screen: Screen, pageId: String? = null)
+import com.itbenevides.genesys21.navigation.Screen
+
+expect fun syncUrlWithScreen(screen: Screen, pageId: String? = null, productId: String? = null)
 
 expect fun getInitialUrlPath(): String?
 
 expect fun getWebBaseUrl(): String
+
+expect fun onUrlChange(callback: () -> Unit)
+
+expect fun navigateBack()

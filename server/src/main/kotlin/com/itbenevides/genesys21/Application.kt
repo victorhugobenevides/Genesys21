@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 
+const val SERVER_PORT = 8080
+
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
         .start(wait = true)
@@ -32,10 +34,8 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     
-    // Injeção de Dependência Manual
     val pageRepository = InMemoryPageRepository()
 
-    // 1. Plugins
     install(ContentNegotiation) { 
         json(Json {
             ignoreUnknownKeys = true 
@@ -44,14 +44,19 @@ fun Application.module() {
         }) 
     }
     
+    // O plugin CORS global deve lidar com os cabeçalhos para todas as rotas, inclusive arquivos estáticos.
     install(CORS) {
         anyHost()
         allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
-        allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.AccessControlAllowOrigin)
+        allowCredentials = true
+        allowNonSimpleContentTypes = true
     }
 
     install(Authentication) {
@@ -68,17 +73,14 @@ fun Application.module() {
         }
     }
 
-    // 2. Inicialização do Firebase
     initFirebase(logger)
 
-    // 3. Roteamento
     routing {
         get("/") {
             val total = pageRepository.getPages("").size
             call.respondText("Genesys21 API Online. Pages in memory: $total")
         }
 
-        // Rota para Upload de Imagens
         authenticate("firebase") {
             post("/upload") {
                 val multipart = call.receiveMultipart()
@@ -100,8 +102,9 @@ fun Application.module() {
                     val file = File(folder, fileName)
                     file.writeBytes(fileBytes!!)
                     
-                    // Retorna a URL da imagem (Ajuste a porta/ip se necessário)
-                    val url = "http://localhost:8080/uploads/$fileName"
+                    // Retorna a URL absoluta baseada no host da requisição
+                    val host = call.request.host()
+                    val url = "http://$host:8080/uploads/$fileName"
                     call.respondText(url)
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
@@ -109,10 +112,9 @@ fun Application.module() {
             }
         }
 
-        // Servir as imagens salvas
+        // Servindo arquivos estáticos. O CORS global configurado acima deve ser suficiente.
         staticFiles("/uploads", File("uploads"))
 
-        // Injetando o repositório nas rotas
         pageRoutes(pageRepository)
     }
 }
@@ -131,8 +133,6 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
                 FirebaseApp.initializeApp(options)
                 logger.info("Firebase Admin inicializado com sucesso!")
             }
-        } else {
-            logger.warn("Arquivo de service account não encontrado: $fileName")
         }
     } catch (e: Exception) {
         logger.error("Erro ao inicializar Firebase: ${e.message}")

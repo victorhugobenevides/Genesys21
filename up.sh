@@ -34,13 +34,20 @@ if [ -n "$SERVER_INSTALL_DIR" ]; then
 fi
 
 # 2. Copiar Web (WasmJS)
-find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" \) -exec cp -f {} deploy/web/ \;
+find composeApp/build/dist/wasmJs/developmentExecutable -type f \( \
+    -name "*.js" -o \
+    -name "*.wasm" -o \
+    -name "*.html" -o \
+    -name "*.css" -o \
+    -name "*.mjs" -o \
+    -name "*.map" \
+\) -exec cp -f {} deploy/web/ \;
 
 # 3. Gerar firebase-bridge.js (Evita erro de CSP inline)
 echo "📦 Gerando firebase-bridge.js..."
 cat <<EOF > deploy/web/firebase-bridge.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
@@ -67,7 +74,7 @@ window.firebaseSignOut = async () => {
 };
 EOF
 
-# 4. Gerar index.html limpo com caminhos ABSOLUTOS para suportar rotas como /p/ID
+# 4. Gerar index.html com BASE HREF (Crítico para rotas /p/ID)
 echo "📄 Gerando index.html..."
 cat <<EOF > deploy/web/index.html
 <!DOCTYPE html>
@@ -75,8 +82,9 @@ cat <<EOF > deploy/web/index.html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Define a raiz para todas as URLs relativas -->
+    <base href="/">
     <title>Genesys21</title>
-    <!-- Uso de caminhos absolutos (/) para evitar 404 em sub-rotas -->
     <script type="module" src="/firebase-bridge.js"></script>
     <style>
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; }
@@ -100,6 +108,3 @@ echo "--------------------------------------------------------"
 echo "✨ Sistema online (WASM)!"
 echo "🌐 Web: http://localhost:8081"
 echo "--------------------------------------------------------"
-
-echo "📝 Logs do servidor..."
-docker-compose logs -f server

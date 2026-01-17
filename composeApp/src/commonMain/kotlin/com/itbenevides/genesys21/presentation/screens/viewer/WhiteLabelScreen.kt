@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
@@ -75,7 +76,7 @@ fun WhiteLabelScreen(
         WhiteLabelContent(
             page = page,
             availableProducts = liveInventory,
-            allAvailableCategories = allCategories, // PASSAMOS AS CATEGORIAS PARA O CONTEÚDO
+            allAvailableCategories = allCategories, 
             isLoading = isLoading,
             onPageUpdate = onPageChange,
             onPublish = { viewModel.savePage(page, true) { onBack() } },
@@ -90,7 +91,7 @@ fun WhiteLabelScreen(
 fun WhiteLabelContent(
     page: Page,
     availableProducts: List<Product>,
-    allAvailableCategories: List<String>, // RECEBEMOS AS CATEGORIAS AQUI
+    allAvailableCategories: List<String>, 
     isLoading: Boolean,
     onPageUpdate: (Page) -> Unit,
     onPublish: () -> Unit,
@@ -182,7 +183,7 @@ fun WhiteLabelContent(
                             filterQuery = filterQuery,
                             onFilterQueryChange = { filterQuery = it },
                             onProductClick = { product -> onEditProduct(product, index) },
-                            allAvailableCategories = allAvailableCategories // REPASSAMOS PARA O WRAPPER
+                            allAvailableCategories = allAvailableCategories 
                         )
                     }
                 }
@@ -345,10 +346,9 @@ fun ComponentWrapper(
     filterQuery: String = "",
     onFilterQueryChange: (String) -> Unit = {},
     onProductClick: (Product) -> Unit,
-    allAvailableCategories: List<String> = emptyList() // RECEBEMOS AQUI
+    allAvailableCategories: List<String> = emptyList() 
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        // TOOLBAR EXTERNA
         Row(
             modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp, start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -387,7 +387,6 @@ fun ComponentWrapper(
             }
         }
 
-        // CARD DO DESIGN
         val isImage = component is PageComponent.Image
         val shape = if (component.isRounded && component !is PageComponent.ProductList) CircleShape else RoundedCornerShape(12.dp)
         
@@ -404,7 +403,7 @@ fun ComponentWrapper(
                     filterQuery = filterQuery,
                     onFilterQueryChange = onFilterQueryChange,
                     onProductClick = onProductClick,
-                    allAvailableCategories = allAvailableCategories // REPASSAMOS PARA O RENDERER
+                    allAvailableCategories = allAvailableCategories 
                 )
             }
         }
@@ -505,7 +504,16 @@ fun ProductListManagementModal(
                                     border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray.copy(alpha = 0.5f))
                                 ) {
                                     Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                                        if (product.imageUrl.isNotEmpty()) {
+                                            AsyncImage(
+                                                model = product.imageUrl,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                                        }
                                         Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
                                         Text("R$ ${product.price}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
@@ -527,7 +535,16 @@ fun ProductListManagementModal(
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(40.dp))
+                            if (product.imageUrl.isNotEmpty()) {
+                                AsyncImage(
+                                    model = product.imageUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(40.dp))
+                            }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(product.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
