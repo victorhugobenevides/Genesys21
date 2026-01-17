@@ -2,7 +2,8 @@ name: Deploy to AWS EC2
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ] # Aceita ambas as nomenclaturas comuns
+  workflow_dispatch: # Permite disparo manual via interface do GitHub
 
 jobs:
   build-and-deploy:
@@ -28,10 +29,9 @@ jobs:
         run: |
           mkdir -p deploy/server deploy/web
           cp -R server/build/install/server/. deploy/server/
-          # Consolidação de arquivos WasmJS para o Nginx
-          find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" \) -exec cp -f {} deploy/web/ \;
+          find composeApp/build/dist/wasmJs/developmentExecutable -type f -exec cp -f {} deploy/web/ \;
           
-          # Gerar ponte Firebase e index.html idêntico ao up.sh local
+          # Gerar ponte Firebase e index.html
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
