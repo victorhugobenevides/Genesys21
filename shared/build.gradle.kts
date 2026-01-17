@@ -18,22 +18,11 @@ kotlin {
     
     jvm()
     
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "Shared"
-            isStatic = true
-        }
-        // Desativa a linkagem de testes nativos se o Firebase Core não estiver disponível
-        // Isso evita o erro 'FirebaseCore not found' ao rodar allTests localmente
-        iosTarget.binaries.filter { it is org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable }.forEach {
-            it.linkerOpts("-framework", "FirebaseCore", "-framework", "FirebaseAuth") 
-            // Nota: Se não usar Cocoapods, o ideal é rodar testes na JVM
-        }
-    }
+    // Alvos iOS configurados apenas como bibliotecas (sem framework próprio)
+    // para evitar conflito de resolução de KLIB no umbrella framework (ComposeApp)
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
     
     js {
         browser()
@@ -64,6 +53,10 @@ kotlin {
         
         jsMain.dependencies {
             implementation(libs.firebase.auth.kmp)
+        }
+
+        wasmJsMain.dependencies {
+            // JS Interop manual
         }
         
         commonTest.dependencies {

@@ -13,10 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,13 +56,21 @@ fun ProductDetailsScreen(product: Product, onBack: () -> Unit) {
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
-                // Aqui seria o carregamento da imagem real
-                Icon(
-                    Icons.Default.ShoppingBag,
-                    contentDescription = null,
-                    modifier = Modifier.size(120.dp),
-                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                )
+                if (product.imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.ShoppingBag,
+                        contentDescription = null,
+                        modifier = Modifier.size(120.dp),
+                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -97,7 +106,7 @@ fun ProductDetailsScreen(product: Product, onBack: () -> Unit) {
                     )
                     
                     Text(
-                        text = "Este é um produto premium disponível na Genesys21. Layout e componentes customizados para uma experiência única.",
+                        text = product.description.ifBlank { "Este é um produto premium disponível na Genesys21. Layout e componentes customizados para uma experiência única." },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

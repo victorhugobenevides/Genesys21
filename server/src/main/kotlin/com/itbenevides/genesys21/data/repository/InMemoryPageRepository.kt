@@ -8,7 +8,6 @@ class InMemoryPageRepository : PageRepository {
     private val pagesDB = ConcurrentHashMap<String, Page>()
 
     override suspend fun getPages(token: String): List<Page> {
-        // O parâmetro 'token' aqui deve ser o UID do Firebase extraído na rota
         return pagesDB.values.filter { it.ownerId == token }
     }
 
@@ -17,7 +16,6 @@ class InMemoryPageRepository : PageRepository {
     }
 
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
-        // Garante que a página salva pertence ao usuário logado
         val pageWithOwner = page.copy(ownerId = token)
         
         if (isEditing) {
@@ -42,5 +40,11 @@ class InMemoryPageRepository : PageRepository {
         } else {
             Result.failure(Exception("Page not found"))
         }
+    }
+
+    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
+        // Implementation for server-side image upload if needed via repository
+        // For now, returning a mock URL or not implemented as the server handles it in Application.kt
+        return Result.failure(Exception("Use /upload endpoint"))
     }
 }

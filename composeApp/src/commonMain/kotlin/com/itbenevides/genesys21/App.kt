@@ -153,6 +153,7 @@ fun App() {
                                     onBack = { currentScreen = previousScreen ?: Screen.PublicViewer }
                                 )
                                 Screen.ProductEditor -> ProductEditorScreen(
+                                    viewModel = viewModel,
                                     product = productToEdit,
                                     existingCategories = allCategories,
                                     onSave = { updatedProduct ->

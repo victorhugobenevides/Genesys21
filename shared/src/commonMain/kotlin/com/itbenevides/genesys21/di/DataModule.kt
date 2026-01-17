@@ -7,10 +7,10 @@ import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import org.koin.core.module.Module
 import org.koin.dsl.module
 
 val dataModule = module {
-    // Definimos uma instância única de Json configurada para ser resiliente
     single {
         Json {
             ignoreUnknownKeys = true
@@ -24,7 +24,6 @@ val dataModule = module {
     single {
         HttpClient {
             install(ContentNegotiation) {
-                // Usamos a instância de Json definida acima
                 json(get<Json>())
             }
         }

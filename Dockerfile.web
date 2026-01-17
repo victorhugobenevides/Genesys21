@@ -4,14 +4,18 @@ FROM nginx:stable-alpine
 # Remove a configuração padrão
 RUN rm /etc/nginx/nginx.conf
 
-# Copiamos o nosso arquivo de configuração customizado para a RAIZ de configuração do Nginx
+# Copiamos o nosso arquivo de configuração customizado
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Limpa a pasta padrão de HTML do Nginx
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copiamos os arquivos da nossa pasta deploy/web (gerada pelo up.sh)
+# Copiamos os arquivos da nossa pasta deploy/web
 COPY deploy/web /usr/share/nginx/html
+
+# Ajuste crítico de permissões dentro do container para evitar 403
+RUN chmod -R 755 /usr/share/nginx/html && \
+    chown -R nginx:nginx /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

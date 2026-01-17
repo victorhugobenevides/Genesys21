@@ -18,12 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import kotlinx.coroutines.launch
@@ -40,8 +42,6 @@ fun PageComponentRenderer(
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
     
     // Verificamos se o componente deve ser filtrado.
-    // Agora diferenciamos se é um filtro de texto (Filter) ou de categoria (CategoryFilter).
-    // Para simplificar, se a filterQuery for exatamente uma das categorias, tratamos como filtro de categoria.
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
 
     val shouldShow = if (filterQuery.isBlank() || !component.isFilterable) {
@@ -50,10 +50,8 @@ fun PageComponentRenderer(
         when (component) {
             is PageComponent.ProductList -> {
                 if (isCategoryFilterActive) {
-                    // Filtro de Categoria: Só mostra se algum produto do bloco tiver a categoria exata
                     component.products.any { it.category.equals(filterQuery, ignoreCase = true) }
                 } else {
-                    // Filtro de Texto: Busca no nome ou categoria
                     component.products.any { 
                         it.name.contains(filterQuery, ignoreCase = true) || 
                         it.category.contains(filterQuery, ignoreCase = true) 
@@ -83,7 +81,6 @@ fun PageComponentRenderer(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Opção "Todos"
                     FilterChip(
                         selected = filterQuery.isEmpty(),
                         onClick = { onFilterQueryChange("") },
@@ -131,15 +128,12 @@ fun PageComponentRenderer(
             )
         }
         is PageComponent.ProductList -> {
-            // Filtramos os produtos individualmente
             val productsToDisplay = if (filterQuery.isBlank() || !component.isFilterable) {
                 component.products
             } else {
                 if (isCategoryFilterActive) {
-                    // Filtro por categoria: Busca exata no campo categoria
                     component.products.filter { it.category.equals(filterQuery, ignoreCase = true) }
                 } else {
-                    // Filtro por texto: Busca no nome ou categoria
                     component.products.filter { 
                         it.name.contains(filterQuery, ignoreCase = true) || 
                         it.category.contains(filterQuery, ignoreCase = true)
@@ -255,12 +249,21 @@ fun PageComponentRenderer(
                     color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                 ) {
                     Box(Modifier.padding(20.dp), contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            modifier = Modifier.size(component.size.dp)
-                        )
+                        if (component.url.isNotEmpty()) {
+                            AsyncImage(
+                                model = component.url,
+                                contentDescription = null,
+                                modifier = Modifier.size(component.size.dp).clip(imgShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                modifier = Modifier.size(component.size.dp)
+                            )
+                        }
                     }
                 }
                 if (component.string.isNotEmpty()) {
@@ -305,7 +308,16 @@ fun ProductCard(
                 Modifier.fillMaxWidth().aspectRatio(1f).clip(shape).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
+                if (product.imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = product.imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
+                }
             }
             Spacer(Modifier.height(8.dp))
             Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)

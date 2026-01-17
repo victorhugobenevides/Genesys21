@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.repository.InMemoryPageRepository
 import com.itbenevides.genesys21.routes.pageRoutes
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -14,10 +15,14 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.http.content.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.util.*
 
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
@@ -33,7 +38,7 @@ fun Application.module() {
     // 1. Plugins
     install(ContentNegotiation) { 
         json(Json {
-            ignoreUnknownKeys = true // Evita erros ao adicionar novos campos de UI no App
+            ignoreUnknownKeys = true 
             isLenient = true
             encodeDefaults = true
         }) 
@@ -44,6 +49,7 @@ fun Application.module() {
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Post)
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
     }
@@ -71,7 +77,41 @@ fun Application.module() {
             val total = pageRepository.getPages("").size
             call.respondText("Genesys21 API Online. Pages in memory: $total")
         }
-        
+
+        // Rota para Upload de Imagens
+        authenticate("firebase") {
+            post("/upload") {
+                val multipart = call.receiveMultipart()
+                var fileName = ""
+                var fileBytes: ByteArray? = null
+
+                multipart.forEachPart { part ->
+                    if (part is PartData.FileItem) {
+                        fileName = UUID.randomUUID().toString() + "." + (part.originalFileName?.substringAfterLast(".") ?: "jpg")
+                        fileBytes = part.streamProvider().readBytes()
+                    }
+                    part.dispose()
+                }
+
+                if (fileBytes != null) {
+                    val folder = File("uploads")
+                    if (!folder.exists()) folder.mkdirs()
+                    
+                    val file = File(folder, fileName)
+                    file.writeBytes(fileBytes!!)
+                    
+                    // Retorna a URL da imagem (Ajuste a porta/ip se necessário)
+                    val url = "http://localhost:8080/uploads/$fileName"
+                    call.respondText(url)
+                } else {
+                    call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
+                }
+            }
+        }
+
+        // Servir as imagens salvas
+        staticFiles("/uploads", File("uploads"))
+
         // Injetando o repositório nas rotas
         pageRoutes(pageRepository)
     }

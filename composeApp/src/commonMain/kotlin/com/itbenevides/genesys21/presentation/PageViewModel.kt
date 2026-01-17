@@ -6,6 +6,7 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.domain.repository.PageRepository
 import com.itbenevides.genesys21.domain.usecase.DeletePageUseCase
 import com.itbenevides.genesys21.domain.usecase.GetPagesUseCase
 import com.itbenevides.genesys21.domain.usecase.GetPublicPageUseCase
@@ -18,7 +19,8 @@ class PageViewModel(
     private val savePageUseCase: SavePageUseCase,
     private val deletePageUseCase: DeletePageUseCase,
     private val getPublicPageUseCase: GetPublicPageUseCase,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val pageRepository: PageRepository
 ) : ViewModel() {
 
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
@@ -33,7 +35,6 @@ class PageViewModel(
         }.distinctBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Obtém todas as categorias únicas cadastradas em todos os produtos do usuário
     val allAvailableCategories: StateFlow<List<String>> = allAvailableProducts.map { products ->
         products.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -91,6 +92,19 @@ class PageViewModel(
             authRepository.signIn(email, pass)
                 .onSuccess { onSuccess() }
                 .onFailure { onFailure(it.message ?: "Erro desconhecido") }
+        }
+    }
+
+    fun uploadImage(bytes: ByteArray, fileName: String, onSuccess: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val token = authRepository.getCurrentUserToken() ?: ""
+            pageRepository.uploadImage(bytes, fileName, token).onSuccess { url ->
+                onSuccess(url)
+            }.onFailure {
+                it.printStackTrace()
+            }
+            _isLoading.value = false
         }
     }
 }

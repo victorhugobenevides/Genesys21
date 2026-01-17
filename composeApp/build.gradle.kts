@@ -11,7 +11,6 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// Função para obter o IP local do Mac/PC
 fun getLocalIp(): String {
     return try {
         InetAddress.getLocalHost().hostAddress
@@ -35,7 +34,6 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
-            // Permite que o Xcode veja classes do modulo shared
             export(projects.shared)
         }
     }
@@ -62,19 +60,17 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            
-            // CORREÇÃO: Deve ser 'api' para ser exportado no framework iOS
             api(projects.shared)
-            
-            // Ktor Client
             implementation(libs.ktor.clientCore)
             implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.ktor.clientSerialization)
-
-            // Koin DI
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
+            
+            // Image Loading
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network)
         }
 
         androidMain.dependencies {
@@ -84,9 +80,8 @@ kotlin {
             implementation(libs.kmpauth.google)
             implementation(libs.kmpauth.firebase)
             implementation(libs.kmpauth.uihelper)
-            
-            // Koin Android
             implementation(libs.koin.android)
+            implementation(libs.peekaboo.image.picker)
         }
 
         iosMain.dependencies {
@@ -94,13 +89,15 @@ kotlin {
             implementation(libs.kmpauth.google)
             implementation(libs.kmpauth.firebase)
             implementation(libs.kmpauth.uihelper)
+            implementation(libs.peekaboo.image.picker)
+        }
+
+        wasmJsMain.dependencies {
+            // No mobile-only dependencies
         }
 
         jsMain.dependencies {
-            implementation(libs.firebase.auth.kmp)
-            implementation(libs.kmpauth.google)
-            implementation(libs.kmpauth.firebase)
-            implementation(libs.kmpauth.uihelper)
+            // No mobile-only dependencies
         }
 
         commonTest.dependencies {
@@ -113,25 +110,16 @@ kotlin {
 android {
     namespace = "com.itbenevides.genesys21"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
-
     defaultConfig {
         applicationId = "com.itbenevides.genesys21"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
-
-        // Voltando para localhost para o Android
         buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
     }
-    buildFeatures {
-        buildConfig = true
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
+    buildFeatures { buildConfig = true }
+    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false

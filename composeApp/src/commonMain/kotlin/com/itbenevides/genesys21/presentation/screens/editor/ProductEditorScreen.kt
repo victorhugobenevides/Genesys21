@@ -1,28 +1,35 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductEditorScreen(
+    viewModel: PageViewModel,
     product: Product?,
     existingCategories: List<String>,
     onSave: (Product) -> Unit,
@@ -34,6 +41,19 @@ fun ProductEditorScreen(
     var description by remember { mutableStateOf(product?.description ?: "") }
     var category by remember { mutableStateOf(product?.category ?: "") }
     var stock by remember { mutableStateOf(product?.stock?.toString() ?: "0") }
+
+    var isUploading by remember { mutableStateOf(false) }
+
+    // Inicialização do Picker de Imagem via expect/actual
+    val launchImagePicker = rememberImagePicker { bytes ->
+        bytes?.let {
+            isUploading = true
+            viewModel.uploadImage(it, "${Random.nextInt()}.jpg") { uploadedUrl ->
+                imageUrl = uploadedUrl
+                isUploading = false
+            }
+        }
+    }
 
     var expanded by remember { mutableStateOf(false) }
 
@@ -60,7 +80,7 @@ fun ProductEditorScreen(
                             )
                             onSave(finalProduct)
                         },
-                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null
+                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading
                     ) {
                         Icon(Icons.Default.Check, contentDescription = "Salvar", tint = MaterialTheme.colorScheme.primary)
                     }
@@ -80,6 +100,35 @@ fun ProductEditorScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text("Mídia do Produto", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            
+            // Área de Seleção de Imagem
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .clickable { launchImagePicker() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isUploading) {
+                    CircularProgressIndicator()
+                } else if (imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Image, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Clique para subir foto", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+
             Text("Informações Básicas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             
             OutlinedTextField(
@@ -117,9 +166,6 @@ fun ProductEditorScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Detalhes", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = it },
@@ -148,7 +194,6 @@ fun ProductEditorScreen(
                 )
 
                 val filteredOptions = existingCategories.filter { it.contains(category, ignoreCase = true) }
-                
                 if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
                     ExposedDropdownMenu(
                         expanded = expanded,
@@ -167,14 +212,6 @@ fun ProductEditorScreen(
                     }
                 }
             }
-
-            OutlinedTextField(
-                value = imageUrl,
-                onValueChange = { imageUrl = it },
-                label = { Text("URL da Imagem") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
 
             OutlinedTextField(
                 value = description,

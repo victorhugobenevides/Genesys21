@@ -7,4 +7,5 @@ interface PageRepository {
     suspend fun getPublicPage(id: String): Result<Page>
     suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit>
     suspend fun deletePage(id: String, token: String): Result<Unit>
+    suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String>
 }

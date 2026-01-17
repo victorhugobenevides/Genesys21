@@ -11,9 +11,11 @@ plugins {
     id("idea")
 }
 
+// O erro :kotlinStoreYarnLock FAILED é mitigado via gradle.properties:
+// kotlin.js.yarn.lockFileRetentionPolicy=STORE_NONE
+
 idea {
     module {
-        // Exclui a pasta de deploy e outras pastas geradas da indexação do IDE
         excludeDirs.add(file("deploy"))
         excludeDirs.add(file("kotlin-js-store"))
     }

@@ -5,7 +5,9 @@ import com.itbenevides.genesys21.domain.repository.PageRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.utils.io.core.*
 
 class KtorPageRepository(
     private val client: HttpClient,
@@ -65,6 +67,25 @@ class KtorPageRepository(
             }
             if (response.status.isSuccess()) Result.success(Unit)
             else Result.failure(Exception("Failed to delete: ${response.status}"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
+        return try {
+            val response: String = client.submitFormWithBinaryData(
+                url = "$baseUrl/upload",
+                formData = formData {
+                    append("image", bytes, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                    })
+                }
+            ) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }.body()
+            Result.success(response) // Supondo que o server retorna a URL da imagem
         } catch (e: Exception) {
             Result.failure(e)
         }
