@@ -5,6 +5,9 @@ services:
       dockerfile: Dockerfile.server
     ports:
       - "8080:8080"
+    volumes:
+      - ./data/server:/app/bin/data # Persiste o banco SQLite
+      - ./uploads:/app/bin/uploads   # Persiste as imagens enviadas
     restart: unless-stopped
     networks:
       - genesys-network

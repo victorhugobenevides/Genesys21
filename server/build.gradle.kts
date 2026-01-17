@@ -18,9 +18,16 @@ dependencies {
     implementation(libs.ktor.serverNetty)
     implementation(libs.ktor.serverAuth)
     implementation(libs.ktor.serverContentNegotiation)
-    implementation(libs.ktor.serverCors) // Adicionado aqui
+    implementation(libs.ktor.serverCors)
     implementation(libs.ktor.serializationJson)
     implementation(libs.firebase.admin)
+    
+    // Database
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.json)
+    implementation(libs.sqlite.jdbc)
+
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }

@@ -4,7 +4,8 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
-import com.itbenevides.genesys21.data.repository.InMemoryPageRepository
+import com.itbenevides.genesys21.data.database.DatabaseFactory
+import com.itbenevides.genesys21.data.repository.SqlitePageRepository
 import com.itbenevides.genesys21.routes.pageRoutes
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -34,7 +35,11 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     
-    val pageRepository = InMemoryPageRepository()
+    // Inicializa Banco de Dados SQLite
+    DatabaseFactory.init()
+    
+    // Repositório real persistente
+    val pageRepository = SqlitePageRepository()
 
     install(ContentNegotiation) { 
         json(Json {
@@ -44,7 +49,6 @@ fun Application.module() {
         }) 
     }
     
-    // O plugin CORS global deve lidar com os cabeçalhos para todas as rotas, inclusive arquivos estáticos.
     install(CORS) {
         anyHost()
         allowMethod(HttpMethod.Options)
@@ -78,7 +82,7 @@ fun Application.module() {
     routing {
         get("/") {
             val total = pageRepository.getPages("").size
-            call.respondText("Genesys21 API Online. Pages in memory: $total")
+            call.respondText("Genesys21 API Online. Pages in DB: $total")
         }
 
         authenticate("firebase") {
@@ -102,7 +106,6 @@ fun Application.module() {
                     val file = File(folder, fileName)
                     file.writeBytes(fileBytes!!)
                     
-                    // Retorna a URL absoluta baseada no host da requisição
                     val host = call.request.host()
                     val url = "http://$host:8080/uploads/$fileName"
                     call.respondText(url)
@@ -112,7 +115,6 @@ fun Application.module() {
             }
         }
 
-        // Servindo arquivos estáticos. O CORS global configurado acima deve ser suficiente.
         staticFiles("/uploads", File("uploads"))
 
         pageRoutes(pageRepository)
