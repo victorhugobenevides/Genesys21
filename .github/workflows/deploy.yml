@@ -2,8 +2,8 @@ name: Deploy to AWS EC2
 
 on:
   push:
-    branches: [ main, master ] # Aceita ambas as nomenclaturas comuns
-  workflow_dispatch: # Permite disparo manual via interface do GitHub
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -29,9 +29,9 @@ jobs:
         run: |
           mkdir -p deploy/server deploy/web
           cp -R server/build/install/server/. deploy/server/
-          find composeApp/build/dist/wasmJs/developmentExecutable -type f -exec cp -f {} deploy/web/ \;
+          find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
           
-          # Gerar ponte Firebase e index.html
+          # Gerar ponte Firebase e index.html idêntico ao local
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -83,6 +83,9 @@ jobs:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
                 ports:
                   - "8080:8080"
+                volumes:
+                  - ./data/server:/app/bin/data
+                  - ./uploads:/app/bin/uploads
                 restart: unless-stopped
               web:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest

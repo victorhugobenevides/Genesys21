@@ -2,9 +2,9 @@ name: CI - Multiplatform Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ mainn, master ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ mainn, master ]
 
 jobs:
   build-android-server-web:
