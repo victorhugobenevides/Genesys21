@@ -12,6 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up QEMU (Para build multi-plataforma)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -24,13 +30,9 @@ jobs:
 
       - name: Decode Firebase Secrets
         run: |
-          # Android
           echo '${{ secrets.GOOGLE_SERVICES_JSON_ANDROID }}' > composeApp/google-services.json
-          # Server
           mkdir -p server/src/main/resources
-          # Criamos com o nome que o Application.kt espera
           echo '${{ secrets.FIREBASE_ADMIN_JSON }}' > server/src/main/resources/firebase-adminsdk.json
-          # Também criamos na raiz para o Docker copiar se necessário
           echo '${{ secrets.FIREBASE_ADMIN_JSON }}' > firebase-adminsdk.json
 
       - name: Build Project
@@ -41,12 +43,10 @@ jobs:
         run: |
           mkdir -p deploy/server deploy/web
           cp -R server/build/install/server/. deploy/server/
-          # Copia o JSON do Firebase para dentro da pasta de deploy do servidor para o Docker incluir
           cp firebase-adminsdk.json deploy/server/bin/
-          
           find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
           
-          # Gerar ponte Firebase e index.html
+          # Index e Bridge
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -66,7 +66,6 @@ jobs:
           window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
           window.firebaseSignOut = async () => await signOut(auth);
           EOF
-
           cat <<EOF > deploy/web/index.html
           <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><base href="/"><title>Genesys21</title><script type="module" src="/firebase-bridge.js"></script><style>html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background-color:#F2F2F7;}#ComposeTarget{width:100%;height:100%;}</style></head><body><canvas id="ComposeTarget"></canvas><script type="module" src="/composeApp.js"></script></body></html>
           EOF
@@ -77,12 +76,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Docker Images
+      - name: Build and Push Multi-arch Images
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest -f Dockerfile.server .
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest -f Dockerfile.web .
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest
+          # Constrói para x86_64 (t2/t3) e arm64 (Mac M1/M2 e AWS Graviton)
+          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest -f Dockerfile.server --push .
+          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest -f Dockerfile.web --push .
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -110,11 +108,6 @@ jobs:
                   - "80:80"
                 restart: unless-stopped
             EOF
-            if docker compose version > /dev/null 2>&1; then
-              docker compose pull
-              docker compose up -d
-            else
-              docker-compose pull
-              docker-compose up -d
-            fi
+            docker compose pull
+            docker compose up -d
             docker image prune -f
