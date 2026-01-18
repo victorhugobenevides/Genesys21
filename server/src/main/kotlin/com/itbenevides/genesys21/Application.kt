@@ -16,7 +16,6 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -36,10 +35,6 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     
-    // Suporte a cabeçalhos de Proxy (Nginx/AWS)
-    install(ForwardedHeaders)
-    install(XForwardedHeaders)
-
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
@@ -106,11 +101,13 @@ fun Application.module() {
                     val file = File(folder, fileName)
                     file.writeBytes(fileBytes!!)
                     
-                    // Lógica de Host Dinâmica e Segura
-                    val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.host()
-                    val protocol = call.request.origin.scheme // Detecta http ou https automaticamente
+                    // Identificação manual do Host e Protocolo segura para Ktor 3.0
+                    val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
+                    val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
+                    
                     val url = "$protocol://$publicHost:8080/uploads/$fileName"
                     
+                    logger.info("Upload processado para: $url")
                     call.respondText(url)
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
@@ -127,7 +124,7 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
         val fileName = "firebase-adminsdk.json"
         val serviceAccount = this::class.java.classLoader.getResourceAsStream(fileName)
-            ?: File(fileName).inputStream() // Tenta ler da raiz se não estiver no resources
+            ?: File(fileName).inputStream()
 
         val options = FirebaseOptions.builder()
             .setCredentials(GoogleCredentials.fromStream(serviceAccount))
