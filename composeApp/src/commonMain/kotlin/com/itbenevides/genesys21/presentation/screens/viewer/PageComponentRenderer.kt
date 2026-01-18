@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +41,7 @@ fun PageComponentRenderer(
     allAvailableCategories: List<String> = emptyList()
 ) {
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
+    val uriHandler = LocalUriHandler.current
     
     // Verificamos se o componente deve ser filtrado.
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
@@ -60,7 +62,8 @@ fun PageComponentRenderer(
             }
             is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
             is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Image -> !isCategoryFilterActive && component.string.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Button -> !isCategoryFilterActive && component.text.contains(filterQuery, ignoreCase = true)
             else -> true
         }
     }
@@ -248,7 +251,7 @@ fun PageComponentRenderer(
                     shape = imgShape,
                     color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                 ) {
-                    Box(Modifier.padding(20.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.padding(if (component.url.isNotEmpty()) 0.dp else 20.dp), contentAlignment = Alignment.Center) {
                         if (component.url.isNotEmpty()) {
                             AsyncImage(
                                 model = component.url,
@@ -274,6 +277,36 @@ fun PageComponentRenderer(
                         modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
+                }
+            }
+        }
+        is PageComponent.Button -> {
+            val btnShape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp)
+            Button(
+                onClick = { uriHandler.openUri(component.url) },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.primary,
+                    contentColor = if (component.isTransparent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
+                ),
+                border = if (component.isTransparent) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val icon = when (component.iconName?.lowercase()) {
+                        "phone" -> Icons.Default.Phone
+                        "email" -> Icons.Default.Email
+                        "web" -> Icons.Default.Public
+                        "whatsapp" -> Icons.Default.Chat
+                        "instagram" -> Icons.Default.CameraAlt
+                        "linkedin" -> Icons.Default.BusinessCenter
+                        else -> null
+                    }
+                    if (icon != null) {
+                        Icon(icon, null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    Text(component.text, fontWeight = FontWeight.Bold)
                 }
             }
         }

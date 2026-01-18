@@ -61,6 +61,18 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Button")
+    data class Button(
+        val text: String,
+        val url: String,
+        val iconName: String? = null,
+        override val customLabel: String? = null,
+        override val isTransparent: Boolean = false,
+        override val isRounded: Boolean = true,
+        override val isFilterable: Boolean = false
+    ) : PageComponent()
+
+    @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductList")
     data class ProductList(
         val products: List<Product>,

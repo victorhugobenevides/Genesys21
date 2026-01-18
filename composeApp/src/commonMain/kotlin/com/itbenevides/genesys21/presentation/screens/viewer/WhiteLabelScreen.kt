@@ -34,6 +34,7 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
 
 @Composable
@@ -56,10 +57,8 @@ fun WhiteLabelScreen(
         }
     }
 
-    // Categorias do servidor
     val savedCategories by viewModel.allAvailableCategories.collectAsState()
     
-    // Categorias em tempo real (extraídas de todos os blocos de produtos da página)
     val allCategories by remember(savedCategories, page) {
         derivedStateOf {
             val currentSessionCategories = page.components
@@ -74,6 +73,7 @@ fun WhiteLabelScreen(
 
     AppTheme(themeConfig = page.theme) {
         WhiteLabelContent(
+            viewModel = viewModel,
             page = page,
             availableProducts = liveInventory,
             allAvailableCategories = allCategories, 
@@ -89,6 +89,7 @@ fun WhiteLabelScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WhiteLabelContent(
+    viewModel: PageViewModel,
     page: Page,
     availableProducts: List<Product>,
     allAvailableCategories: List<String>, 
@@ -222,6 +223,7 @@ fun WhiteLabelContent(
 
             pendingNewComponent?.let { component ->
                 EditComponentModal(
+                    viewModel = viewModel,
                     component = component,
                     isNew = true,
                     onComponentUpdated = { updated ->
@@ -254,6 +256,7 @@ fun WhiteLabelContent(
                     )
                 } else {
                     EditComponentModal(
+                        viewModel = viewModel,
                         component = component,
                         isNew = false,
                         onComponentUpdated = { updated ->
@@ -269,68 +272,6 @@ fun WhiteLabelContent(
                         onDismiss = { editingComponentIndex = null }
                     )
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ThemeSelectorModal(
-    currentTheme: PageThemeConfig,
-    onThemeSelected: (PageThemeConfig) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Cores Harmonizadas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
-            }
-            
-            Spacer(Modifier.height(20.dp))
-            
-            val themes = listOf(
-                Triple(PageThemeConfig.DEFAULT, "Royal", Color(0xFF2D3142)),
-                Triple(PageThemeConfig.OCEAN, "Soft Ocean", Color(0xFF4A90E2)),
-                Triple(PageThemeConfig.FOREST, "Eco Forest", Color(0xFF386641)),
-                Triple(PageThemeConfig.CANDY, "Rose Gold", Color(0xFFB08968)),
-                Triple(PageThemeConfig.DARK, "Midnight", Color(0xFFE0E1DD)),
-                Triple(PageThemeConfig.SUNSET, "Sunset", Color(0xFFF4A261)),
-                Triple(PageThemeConfig.BERRY, "Berry", Color(0xFF9D0208)),
-                Triple(PageThemeConfig.MINIMAL, "Minimal", Color(0xFF000000)),
-                Triple(PageThemeConfig.VINTAGE, "Vintage", Color(0xFF6D597A)),
-                Triple(PageThemeConfig.NEON, "Neon", Color(0xFF39FF14))
-            )
-            
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                themes.forEach { (config, label, color) ->
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp)
-                            .clickable { onThemeSelected(config) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (currentTheme == config) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = if (currentTheme == config) androidx.compose.foundation.BorderStroke(2.dp, color) else null
-                    ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(Modifier.size(24.dp).clip(CircleShape).background(color))
-                            Spacer(Modifier.width(16.dp))
-                            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = if (currentTheme == config) FontWeight.Bold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
-                            Spacer(Modifier.weight(1f))
-                            if (currentTheme == config) Icon(Icons.Default.Check, null, tint = color)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(100.dp))
             }
         }
     }
@@ -406,6 +347,131 @@ fun ComponentWrapper(
                     allAvailableCategories = allAvailableCategories 
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditComponentModal(
+    viewModel: PageViewModel,
+    component: PageComponent, 
+    isNew: Boolean = false,
+    onComponentUpdated: (PageComponent) -> Unit, 
+    onDeleteRequest: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.fillMaxSize(),
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
+            }
+            
+            Spacer(Modifier.height(16.dp))
+
+            var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
+            var isTransparent by remember { mutableStateOf(component.isTransparent) }
+            var isRounded by remember { mutableStateOf(component.isRounded) }
+            var isFilterable by remember { mutableStateOf(component.isFilterable) }
+            var headerTitle by remember { mutableStateOf(if (component is PageComponent.Header) component.title else "") }
+            var textContent by remember { mutableStateOf(if (component is PageComponent.Text) component.content else "") }
+            var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
+            var imageDesc by remember { mutableStateOf(if (component is PageComponent.Image) component.string else "") }
+            var imageSize by remember { mutableStateOf(if (component is PageComponent.Image) component.size.toString() else "200") }
+            var btnText by remember { mutableStateOf(if (component is PageComponent.Button) component.text else "") }
+            var btnUrl by remember { mutableStateOf(if (component is PageComponent.Button) component.url else "") }
+            var btnIcon by remember { mutableStateOf(if (component is PageComponent.Button) component.iconName ?: "" else "") }
+            var filterPlaceholder by remember { mutableStateOf(if (component is PageComponent.Filter) component.placeholder else "Filtrar conteúdo...") }
+
+            var isUploading by remember { mutableStateOf(false) }
+            val picker = rememberImagePicker { bytes ->
+                bytes?.let {
+                    isUploading = true
+                    viewModel.uploadImage(it, "image_component.jpg") { url ->
+                        imageUrl = url
+                        isUploading = false
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                val previewComp = when (component) {
+                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    else -> component
+                }
+
+                Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
+                    if (isUploading) CircularProgressIndicator()
+                    else PageComponentRenderer(component = previewComp, onProductClick = {})
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
+                    Checkbox(checked = isTransparent, onCheckedChange = { isTransparent = it })
+                    Text("Fundo Transparente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.width(16.dp))
+                    Checkbox(checked = isRounded, onCheckedChange = { isRounded = it })
+                    Text("Redondo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                when (component) {
+                    is PageComponent.Header -> OutlinedTextField(value = headerTitle, onValueChange = { headerTitle = it }, label = { Text("Texto do Título") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                    is PageComponent.Text -> OutlinedTextField(value = textContent, onValueChange = { textContent = it }, label = { Text("Conteúdo") }, modifier = Modifier.fillMaxWidth(), minLines = 4, shape = RoundedCornerShape(10.dp))
+                    is PageComponent.Image -> {
+                        Button(onClick = { picker() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
+                            Icon(Icons.Default.CloudUpload, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Selecionar Foto Local")
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(value = imageUrl, onValueChange = { imageUrl = it }, label = { Text("URL da Imagem") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(value = imageSize, onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() }) imageSize = it }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                    }
+                    is PageComponent.Button -> {
+                        OutlinedTextField(value = btnText, onValueChange = { btnText = it }, label = { Text("Texto do Botão") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(value = btnUrl, onValueChange = { btnUrl = it }, label = { Text("URL de Destino") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(value = btnIcon, onValueChange = { btnIcon = it }, label = { Text("Nome do Ícone (opcional)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                    }
+                    else -> {}
+                }
+                Spacer(Modifier.height(40.dp))
+            }
+
+            ActionButtons(isNew, true, {
+                val finalComp = when (component) {
+                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    else -> component
+                }
+                onComponentUpdated(finalComp)
+            }, onDeleteRequest)
         }
     }
 }
@@ -587,123 +653,62 @@ fun ProductListManagementModal(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditComponentModal(
-    component: PageComponent, 
-    isNew: Boolean = false,
-    onComponentUpdated: (PageComponent) -> Unit, 
-    onDeleteRequest: () -> Unit,
+fun ThemeSelectorModal(
+    currentTheme: PageThemeConfig,
+    onThemeSelected: (PageThemeConfig) -> Unit,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp)
-                .navigationBarsPadding()
-        ) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Cores Harmonizadas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
-            Spacer(Modifier.height(16.dp))
-
-            var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
-            var isTransparent by remember { mutableStateOf(component.isTransparent) }
-            var isRounded by remember { mutableStateOf(component.isRounded) }
-            var isFilterable by remember { mutableStateOf(component.isFilterable) }
-            var headerTitle by remember { mutableStateOf(if (component is PageComponent.Header) component.title else "") }
-            var textContent by remember { mutableStateOf(if (component is PageComponent.Text) component.content else "") }
-            var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
-            var imageDesc by remember { mutableStateOf(if (component is PageComponent.Image) component.string else "") }
-            var imageSize by remember { mutableStateOf(if (component is PageComponent.Image) component.size.toString() else "200") }
-            var filterPlaceholder by remember { mutableStateOf(if (component is PageComponent.Filter) component.placeholder else "Filtrar conteúdo...") }
-
-            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                val previewComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
-                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    else -> component
-                }
-
-                Box(Modifier.fillMaxWidth().padding(vertical = 20.dp), contentAlignment = Alignment.Center) {
-                    PageComponentRenderer(
-                        component = previewComp,
-                        filterQuery = "",
-                        onFilterQueryChange = {},
-                        onProductClick = {}
-                    )
-                }
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-                Spacer(Modifier.height(16.dp))
-
-                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
-                    Checkbox(checked = isTransparent, onCheckedChange = { isTransparent = it })
-                    Text("Fundo Transparente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.width(16.dp))
-                    Checkbox(checked = isRounded, onCheckedChange = { isRounded = it })
-                    Text("Redondo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-                    Checkbox(checked = isFilterable, onCheckedChange = { isFilterable = it })
-                    Text("Permitir Filtragem", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                when (component) {
-                    is PageComponent.Header -> OutlinedTextField(value = headerTitle, onValueChange = { headerTitle = it }, label = { Text("Texto do Título") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                    is PageComponent.Text -> OutlinedTextField(value = textContent, onValueChange = { textContent = it }, label = { Text("Conteúdo") }, modifier = Modifier.fillMaxWidth(), minLines = 4, shape = RoundedCornerShape(10.dp))
-                    is PageComponent.Image -> {
-                        OutlinedTextField(value = imageUrl, onValueChange = { imageUrl = it }, label = { Text("URL da Imagem") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = imageSize, onValueChange = { 
-                            if (it.isEmpty() || it.all { c -> c.isDigit() }) {
-                                imageSize = it 
-                            }
-                        }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+            Spacer(Modifier.height(20.dp))
+            
+            val themes = listOf(
+                Triple(PageThemeConfig.DEFAULT, "Royal", Color(0xFF2D3142)),
+                Triple(PageThemeConfig.OCEAN, "Soft Ocean", Color(0xFF4A90E2)),
+                Triple(PageThemeConfig.FOREST, "Eco Forest", Color(0xFF386641)),
+                Triple(PageThemeConfig.CANDY, "Rose Gold", Color(0xFFB08968)),
+                Triple(PageThemeConfig.DARK, "Midnight", Color(0xFFE0E1DD)),
+                Triple(PageThemeConfig.SUNSET, "Sunset", Color(0xFFF4A261)),
+                Triple(PageThemeConfig.BERRY, "Berry", Color(0xFF9D0208)),
+                Triple(PageThemeConfig.MINIMAL, "Minimal", Color(0xFF000000)),
+                Triple(PageThemeConfig.VINTAGE, "Vintage", Color(0xFF6D597A)),
+                Triple(PageThemeConfig.NEON, "Neon", Color(0xFF39FF14))
+            )
+            
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                themes.forEach { (config, label, color) ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .clickable { onThemeSelected(config) },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (currentTheme == config) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = if (currentTheme == config) androidx.compose.foundation.BorderStroke(2.dp, color) else null
+                    ) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(24.dp).clip(CircleShape).background(color))
+                            Spacer(Modifier.width(16.dp))
+                            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = if (currentTheme == config) FontWeight.Bold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+                            Spacer(Modifier.weight(1f))
+                            if (currentTheme == config) Icon(Icons.Default.Check, null, tint = color)
+                        }
                     }
-                    is PageComponent.Filter -> {
-                        OutlinedTextField(value = filterPlaceholder, onValueChange = { filterPlaceholder = it }, label = { Text("Texto de Orientação (Placeholder)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                    }
-                    else -> {}
                 }
-                Spacer(Modifier.height(40.dp))
+                Spacer(Modifier.height(100.dp))
             }
-
-            val isDataValid = when (component) {
-                is PageComponent.Header -> headerTitle.isNotBlank()
-                is PageComponent.Text -> textContent.isNotBlank()
-                is PageComponent.Image -> imageUrl.isNotBlank()
-                else -> true
-            }
-
-            ActionButtons(isNew, isDataValid, {
-                val finalComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
-                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize.toIntOrNull() ?: 200, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    else -> component
-                }
-                onComponentUpdated(finalComp)
-            }, onDeleteRequest)
         }
     }
 }
@@ -745,6 +750,7 @@ fun ComponentCatalogModal(
                 Triple("Título", PageComponent.Header(""), Icons.Default.Title),
                 Triple("Texto", PageComponent.Text(""), Icons.AutoMirrored.Filled.Notes),
                 Triple("Imagem", PageComponent.Image("", ""), Icons.Default.Image),
+                Triple("Botão de Link", PageComponent.Button("", ""), Icons.Default.SmartButton),
                 Triple("Lista de Produtos", PageComponent.ProductList(emptyList()), Icons.Default.ShoppingBag)
             )
             catalogItems.forEach { (name, component, icon) -> CatalogItemRow(name, icon) { onComponentSelected(component) } }
@@ -760,7 +766,7 @@ fun ComponentCatalogModal(
             }
 
             Surface(
-                modifier = Modifier.fillMaxWidth().clickable { 
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
                         PageComponent.Image("", "", 80, isTransparent = true, isRounded = true), 
                         PageComponent.Header("Bem-vindo à Loja!", isTransparent = true), 
@@ -777,6 +783,28 @@ fun ComponentCatalogModal(
                     Icon(Icons.Default.Dashboard, null, tint = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.width(16.dp))
                     Text("Loja Completa", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
+                    onTemplateSelected(listOf(
+                        PageComponent.Image("", "", 120, isTransparent = true, isRounded = true, customLabel = "Foto de Perfil"), 
+                        PageComponent.Header("Seu Nome Aqui", isTransparent = true), 
+                        PageComponent.Text("Sua biografia curta e inspiradora aparece aqui.", isTransparent = true, isRounded = false),
+                        PageComponent.Button("WhatsApp", "https://wa.me/seunumeroaqui", "whatsapp", isTransparent = false),
+                        PageComponent.Button("Instagram", "https://instagram.com/seuuser", "instagram", isTransparent = false),
+                        PageComponent.Button("Email", "mailto:seuemail@exemplo.com", "email", isTransparent = false),
+                        PageComponent.Button("Portfólio", "https://seusite.com", "web", isTransparent = true)
+                    )) 
+                }, 
+                shape = RoundedCornerShape(12.dp), 
+                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
+            ) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.tertiary)
+                    Spacer(Modifier.width(16.dp))
+                    Text("Perfil Profissional (Link in Bio)", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
                 }
             }
         }

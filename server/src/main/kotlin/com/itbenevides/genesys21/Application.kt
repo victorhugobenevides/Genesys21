@@ -35,10 +35,7 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     
-    // Inicializa Banco de Dados SQLite
     DatabaseFactory.init()
-    
-    // Repositório real persistente
     val pageRepository = SqlitePageRepository()
 
     install(ContentNegotiation) { 
@@ -106,8 +103,11 @@ fun Application.module() {
                     val file = File(folder, fileName)
                     file.writeBytes(fileBytes!!)
                     
-                    val host = call.request.host()
-                    val url = "http://$host:8080/uploads/$fileName"
+                    // Prioriza a variável de ambiente PUBLIC_HOST, senão usa o host da requisição
+                    val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.host()
+                    val url = "http://$publicHost:8080/uploads/$fileName"
+                    
+                    logger.info("Upload concluído. URL gerada: $url")
                     call.respondText(url)
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")

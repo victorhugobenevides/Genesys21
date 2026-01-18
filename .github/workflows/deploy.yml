@@ -31,7 +31,7 @@ jobs:
           cp -R server/build/install/server/. deploy/server/
           find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
           
-          # Gerar ponte Firebase e index.html idêntico ao local
+          # Gerar ponte Firebase e index.html
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -83,6 +83,8 @@ jobs:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
                 ports:
                   - "8080:8080"
+                environment:
+                  - PUBLIC_HOST=ec2-18-230-62-165.sa-east-1.compute.amazonaws.com
                 volumes:
                   - ./data/server:/app/bin/data
                   - ./uploads:/app/bin/uploads
