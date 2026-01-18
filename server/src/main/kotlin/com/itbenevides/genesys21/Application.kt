@@ -101,7 +101,6 @@ fun Application.module() {
                     val file = File(folder, fileName)
                     file.writeBytes(fileBytes!!)
                     
-                    // Identificação manual do Host e Protocolo segura para Ktor 3.0
                     val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
                     val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
                     
@@ -123,18 +122,23 @@ fun Application.module() {
 private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
         val fileName = "firebase-adminsdk.json"
-        val serviceAccount = this::class.java.classLoader.getResourceAsStream(fileName)
-            ?: File(fileName).inputStream()
+        val stream = this::class.java.classLoader.getResourceAsStream(fileName)
+            ?: if (File(fileName).exists()) File(fileName).inputStream() else null
+
+        if (stream == null) {
+            logger.warn("AVISO: Arquivo $fileName não encontrado. Autenticação Firebase não funcionará.")
+            return
+        }
 
         val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+            .setCredentials(GoogleCredentials.fromStream(stream))
             .build()
 
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseApp.initializeApp(options)
-            logger.info("Firebase Admin inicializado!")
+            logger.info("Firebase Admin inicializado com sucesso!")
         }
     } catch (e: Exception) {
-        logger.error("Erro Firebase: ${e.message}")
+        logger.error("Erro crítico ao inicializar Firebase: ${e.message}")
     }
 }

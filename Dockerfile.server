@@ -1,11 +1,20 @@
-# Runtime Stage
+# Build Stage
 FROM eclipse-temurin:21-jre-jammy
 
-EXPOSE 8080
-RUN mkdir /app
+# Cria diretórios necessários
+RUN mkdir -p /app/bin /app/uploads /app/data
 
-# Copiamos da pasta deploy que criamos no up.sh
+# Copia os arquivos do build (gerados pelo up.sh ou CI)
 COPY deploy/server /app/
 
+# Define permissões de execução para o binário do Ktor
+RUN chmod +x /app/bin/server
+
 WORKDIR /app/bin
+
+EXPOSE 8080
+
+# Garante que o container não crash se o host for localhost
+ENV PUBLIC_HOST=localhost
+
 ENTRYPOINT ["./server"]
