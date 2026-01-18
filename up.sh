@@ -43,7 +43,7 @@ find composeApp/build/dist/wasmJs/developmentExecutable -type f \( \
     -name "*.map" \
 \) -exec cp -f {} deploy/web/ \;
 
-# 3. Gerar firebase-bridge.js (Evita erro de CSP inline)
+# 3. Gerar firebase-bridge.js
 echo "📦 Gerando firebase-bridge.js..."
 cat <<EOF > deploy/web/firebase-bridge.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -74,7 +74,7 @@ window.firebaseSignOut = async () => {
 };
 EOF
 
-# 4. Gerar index.html com BASE HREF (Crítico para rotas /p/ID)
+# 4. Gerar index.html com POLYFILL de UUID (Crítico para HTTP)
 echo "📄 Gerando index.html..."
 cat <<EOF > deploy/web/index.html
 <!DOCTYPE html>
@@ -82,9 +82,19 @@ cat <<EOF > deploy/web/index.html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Define a raiz para todas as URLs relativas -->
     <base href="/">
     <title>Genesys21</title>
+    <script>
+        // Polyfill para crypto.randomUUID em contextos HTTP não seguros
+        if (!window.crypto.randomUUID) {
+            window.crypto.randomUUID = function() {
+                return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                );
+            };
+            console.log("WASM: Polyfill de randomUUID aplicado para contexto HTTP.");
+        }
+    </script>
     <script type="module" src="/firebase-bridge.js"></script>
     <style>
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; }
