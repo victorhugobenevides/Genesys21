@@ -16,6 +16,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -35,6 +36,10 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     
+    // Suporte a cabeçalhos de Proxy (Nginx/AWS)
+    install(ForwardedHeaders)
+    install(XForwardedHeaders)
+
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
@@ -55,9 +60,7 @@ fun Application.module() {
         allowMethod(HttpMethod.Delete)
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.AccessControlAllowOrigin)
         allowCredentials = true
-        allowNonSimpleContentTypes = true
     }
 
     install(Authentication) {
@@ -90,7 +93,7 @@ fun Application.module() {
 
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
-                        fileName = UUID.randomUUID().toString() + "." + (part.originalFileName?.substringAfterLast(".") ?: "jpg")
+                        fileName = "${UUID.randomUUID()}.${part.originalFileName?.substringAfterLast(".") ?: "jpg"}"
                         fileBytes = part.streamProvider().readBytes()
                     }
                     part.dispose()
@@ -103,11 +106,11 @@ fun Application.module() {
                     val file = File(folder, fileName)
                     file.writeBytes(fileBytes!!)
                     
-                    // Prioriza a variável de ambiente PUBLIC_HOST, senão usa o host da requisição
+                    // Lógica de Host Dinâmica e Segura
                     val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.host()
-                    val url = "http://$publicHost:8080/uploads/$fileName"
+                    val protocol = call.request.origin.scheme // Detecta http ou https automaticamente
+                    val url = "$protocol://$publicHost:8080/uploads/$fileName"
                     
-                    logger.info("Upload concluído. URL gerada: $url")
                     call.respondText(url)
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
@@ -116,27 +119,25 @@ fun Application.module() {
         }
 
         staticFiles("/uploads", File("uploads"))
-
         pageRoutes(pageRepository)
     }
 }
 
 private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
-        val fileName = "genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json"
+        val fileName = "firebase-adminsdk.json"
         val serviceAccount = this::class.java.classLoader.getResourceAsStream(fileName)
+            ?: File(fileName).inputStream() // Tenta ler da raiz se não estiver no resources
 
-        if (serviceAccount != null) {
-            val options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                .build()
+        val options = FirebaseOptions.builder()
+            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+            .build()
 
-            if (FirebaseApp.getApps().isEmpty()) {
-                FirebaseApp.initializeApp(options)
-                logger.info("Firebase Admin inicializado com sucesso!")
-            }
+        if (FirebaseApp.getApps().isEmpty()) {
+            FirebaseApp.initializeApp(options)
+            logger.info("Firebase Admin inicializado!")
         }
     } catch (e: Exception) {
-        logger.error("Erro ao inicializar Firebase: ${e.message}")
+        logger.error("Erro Firebase: ${e.message}")
     }
 }
