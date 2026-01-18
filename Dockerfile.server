@@ -1,20 +1,22 @@
-# Build Stage
+# Runtime Stage
 FROM eclipse-temurin:21-jre-jammy
 
 # Cria diretórios necessários
-RUN mkdir -p /app/bin /app/uploads /app/data
+RUN mkdir -p /app/bin /app/lib /app/uploads /app/data
 
-# Copia os arquivos do build (gerados pelo up.sh ou CI)
-COPY deploy/server /app/
+# Copia as bibliotecas e o executável
+COPY deploy/server/lib /app/lib
+COPY deploy/server/bin /app/bin
 
-# Define permissões de execução para o binário do Ktor
+# Define permissões de execução
 RUN chmod +x /app/bin/server
 
 WORKDIR /app/bin
 
 EXPOSE 8080
 
-# Garante que o container não crash se o host for localhost
+# Define variáveis de ambiente padrão
 ENV PUBLIC_HOST=localhost
 
+# Comando de entrada usando o script gerado pelo Gradle
 ENTRYPOINT ["./server"]
