@@ -101,7 +101,7 @@ fun WhiteLabelContent(
 ) {
     var showCatalog by remember { mutableStateOf(false) }
     var showThemeSelector by remember { mutableStateOf(false) }
-    var showPageSettings by remember { mutableStateOf(false) } // NOVO ESTADO
+    var showPageSettings by remember { mutableStateOf(false) }
     var editingComponentIndex by remember { mutableStateOf<Int?>(null) }
     var pendingNewComponent by remember { mutableStateOf<PageComponent?>(null) }
     
@@ -323,7 +323,7 @@ fun PageSettingsModal(
                 label = { Text("Domínio Customizado") },
                 placeholder = { Text("ex: meusite.com") },
                 modifier = Modifier.fillMaxWidth(),
-                helperText = { Text("Aponte o DNS tipo A para 18.230.62.165", style = MaterialTheme.typography.labelSmall) }
+                supportingText = { Text("Aponte o DNS tipo A para 18.230.62.165", style = MaterialTheme.typography.labelSmall) }
             )
             
             Spacer(Modifier.height(32.dp))
@@ -464,6 +464,80 @@ fun EditComponentModal(
                 }
                 onComponentUpdated(finalComp)
             }, onDeleteRequest)
+        }
+    }
+}
+
+@Composable
+fun ComponentWrapper(
+    component: PageComponent,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    onMoveUp: (() -> Unit)? = null,
+    onMoveDown: (() -> Unit)? = null,
+    filterQuery: String = "",
+    onFilterQueryChange: (String) -> Unit = {},
+    onProductClick: (Product) -> Unit,
+    allAvailableCategories: List<String> = emptyList() 
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp, start = 4.dp, end = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onMoveUp != null) {
+                    IconButton(onClick = onMoveUp, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.ArrowUpward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                if (onMoveDown != null) {
+                    IconButton(onClick = onMoveDown, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.ArrowDownward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
+
+        val isImage = component is PageComponent.Image
+        val shape = if (component.isRounded && component !is PageComponent.ProductList) CircleShape else RoundedCornerShape(12.dp)
+        
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = shape,
+            color = if (component.isTransparent || isImage) Color.Transparent else MaterialTheme.colorScheme.surface,
+            border = if (component.isTransparent || isImage) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+            shadowElevation = if (component.isTransparent || isImage) 0.dp else 1.dp
+        ) {
+            Box(Modifier.padding(if (component.isTransparent || isImage) 0.dp else 16.dp)) {
+                PageComponentRenderer(
+                    component = component,
+                    filterQuery = filterQuery,
+                    onFilterQueryChange = onFilterQueryChange,
+                    onProductClick = onProductClick,
+                    allAvailableCategories = allAvailableCategories 
+                )
+            }
         }
     }
 }
@@ -781,7 +855,7 @@ fun ComponentCatalogModal(
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
-                        PageComponent.Image("", "", 120, isTransparent = true, isRounded = true, customDomain = null, customLabel = "Foto de Perfil"), 
+                        PageComponent.Image("", "", 120, isTransparent = true, isRounded = true, customLabel = "Foto de Perfil"), 
                         PageComponent.Header("Seu Nome Aqui", isTransparent = true), 
                         PageComponent.Text("Sua biografia curta e inspiradora aparece aqui.", isTransparent = true, isRounded = false),
                         PageComponent.Button("WhatsApp", "https://wa.me/seunumeroaqui", "whatsapp", isTransparent = false),

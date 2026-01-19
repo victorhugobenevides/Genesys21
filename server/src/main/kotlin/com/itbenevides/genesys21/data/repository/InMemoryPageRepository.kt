@@ -15,6 +15,12 @@ class InMemoryPageRepository : PageRepository {
         return pagesDB[id]?.let { Result.success(it) } ?: Result.failure(Exception("Page not found"))
     }
 
+    override suspend fun getPageByDomain(domain: String): Result<Page> {
+        return pagesDB.values.find { it.customDomain == domain }
+            ?.let { Result.success(it) }
+            ?: Result.failure(Exception("Domain not linked"))
+    }
+
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
         val pageWithOwner = page.copy(ownerId = token)
         
@@ -43,8 +49,6 @@ class InMemoryPageRepository : PageRepository {
     }
 
     override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
-        // Implementation for server-side image upload if needed via repository
-        // For now, returning a mock URL or not implemented as the server handles it in Application.kt
         return Result.failure(Exception("Use /upload endpoint"))
     }
 }

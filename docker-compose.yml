@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - PUBLIC_HOST=victorbenevides.dev
+      - PUBLIC_HOST=localhost
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
@@ -19,21 +19,10 @@ services:
       context: .
       dockerfile: Dockerfile.web
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - "8081:80" # Volta para 8081 para funcionar o http://localhost:8081
     restart: unless-stopped
     networks:
       - genesys-network
-
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 networks:
   genesys-network:

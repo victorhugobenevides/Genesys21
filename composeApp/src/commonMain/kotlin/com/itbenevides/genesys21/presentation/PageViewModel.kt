@@ -55,6 +55,13 @@ class PageViewModel(
         return result.getOrNull()
     }
 
+    suspend fun loadPageByDomain(domain: String): Page? {
+        _isLoading.value = true
+        val result = pageRepository.getPageByDomain(domain)
+        _isLoading.value = false
+        return result.getOrNull()
+    }
+
     suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()
 
     fun signOut() {
