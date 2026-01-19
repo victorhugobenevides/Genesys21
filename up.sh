@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# Aborta o script em caso de erro
 set -e
-
-# Aumenta a memória disponível para o processo do Node/Webpack
 export NODE_OPTIONS="--max-old-space-size=4096"
 
 echo "🛑 Parando containers..."
@@ -14,7 +11,6 @@ rm -rf kotlin-js-store
 rm -f yarn.lock
 ./gradlew clean --no-daemon
 
-# Força a atualização do lockfile para evitar erro de sincronização
 echo "🔄 Atualizando Yarn Lock..."
 ./gradlew :kotlinUpgradeYarnLock --no-daemon
 
@@ -23,14 +19,23 @@ echo "🚀 Build do projeto (Server e WasmJS)..."
 
 echo "✅ Build concluído!"
 
-# Limpamos e criamos a estrutura de deploy
 rm -rf deploy
 mkdir -p deploy/server deploy/web
 
-# 1. Copiar Servidor
+# 1. Copiar Servidor e Credenciais
 SERVER_INSTALL_DIR=$(find server/build/install -maxdepth 1 -mindepth 1 -type d | head -n 1)
 if [ -n "$SERVER_INSTALL_DIR" ]; then
     cp -R "$SERVER_INSTALL_DIR"/. deploy/server/
+    
+    # CORREÇÃO CRÍTICA: Copiar o JSON para a raiz da pasta deploy/server
+    # O Dockerfile.server copiará tudo de deploy/server para /app/
+    FIREBASE_JSON=$(find . -name "genesys21-32035-firebase-adminsdk-*.json" | head -n 1)
+    if [ -n "$FIREBASE_JSON" ]; then
+        echo "🔑 Copiando credenciais Firebase: $FIREBASE_JSON"
+        cp "$FIREBASE_JSON" deploy/server/firebase-adminsdk.json
+    else
+        echo "⚠️ AVISO: Arquivo genesys21-32035-firebase-adminsdk-*.json não encontrado!"
+    fi
 fi
 
 # 2. Copiar Web (WasmJS)
@@ -47,7 +52,7 @@ find composeApp/build/dist/wasmJs/developmentExecutable -type f \( \
 echo "📦 Gerando firebase-bridge.js..."
 cat <<EOF > deploy/web/firebase-bridge.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
@@ -60,12 +65,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+const authReady = new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        resolve(user);
+        unsubscribe();
+    });
+});
+
 window.firebaseSignIn = async (email, pass) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     return await userCredential.user.getIdToken();
 };
 
 window.firebaseGetToken = async () => {
+    await authReady;
     return auth.currentUser ? await auth.currentUser.getIdToken() : null;
 };
 
@@ -74,7 +87,7 @@ window.firebaseSignOut = async () => {
 };
 EOF
 
-# 4. Gerar index.html com POLYFILL de UUID (Crítico para HTTP)
+# 4. Gerar index.html
 echo "📄 Gerando index.html..."
 cat <<EOF > deploy/web/index.html
 <!DOCTYPE html>
@@ -85,14 +98,12 @@ cat <<EOF > deploy/web/index.html
     <base href="/">
     <title>Genesys21</title>
     <script>
-        // Polyfill para crypto.randomUUID em contextos HTTP não seguros
         if (!window.crypto.randomUUID) {
             window.crypto.randomUUID = function() {
                 return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
                     (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
                 );
             };
-            console.log("WASM: Polyfill de randomUUID aplicado para contexto HTTP.");
         }
     </script>
     <script type="module" src="/firebase-bridge.js"></script>
@@ -108,10 +119,7 @@ cat <<EOF > deploy/web/index.html
 </html>
 EOF
 
-# 5. Ajustar permissões
 chmod -R 755 deploy/web
-
-echo "🐳 Subindo os containers..."
 docker-compose up --build -d
 
 echo "--------------------------------------------------------"

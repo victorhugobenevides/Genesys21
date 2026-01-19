@@ -46,6 +46,7 @@ jobs:
           cp firebase-adminsdk.json deploy/server/bin/
           find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
           
+          # Gerar ponte Firebase e index.html com Polyfill UUID
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -91,7 +92,7 @@ jobs:
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
             
-            # Criamos um Nginx exclusivo para Produção com SSL
+            # Nginx de Produção com Proxy Reverso para API
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -100,8 +101,8 @@ jobs:
                 include /etc/nginx/mime.types;
                 types { application/wasm wasm; }
                 default_type application/octet-stream;
+                client_max_body_size 20M;
 
-                # HTTP -> Redireciona para HTTPS
                 server {
                     listen 80;
                     server_name victorbenevides.dev;
@@ -109,7 +110,6 @@ jobs:
                     location / { return 301 https://\$host\$request_uri; }
                 }
 
-                # HTTPS
                 server {
                     listen 443 ssl;
                     server_name victorbenevides.dev;
@@ -118,10 +118,41 @@ jobs:
 
                     root /usr/share/nginx/html;
                     index index.html;
-                    add_header Access-Control-Allow-Origin * always;
-                    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src * https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com;" always;
 
-                    location / { try_files \$uri \$uri/ /index.html; }
+                    # Proxy para a API (Importante para evitar ERR_SSL_PROTOCOL_ERROR)
+                    location /pages {
+                        proxy_pass http://server:8080/pages;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                    }
+
+                    location /api {
+                        proxy_pass http://server:8080/api;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                    }
+
+                    location /upload {
+                        proxy_pass http://server:8080/upload;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                    }
+
+                    location /uploads {
+                        proxy_pass http://server:8080/uploads;
+                        proxy_set_header Host \$host;
+                    }
+
+                    location / {
+                        try_files \$uri \$uri/ /index.html;
+                    }
+
                     location ~* \.(js|mjs|wasm|css|png|jpg|jpeg|gif|ico|svg)$ {
                         expires 1h;
                         add_header Cache-Control "public, no-transform";
@@ -134,14 +165,16 @@ jobs:
             services:
               server:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
-                ports:
-                  - "8080:8080"
+                expose:
+                  - "8080"
                 environment:
                   - PUBLIC_HOST=victorbenevides.dev
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
                 restart: unless-stopped
+                networks:
+                  - genesys-network
               web:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest
                 ports:
@@ -152,6 +185,11 @@ jobs:
                   - ./certbot/conf:/etc/letsencrypt:ro
                   - ./certbot/www:/var/www/certbot:ro
                 restart: unless-stopped
+                networks:
+                  - genesys-network
+            networks:
+              genesys-network:
+                driver: bridge
             EOF
             docker compose pull
             docker compose up -d

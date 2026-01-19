@@ -18,16 +18,21 @@ class WasmAuthRepository : AuthRepository {
     override suspend fun signIn(email: String, password: String): Result<String?> {
         return try {
             val token = firebaseSignIn(email, password).await().toString()
+            println("WASM: Login realizado com sucesso. Token obtido.")
             Result.success(token)
         } catch (e: Exception) {
+            println("WASM: Erro no login -> \${e.message}")
             Result.failure(Exception(e.message))
         }
     }
 
     override suspend fun getCurrentUserToken(): String? {
         return try {
-            firebaseGetToken().await()?.toString()
+            val token = firebaseGetToken().await()?.toString()
+            if (token == null) println("WASM: Nenhum usuário logado no Firebase.")
+            token
         } catch (e: Exception) {
+            println("WASM: Erro ao buscar token -> \${e.message}")
             null
         }
     }
@@ -35,7 +40,10 @@ class WasmAuthRepository : AuthRepository {
     override suspend fun signOut() {
         try {
             firebaseSignOut().await()
-        } catch (e: Exception) { }
+            println("WASM: Logout realizado.")
+        } catch (e: Exception) { 
+            println("WASM: Erro no logout.")
+        }
     }
 }
 
@@ -43,8 +51,14 @@ class WasmAuthRepository : AuthRepository {
 private suspend fun <T : JsAny?> Promise<T>.await(): T =
     suspendInternal { continuation ->
         this.then(
-            { value -> continuation.resumeWith(Result.success(value)); null },
-            { error -> continuation.resumeWith(Result.failure(Exception("JS Error"))); null }
+            { value -> 
+                continuation.resumeWith(Result.success(value))
+                null 
+            },
+            { error -> 
+                continuation.resumeWith(Result.failure(Exception("JS Error")))
+                null 
+            }
         )
     }
 

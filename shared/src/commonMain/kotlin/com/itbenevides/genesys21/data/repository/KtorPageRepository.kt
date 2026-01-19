@@ -15,12 +15,17 @@ class KtorPageRepository(
 ) : PageRepository {
 
     override suspend fun getPages(token: String): List<Page> {
+        if (token.isBlank()) return emptyList()
         return try {
-            client.get("$baseUrl/pages") {
+            val response = client.get("$baseUrl/pages") {
                 header(HttpHeaders.Authorization, "Bearer $token")
-            }.body()
+            }
+            if (response.status.isSuccess()) {
+                response.body()
+            } else {
+                emptyList()
+            }
         } catch (e: Exception) {
-            e.printStackTrace()
             emptyList()
         }
     }
@@ -31,7 +36,7 @@ class KtorPageRepository(
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                Result.failure(Exception("Page not found"))
+                Result.failure(Exception("Página não encontrada"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -44,7 +49,7 @@ class KtorPageRepository(
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                Result.failure(Exception("Domain not linked"))
+                Result.failure(Exception("Domínio não vinculado"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -52,6 +57,7 @@ class KtorPageRepository(
     }
 
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response = if (isEditing) {
                 client.put("$baseUrl/pages") {
@@ -67,25 +73,27 @@ class KtorPageRepository(
                 }
             }
             if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Failed to save: ${response.status}"))
+            else Result.failure(Exception("Erro ao salvar: ${response.status}"))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
     override suspend fun deletePage(id: String, token: String): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response = client.delete("$baseUrl/pages/$id") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Failed to delete: ${response.status}"))
+            else Result.failure(Exception("Erro ao excluir"))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
     override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response: String = client.submitFormWithBinaryData(
                 url = "$baseUrl/upload",

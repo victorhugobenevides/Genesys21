@@ -1,22 +1,21 @@
 package com.itbenevides.genesys21.di
 
-/**
- * Obtém a URL base de forma dinâmica no WasmJS sem depender de bibliotecas externas (como kotlinx.browser).
- * Isso resolve o erro de 'Unresolved reference browser' no módulo shared.
- */
 @JsFun("() => window.location.hostname")
 private external fun getJsHostname(): JsString
 
-@JsFun("() => window.location.protocol")
-private external fun getJsProtocol(): JsString
+@JsFun("() => window.location.origin")
+private external fun getJsOrigin(): JsString
 
 actual fun getBaseUrl(): String {
     val host = getJsHostname().toString()
-    val protocol = getJsProtocol().toString()
+    val origin = getJsOrigin().toString()
     
+    // Em produção (na AWS), usamos o próprio domínio (HTTPS via Proxy do Nginx)
+    // Em local, continuamos usando a porta 8080
     return if (host == "localhost" || host == "127.0.0.1") {
-        "$protocol//localhost:8080"
+        "http://localhost:8080"
     } else {
-        "$protocol//$host:8080"
+        // Na AWS, todas as chamadas para /pages, /api etc serão tratadas pelo Nginx
+        origin
     }
 }
