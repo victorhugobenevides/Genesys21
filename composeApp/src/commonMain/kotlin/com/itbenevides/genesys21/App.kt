@@ -34,10 +34,8 @@ fun App() {
         val router = remember { Router(viewModel) }
         val currentRoute = router.currentRoute
 
-        // Categorias globais
         val savedCategories by viewModel.allAvailableCategories.collectAsState()
         
-        // Categorias da sessão atual (reativas à página selecionada na rota)
         val allCategories by remember(savedCategories, currentRoute) {
             derivedStateOf {
                 val page = when (currentRoute) {
@@ -52,14 +50,17 @@ fun App() {
                     ?.map { it.category }
                     ?.filter { it.isNotBlank() } ?: emptyList()
                 
-                (savedCategories + currentSessionCategories).distinct().sorted()
+                (savedCategories + currentSessionCategories).distinct().filterNotNull().sorted()
             }
         }
 
         val themeConfig = when (currentRoute) {
             is Route.WhiteLabel -> currentRoute.page.theme
             is Route.PublicViewer -> currentRoute.page.theme
-            is Route.ProductDetails -> (currentRoute.fromRoute as? Route.PublicViewer)?.page?.theme ?: PageThemeConfig.DEFAULT
+            is Route.ProductDetails -> {
+                val from = currentRoute.fromRoute
+                if (from is Route.PublicViewer) from.page.theme else PageThemeConfig.DEFAULT
+            }
             else -> PageThemeConfig.DEFAULT
         }
 
@@ -67,16 +68,12 @@ fun App() {
             LaunchedEffect(Unit) {
                 router.handleDeepLink()
                 onUrlChange {
-                    println("WASM: [App] Notificação de mudança de URL recebida!")
-                    launch {
-                        router.handleDeepLink()
-                    }
+                    launch { router.handleDeepLink() }
                 }
             }
 
-            // Sincroniza a URL do app -> navegador (Apenas se a URL atual for diferente)
-            LaunchedEffect(currentScreenFromRoute(currentRoute), currentRoute) {
-                syncUrl(router)
+            LaunchedEffect(currentRoute) {
+                router.forceSyncUrl()
             }
 
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -120,11 +117,13 @@ fun App() {
                                     onSave = { updatedProduct ->
                                         val newComponents = route.page.components.toMutableList()
                                         route.componentIndex?.let { idx ->
-                                            val component = newComponents[idx] as? PageComponent.ProductList
-                                            component?.let {
-                                                val newProducts = if (route.product == null) it.products + updatedProduct
-                                                else it.products.map { p -> if (p.id == updatedProduct.id) updatedProduct else p }
-                                                newComponents[idx] = it.copy(products = newProducts)
+                                            if (idx >= 0 && idx < newComponents.size) {
+                                                val component = newComponents[idx] as? PageComponent.ProductList
+                                                component?.let {
+                                                    val newProducts = if (route.product == null) it.products + updatedProduct
+                                                    else it.products.map { p -> if (p.id == updatedProduct.id) updatedProduct else p }
+                                                    newComponents[idx] = it.copy(products = newProducts)
+                                                }
                                             }
                                         }
                                         router.navigateTo(Route.WhiteLabel(route.page.copy(components = newComponents)))
@@ -138,23 +137,6 @@ fun App() {
             }
         }
     }
-}
-
-private fun currentScreenFromRoute(route: Route) = when(route) {
-    Route.Splash -> com.itbenevides.genesys21.navigation.Screen.Splash
-    Route.Login -> com.itbenevides.genesys21.navigation.Screen.Login
-    Route.PageList -> com.itbenevides.genesys21.navigation.Screen.List
-    is Route.PageEditor -> com.itbenevides.genesys21.navigation.Screen.Editor
-    is Route.WhiteLabel -> com.itbenevides.genesys21.navigation.Screen.WhiteLabel
-    is Route.PublicViewer -> com.itbenevides.genesys21.navigation.Screen.PublicViewer
-    is Route.ProductDetails -> com.itbenevides.genesys21.navigation.Screen.ProductDetails
-    is Route.ProductEditor -> com.itbenevides.genesys21.navigation.Screen.ProductEditor
-}
-
-private fun syncUrl(router: Router) {
-    // A sincronização agora é gerenciada pelo roteador para manter SOLID
-    // mas o gatilho é a mudança de estado do Compose
-    router.forceSyncUrl()
 }
 
 @Composable
