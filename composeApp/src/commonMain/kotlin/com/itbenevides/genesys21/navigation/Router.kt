@@ -10,6 +10,7 @@ import com.itbenevides.genesys21.onUrlChange
 import com.itbenevides.genesys21.syncUrlWithScreen
 import com.itbenevides.genesys21.navigateBack
 import com.itbenevides.genesys21.presentation.PageViewModel
+import kotlinx.browser.window
 
 class Router(private val viewModel: PageViewModel) {
     var currentRoute by mutableStateOf<Route>(Route.Splash)
@@ -31,7 +32,7 @@ class Router(private val viewModel: PageViewModel) {
             is Route.WhiteLabel -> route.page.id to null
             is Route.PublicViewer -> route.page.id to null
             is Route.ProductDetails -> {
-                val pId = if (route.fromRoute is Route.PublicViewer) route.fromRoute.page.id else null
+                val pId = (route.fromRoute as? Route.PublicViewer)?.page?.id
                 pId to route.product.id
             }
             is Route.ProductEditor -> route.page.id to route.product?.id
@@ -54,16 +55,16 @@ class Router(private val viewModel: PageViewModel) {
 
     suspend fun handleDeepLink() {
         val urlPath = getInitialUrlPath() ?: "/"
+        val currentDomain = window.location.hostname
         
-        // Se a rota for a raiz '/', tentamos carregar por domínio customizado
+        // Lógica de Multi-domínio: Se estiver na raiz, tenta carregar página pelo domínio
         if (urlPath == "/" || urlPath == "") {
-            try {
-                // Aqui o backend precisará de um endpoint que busque página por domínio
-                // Por enquanto, carregamos a lógica padrão de login ou lista
-                val token = viewModel.getCurrentUserToken()
-                currentRoute = if (token != null) Route.PageList else Route.Login
-                return
-            } catch (e: Exception) { }
+            if (currentDomain != "localhost" && !currentDomain.contains("amazonaws.com")) {
+                viewModel.loadPageByDomain(currentDomain)?.let { page ->
+                    currentRoute = Route.PublicViewer(page)
+                    return
+                }
+            }
         }
 
         val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
@@ -72,8 +73,7 @@ class Router(private val viewModel: PageViewModel) {
         try {
             when {
                 pageId != null && pageId != "new" -> {
-                    val page = viewModel.loadPublicPage(pageId)
-                    if (page != null) {
+                    viewModel.loadPublicPage(pageId)?.let { page ->
                         if (productId != null) {
                             val product = findProductInPage(page, productId)
                             if (product != null) {
@@ -87,9 +87,7 @@ class Router(private val viewModel: PageViewModel) {
                             urlPath.contains("/editor/") -> Route.PageEditor(page)
                             else -> Route.PublicViewer(page)
                         }
-                    } else {
-                        currentRoute = Route.Login
-                    }
+                    } ?: run { currentRoute = Route.Login }
                 }
                 urlPath.startsWith("/login") -> currentRoute = Route.Login
                 urlPath.startsWith("/list") -> currentRoute = Route.PageList
