@@ -28,10 +28,14 @@ class SqlitePageRepository : PageRepository {
 
     override suspend fun getPageByDomain(domain: String): Result<Page> = try {
         dbQuery {
-            PagesTable.selectAll().where { PagesTable.customDomain eq domain }
-                .map { it.toPage() }
-                .singleOrNull()?.let { Result.success(it) }
-                ?: Result.failure(Exception("Domínio não vinculado"))
+            val cleanDomain = domain.lowercase().removePrefix("www.")
+            // Busca permitindo match com ou sem WWW e insensível a caixa
+            PagesTable.selectAll().where { 
+                (PagesTable.customDomain.lowerCase() eq domain.lowercase()) or 
+                (PagesTable.customDomain.lowerCase() eq cleanDomain)
+            }.map { it.toPage() }
+             .firstOrNull()?.let { Result.success(it) }
+             ?: Result.failure(Exception("Domínio não vinculado"))
         }
     } catch (e: Exception) {
         Result.failure(e)
@@ -51,7 +55,7 @@ class SqlitePageRepository : PageRepository {
                     it[title] = page.title
                     it[ownerId] = token
                     it[theme] = page.theme.name
-                    it[customDomain] = page.customDomain
+                    it[customDomain] = page.customDomain?.trim()?.lowercase()
                     it[components] = page.components
                 }
             } else {
@@ -60,7 +64,7 @@ class SqlitePageRepository : PageRepository {
                     it[title] = page.title
                     it[ownerId] = token
                     it[theme] = page.theme.name
-                    it[customDomain] = page.customDomain
+                    it[customDomain] = page.customDomain?.trim()?.lowercase()
                     it[components] = page.components
                 }
             }

@@ -4,16 +4,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.navigation.Route
+import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.ui.theme.AppTheme
+import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageViewerScreen(
     page: Page, 
@@ -21,16 +26,20 @@ fun PageViewerScreen(
     onProductClick: (Product) -> Unit,
     allAvailableCategories: List<String> = emptyList()
 ) {
-    // Aplicamos o tema configurado na página para a visualização pública
+    val router: Router = koinInject()
+    var isLoggedIn by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isLoggedIn = router.viewModel.getCurrentUserToken() != null
+    }
+
     AppTheme(themeConfig = page.theme) {
         var filterQuery by remember { mutableStateOf("") }
 
-        Scaffold { padding ->
+        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            // Restauração do Layout Original (LazyColumn com espaçamentos corretos)
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -41,6 +50,23 @@ fun PageViewerScreen(
                         filterQuery = filterQuery,
                         onFilterQueryChange = { filterQuery = it },
                         allAvailableCategories = allAvailableCategories
+                    )
+                }
+            }
+
+            // Ícone de Engrenagem Sutil e Transparente
+            if (isLoggedIn) {
+                IconButton(
+                    onClick = { router.navigateTo(Route.WhiteLabel(page)) },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .alpha(0.3f) // Muito sutil
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Configurações",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

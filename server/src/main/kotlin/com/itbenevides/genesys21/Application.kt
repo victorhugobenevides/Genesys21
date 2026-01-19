@@ -103,29 +103,26 @@ fun Application.module() {
                     
                     val file = File(folder, fileName)
                     
-                    // OTIMIZAÇÃO DE IMAGEM: Redimensiona para um tamanho web amigável (max 1200px)
-                    // Mantendo o Aspect Ratio para não deformar nem cortar.
                     try {
                         val outputStream = ByteArrayOutputStream()
                         Thumbnails.of(ByteArrayInputStream(fileBytes))
-                            .size(1200, 1200) // Limite máximo sem distorcer
+                            .size(1200, 1200)
                             .keepAspectRatio(true)
                             .outputFormat("jpg")
-                            .outputQuality(0.85) // Compressão de alta qualidade
+                            .outputQuality(0.85)
                             .toOutputStream(outputStream)
-                        
                         file.writeBytes(outputStream.toByteArray())
-                        logger.info("Imagem otimizada e salva: $fileName")
                     } catch (e: Exception) {
-                        // Fallback: se falhar o redimensionamento, salva o original
                         file.writeBytes(fileBytes!!)
-                        logger.error("Falha ao otimizar imagem, salvando original: ${e.message}")
                     }
                     
                     val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
                     val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
                     
-                    val url = "$protocol://$publicHost:8080/uploads/$fileName"
+                    // Se estiver em produção (domínio customizado), não usamos a porta 8080 na URL pública
+                    val portSuffix = if (publicHost == "localhost" || publicHost == "127.0.0.1") ":8080" else ""
+                    val url = "$protocol://$publicHost$portSuffix/uploads/$fileName"
+                    
                     call.respondText(url)
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
@@ -144,10 +141,7 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
         val stream = this::class.java.classLoader.getResourceAsStream(fileName)
             ?: if (File(fileName).exists()) File(fileName).inputStream() else null
 
-        if (stream == null) {
-            logger.warn("Firebase Admin JSON não encontrado.")
-            return
-        }
+        if (stream == null) return
 
         val options = FirebaseOptions.builder()
             .setCredentials(GoogleCredentials.fromStream(stream))

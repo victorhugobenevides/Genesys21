@@ -264,15 +264,26 @@ fun PageComponentRenderer(
             ) {
                 Surface(
                     modifier = modifier.clickable {
-                        val destId = component.destinationPageId
+                        // Captura o ID em uma variável local para satisfazer o Smart Cast do Wasm
+                        val destId = (component as? PageComponent.Image)?.destinationPageId
                         if (!destId.isNullOrBlank()) {
                             scope.launch {
                                 router.viewModel.loadPublicPage(destId)?.let { targetPage ->
-                                    router.navigateTo(Route.PublicViewer(targetPage))
+                                    // REDIRECIONAMENTO INTELIGENTE:
+                                    // Se estamos no Editor (WhiteLabel), vamos para o Editor da outra página.
+                                    // Se estamos na visualização pública, vamos para a visualização pública.
+                                    if (router.currentRoute is Route.WhiteLabel) {
+                                        router.navigateTo(Route.WhiteLabel(targetPage))
+                                    } else {
+                                        router.navigateTo(Route.PublicViewer(targetPage))
+                                    }
                                 }
                             }
-                        } else if (component.url.startsWith("http")) {
-                            uriHandler.openUri(component.url)
+                        } else {
+                            val currentUrl = (component as? PageComponent.Image)?.url ?: ""
+                            if (currentUrl.startsWith("http")) {
+                                uriHandler.openUri(currentUrl)
+                            }
                         }
                     },
                     shape = imgShape,

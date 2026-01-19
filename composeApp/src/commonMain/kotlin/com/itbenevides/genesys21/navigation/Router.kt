@@ -55,15 +55,29 @@ class Router(val viewModel: PageViewModel) {
 
     suspend fun handleDeepLink() {
         val urlPath = getInitialUrlPath() ?: "/"
-        val currentDomain = window.location.hostname
+        val currentDomain = window.location.hostname.lowercase().removePrefix("www.")
         
+        // Lógica de Redirecionamento Inteligente para Home
         if (urlPath == "/" || urlPath == "") {
-            if (currentDomain != "localhost" && !currentDomain.contains("amazonaws.com")) {
-                viewModel.loadPageByDomain(currentDomain)?.let { page ->
-                    currentRoute = Route.PublicViewer(page)
+            // 1. Prioridade: Domínio customizado
+            viewModel.loadPageByDomain(currentDomain)?.let { page ->
+                currentRoute = Route.PublicViewer(page)
+                return
+            }
+            
+            // 2. Fallback: Se estiver logado, abre a PRIMEIRA página como Home pública
+            val token = viewModel.getCurrentUserToken()
+            if (token != null) {
+                val userPages = viewModel.getPagesSync()
+                if (userPages.isNotEmpty()) {
+                    currentRoute = Route.PublicViewer(userPages.first())
                     return
                 }
+                currentRoute = Route.PageList
+            } else {
+                currentRoute = Route.Login
             }
+            return
         }
 
         val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")

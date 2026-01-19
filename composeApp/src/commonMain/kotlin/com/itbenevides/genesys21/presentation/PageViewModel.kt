@@ -47,6 +47,11 @@ class PageViewModel(
             _isLoading.value = false
         }
     }
+
+    suspend fun getPagesSync(): List<Page> {
+        val token = authRepository.getCurrentUserToken() ?: return emptyList()
+        return getPagesUseCase(token)
+    }
     
     suspend fun loadPublicPage(id: String): Page? {
         _isLoading.value = true
