@@ -46,7 +46,7 @@ jobs:
           cp firebase-adminsdk.json deploy/server/bin/
           find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
           
-          # Gerar ponte Firebase e index.html com POLYFILL de UUID (Crítico para HTTP)
+          # Index e Bridge com Polyfill UUID
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -66,18 +66,9 @@ jobs:
           window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
           window.firebaseSignOut = async () => await signOut(auth);
           EOF
-
           cat <<EOF > deploy/web/index.html
           <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><base href="/"><title>Genesys21</title>
-          <script>
-            if (!window.crypto.randomUUID) {
-                window.crypto.randomUUID = function() {
-                    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-                        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-                    );
-                };
-            }
-          </script>
+          <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
           <script type="module" src="/firebase-bridge.js"></script><style>html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background-color:#F2F2F7;}#ComposeTarget{width:100%;height:100%;}</style></head><body><canvas id="ComposeTarget"></canvas><script type="module" src="/composeApp.js"></script></body></html>
           EOF
 
@@ -109,8 +100,8 @@ jobs:
                 environment:
                   - PUBLIC_HOST=ec2-18-230-62-165.sa-east-1.compute.amazonaws.com
                 volumes:
-                  - ./data/server:/app/bin/data
-                  - ./uploads:/app/bin/uploads
+                  - ./data:/app/data
+                  - ./uploads:/app/uploads
                 restart: unless-stopped
               web:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest

@@ -117,6 +117,7 @@ data class Page(
     val id: String,
     val title: String,
     val ownerId: String? = null,
+    val customDomain: String? = null, // NOVO CAMPO
     val components: List<PageComponent> = emptyList(),
     val theme: PageThemeConfig = PageThemeConfig.DEFAULT
 )

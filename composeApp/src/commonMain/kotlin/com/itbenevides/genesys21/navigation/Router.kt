@@ -17,7 +17,6 @@ class Router(private val viewModel: PageViewModel) {
 
     fun navigateTo(route: Route) {
         if (currentRoute != route) {
-            println("WASM: Router.navigateTo -> $route")
             currentRoute = route
         }
     }
@@ -26,7 +25,6 @@ class Router(private val viewModel: PageViewModel) {
         navigateBack()
     }
 
-    // Sincroniza o estado interno com a URL (Escrita)
     fun forceSyncUrl() {
         val (pageId, productId) = when (val route = currentRoute) {
             is Route.PageEditor -> route.page?.id to null
@@ -54,11 +52,20 @@ class Router(private val viewModel: PageViewModel) {
         syncUrlWithScreen(screen, pageId, productId)
     }
 
-    // Reconstrói o estado a partir da URL (Leitura)
     suspend fun handleDeepLink() {
         val urlPath = getInitialUrlPath() ?: "/"
-        println("WASM: Router.handleDeepLink processando -> $urlPath")
         
+        // Se a rota for a raiz '/', tentamos carregar por domínio customizado
+        if (urlPath == "/" || urlPath == "") {
+            try {
+                // Aqui o backend precisará de um endpoint que busque página por domínio
+                // Por enquanto, carregamos a lógica padrão de login ou lista
+                val token = viewModel.getCurrentUserToken()
+                currentRoute = if (token != null) Route.PageList else Route.Login
+                return
+            } catch (e: Exception) { }
+        }
+
         val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
         val productId = urlPath.extractId("/product/")
 
@@ -67,7 +74,6 @@ class Router(private val viewModel: PageViewModel) {
                 pageId != null && pageId != "new" -> {
                     val page = viewModel.loadPublicPage(pageId)
                     if (page != null) {
-                        println("WASM: DeepLink -> Página carregada: ${page.id}")
                         if (productId != null) {
                             val product = findProductInPage(page, productId)
                             if (product != null) {
@@ -82,7 +88,6 @@ class Router(private val viewModel: PageViewModel) {
                             else -> Route.PublicViewer(page)
                         }
                     } else {
-                        println("WASM: DeepLink -> Página não encontrada, voltando para login")
                         currentRoute = Route.Login
                     }
                 }
@@ -93,9 +98,7 @@ class Router(private val viewModel: PageViewModel) {
                     currentRoute = if (token != null) Route.PageList else Route.Login
                 }
             }
-            println("WASM: Router.handleDeepLink -> Rota definida para $currentRoute")
         } catch (e: Exception) {
-            println("WASM: Router.handleDeepLink ERROR -> ${e.message}")
             currentRoute = Route.Login
         }
     }

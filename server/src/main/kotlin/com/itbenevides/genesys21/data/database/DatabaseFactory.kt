@@ -12,6 +12,7 @@ object PagesTable : Table("pages") {
     val title = varchar("title", 255)
     val ownerId = varchar("owner_id", 100).nullable()
     val theme = varchar("theme", 50)
+    val customDomain = varchar("custom_domain", 255).nullable().uniqueIndex() // NOVO CAMPO
     val components = json<List<PageComponent>>("components", Json { ignoreUnknownKeys = true })
 
     override val primaryKey = PrimaryKey(id)
@@ -19,20 +20,20 @@ object PagesTable : Table("pages") {
 
 object DatabaseFactory {
     fun init() {
-        // Padronização: O banco sempre ficará na pasta 'data' na raiz da execução
         val dataFolder = File("data")
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs()
-        }
+        if (!dataFolder.exists()) dataFolder.mkdirs()
 
         val driverClassName = "org.sqlite.JDBC"
-        // Caminho relativo ao WORKDIR do Docker (/app)
         val jdbcUrl = "jdbc:sqlite:data/genesys21.db"
-        
         Database.connect(jdbcUrl, driverClassName)
         
         transaction {
             SchemaUtils.create(PagesTable)
+            // Caso a tabela já exista, adicionamos a coluna se ela não existir
+            val columns = PagesTable.columns.map { it.name }
+            if ("custom_domain" !in columns) {
+                exec("ALTER TABLE pages ADD COLUMN custom_domain VARCHAR(255)")
+            }
         }
     }
 
