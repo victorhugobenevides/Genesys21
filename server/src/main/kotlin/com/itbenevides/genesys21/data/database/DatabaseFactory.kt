@@ -19,12 +19,16 @@ object PagesTable : Table("pages") {
 
 object DatabaseFactory {
     fun init() {
-        // Garante que a pasta 'data' existe para persistência no Docker
+        // Padronização: O banco sempre ficará na pasta 'data' na raiz da execução
         val dataFolder = File("data")
-        if (!dataFolder.exists()) dataFolder.mkdirs()
+        if (!dataFolder.exists()) {
+            dataFolder.mkdirs()
+        }
 
         val driverClassName = "org.sqlite.JDBC"
+        // Caminho relativo ao WORKDIR do Docker (/app)
         val jdbcUrl = "jdbc:sqlite:data/genesys21.db"
+        
         Database.connect(jdbcUrl, driverClassName)
         
         transaction {
