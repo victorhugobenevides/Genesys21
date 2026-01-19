@@ -46,7 +46,6 @@ jobs:
           cp firebase-adminsdk.json deploy/server/bin/
           find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
           
-          # Index e Bridge com Polyfill UUID
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
           import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -90,7 +89,47 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p ~/app && cd ~/app
+            mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
+            
+            # Criamos um Nginx exclusivo para Produção com SSL
+            cat <<EOF > nginx.prod.conf
+            user  nginx;
+            worker_processes  auto;
+            events { worker_connections  1024; }
+            http {
+                include /etc/nginx/mime.types;
+                types { application/wasm wasm; }
+                default_type application/octet-stream;
+
+                # HTTP -> Redireciona para HTTPS
+                server {
+                    listen 80;
+                    server_name victorbenevides.dev;
+                    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+                    location / { return 301 https://\$host\$request_uri; }
+                }
+
+                # HTTPS
+                server {
+                    listen 443 ssl;
+                    server_name victorbenevides.dev;
+                    ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
+                    ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
+
+                    root /usr/share/nginx/html;
+                    index index.html;
+                    add_header Access-Control-Allow-Origin * always;
+                    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src * https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com;" always;
+
+                    location / { try_files \$uri \$uri/ /index.html; }
+                    location ~* \.(js|mjs|wasm|css|png|jpg|jpeg|gif|ico|svg)$ {
+                        expires 1h;
+                        add_header Cache-Control "public, no-transform";
+                    }
+                }
+            }
+            EOF
+
             cat <<EOF > docker-compose.yml
             services:
               server:
@@ -98,7 +137,7 @@ jobs:
                 ports:
                   - "8080:8080"
                 environment:
-                  - PUBLIC_HOST=ec2-18-230-62-165.sa-east-1.compute.amazonaws.com
+                  - PUBLIC_HOST=victorbenevides.dev
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
@@ -107,6 +146,11 @@ jobs:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest
                 ports:
                   - "80:80"
+                  - "443:443"
+                volumes:
+                  - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+                  - ./certbot/conf:/etc/letsencrypt:ro
+                  - ./certbot/www:/var/www/certbot:ro
                 restart: unless-stopped
             EOF
             docker compose pull
