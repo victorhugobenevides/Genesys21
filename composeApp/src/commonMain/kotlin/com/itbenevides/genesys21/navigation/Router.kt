@@ -12,7 +12,7 @@ import com.itbenevides.genesys21.navigateBack
 import com.itbenevides.genesys21.presentation.PageViewModel
 import kotlinx.browser.window
 
-class Router(private val viewModel: PageViewModel) {
+class Router(val viewModel: PageViewModel) {
     var currentRoute by mutableStateOf<Route>(Route.Splash)
         private set
 
@@ -57,7 +57,6 @@ class Router(private val viewModel: PageViewModel) {
         val urlPath = getInitialUrlPath() ?: "/"
         val currentDomain = window.location.hostname
         
-        // Lógica de Multi-domínio: Se estiver na raiz, tenta carregar página pelo domínio
         if (urlPath == "/" || urlPath == "") {
             if (currentDomain != "localhost" && !currentDomain.contains("amazonaws.com")) {
                 viewModel.loadPageByDomain(currentDomain)?.let { page ->

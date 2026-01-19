@@ -27,6 +27,9 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
     implementation(libs.sqlite.jdbc)
+    
+    // Manipulação de Imagem
+    implementation(libs.thumbnailator)
 
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)

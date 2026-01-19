@@ -29,7 +29,10 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.navigation.Route
+import com.itbenevides.genesys21.navigation.Router
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -42,8 +45,8 @@ fun PageComponentRenderer(
 ) {
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
     val uriHandler = LocalUriHandler.current
+    val router: Router = koinInject()
     
-    // Verificamos se o componente deve ser filtrado.
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
 
     val shouldShow = if (filterQuery.isBlank() || !component.isFilterable) {
@@ -241,23 +244,47 @@ fun PageComponentRenderer(
             )
         }
         is PageComponent.Image -> {
-            val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp)
+            val scope = rememberCoroutineScope()
+            
+            val modifier = if (component.isFullWidth) {
+                Modifier.fillMaxWidth()
+            } else {
+                Modifier.wrapContentSize().padding(horizontal = 16.dp)
+            }
+
+            val imgShape = when {
+                component.isRounded -> CircleShape
+                component.isFullWidth -> RoundedCornerShape(0.dp)
+                else -> RoundedCornerShape(12.dp)
+            }
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Surface(
-                    modifier = Modifier.wrapContentSize(),
+                    modifier = modifier.clickable {
+                        val destId = component.destinationPageId
+                        if (!destId.isNullOrBlank()) {
+                            scope.launch {
+                                router.viewModel.loadPublicPage(destId)?.let { targetPage ->
+                                    router.navigateTo(Route.PublicViewer(targetPage))
+                                }
+                            }
+                        } else if (component.url.startsWith("http")) {
+                            uriHandler.openUri(component.url)
+                        }
+                    },
                     shape = imgShape,
                     color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
                 ) {
-                    Box(Modifier.padding(if (component.url.isNotEmpty()) 0.dp else 20.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.padding(if (component.url.isNotEmpty() || component.isFullWidth) 0.dp else 20.dp), contentAlignment = Alignment.Center) {
                         if (component.url.isNotEmpty()) {
                             AsyncImage(
                                 model = component.url,
                                 contentDescription = null,
-                                modifier = Modifier.size(component.size.dp).clip(imgShape),
-                                contentScale = ContentScale.Crop
+                                modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.size(component.size.dp).clip(imgShape),
+                                contentScale = if (component.isFullWidth) ContentScale.FillWidth else ContentScale.Fit
                             )
                         } else {
                             Icon(
@@ -269,7 +296,7 @@ fun PageComponentRenderer(
                         }
                     }
                 }
-                if (component.string.isNotEmpty()) {
+                if (component.string.isNotEmpty() && !component.isFullWidth) {
                     Text(
                         text = component.string,
                         style = MaterialTheme.typography.labelSmall,

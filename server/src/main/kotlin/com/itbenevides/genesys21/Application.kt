@@ -21,7 +21,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.http.content.*
 import kotlinx.serialization.json.Json
+import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 
@@ -99,14 +102,30 @@ fun Application.module() {
                     if (!folder.exists()) folder.mkdirs()
                     
                     val file = File(folder, fileName)
-                    file.writeBytes(fileBytes!!)
+                    
+                    // OTIMIZAÇÃO DE IMAGEM: Redimensiona para um tamanho web amigável (max 1200px)
+                    // Mantendo o Aspect Ratio para não deformar nem cortar.
+                    try {
+                        val outputStream = ByteArrayOutputStream()
+                        Thumbnails.of(ByteArrayInputStream(fileBytes))
+                            .size(1200, 1200) // Limite máximo sem distorcer
+                            .keepAspectRatio(true)
+                            .outputFormat("jpg")
+                            .outputQuality(0.85) // Compressão de alta qualidade
+                            .toOutputStream(outputStream)
+                        
+                        file.writeBytes(outputStream.toByteArray())
+                        logger.info("Imagem otimizada e salva: $fileName")
+                    } catch (e: Exception) {
+                        // Fallback: se falhar o redimensionamento, salva o original
+                        file.writeBytes(fileBytes!!)
+                        logger.error("Falha ao otimizar imagem, salvando original: ${e.message}")
+                    }
                     
                     val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
                     val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
                     
                     val url = "$protocol://$publicHost:8080/uploads/$fileName"
-                    
-                    logger.info("Upload processado para: $url")
                     call.respondText(url)
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
@@ -126,7 +145,7 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
             ?: if (File(fileName).exists()) File(fileName).inputStream() else null
 
         if (stream == null) {
-            logger.warn("AVISO: Arquivo $fileName não encontrado. Autenticação Firebase não funcionará.")
+            logger.warn("Firebase Admin JSON não encontrado.")
             return
         }
 
@@ -136,9 +155,9 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
 
         if (FirebaseApp.getApps().isEmpty()) {
             FirebaseApp.initializeApp(options)
-            logger.info("Firebase Admin inicializado com sucesso!")
+            logger.info("Firebase Admin inicializado!")
         }
     } catch (e: Exception) {
-        logger.error("Erro crítico ao inicializar Firebase: ${e.message}")
+        logger.error("Erro Firebase: ${e.message}")
     }
 }

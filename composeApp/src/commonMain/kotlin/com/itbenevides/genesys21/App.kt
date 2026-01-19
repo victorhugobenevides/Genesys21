@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.KoinContext
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -31,7 +32,8 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App() {
     KoinContext {
         val viewModel: PageViewModel = koinViewModel()
-        val router = remember { Router(viewModel) }
+        // Agora usamos a instância única do Koin
+        val router: Router = koinInject()
         val currentRoute = router.currentRoute
 
         val savedCategories by viewModel.allAvailableCategories.collectAsState()

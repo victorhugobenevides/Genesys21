@@ -24,6 +24,7 @@ peekabooImagePicker = "0.5.2"
 coil = "3.1.0"
 exposed = "0.59.0"
 sqlite-jdbc = "3.49.0.0"
+thumbnailator = "0.4.20"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -69,6 +70,7 @@ exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "e
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+thumbnailator = { module = "net.coobird:thumbnailator", version.ref = "thumbnailator" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
