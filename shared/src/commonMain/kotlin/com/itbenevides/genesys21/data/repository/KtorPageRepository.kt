@@ -38,6 +38,19 @@ class KtorPageRepository(
         }
     }
 
+    override suspend fun getPageByDomain(domain: String): Result<Page> {
+        return try {
+            val response = client.get("$baseUrl/api/public/domain/$domain")
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Domain not linked"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
         return try {
             val response = if (isEditing) {
@@ -85,7 +98,7 @@ class KtorPageRepository(
             ) {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }.body()
-            Result.success(response) // Supondo que o server retorna a URL da imagem
+            Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)
         }

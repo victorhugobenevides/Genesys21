@@ -12,12 +12,20 @@ import io.ktor.server.routing.*
 fun Route.pageRoutes(pageRepository: PageRepository) {
     
     // Rotas Públicas
-    route("/api/public/pages") {
-        get("/{id}") {
+    route("/api/public") {
+        get("/pages/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             pageRepository.getPublicPage(id)
                 .onSuccess { page -> call.respond(page) }
                 .onFailure { call.respond(HttpStatusCode.NotFound) }
+        }
+
+        // NOVO: Busca por domínio customizado
+        get("/domain/{domain}") {
+            val domain = call.parameters["domain"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            pageRepository.getPageByDomain(domain)
+                .onSuccess { page -> call.respond(page) }
+                .onFailure { call.respond(HttpStatusCode.NotFound, it.message ?: "Não encontrado") }
         }
     }
 
