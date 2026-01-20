@@ -19,7 +19,6 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.http.content.*
 import kotlinx.serialization.json.Json
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
@@ -41,11 +40,10 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // Caminho absoluto para a pasta de uploads (Garantido)
     val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
-    logger.info("UPLOAD DIR ABSOLUTE PATH: ${uploadDir.absolutePath}")
+    logger.info("UPLOAD DIR: ${uploadDir.absolutePath}")
 
     install(ContentNegotiation) { 
         json(Json {
@@ -84,31 +82,38 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // 1. SILENCIAR FAVICON
-        get("/favicon.ico") {
-            call.respond(HttpStatusCode.NoContent)
-        }
-
-        // 2. SERVIR UPLOADS (Usando a API moderna do Ktor)
-        staticFiles("/uploads", uploadDir)
-
-        // 3. ROTA DE DIAGNÓSTICO ROBUSTA
-        get("/api/debug/files") {
-            try {
-                val fileNames = uploadDir.listFiles()?.map { it.name } ?: emptyList<String>()
-                val response = buildString {
-                    append("DIR: ${uploadDir.absolutePath}\n")
-                    append("COUNT: ${fileNames.size}\n\n")
-                    fileNames.forEach { append("- $it\n") }
-                }
-                call.respondText(response)
-            } catch (e: Exception) {
-                call.respondText("ERRO NO DIAGNÓSTICO: ${e.message}", status = HttpStatusCode.InternalServerError)
+        // ROTA MANUAL PARA UPLOADS COM LOG DE ACESSO
+        get("/uploads/{filename}") {
+            val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val file = File(uploadDir, filename)
+            
+            logger.info("Tentativa de acesso ao arquivo: $filename")
+            
+            if (file.exists()) {
+                logger.info("Arquivo encontrado! Enviando...")
+                call.respondFile(file)
+            } else {
+                logger.warn("Arquivo NÃO encontrado no disco: ${file.absolutePath}")
+                call.respond(HttpStatusCode.NotFound)
             }
         }
 
+        get("/favicon.ico") {
+            call.respondBytes(ByteArray(0), ContentType.Image.XIcon)
+        }
+
+        get("/api/debug/files") {
+            val fileNames = uploadDir.listFiles()?.map { it.name } ?: emptyList()
+            val response = buildString {
+                append("DIR: ${uploadDir.absolutePath}\n")
+                append("TOTAL: ${fileNames.size}\n\n")
+                fileNames.forEach { append("- $it\n") }
+            }
+            call.respondText(response)
+        }
+
         get("/") {
-            call.respondText("Genesys21 API Online. Verifique /api/debug/files")
+            call.respondText("Genesys21 API Online.")
         }
 
         authenticate("firebase") {
@@ -136,13 +141,9 @@ fun Application.module() {
                             .outputQuality(0.85)
                             .toOutputStream(outputStream)
                         file.writeBytes(outputStream.toByteArray())
-                        logger.info("Imagem processada e salva: ${file.name}")
                     } catch (e: Exception) {
-                        logger.warn("Falha no processamento, salvando arquivo original: ${e.message}")
                         file.writeBytes(fileBytes!!)
                     }
-                    
-                    // Retornamos o caminho que o Ktor espera resolver
                     call.respondText("/uploads/$fileName")
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
