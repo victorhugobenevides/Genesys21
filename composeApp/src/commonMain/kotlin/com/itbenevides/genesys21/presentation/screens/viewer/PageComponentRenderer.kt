@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
@@ -348,7 +349,7 @@ fun PageComponentRenderer(
                         "phone" -> Icons.Default.Phone
                         "email" -> Icons.Default.Email
                         "web" -> Icons.Default.Public
-                        "whatsapp" -> Icons.Default.Chat
+                        "whatsapp" -> Icons.AutoMirrored.Filled.Chat
                         "instagram" -> Icons.Default.CameraAlt
                         "linkedin" -> Icons.Default.BusinessCenter
                         else -> null
@@ -389,11 +390,10 @@ fun ProductCard(
         border = if (isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // Container da imagem com tamanho e proporção garantidos
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f) // Mantém o Box quadrado
+                    .aspectRatio(1f)
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
                 contentAlignment = Alignment.Center
@@ -425,7 +425,6 @@ fun ProductCard(
                 }
             }
             
-            // Textos fora do Box da imagem para garantir o fluxo vertical
             Spacer(Modifier.height(12.dp))
             
             Text(

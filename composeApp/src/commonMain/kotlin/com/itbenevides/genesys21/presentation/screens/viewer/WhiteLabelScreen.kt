@@ -109,8 +109,6 @@ fun WhiteLabelContent(
     
     var filterQuery by remember { mutableStateOf("") }
     val userPages by viewModel.pages.collectAsState()
-    
-    // Coleta o contador de itens do carrinho
     val cartCount by viewModel.cartCount.collectAsState()
 
     val hasProductList = remember(page.components) {
@@ -124,8 +122,8 @@ fun WhiteLabelContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { showPageSettings = true }) {
                         Text(page.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Configurações", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                            Icon(Icons.Default.Settings, null, modifier = Modifier.size(12.dp).padding(start = 2.dp), tint = MaterialTheme.colorScheme.primary)
+                            Text("Título da Página", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.Edit, null, modifier = Modifier.size(12.dp).padding(start = 2.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -136,7 +134,6 @@ fun WhiteLabelContent(
                 },
                 actions = {
                     if (hasProductList || cartCount > 0) {
-                        // BadgedBox com Badge contendo o número
                         BadgedBox(
                             badge = { 
                                 if (cartCount > 0) {
@@ -168,13 +165,15 @@ fun WhiteLabelContent(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCatalog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, null)
+            if (!isLoading) {
+                FloatingActionButton(
+                    onClick = { showCatalog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.Add, null)
+                }
             }
         }
     ) { padding ->
@@ -250,7 +249,8 @@ fun WhiteLabelContent(
                         if (newComponent is PageComponent.ProductList) {
                             val newList = page.components + newComponent
                             onPageUpdate(page.copy(components = newList))
-                            editingComponentIndex = newList.size - 1
+                            // Não definimos editingComponentIndex aqui para evitar o crash de índice fora de limites
+                            // O usuário poderá editar clicando no botão de editar do componente após a lista atualizar
                         } else {
                             pendingNewComponent = newComponent
                         }
@@ -280,42 +280,48 @@ fun WhiteLabelContent(
             }
 
             editingComponentIndex?.let { index ->
-                val component = page.components[index]
-                if (component is PageComponent.ProductList) {
-                    ProductListManagementModal(
-                        component = component,
-                        availableProducts = availableProducts,
-                        onAddProduct = { onEditProduct(null, index) },
-                        onEditProduct = { product: Product -> onEditProduct(product, index) },
-                        onComponentUpdated = { updated: PageComponent.ProductList ->
-                            val newList = page.components.toMutableList().apply { set(index, updated) }
-                            onPageUpdate(page.copy(components = newList))
-                        },
-                        onDeleteComponent = {
-                            val newList = page.components.toMutableList().apply { removeAt(index) }
-                            onPageUpdate(page.copy(components = newList))
-                            editingComponentIndex = null
-                        },
-                        onDismiss = { editingComponentIndex = null }
-                    )
+                // Adicionada verificação de segurança de índice
+                if (index < page.components.size) {
+                    val component = page.components[index]
+                    if (component is PageComponent.ProductList) {
+                        ProductListManagementModal(
+                            component = component,
+                            availableProducts = availableProducts,
+                            onAddProduct = { onEditProduct(null, index) },
+                            onEditProduct = { product: Product -> onEditProduct(product, index) },
+                            onComponentUpdated = { updated: PageComponent.ProductList ->
+                                val newList = page.components.toMutableList().apply { set(index, updated) }
+                                onPageUpdate(page.copy(components = newList))
+                            },
+                            onDeleteComponent = {
+                                val newList = page.components.toMutableList().apply { removeAt(index) }
+                                onPageUpdate(page.copy(components = newList))
+                                editingComponentIndex = null
+                            },
+                            onDismiss = { editingComponentIndex = null }
+                        )
+                    } else {
+                        EditComponentModal(
+                            viewModel = viewModel,
+                            userPages = userPages,
+                            component = component,
+                            isNew = false,
+                            onComponentUpdated = { updated: PageComponent ->
+                                val newList = page.components.toMutableList().apply { set(index, updated) }
+                                onPageUpdate(page.copy(components = newList))
+                                editingComponentIndex = null
+                            },
+                            onDeleteRequest = {
+                                val newList = page.components.toMutableList().apply { removeAt(index) }
+                                onPageUpdate(page.copy(components = newList))
+                                editingComponentIndex = null
+                            },
+                            onDismiss = { editingComponentIndex = null }
+                        )
+                    }
                 } else {
-                    EditComponentModal(
-                        viewModel = viewModel,
-                        userPages = userPages,
-                        component = component,
-                        isNew = false,
-                        onComponentUpdated = { updated: PageComponent ->
-                            val newList = page.components.toMutableList().apply { set(index, updated) }
-                            onPageUpdate(page.copy(components = newList))
-                            editingComponentIndex = null
-                        },
-                        onDeleteRequest = {
-                            val newList = page.components.toMutableList().apply { removeAt(index) }
-                            onPageUpdate(page.copy(components = newList))
-                            editingComponentIndex = null
-                        },
-                        onDismiss = { editingComponentIndex = null }
-                    )
+                    // Limpa o índice se ele se tornou inválido
+                    editingComponentIndex = null
                 }
             }
         }
@@ -331,61 +337,34 @@ fun PageSettingsModal(
 ) {
     val sheetState = rememberModalBottomSheetState()
     var title by remember { mutableStateOf(page.title) }
-    var customDomain by remember { mutableStateOf(page.customDomain ?: "") }
-    var whatsapp by remember { mutableStateOf(page.whatsapp ?: "") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
         Column(Modifier.fillMaxWidth().padding(24.dp).navigationBarsPadding()) {
-            Text("Configurações da Página", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Nome da Página", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(24.dp))
             
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Título da Página") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(Modifier.height(16.dp))
-            
-            OutlinedTextField(
-                value = customDomain,
-                onValueChange = { customDomain = it },
-                label = { Text("Domínio Customizado") },
-                placeholder = { Text("ex: meusite.com") },
+                label = { Text("Título exibido no topo") },
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = { Text("Aponte o DNS tipo A para 18.230.62.165", style = MaterialTheme.typography.labelSmall) }
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = whatsapp,
-                onValueChange = { whatsapp = it },
-                label = { Text("WhatsApp para Pedidos") },
-                placeholder = { Text("5511999999999") },
-                modifier = Modifier.fillMaxWidth(),
-                supportingText = { Text("Número com DDD para receber os pedidos do carrinho") }
+                shape = RoundedCornerShape(12.dp)
             )
             
             Spacer(Modifier.height(32.dp))
             
             Button(
                 onClick = { 
-                    onUpdate(page.copy(
-                        title = title, 
-                        customDomain = customDomain.ifBlank { null },
-                        whatsapp = whatsapp.ifBlank { null }
-                    ))
+                    onUpdate(page.copy(title = title))
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Salvar Configurações")
+                Text("Salvar Título")
             }
             Spacer(Modifier.height(16.dp))
         }

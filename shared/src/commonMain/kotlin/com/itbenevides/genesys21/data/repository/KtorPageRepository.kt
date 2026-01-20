@@ -8,16 +8,26 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
+import kotlinx.browser.window
 
 class KtorPageRepository(
     private val client: HttpClient,
-    private val baseUrl: String = "http://localhost:8080"
+    private var baseUrl: String = "http://localhost:8080"
 ) : PageRepository {
 
+    init {
+        // Ajuste dinâmico da base URL para WasmJs/Web
+        val hostname = window.location.hostname
+        if (hostname != "localhost" && hostname != "127.0.0.1") {
+            // Em produção (AWS), assume que a API está no mesmo domínio/porta padrão
+            baseUrl = "${window.location.protocol}//$hostname"
+            // Se sua API rodar em uma subpasta ou porta diferente na AWS, ajuste aqui:
+            // baseUrl = "https://$hostname/api" 
+        }
+    }
+
     override suspend fun getPages(token: String): List<Page> {
-        // Se o token estiver em branco, chama a rota de fallback público
         val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/pages"
-        
         return try {
             val response = client.get(url) {
                 if (token.isNotBlank()) {
@@ -25,7 +35,7 @@ class KtorPageRepository(
                 }
             }
             if (response.status.isSuccess()) {
-                if (token.isBlank()) listOf(response.body<Page>()) // Retorna a primeira em uma lista
+                if (token.isBlank()) listOf(response.body<Page>())
                 else response.body()
             } else {
                 emptyList()
