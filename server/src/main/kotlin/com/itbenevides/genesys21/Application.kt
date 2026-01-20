@@ -40,10 +40,12 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
+    // Pasta de uploads absoluta
     val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
-    logger.info("UPLOAD DIR: ${uploadDir.absolutePath}")
+    logger.info("BACKEND ONLINE")
+    logger.info("DIRETÓRIO DE UPLOADS: ${uploadDir.absolutePath}")
 
     install(ContentNegotiation) { 
         json(Json {
@@ -82,18 +84,21 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA MANUAL PARA UPLOADS COM LOG DE ACESSO
-        get("/uploads/{filename}") {
-            val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        // ROTA DE IMAGENS - PRIORIDADE MÁXIMA E LOG DETALHADO
+        get("/uploads/{filename...}") {
+            val filename = call.parameters.getAll("filename")?.joinToString("/")
+            if (filename == null) {
+                call.respond(HttpStatusCode.BadRequest)
+                return@get
+            }
+            
             val file = File(uploadDir, filename)
-            
-            logger.info("Tentativa de acesso ao arquivo: $filename")
-            
+            logger.info(">>> REQUISIÇÃO DE IMAGEM: $filename | EXISTE: ${file.exists()}")
+
             if (file.exists()) {
-                logger.info("Arquivo encontrado! Enviando...")
                 call.respondFile(file)
             } else {
-                logger.warn("Arquivo NÃO encontrado no disco: ${file.absolutePath}")
+                logger.warn(">>> ARQUIVO NÃO ENCONTRADO NO DISCO: ${file.absolutePath}")
                 call.respond(HttpStatusCode.NotFound)
             }
         }
