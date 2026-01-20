@@ -40,12 +40,12 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // Pasta de uploads absoluta
+    // Pasta de uploads absoluta dentro do container Docker
     val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
-    logger.info("BACKEND ONLINE")
-    logger.info("DIRETÓRIO DE UPLOADS: ${uploadDir.absolutePath}")
+    logger.info(">>> BACKEND GENESYS21 INICIADO")
+    logger.info(">>> PASTA DE UPLOADS: ${uploadDir.absolutePath}")
 
     install(ContentNegotiation) { 
         json(Json {
@@ -84,22 +84,28 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA DE IMAGENS - PRIORIDADE MÁXIMA E LOG DETALHADO
+        // ROTA DE IMAGENS - LOG SUPER DETALHADO
         get("/uploads/{filename...}") {
-            val filename = call.parameters.getAll("filename")?.joinToString("/")
-            if (filename == null) {
-                call.respond(HttpStatusCode.BadRequest)
-                return@get
-            }
+            val pathParams = call.parameters.getAll("filename")
+            val filename = pathParams?.joinToString("/") ?: ""
             
-            val file = File(uploadDir, filename)
-            logger.info(">>> REQUISIÇÃO DE IMAGEM: $filename | EXISTE: ${file.exists()}")
+            val file = File(uploadDir, filename).absoluteFile
+            
+            // LOG CRÍTICO: Verifique isso no console da AWS (docker-compose logs -f server)
+            logger.info("REQ_IMAGEM: '$filename' | BUSCANDO EM: '${file.absolutePath}' | EXISTE: ${file.exists()}")
 
-            if (file.exists()) {
+            if (file.exists() && file.isFile) {
+                // Tenta determinar o Content-Type pela extensão
+                val contentType = when (file.extension.lowercase()) {
+                    "jpg", "jpeg" -> ContentType.Image.JPEG
+                    "png" -> ContentType.Image.PNG
+                    "webp" -> ContentType.parse("image/webp")
+                    "gif" -> ContentType.Image.GIF
+                    else -> ContentType.Application.OctetStream
+                }
                 call.respondFile(file)
             } else {
-                logger.warn(">>> ARQUIVO NÃO ENCONTRADO NO DISCO: ${file.absolutePath}")
-                call.respond(HttpStatusCode.NotFound)
+                call.respond(HttpStatusCode.NotFound, "Arquivo não encontrado no servidor.")
             }
         }
 
@@ -109,11 +115,7 @@ fun Application.module() {
 
         get("/api/debug/files") {
             val fileNames = uploadDir.listFiles()?.map { it.name } ?: emptyList()
-            val response = buildString {
-                append("DIR: ${uploadDir.absolutePath}\n")
-                append("TOTAL: ${fileNames.size}\n\n")
-                fileNames.forEach { append("- $it\n") }
-            }
+            val response = "DIR: ${uploadDir.absolutePath}\nFILES: ${fileNames.joinToString(", ")}"
             call.respondText(response)
         }
 
