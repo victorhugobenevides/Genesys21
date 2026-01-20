@@ -41,7 +41,7 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // Garante que a pasta de uploads existe usando caminho absoluto baseado no diretório de execução
+    // Garante que a pasta de uploads existe
     val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
 
@@ -87,7 +87,7 @@ fun Application.module() {
             call.respondText("Genesys21 API Online. Pages in DB: $total")
         }
 
-        // Ignora requisição de favicon para não poluir logs com 404
+        // Rota para silenciar erro de favicon
         get("/favicon.ico") {
             call.respond(HttpStatusCode.NoContent)
         }
@@ -122,22 +122,15 @@ fun Application.module() {
                         file.writeBytes(fileBytes!!)
                     }
                     
-                    val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
-                    val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
-                    
-                    val isLocal = publicHost == "localhost" || publicHost == "127.0.0.1"
-                    val portSuffix = if (isLocal) ":$SERVER_PORT" else ""
-                    
-                    val url = "$protocol://$publicHost$portSuffix/uploads/$fileName"
-                    
-                    call.respondText(url)
+                    // Retornamos apenas o caminho relativo para ser resolvido pelo cliente
+                    call.respondText("/uploads/$fileName")
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
                 }
             }
         }
 
-        // SERVE ARQUIVOS USANDO CAMINHO ABSOLUTO
+        // Configuração de arquivos estáticos usando caminho absoluto
         staticFiles("/uploads", uploadDir)
         
         pageRoutes(pageRepository)

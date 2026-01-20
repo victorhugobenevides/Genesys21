@@ -72,7 +72,7 @@ fun PageComponentRenderer(
             }
             is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
             is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Image -> !isCategoryFilterActive && (component as PageComponent.Image).url.contains(filterQuery, ignoreCase = true)
             is PageComponent.Button -> !isCategoryFilterActive && component.text.contains(filterQuery, ignoreCase = true)
             else -> true
         }
@@ -143,7 +143,7 @@ fun PageComponentRenderer(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Transparent // Bordas invisíveis para look moderno
+                    unfocusedBorderColor = Color.Transparent
                 )
             )
         }
@@ -190,7 +190,6 @@ fun PageComponentRenderer(
                                     }
                                 }
                                 
-                                // Setas de navegação mais elegantes
                                 if (productsToDisplay.size > 1) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth().align(Alignment.Center),
@@ -350,7 +349,6 @@ fun ProductCard(
                     Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), modifier = Modifier.size(48.dp))
                 }
                 
-                // Botão de adicionar mais elegante
                 if (onAddToCart != null && product.stock > 0) {
                     Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomEnd) {
                         SmallFloatingActionButton(
