@@ -41,9 +41,14 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // Garante que a pasta de uploads existe
+    // RESOLVE O DIRETÓRIO DE UPLOADS DE FORMA ABSOLUTA
     val uploadDir = File("uploads").absoluteFile
-    if (!uploadDir.exists()) uploadDir.mkdirs()
+    if (!uploadDir.exists()) {
+        uploadDir.mkdirs()
+        logger.info("Criando diretório de uploads em: ${uploadDir.absolutePath}")
+    } else {
+        logger.info("Diretório de uploads detectado em: ${uploadDir.absolutePath}")
+    }
 
     install(ContentNegotiation) { 
         json(Json {
@@ -82,14 +87,17 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        get("/") {
-            val total = pageRepository.getPages("").size
-            call.respondText("Genesys21 API Online. Pages in DB: $total")
-        }
-
-        // Rota para silenciar erro de favicon
+        // 1. PRIORIDADE: FAVICON (Silencia erro 404 no navegador)
         get("/favicon.ico") {
             call.respond(HttpStatusCode.NoContent)
+        }
+
+        // 2. SERVIR ARQUIVOS ESTÁTICOS
+        staticFiles("/uploads", uploadDir)
+
+        get("/") {
+            val total = pageRepository.getPages("").size
+            call.respondText("Genesys21 API Online. Pages in DB: $total | Uploads: ${uploadDir.listFiles()?.size ?: 0}")
         }
 
         authenticate("firebase") {
@@ -122,7 +130,7 @@ fun Application.module() {
                         file.writeBytes(fileBytes!!)
                     }
                     
-                    // Retornamos apenas o caminho relativo para ser resolvido pelo cliente
+                    // Retorna o caminho relativo que será resolvido pelo staticFiles
                     call.respondText("/uploads/$fileName")
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
@@ -130,9 +138,6 @@ fun Application.module() {
             }
         }
 
-        // Configuração de arquivos estáticos usando caminho absoluto
-        staticFiles("/uploads", uploadDir)
-        
         pageRoutes(pageRepository)
     }
 }
