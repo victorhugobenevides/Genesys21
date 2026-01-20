@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -33,6 +34,7 @@ import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.di.getBaseUrl
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -45,11 +47,12 @@ fun PageComponentRenderer(
     onFilterQueryChange: (String) -> Unit = {},
     allAvailableCategories: List<String> = emptyList()
 ) {
-    val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
+    val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(16.dp)
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
     val viewModel = router.viewModel
     val scope = rememberCoroutineScope()
+    val backendUrl = remember { getBaseUrl() }
     
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
 
@@ -79,12 +82,12 @@ fun PageComponentRenderer(
 
     when (component) {
         is PageComponent.CategoryFilter -> {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(
                     text = "Categorias",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -95,7 +98,11 @@ fun PageComponentRenderer(
                         selected = filterQuery.isEmpty(),
                         onClick = { onFilterQueryChange("") },
                         label = { Text("Todos") },
-                        shape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
+                        shape = CircleShape,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     )
                     
                     allAvailableCategories.forEach { category ->
@@ -106,7 +113,7 @@ fun PageComponentRenderer(
                                 else onFilterQueryChange(category)
                             },
                             label = { Text(category) },
-                            shape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
+                            shape = CircleShape
                         )
                     }
                 }
@@ -116,24 +123,27 @@ fun PageComponentRenderer(
             OutlinedTextField(
                 value = filterQuery,
                 onValueChange = onFilterQueryChange,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                textStyle = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface),
-                placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .shadow(if (component.isTransparent) 0.dp else 2.dp, CircleShape),
+                textStyle = TextStyle(fontSize = 15.sp),
+                placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
                 trailingIcon = {
                     if (filterQuery.isNotEmpty()) {
                         IconButton(onClick = { onFilterQueryChange("") }) {
-                            Icon(Icons.Default.Close, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(Icons.Default.Close, null)
                         }
                     }
                 },
                 singleLine = true,
-                shape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp),
+                shape = CircleShape,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    unfocusedBorderColor = Color.Transparent // Bordas invisíveis para look moderno
                 )
             )
         }
@@ -155,7 +165,7 @@ fun PageComponentRenderer(
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                     val maxColumns = if (maxWidth > 800.dp) 3 else 2
                     
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         if (component.isHorizontal) {
                             val listState = rememberLazyListState()
                             val coroutineScope = rememberCoroutineScope()
@@ -164,77 +174,64 @@ fun PageComponentRenderer(
                                 LazyRow(
                                     state = listState,
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
                                 ) {
                                     items(productsToDisplay) { product ->
+                                        val fullImageUrl = if (product.imageUrl.startsWith("/")) "$backendUrl${product.imageUrl}" else product.imageUrl
                                         ProductCard(
-                                            product = product,
-                                            shape = commonShape,
+                                            product = product.copy(imageUrl = fullImageUrl),
+                                            shape = RoundedCornerShape(20.dp),
                                             isTransparent = component.isTransparent,
-                                            modifier = Modifier.width(160.dp),
+                                            modifier = Modifier.width(180.dp),
                                             onClick = onProductClick,
-                                            onAddToCart = { 
-                                                viewModel.addToCart(product)
-                                            }
+                                            onAddToCart = { viewModel.addToCart(product) }
                                         )
                                     }
                                 }
-
+                                
+                                // Setas de navegação mais elegantes
                                 if (productsToDisplay.size > 1) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth().align(Alignment.Center),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         if (listState.firstVisibleItemIndex > 0) {
-                                            FilledIconButton(
-                                                onClick = {
-                                                    coroutineScope.launch {
-                                                        listState.animateScrollToItem(maxOf(0, listState.firstVisibleItemIndex - 1))
-                                                    }
-                                                },
-                                                modifier = Modifier.size(32.dp).padding(start = 4.dp),
-                                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                                            IconButton(
+                                                onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex - 1) } },
+                                                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
                                             ) {
-                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
+                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null)
                                             }
-                                        } else { Spacer(Modifier.width(32.dp)) }
+                                        } else { Spacer(Modifier.width(40.dp)) }
 
                                         if (listState.canScrollForward) {
-                                            FilledIconButton(
-                                                onClick = {
-                                                    coroutineScope.launch {
-                                                        listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
-                                                    }
-                                                },
-                                                modifier = Modifier.size(32.dp).padding(end = 4.dp),
-                                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                                            IconButton(
+                                                onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex + 1) } },
+                                                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
                                             ) {
-                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
+                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
                                             }
-                                        } else { Spacer(Modifier.width(32.dp)) }
+                                        } else { Spacer(Modifier.width(40.dp)) }
                                     }
                                 }
                             }
                         } else {
                             productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     rowProducts.forEach { product ->
+                                        val fullImageUrl = if (product.imageUrl.startsWith("/")) "$backendUrl${product.imageUrl}" else product.imageUrl
                                         ProductCard(
-                                            product = product,
-                                            shape = commonShape,
+                                            product = product.copy(imageUrl = fullImageUrl),
+                                            shape = RoundedCornerShape(20.dp),
                                             isTransparent = component.isTransparent,
                                             modifier = Modifier.weight(1f),
                                             onClick = onProductClick,
-                                            onAddToCart = { 
-                                                viewModel.addToCart(product)
-                                            }
+                                            onAddToCart = { viewModel.addToCart(product) }
                                         )
                                     }
                                     if (rowProducts.size < maxColumns) {
-                                        repeat(maxColumns - rowProducts.size) {
-                                            Spacer(Modifier.weight(1f))
-                                        }
+                                        repeat(maxColumns - rowProducts.size) { Spacer(Modifier.weight(1f)) }
                                     }
                                 }
                             }
@@ -246,127 +243,76 @@ fun PageComponentRenderer(
         is PageComponent.Header -> {
             Text(
                 text = component.title.ifBlank { "Título" }, 
-                style = MaterialTheme.typography.headlineMedium, 
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold), 
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             )
         }
         is PageComponent.Text -> {
             Text(
                 text = component.content.ifBlank { "Conteúdo..." }, 
-                style = MaterialTheme.typography.bodyMedium, 
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyLarge, 
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                 textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         is PageComponent.Image -> {
             val scope = rememberCoroutineScope()
-            
-            val modifier = if (component.isFullWidth) {
-                Modifier.fillMaxWidth()
-            } else {
-                Modifier.wrapContentSize().padding(horizontal = 16.dp)
-            }
+            val imgModifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.wrapContentSize().padding(16.dp)
+            val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(if (component.isFullWidth) 0.dp else 24.dp)
 
-            val imgShape = when {
-                component.isRounded -> CircleShape
-                component.isFullWidth -> RoundedCornerShape(0.dp)
-                else -> RoundedCornerShape(12.dp)
-            }
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Surface(
-                    modifier = modifier.clickable {
+                    modifier = imgModifier.clickable {
                         val destId = (component as? PageComponent.Image)?.destinationPageId
                         if (!destId.isNullOrBlank()) {
                             scope.launch {
                                 router.viewModel.loadPublicPage(destId)?.let { targetPage ->
-                                    if (router.currentRoute is Route.WhiteLabel) {
-                                        router.navigateTo(Route.WhiteLabel(targetPage))
-                                    } else {
-                                        router.navigateTo(Route.PublicViewer(targetPage))
-                                    }
+                                    if (router.currentRoute is Route.WhiteLabel) router.navigateTo(Route.WhiteLabel(targetPage))
+                                    else router.navigateTo(Route.PublicViewer(targetPage))
                                 }
-                            }
-                        } else {
-                            val currentUrl = (component as? PageComponent.Image)?.url ?: ""
-                            if (currentUrl.startsWith("http")) {
-                                uriHandler.openUri(currentUrl)
                             }
                         }
                     },
                     shape = imgShape,
-                    color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                    color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    tonalElevation = if (component.isTransparent) 0.dp else 2.dp
                 ) {
-                    Box(Modifier.padding(if (component.url.isNotEmpty() || component.isFullWidth) 0.dp else 20.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.padding(if (component.url.isNotEmpty() || component.isFullWidth) 0.dp else 40.dp), contentAlignment = Alignment.Center) {
                         if (component.url.isNotEmpty()) {
+                            val fullImageUrl = if (component.url.startsWith("/")) "$backendUrl${component.url}" else component.url
                             AsyncImage(
-                                model = component.url,
+                                model = fullImageUrl,
                                 contentDescription = null,
                                 modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.size(component.size.dp).clip(imgShape),
-                                contentScale = if (component.isFullWidth) ContentScale.FillWidth else ContentScale.Fit
+                                contentScale = if (component.isFullWidth) ContentScale.FillWidth else ContentScale.Crop
                             )
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                modifier = Modifier.size(component.size.dp)
-                            )
+                            Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(component.size.dp))
                         }
                     }
-                }
-                if (component.string.isNotEmpty() && !component.isFullWidth) {
-                    Text(
-                        text = component.string,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }
         is PageComponent.Button -> {
-            val btnShape = if (component.isRounded) CircleShape else RoundedCornerShape(12.dp)
             Button(
                 onClick = { uriHandler.openUri(component.url) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = btnShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.primary,
-                    contentColor = if (component.isTransparent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
-                ),
-                border = if (component.isTransparent) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
+                shape = CircleShape,
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val icon = when (component.iconName?.lowercase()) {
-                        "phone" -> Icons.Default.Phone
-                        "email" -> Icons.Default.Email
-                        "web" -> Icons.Default.Public
-                        "whatsapp" -> Icons.AutoMirrored.Filled.Chat
-                        "instagram" -> Icons.Default.CameraAlt
-                        "linkedin" -> Icons.Default.BusinessCenter
-                        else -> null
-                    }
-                    if (icon != null) {
-                        Icon(icon, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(12.dp))
-                    }
-                    Text(component.text, fontWeight = FontWeight.Bold)
+                val icon = when (component.iconName?.lowercase()) {
+                    "whatsapp" -> Icons.AutoMirrored.Filled.Chat
+                    "instagram" -> Icons.Default.CameraAlt
+                    else -> null
                 }
+                if (icon != null) { Icon(icon, null); Spacer(Modifier.width(8.dp)) }
+                Text(component.text, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
-        is PageComponent.Unknown -> {
-            Box(Modifier.fillMaxWidth().padding(8.dp), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.QuestionMark, null, tint = MaterialTheme.colorScheme.outline)
-            }
-        }
+        else -> {}
     }
 }
 
@@ -379,23 +325,18 @@ fun ProductCard(
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null
 ) {
-    Surface(
-        modifier = modifier.let { m -> 
-            if (onClick != null) m.clickable { onClick(product) } 
-            else m 
-        },
+    Card(
+        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke(product) },
         shape = shape,
-        color = if (isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = if (isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        colors = CardDefaults.cardColors(containerColor = if (isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isTransparent) 0.dp else 4.dp)
     ) {
-        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .clip(shape)
-                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
                 if (product.imageUrl.isNotEmpty()) {
@@ -406,58 +347,57 @@ fun ProductCard(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), modifier = Modifier.size(48.dp))
                 }
                 
+                // Botão de adicionar mais elegante
                 if (onAddToCart != null && product.stock > 0) {
-                    Box(modifier = Modifier.fillMaxSize().padding(4.dp), contentAlignment = Alignment.BottomEnd) {
-                        FilledIconButton(
-                            onClick = { onAddToCart() },
-                            modifier = Modifier.size(32.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomEnd) {
+                        SmallFloatingActionButton(
+                            onClick = onAddToCart,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            shape = CircleShape,
+                            modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(Icons.Default.AddShoppingCart, null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
             }
             
-            Spacer(Modifier.height(12.dp))
-            
-            Text(
-                text = product.name, 
-                style = MaterialTheme.typography.labelLarge, 
-                maxLines = 1, 
-                overflow = TextOverflow.Ellipsis, 
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(Modifier.height(4.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.padding(12.dp)) {
                 Text(
-                    text = "R$ ${product.price}", 
-                    style = MaterialTheme.typography.bodySmall, 
-                    fontWeight = FontWeight.ExtraBold, 
-                    color = MaterialTheme.colorScheme.primary
+                    text = product.name, 
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), 
+                    maxLines = 1, 
+                    overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.width(8.dp))
-                if (product.stock > 0) {
+                
+                Spacer(Modifier.height(4.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "${product.stock} un", 
-                        style = MaterialTheme.typography.labelSmall, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "R$ ${product.price}", 
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), 
+                        color = MaterialTheme.colorScheme.primary
                     )
-                } else {
-                    Text(
-                        text = "Esgotado", 
-                        style = MaterialTheme.typography.labelSmall, 
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    
+                    if (product.stock <= 0) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                "ESGOTADO", 
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    } else if (product.stock < 5) {
+                        Text("Só ${product.stock} un!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }

@@ -116,11 +116,14 @@ fun Application.module() {
                         file.writeBytes(fileBytes!!)
                     }
                     
+                    // LÓGICA DE URL ABSOLUTA CORRIGIDA
                     val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
                     val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
                     
-                    // Se estiver em produção (domínio customizado), não usamos a porta 8080 na URL pública
-                    val portSuffix = if (publicHost == "localhost" || publicHost == "127.0.0.1") ":8080" else ""
+                    // Garante que em produção não use a porta 8080 se o Nginx estiver na 80/443
+                    val isLocal = publicHost == "localhost" || publicHost == "127.0.0.1"
+                    val portSuffix = if (isLocal) ":$SERVER_PORT" else ""
+                    
                     val url = "$protocol://$publicHost$portSuffix/uploads/$fileName"
                     
                     call.respondText(url)
@@ -130,7 +133,9 @@ fun Application.module() {
             }
         }
 
+        // SERVE ARQUIVOS DA PASTA UPLOADS
         staticFiles("/uploads", File("uploads"))
+        
         pageRoutes(pageRepository)
     }
 }
