@@ -13,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
@@ -22,6 +24,7 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.domain.model.PageComponent
 import org.koin.compose.koinInject
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageViewerScreen(
     page: Page, 
@@ -37,7 +40,6 @@ fun PageViewerScreen(
         isLoggedIn = router.viewModel.getCurrentUserToken() != null
     }
 
-    // Verifica se a página tem algum componente de lista de produtos
     val hasProductList = remember(page.components) {
         page.components.any { it is PageComponent.ProductList }
     }
@@ -45,62 +47,66 @@ fun PageViewerScreen(
     AppTheme(themeConfig = page.theme) {
         var filterQuery by remember { mutableStateOf("") }
 
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(page.components) { component ->
-                    PageComponentRenderer(
-                        component = component,
-                        onProductClick = onProductClick,
-                        filterQuery = filterQuery,
-                        onFilterQueryChange = { filterQuery = it },
-                        allAvailableCategories = allAvailableCategories
-                    )
-                }
-            }
-
-            // Barra de Ação Superior (Admin à esquerda, Carrinho à direita)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .align(Alignment.TopCenter),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // LADO ESQUERDO: Ícone de Admin (Sutil)
-                Box(modifier = Modifier.size(48.dp)) {
-                    if (isLoggedIn) {
-                        IconButton(
-                            onClick = { router.navigateTo(Route.WhiteLabel(page)) },
-                            modifier = Modifier.alpha(0.3f)
-                        ) {
-                            Icon(Icons.Default.Settings, "Configurações")
-                        }
-                    }
-                }
-
-                // LADO DIREITO: Ícone do Carrinho com Contador
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = MaterialTheme.colorScheme.background,
+            floatingActionButton = {
+                // Carrinho como um FAB (Floating Action Button) - Super Visível e Padrão de Mercado
                 if (hasProductList || cartCount > 0) {
                     BadgedBox(
-                        badge = { 
+                        badge = {
                             if (cartCount > 0) {
                                 Badge(
                                     containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError
-                                ) { 
-                                    Text(cartCount.toString()) 
-                                } 
+                                    contentColor = MaterialTheme.colorScheme.onError,
+                                    modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
+                                ) {
+                                    Text(cartCount.toString(), fontSize = 12.sp)
+                                }
                             }
-                        },
-                        modifier = Modifier.padding(end = 12.dp)
-                    ) {
-                        IconButton(onClick = { router.navigateTo(Route.Cart(page.whatsapp)) }) {
-                            Icon(Icons.Default.ShoppingCart, "Carrinho")
                         }
+                    ) {
+                        ExtendedFloatingActionButton(
+                            onClick = { router.navigateTo(Route.Cart(page.whatsapp)) },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            shape = CircleShape,
+                            icon = { Icon(Icons.Default.ShoppingCart, "Carrinho") },
+                            text = { Text("Ver Carrinho") }
+                        )
+                    }
+                }
+            }
+        ) { padding ->
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(page.components) { component ->
+                        PageComponentRenderer(
+                            component = component,
+                            onProductClick = onProductClick,
+                            filterQuery = filterQuery,
+                            onFilterQueryChange = { filterQuery = it },
+                            allAvailableCategories = allAvailableCategories
+                        )
+                    }
+                    // Espaçador final para o FAB não cobrir o último item
+                    item { Spacer(Modifier.height(80.dp)) }
+                }
+
+                // Botão de Admin sutil no topo
+                if (isLoggedIn) {
+                    IconButton(
+                        onClick = { router.navigateTo(Route.WhiteLabel(page)) },
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp)
+                            .alpha(0.4f)
+                    ) {
+                        Icon(Icons.Default.Settings, "Configurações", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
