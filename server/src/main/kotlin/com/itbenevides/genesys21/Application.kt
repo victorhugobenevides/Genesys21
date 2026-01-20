@@ -40,12 +40,11 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // Pasta de uploads absoluta dentro do container Docker
+    // Pasta de uploads absoluta
     val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
-    logger.info(">>> BACKEND GENESYS21 INICIADO")
-    logger.info(">>> PASTA DE UPLOADS: ${uploadDir.absolutePath}")
+    logger.info("UPLOAD_DIR_PATH: ${uploadDir.absolutePath}")
 
     install(ContentNegotiation) { 
         json(Json {
@@ -84,28 +83,16 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA DE IMAGENS - LOG SUPER DETALHADO
+        // ROTA DE IMAGENS COM IDENTIFICADOR DE BACKEND
         get("/uploads/{filename...}") {
-            val pathParams = call.parameters.getAll("filename")
-            val filename = pathParams?.joinToString("/") ?: ""
+            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
+            val file = File(uploadDir, filename)
             
-            val file = File(uploadDir, filename).absoluteFile
-            
-            // LOG CRÍTICO: Verifique isso no console da AWS (docker-compose logs -f server)
-            logger.info("REQ_IMAGEM: '$filename' | BUSCANDO EM: '${file.absolutePath}' | EXISTE: ${file.exists()}")
-
             if (file.exists() && file.isFile) {
-                // Tenta determinar o Content-Type pela extensão
-                val contentType = when (file.extension.lowercase()) {
-                    "jpg", "jpeg" -> ContentType.Image.JPEG
-                    "png" -> ContentType.Image.PNG
-                    "webp" -> ContentType.parse("image/webp")
-                    "gif" -> ContentType.Image.GIF
-                    else -> ContentType.Application.OctetStream
-                }
                 call.respondFile(file)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Arquivo não encontrado no servidor.")
+                // Se o usuário ver essa mensagem, a requisição CHEGOU no Ktor mas ele não achou o arquivo
+                call.respondText("Genesys21-Ktor-Error: File not found on disk at ${file.absolutePath}", status = HttpStatusCode.NotFound)
             }
         }
 
@@ -115,8 +102,7 @@ fun Application.module() {
 
         get("/api/debug/files") {
             val fileNames = uploadDir.listFiles()?.map { it.name } ?: emptyList()
-            val response = "DIR: ${uploadDir.absolutePath}\nFILES: ${fileNames.joinToString(", ")}"
-            call.respondText(response)
+            call.respondText("DIR: ${uploadDir.absolutePath}\nFILES: ${fileNames.joinToString(", ")}")
         }
 
         get("/") {
