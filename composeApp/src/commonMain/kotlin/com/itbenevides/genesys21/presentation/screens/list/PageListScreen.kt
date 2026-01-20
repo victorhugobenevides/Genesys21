@@ -33,7 +33,9 @@ fun PageListScreen(
 ) {
     val pages by viewModel.pages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showGlobalSettings by remember { mutableStateOf(false) }
     var newPageTitle by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) { viewModel.loadPages() }
@@ -42,6 +44,7 @@ fun PageListScreen(
         pages = pages,
         isLoading = isLoading,
         onAddClick = { showCreateDialog = true },
+        onSettingsClick = { showGlobalSettings = true },
         onLogoutClick = onLogout,
         onPageClick = onViewPage,
         onEditTitleClick = onEditPage,
@@ -59,8 +62,28 @@ fun PageListScreen(
                 viewModel.savePage(newPage, false) {
                     showCreateDialog = false
                     newPageTitle = ""
-                    // REDIRECIONAMENTO DIRETO APÓS CRIAR
                     onEditPage(newPage)
+                }
+            }
+        )
+    }
+
+    if (showGlobalSettings && pages.isNotEmpty()) {
+        val firstPage = pages.first()
+        GlobalSettingsDialog(
+            initialDomain = firstPage.customDomain ?: "",
+            initialWhatsapp = firstPage.whatsapp ?: "",
+            onDismiss = { showGlobalSettings = false },
+            onConfirm = { domain, whatsapp ->
+                // Atualiza a primeira página com os novos dados globais
+                // O servidor replicará o domínio para as outras automaticamente
+                val updatedPage = firstPage.copy(
+                    customDomain = domain.ifBlank { null },
+                    whatsapp = whatsapp.ifBlank { null }
+                )
+                viewModel.savePage(updatedPage, true) {
+                    showGlobalSettings = false
+                    viewModel.loadPages()
                 }
             }
         )
@@ -73,6 +96,7 @@ fun PageListContent(
     pages: List<Page>,
     isLoading: Boolean,
     onAddClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onPageClick: (Page) -> Unit,
     onEditTitleClick: (Page) -> Unit,
@@ -90,6 +114,9 @@ fun PageListContent(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Default.Settings, "Configurações Globais", tint = MaterialTheme.colorScheme.primary)
+                    }
                     IconButton(onClick = onAddClick) {
                         Icon(Icons.Default.Add, "Novo", tint = MaterialTheme.colorScheme.primary)
                     }
@@ -219,6 +246,54 @@ fun CreatePageDialog(
                 enabled = title.isNotBlank(),
                 onClick = onConfirm
             ) { Text("Criar", fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
+}
+
+@Composable
+fun GlobalSettingsDialog(
+    initialDomain: String,
+    initialWhatsapp: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var domain by remember { mutableStateOf(initialDomain) }
+    var whatsapp by remember { mutableStateOf(initialWhatsapp) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Configurações Globais", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Essas informações serão aplicadas a todas as suas páginas.", style = MaterialTheme.typography.bodySmall)
+                
+                OutlinedTextField(
+                    value = domain,
+                    onValueChange = { domain = it },
+                    label = { Text("Domínio Customizado") },
+                    placeholder = { Text("ex: meusite.com") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+
+                OutlinedTextField(
+                    value = whatsapp,
+                    onValueChange = { whatsapp = it },
+                    label = { Text("WhatsApp para Pedidos") },
+                    placeholder = { Text("5511999999999") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    supportingText = { Text("Número com DDD para o carrinho") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(domain, whatsapp) }) {
+                Text("Salvar para Todas as Páginas", fontWeight = FontWeight.Bold)
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }

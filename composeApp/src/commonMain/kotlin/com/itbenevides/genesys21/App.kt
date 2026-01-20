@@ -16,9 +16,7 @@ import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.ProductDetailsScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.WhiteLabelScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -32,7 +30,6 @@ import org.koin.compose.viewmodel.koinViewModel
 fun App() {
     KoinContext {
         val viewModel: PageViewModel = koinViewModel()
-        // Agora usamos a instância única do Koin
         val router: Router = koinInject()
         val currentRoute = router.currentRoute
 
@@ -110,7 +107,12 @@ fun App() {
                                 )
                                 is Route.ProductDetails -> ProductDetailsScreen(
                                     product = route.product,
-                                    onBack = { router.goBack() }
+                                    onBack = { router.goBack() },
+                                    onNavigateToCart = { 
+                                        val whatsapp = (route.fromRoute as? Route.PublicViewer)?.page?.whatsapp 
+                                            ?: (route.fromRoute as? Route.WhiteLabel)?.page?.whatsapp
+                                        router.navigateTo(Route.Cart(whatsapp))
+                                    }
                                 )
                                 is Route.ProductEditor -> ProductEditorScreen(
                                     viewModel = viewModel,
@@ -132,6 +134,7 @@ fun App() {
                                     },
                                     onBack = { router.navigateTo(Route.WhiteLabel(route.page)) }
                                 )
+                                is Route.Cart -> CartScreen(whatsappNumber = route.whatsapp, onBack = { router.goBack() })
                             }
                         }
                     }

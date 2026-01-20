@@ -31,6 +31,7 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
+import com.itbenevides.genesys21.presentation.PageViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -46,6 +47,8 @@ fun PageComponentRenderer(
     val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(8.dp)
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
+    val viewModel = router.viewModel
+    val scope = rememberCoroutineScope()
     
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
 
@@ -148,77 +151,91 @@ fun PageComponentRenderer(
             }
 
             if (productsToDisplay.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (component.isHorizontal) {
-                        val listState = rememberLazyListState()
-                        val coroutineScope = rememberCoroutineScope()
-                        
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            LazyRow(
-                                state = listState,
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                contentPadding = PaddingValues(horizontal = 4.dp)
-                            ) {
-                                items(productsToDisplay) { product ->
-                                    ProductCard(
-                                        product = product,
-                                        shape = commonShape,
-                                        isTransparent = component.isTransparent,
-                                        modifier = Modifier.width(160.dp),
-                                        onClick = onProductClick
-                                    )
-                                }
-                            }
-
-                            if (productsToDisplay.size > 1) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().align(Alignment.Center),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val maxColumns = if (maxWidth > 800.dp) 3 else 2
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (component.isHorizontal) {
+                            val listState = rememberLazyListState()
+                            val coroutineScope = rememberCoroutineScope()
+                            
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                LazyRow(
+                                    state = listState,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp)
                                 ) {
-                                    if (listState.firstVisibleItemIndex > 0) {
-                                        FilledIconButton(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    listState.animateScrollToItem(maxOf(0, listState.firstVisibleItemIndex - 1))
-                                                }
-                                            },
-                                            modifier = Modifier.size(32.dp).padding(start = 4.dp),
-                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
-                                        ) {
-                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
-                                        }
-                                    } else { Spacer(Modifier.width(32.dp)) }
+                                    items(productsToDisplay) { product ->
+                                        ProductCard(
+                                            product = product,
+                                            shape = commonShape,
+                                            isTransparent = component.isTransparent,
+                                            modifier = Modifier.width(160.dp),
+                                            onClick = onProductClick,
+                                            onAddToCart = { 
+                                                viewModel.addToCart(product)
+                                            }
+                                        )
+                                    }
+                                }
 
-                                    if (listState.canScrollForward) {
-                                        FilledIconButton(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
-                                                }
-                                            },
-                                            modifier = Modifier.size(32.dp).padding(end = 4.dp),
-                                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
-                                        ) {
-                                            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
-                                        }
-                                    } else { Spacer(Modifier.width(32.dp)) }
+                                if (productsToDisplay.size > 1) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        if (listState.firstVisibleItemIndex > 0) {
+                                            FilledIconButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        listState.animateScrollToItem(maxOf(0, listState.firstVisibleItemIndex - 1))
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp).padding(start = 4.dp),
+                                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                                            ) {
+                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
+                                            }
+                                        } else { Spacer(Modifier.width(32.dp)) }
+
+                                        if (listState.canScrollForward) {
+                                            FilledIconButton(
+                                                onClick = {
+                                                    coroutineScope.launch {
+                                                        listState.animateScrollToItem(listState.firstVisibleItemIndex + 1)
+                                                    }
+                                                },
+                                                modifier = Modifier.size(32.dp).padding(end = 4.dp),
+                                                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                                            ) {
+                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
+                                            }
+                                        } else { Spacer(Modifier.width(32.dp)) }
+                                    }
                                 }
                             }
-                        }
-                    } else {
-                        productsToDisplay.chunked(2).forEach { rowProducts ->
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                rowProducts.forEach { product ->
-                                    ProductCard(
-                                        product = product,
-                                        shape = commonShape,
-                                        isTransparent = component.isTransparent,
-                                        modifier = Modifier.weight(1f),
-                                        onClick = onProductClick
-                                    )
+                        } else {
+                            productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    rowProducts.forEach { product ->
+                                        ProductCard(
+                                            product = product,
+                                            shape = commonShape,
+                                            isTransparent = component.isTransparent,
+                                            modifier = Modifier.weight(1f),
+                                            onClick = onProductClick,
+                                            onAddToCart = { 
+                                                viewModel.addToCart(product)
+                                            }
+                                        )
+                                    }
+                                    if (rowProducts.size < maxColumns) {
+                                        repeat(maxColumns - rowProducts.size) {
+                                            Spacer(Modifier.weight(1f))
+                                        }
+                                    }
                                 }
-                                if (rowProducts.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                     }
@@ -264,14 +281,10 @@ fun PageComponentRenderer(
             ) {
                 Surface(
                     modifier = modifier.clickable {
-                        // Captura o ID em uma variável local para satisfazer o Smart Cast do Wasm
                         val destId = (component as? PageComponent.Image)?.destinationPageId
                         if (!destId.isNullOrBlank()) {
                             scope.launch {
                                 router.viewModel.loadPublicPage(destId)?.let { targetPage ->
-                                    // REDIRECIONAMENTO INTELIGENTE:
-                                    // Se estamos no Editor (WhiteLabel), vamos para o Editor da outra página.
-                                    // Se estamos na visualização pública, vamos para a visualização pública.
                                     if (router.currentRoute is Route.WhiteLabel) {
                                         router.navigateTo(Route.WhiteLabel(targetPage))
                                     } else {
@@ -362,7 +375,8 @@ fun ProductCard(
     shape: androidx.compose.ui.graphics.Shape,
     isTransparent: Boolean,
     modifier: Modifier = Modifier,
-    onClick: ((Product) -> Unit)? = null
+    onClick: ((Product) -> Unit)? = null,
+    onAddToCart: (() -> Unit)? = null
 ) {
     Surface(
         modifier = modifier.let { m -> 
@@ -375,8 +389,13 @@ fun ProductCard(
         border = if (isTransparent) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            // Container da imagem com tamanho e proporção garantidos
             Box(
-                Modifier.fillMaxWidth().aspectRatio(1f).clip(shape).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f) // Mantém o Box quadrado
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)), 
                 contentAlignment = Alignment.Center
             ) {
                 if (product.imageUrl.isNotEmpty()) {
@@ -389,17 +408,57 @@ fun ProductCard(
                 } else {
                     Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), modifier = Modifier.size(24.dp))
                 }
+                
+                if (onAddToCart != null && product.stock > 0) {
+                    Box(modifier = Modifier.fillMaxSize().padding(4.dp), contentAlignment = Alignment.BottomEnd) {
+                        FilledIconButton(
+                            onClick = { onAddToCart() },
+                            modifier = Modifier.size(32.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Icon(Icons.Default.AddShoppingCart, null, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
             }
-            Spacer(Modifier.height(8.dp))
-            Text(product.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurface)
+            
+            // Textos fora do Box da imagem para garantir o fluxo vertical
+            Spacer(Modifier.height(12.dp))
+            
+            Text(
+                text = product.name, 
+                style = MaterialTheme.typography.labelLarge, 
+                maxLines = 1, 
+                overflow = TextOverflow.Ellipsis, 
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(Modifier.height(4.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "R$ ${product.price}", 
+                    style = MaterialTheme.typography.bodySmall, 
+                    fontWeight = FontWeight.ExtraBold, 
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Spacer(Modifier.width(8.dp))
                 if (product.stock > 0) {
-                    Text("${product.stock} un", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = "${product.stock} un", 
+                        style = MaterialTheme.typography.labelSmall, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 } else {
-                    Text("Esgotado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = "Esgotado", 
+                        style = MaterialTheme.typography.labelSmall, 
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }

@@ -15,13 +15,18 @@ class KtorPageRepository(
 ) : PageRepository {
 
     override suspend fun getPages(token: String): List<Page> {
-        if (token.isBlank()) return emptyList()
+        // Se o token estiver em branco, chama a rota de fallback público
+        val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/pages"
+        
         return try {
-            val response = client.get("$baseUrl/pages") {
-                header(HttpHeaders.Authorization, "Bearer $token")
+            val response = client.get(url) {
+                if (token.isNotBlank()) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             }
             if (response.status.isSuccess()) {
-                response.body()
+                if (token.isBlank()) listOf(response.body<Page>()) // Retorna a primeira em uma lista
+                else response.body()
             } else {
                 emptyList()
             }

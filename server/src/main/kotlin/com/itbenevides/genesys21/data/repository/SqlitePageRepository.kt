@@ -11,8 +11,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 class SqlitePageRepository : PageRepository {
 
     override suspend fun getPages(token: String): List<Page> = dbQuery {
-        PagesTable.selectAll().where { PagesTable.ownerId eq token }
-            .map { it.toPage() }
+        val query = if (token.isBlank()) {
+            PagesTable.selectAll()
+        } else {
+            PagesTable.selectAll().where { PagesTable.ownerId eq token }
+        }
+        query.map { it.toPage() }
     }
 
     override suspend fun getPublicPage(id: String): Result<Page> = try {
@@ -28,14 +32,13 @@ class SqlitePageRepository : PageRepository {
 
     override suspend fun getPageByDomain(domain: String): Result<Page> = try {
         dbQuery {
-            val cleanDomain = domain.lowercase().removePrefix("www.")
-            // Busca permitindo match com ou sem WWW e insensível a caixa
+            val searchDomain = domain.lowercase().removePrefix("www.")
             PagesTable.selectAll().where { 
-                (PagesTable.customDomain.lowerCase() eq domain.lowercase()) or 
-                (PagesTable.customDomain.lowerCase() eq cleanDomain)
+                (PagesTable.customDomain.lowerCase() eq searchDomain) or 
+                (PagesTable.customDomain.lowerCase() eq "www.$searchDomain")
             }.map { it.toPage() }
              .firstOrNull()?.let { Result.success(it) }
-             ?: Result.failure(Exception("Domínio não vinculado"))
+             ?: Result.failure(Exception("Domínio $domain não vinculado"))
         }
     } catch (e: Exception) {
         Result.failure(e)
@@ -43,19 +46,31 @@ class SqlitePageRepository : PageRepository {
 
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> = try {
         dbQuery {
+            val formattedDomain = page.customDomain?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+            val formattedWhatsapp = page.whatsapp?.trim()?.takeIf { it.isNotBlank() }
+
+            // 1. REPLICA DOMÍNIO E WHATSAPP PARA TODAS AS PÁGINAS DO USUÁRIO (CENTRALIZAÇÃO)
+            if (token.isNotBlank()) {
+                PagesTable.update({ PagesTable.ownerId eq token }) {
+                    it[customDomain] = formattedDomain
+                    it[whatsapp] = formattedWhatsapp
+                }
+            }
+
             val existingPage = PagesTable.selectAll().where { PagesTable.id eq page.id }.singleOrNull()
             
             if (existingPage != null) {
                 val owner = existingPage[PagesTable.ownerId]
-                if (owner != null && owner != token) {
-                    throw Exception("Acesso negado")
+                if (owner != null && owner.isNotBlank() && owner != token) {
+                    throw Exception("Acesso negado: Você não é o dono desta página")
                 }
 
                 PagesTable.update({ PagesTable.id eq page.id }) {
                     it[title] = page.title
                     it[ownerId] = token
                     it[theme] = page.theme.name
-                    it[customDomain] = page.customDomain?.trim()?.lowercase()
+                    it[customDomain] = formattedDomain
+                    it[whatsapp] = formattedWhatsapp
                     it[components] = page.components
                 }
             } else {
@@ -64,7 +79,8 @@ class SqlitePageRepository : PageRepository {
                     it[title] = page.title
                     it[ownerId] = token
                     it[theme] = page.theme.name
-                    it[customDomain] = page.customDomain?.trim()?.lowercase()
+                    it[customDomain] = formattedDomain
+                    it[whatsapp] = formattedWhatsapp
                     it[components] = page.components
                 }
             }
@@ -92,6 +108,7 @@ class SqlitePageRepository : PageRepository {
         title = this[PagesTable.title],
         ownerId = this[PagesTable.ownerId],
         customDomain = this[PagesTable.customDomain],
+        whatsapp = this[PagesTable.whatsapp],
         components = this[PagesTable.components],
         theme = try { PageThemeConfig.valueOf(this[PagesTable.theme]) } catch (e: Exception) { PageThemeConfig.DEFAULT }
     )

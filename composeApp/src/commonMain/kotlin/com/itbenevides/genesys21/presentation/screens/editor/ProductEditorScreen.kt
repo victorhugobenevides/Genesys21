@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,11 +45,10 @@ fun ProductEditorScreen(
 
     var isUploading by remember { mutableStateOf(false) }
 
-    // Inicialização do Picker de Imagem via expect/actual
     val launchImagePicker = rememberImagePicker { bytes ->
         bytes?.let {
             isUploading = true
-            viewModel.uploadImage(it, "${Random.nextInt()}.jpg") { uploadedUrl ->
+            viewModel.uploadImage(it, "prod_${Random.nextInt()}.jpg") { uploadedUrl ->
                 imageUrl = uploadedUrl
                 isUploading = false
             }
@@ -67,7 +67,7 @@ fun ProductEditorScreen(
                     }
                 },
                 actions = {
-                    IconButton(
+                    TextButton(
                         onClick = {
                             val finalProduct = Product(
                                 id = product?.id ?: Random.nextInt().toString(),
@@ -82,7 +82,7 @@ fun ProductEditorScreen(
                         },
                         enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Salvar", tint = MaterialTheme.colorScheme.primary)
+                        Text("Salvar", fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -91,138 +91,167 @@ fun ProductEditorScreen(
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
-                .padding(padding)
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Text("Mídia do Produto", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            
-            // Área de Seleção de Imagem
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .clickable { launchImagePicker() },
-                contentAlignment = Alignment.Center
+                    .widthIn(max = 600.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                if (isUploading) {
-                    CircularProgressIndicator()
-                } else if (imageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = "Preview",
+                // Seção de Imagem (Estilo Consistente com Detalhes)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1.2f)
+                        .clickable { launchImagePicker() },
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Image, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Clique para subir foto", style = MaterialTheme.typography.bodySmall)
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isUploading) {
+                            CircularProgressIndicator()
+                        } else if (imageUrl.isNotEmpty()) {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = "Preview",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Default.Image, 
+                                    null, 
+                                    modifier = Modifier.size(60.dp), 
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text("Clique para adicionar foto", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                     }
                 }
-            }
 
-            Text("Informações Básicas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-            
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Nome do Produto") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = price,
-                    onValueChange = { input ->
-                        if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) {
-                            price = input
-                        }
-                    },
-                    label = { Text("Preço") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                OutlinedTextField(
-                    value = stock,
-                    onValueChange = { input ->
-                        if (input.isEmpty() || input.all { it.isDigit() }) {
-                            stock = input
-                        }
-                    },
-                    label = { Text("Estoque") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { 
-                        category = it
-                        expanded = true
-                    },
-                    label = { Text("Categoria") },
-                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    trailingIcon = {
-                        Row {
-                            if (category.isNotEmpty()) {
-                                IconButton(onClick = { category = ""; expanded = true }) {
-                                    Icon(Icons.Default.Clear, "Limpar")
-                                }
-                            }
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        }
-                    },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                )
-
-                val filteredOptions = existingCategories.filter { it.contains(category, ignoreCase = true) }
-                if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                // Card de Informações
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        val optionsToShow = if (category.isEmpty()) existingCategories else filteredOptions
-                        optionsToShow.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    category = selectionOption
-                                    expanded = false
-                                }
+                        Text("Detalhes do Produto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Nome do Produto") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedTextField(
+                                value = price,
+                                onValueChange = { input ->
+                                    if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) {
+                                        price = input
+                                    }
+                                },
+                                label = { Text("Preço") },
+                                prefix = { Text("R$ ") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            OutlinedTextField(
+                                value = stock,
+                                onValueChange = { input ->
+                                    if (input.isEmpty() || input.all { it.isDigit() }) {
+                                        stock = input
+                                    }
+                                },
+                                label = { Text("Estoque") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(12.dp)
                             )
                         }
+
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = category,
+                                onValueChange = { 
+                                    category = it
+                                    expanded = true
+                                },
+                                label = { Text("Categoria") },
+                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                trailingIcon = {
+                                    Row {
+                                        if (category.isNotEmpty()) {
+                                            IconButton(onClick = { category = ""; expanded = true }) {
+                                                Icon(Icons.Default.Clear, "Limpar")
+                                            }
+                                        }
+                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                    }
+                                }
+                            )
+
+                            val filteredOptions = existingCategories.filter { it.contains(category, ignoreCase = true) }
+                            if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
+                                ExposedDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    val optionsToShow = if (category.isEmpty()) existingCategories else filteredOptions
+                                    optionsToShow.forEach { selectionOption ->
+                                        DropdownMenuItem(
+                                            text = { Text(selectionOption) },
+                                            onClick = {
+                                                category = selectionOption
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("Descrição") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 4,
+                            shape = RoundedCornerShape(12.dp)
+                        )
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(40.dp))
             }
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Descrição Completa") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 4,
-                shape = RoundedCornerShape(12.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

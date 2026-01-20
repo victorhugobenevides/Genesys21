@@ -55,7 +55,7 @@ sealed class PageComponent {
         val string: String,
         val size: Int = 200,
         val destinationPageId: String? = null,
-        val isFullWidth: Boolean = false, // NOVO CAMPO
+        val isFullWidth: Boolean = false,
         override val customLabel: String? = null,
         override val isTransparent: Boolean = false,
         override val isRounded: Boolean = false,
@@ -120,6 +120,7 @@ data class Page(
     val title: String,
     val ownerId: String? = null,
     val customDomain: String? = null,
+    val whatsapp: String? = null, // NOVO CAMPO PARA PEDIDOS
     val components: List<PageComponent> = emptyList(),
     val theme: PageThemeConfig = PageThemeConfig.DEFAULT
 )

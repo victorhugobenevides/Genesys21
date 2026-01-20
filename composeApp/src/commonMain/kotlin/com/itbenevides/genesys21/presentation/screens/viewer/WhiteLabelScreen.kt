@@ -31,9 +31,12 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.navigation.Route
+import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.util.rememberImagePicker
+import org.koin.compose.koinInject
 
 @Composable
 fun WhiteLabelScreen(
@@ -97,6 +100,7 @@ fun WhiteLabelContent(
     onBack: () -> Unit,
     onEditProduct: (Product?, Int?) -> Unit
 ) {
+    val router: Router = koinInject()
     var showCatalog by remember { mutableStateOf(false) }
     var showThemeSelector by remember { mutableStateOf(false) }
     var showPageSettings by remember { mutableStateOf(false) }
@@ -105,6 +109,13 @@ fun WhiteLabelContent(
     
     var filterQuery by remember { mutableStateOf("") }
     val userPages by viewModel.pages.collectAsState()
+    
+    // Coleta o contador de itens do carrinho
+    val cartCount by viewModel.cartCount.collectAsState()
+
+    val hasProductList = remember(page.components) {
+        page.components.any { it is PageComponent.ProductList }
+    }
 
     Scaffold(
         topBar = {
@@ -124,6 +135,27 @@ fun WhiteLabelContent(
                     }
                 },
                 actions = {
+                    if (hasProductList || cartCount > 0) {
+                        // BadgedBox com Badge contendo o número
+                        BadgedBox(
+                            badge = { 
+                                if (cartCount > 0) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ) { 
+                                        Text(cartCount.toString()) 
+                                    } 
+                                }
+                            },
+                            modifier = Modifier.padding(end = 12.dp)
+                        ) {
+                            IconButton(onClick = { router.navigateTo(Route.Cart(page.whatsapp)) }) {
+                                Icon(Icons.Default.ShoppingCart, "Carrinho", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    }
+
                     IconButton(onClick = { showThemeSelector = true }) {
                         Icon(Icons.Default.Palette, "Temas", tint = MaterialTheme.colorScheme.primary)
                     }
@@ -300,6 +332,7 @@ fun PageSettingsModal(
     val sheetState = rememberModalBottomSheetState()
     var title by remember { mutableStateOf(page.title) }
     var customDomain by remember { mutableStateOf(page.customDomain ?: "") }
+    var whatsapp by remember { mutableStateOf(page.whatsapp ?: "") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -326,12 +359,27 @@ fun PageSettingsModal(
                 modifier = Modifier.fillMaxWidth(),
                 supportingText = { Text("Aponte o DNS tipo A para 18.230.62.165", style = MaterialTheme.typography.labelSmall) }
             )
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = whatsapp,
+                onValueChange = { whatsapp = it },
+                label = { Text("WhatsApp para Pedidos") },
+                placeholder = { Text("5511999999999") },
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = { Text("Número com DDD para receber os pedidos do carrinho") }
+            )
             
             Spacer(Modifier.height(32.dp))
             
             Button(
                 onClick = { 
-                    onUpdate(page.copy(title = title, customDomain = customDomain.ifBlank { null }))
+                    onUpdate(page.copy(
+                        title = title, 
+                        customDomain = customDomain.ifBlank { null },
+                        whatsapp = whatsapp.ifBlank { null }
+                    ))
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -784,7 +832,7 @@ fun ThemeSelectorModal(
             )
             
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                themes.forEach { triple: Triple<PageThemeConfig, String, Color> ->
+                themes.forEach { triple ->
                     val config = triple.first
                     val label = triple.second
                     val color = triple.third

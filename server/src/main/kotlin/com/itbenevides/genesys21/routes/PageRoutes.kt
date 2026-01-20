@@ -13,14 +13,20 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
     
     // Rotas Públicas
     route("/api/public") {
+        get("/pages/first") {
+            // Retorna a primeira página pública encontrada no sistema
+            pageRepository.getPages("") 
+                .firstOrNull()?.let { call.respond(it) }
+                ?: call.respond(HttpStatusCode.NotFound, "Nenhuma página disponível")
+        }
+
         get("/pages/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             pageRepository.getPublicPage(id)
                 .onSuccess { page -> call.respond(page) }
-                .onFailure { call.respond(HttpStatusCode.NotFound) }
+                .onFailure { call.respond(HttpStatusCode.NotFound, it.message ?: "Não encontrado") }
         }
 
-        // NOVO: Busca por domínio customizado
         get("/domain/{domain}") {
             val domain = call.parameters["domain"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             pageRepository.getPageByDomain(domain)
@@ -42,7 +48,14 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
                 val page = call.receive<Page>()
                 pageRepository.savePage(page, principal.name, isEditing = false)
                     .onSuccess { call.respond(HttpStatusCode.Created) }
-                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao criar") }
+                    .onFailure { 
+                        val msg = it.message ?: "Erro ao criar"
+                        if (msg.contains("unique", true)) {
+                            call.respond(HttpStatusCode.Conflict, "Este domínio já está sendo usado por outra página.")
+                        } else {
+                            call.respond(HttpStatusCode.InternalServerError, msg)
+                        }
+                    }
             }
 
             put {
@@ -50,7 +63,16 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
                 val page = call.receive<Page>()
                 pageRepository.savePage(page, principal.name, isEditing = true)
                     .onSuccess { call.respond(HttpStatusCode.OK) }
-                    .onFailure { call.respond(HttpStatusCode.Forbidden, it.message ?: "Sem permissão") }
+                    .onFailure { 
+                        val msg = it.message ?: "Sem permissão ou erro interno"
+                        if (msg.contains("negado", true)) {
+                            call.respond(HttpStatusCode.Forbidden, msg)
+                        } else if (msg.contains("unique", true)) {
+                            call.respond(HttpStatusCode.Conflict, "Este domínio já está sendo usado por outra página.")
+                        } else {
+                            call.respond(HttpStatusCode.InternalServerError, msg)
+                        }
+                    }
             }
 
             delete("/{id}") {

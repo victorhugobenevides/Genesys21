@@ -5,9 +5,9 @@ import com.itbenevides.genesys21.presentation.PageViewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    // O Router precisa ser single para manter o estado da navegação
+    // PageViewModel como SINGLE para compartilhar o estado do carrinho entre todas as telas
+    single { PageViewModel(get(), get(), get(), get(), get(), get()) }
+
+    // O Router também precisa ser single para manter o estado da navegação
     single { Router(get()) }
-    
-    // PageViewModel como factory ou single conforme necessidade
-    factory { PageViewModel(get(), get(), get(), get(), get(), get()) }
 }
