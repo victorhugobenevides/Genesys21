@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.di.getBaseUrl
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +37,7 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
     val uriHandler = LocalUriHandler.current
+    val backendUrl = remember { getBaseUrl() }
 
     Scaffold(
         topBar = {
@@ -146,14 +148,15 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .widthIn(max = 600.dp) // Limita a largura na Web para manter o visual elegante
+                        .widthIn(max = 600.dp)
                         .fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(cartItems) { item ->
+                        val imageUrl = if (item.product.imageUrl.startsWith("/")) "$backendUrl${item.product.imageUrl}" else item.product.imageUrl
                         CartItemRow(
-                            item = item,
+                            item = item.copy(product = item.product.copy(imageUrl = imageUrl)),
                             onIncrease = { viewModel.updateCartQuantity(item.product.id, item.quantity + 1) },
                             onDecrease = { viewModel.updateCartQuantity(item.product.id, item.quantity - 1) },
                             onRemove = { viewModel.removeFromCart(item.product.id) }
@@ -183,7 +186,6 @@ fun CartItemRow(
             modifier = Modifier.padding(12.dp), 
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagem do Produto no Carrinho
             Box(
                 modifier = Modifier
                     .size(90.dp)
@@ -222,7 +224,6 @@ fun CartItemRow(
                 
                 Spacer(Modifier.height(12.dp))
                 
-                // Controles de Quantidade Estilizados
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                     shape = CircleShape

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.di.getBaseUrl
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -37,8 +38,14 @@ fun ProductDetailsScreen(
     val viewModel: PageViewModel = koinViewModel()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val backendUrl = remember { getBaseUrl() }
     
     var showSuccessDialog by remember { mutableStateOf(false) }
+
+    // Resolve a URL da imagem se for um caminho relativo
+    val fullImageUrl = remember(product.imageUrl) {
+        if (product.imageUrl.startsWith("/")) "$backendUrl${product.imageUrl}" else product.imageUrl
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -71,7 +78,6 @@ fun ProductDetailsScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Image Card with Elevation
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -84,9 +90,9 @@ fun ProductDetailsScreen(
                         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (product.imageUrl.isNotEmpty()) {
+                        if (fullImageUrl.isNotEmpty()) {
                             AsyncImage(
-                                model = product.imageUrl,
+                                model = fullImageUrl,
                                 contentDescription = product.name,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -104,7 +110,6 @@ fun ProductDetailsScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Product Info Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -112,17 +117,10 @@ fun ProductDetailsScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Text(
-                                text = product.name.ifBlank { "Produto sem nome" },
-                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        Text(
+                            text = product.name.ifBlank { "Produto sem nome" },
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold)
+                        )
                         
                         Spacer(modifier = Modifier.height(12.dp))
                         
@@ -136,7 +134,6 @@ fun ProductDetailsScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Stock Status Badge
                         if (product.stock <= 0) {
                             Surface(
                                 color = MaterialTheme.colorScheme.errorContainer,
@@ -219,7 +216,7 @@ fun ProductDetailsScreen(
             }
         }
 
-        // Modal de Sucesso (Estilizado)
+        // Modal de Sucesso
         if (showSuccessDialog) {
             AlertDialog(
                 onDismissRequest = { showSuccessDialog = false },

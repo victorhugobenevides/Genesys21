@@ -41,14 +41,12 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // RESOLVE O DIRETÓRIO DE UPLOADS DE FORMA ABSOLUTA
+    // Caminho absoluto para a pasta de uploads
     val uploadDir = File("uploads").absoluteFile
-    if (!uploadDir.exists()) {
-        uploadDir.mkdirs()
-        logger.info("Criando diretório de uploads em: ${uploadDir.absolutePath}")
-    } else {
-        logger.info("Diretório de uploads detectado em: ${uploadDir.absolutePath}")
-    }
+    if (!uploadDir.exists()) uploadDir.mkdirs()
+    
+    logger.info("SERVIDOR INICIADO")
+    logger.info("DIRETÓRIO DE UPLOADS: ${uploadDir.absolutePath}")
 
     install(ContentNegotiation) { 
         json(Json {
@@ -60,13 +58,13 @@ fun Application.module() {
     
     install(CORS) {
         anyHost()
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
-        allowHeader(HttpHeaders.Authorization)
-        allowHeader(HttpHeaders.ContentType)
         allowCredentials = true
     }
 
@@ -87,17 +85,28 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // 1. PRIORIDADE: FAVICON (Silencia erro 404 no navegador)
+        // 1. Servir arquivos estáticos (Mapeamento explícito)
+        static("/uploads") {
+            files(uploadDir)
+        }
+
+        // 2. Silenciar Favicon
         get("/favicon.ico") {
             call.respond(HttpStatusCode.NoContent)
         }
 
-        // 2. SERVIR ARQUIVOS ESTÁTICOS
-        staticFiles("/uploads", uploadDir)
+        // 3. Rota de Diagnóstico (Ajuda a verificar se os arquivos estão lá)
+        get("/api/debug/files") {
+            val files = uploadDir.listFiles()?.map { it.name } ?: emptyList()
+            call.respond(mapOf(
+                "directory" to uploadDir.absolutePath,
+                "count" to files.size,
+                "files" to files
+            ))
+        }
 
         get("/") {
-            val total = pageRepository.getPages("").size
-            call.respondText("Genesys21 API Online. Pages in DB: $total | Uploads: ${uploadDir.listFiles()?.size ?: 0}")
+            call.respondText("Genesys21 API Online. Verifique /api/debug/files para diagnóstico de imagens.")
         }
 
         authenticate("firebase") {
@@ -116,7 +125,6 @@ fun Application.module() {
 
                 if (fileBytes != null) {
                     val file = File(uploadDir, fileName)
-                    
                     try {
                         val outputStream = ByteArrayOutputStream()
                         Thumbnails.of(ByteArrayInputStream(fileBytes))
@@ -126,11 +134,13 @@ fun Application.module() {
                             .outputQuality(0.85)
                             .toOutputStream(outputStream)
                         file.writeBytes(outputStream.toByteArray())
+                        logger.info("Imagem salva em: ${file.absolutePath}")
                     } catch (e: Exception) {
+                        logger.error("Erro no processamento da imagem, salvando bytes puros: ${e.message}")
                         file.writeBytes(fileBytes!!)
                     }
                     
-                    // Retorna o caminho relativo que será resolvido pelo staticFiles
+                    // Retorna o caminho relativo que o frontend já sabe tratar
                     call.respondText("/uploads/$fileName")
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
