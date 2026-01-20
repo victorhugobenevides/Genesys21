@@ -41,6 +41,10 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
+    // Garante que a pasta de uploads existe usando caminho absoluto baseado no diretório de execução
+    val uploadDir = File("uploads").absoluteFile
+    if (!uploadDir.exists()) uploadDir.mkdirs()
+
     install(ContentNegotiation) { 
         json(Json {
             ignoreUnknownKeys = true 
@@ -83,6 +87,11 @@ fun Application.module() {
             call.respondText("Genesys21 API Online. Pages in DB: $total")
         }
 
+        // Ignora requisição de favicon para não poluir logs com 404
+        get("/favicon.ico") {
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         authenticate("firebase") {
             post("/upload") {
                 val multipart = call.receiveMultipart()
@@ -98,10 +107,7 @@ fun Application.module() {
                 }
 
                 if (fileBytes != null) {
-                    val folder = File("uploads")
-                    if (!folder.exists()) folder.mkdirs()
-                    
-                    val file = File(folder, fileName)
+                    val file = File(uploadDir, fileName)
                     
                     try {
                         val outputStream = ByteArrayOutputStream()
@@ -116,11 +122,9 @@ fun Application.module() {
                         file.writeBytes(fileBytes!!)
                     }
                     
-                    // LÓGICA DE URL ABSOLUTA CORRIGIDA
                     val publicHost = System.getenv("PUBLIC_HOST") ?: call.request.header("X-Forwarded-Host") ?: call.request.host()
                     val protocol = call.request.header("X-Forwarded-Proto") ?: call.request.local.scheme
                     
-                    // Garante que em produção não use a porta 8080 se o Nginx estiver na 80/443
                     val isLocal = publicHost == "localhost" || publicHost == "127.0.0.1"
                     val portSuffix = if (isLocal) ":$SERVER_PORT" else ""
                     
@@ -133,8 +137,8 @@ fun Application.module() {
             }
         }
 
-        // SERVE ARQUIVOS DA PASTA UPLOADS
-        staticFiles("/uploads", File("uploads"))
+        // SERVE ARQUIVOS USANDO CAMINHO ABSOLUTO
+        staticFiles("/uploads", uploadDir)
         
         pageRoutes(pageRepository)
     }
