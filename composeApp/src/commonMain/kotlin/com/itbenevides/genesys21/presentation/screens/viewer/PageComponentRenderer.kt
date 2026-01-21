@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -34,6 +35,7 @@ import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -103,19 +105,23 @@ fun PageComponentRenderer(
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = Color.Transparent
                         ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true, 
-                            selected = filterQuery.isEmpty(), 
-                            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                        )
+                        border = FilterChipDefaults.filterChipBorder(enabled = true, selected = filterQuery.isEmpty(), borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     )
                     
                     allAvailableCategories.forEach { category ->
                         FilterChip(
                             selected = filterQuery.equals(category, ignoreCase = true),
                             onClick = { 
-                                if (filterQuery.equals(category, ignoreCase = true)) onFilterQueryChange("")
-                                else onFilterQueryChange(category)
+                                if (filterQuery.equals(category, ignoreCase = true)) {
+                                    onFilterQueryChange("")
+                                } else {
+                                    onFilterQueryChange(category)
+                                    // GA4: Rastrear seleção de categoria
+                                    AnalyticsManager.logEvent("select_content", mapOf(
+                                        "content_type" to "category",
+                                        "item_id" to category
+                                    ))
+                                }
                             },
                             label = { Text(category) },
                             shape = CircleShape,
@@ -124,11 +130,7 @@ fun PageComponentRenderer(
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                                 containerColor = Color.Transparent
                             ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true, 
-                                selected = filterQuery.equals(category, ignoreCase = true), 
-                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                            )
+                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = filterQuery.equals(category, ignoreCase = true), borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                         )
                     }
                 }
@@ -138,7 +140,13 @@ fun PageComponentRenderer(
             Box(Modifier.padding(vertical = 16.dp)) {
                 OutlinedTextField(
                     value = filterQuery,
-                    onValueChange = onFilterQueryChange,
+                    onValueChange = { 
+                        onFilterQueryChange(it)
+                        // GA4: Rastrear busca (debounce recomendado na vida real, mas aqui logamos a intenção)
+                        if (it.length > 3) {
+                            AnalyticsManager.logEvent("search", mapOf("search_term" to it))
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -316,6 +324,8 @@ fun PageComponentRenderer(
                             val currentUrl = (component as? PageComponent.Image)?.url ?: ""
                             if (currentUrl.startsWith("http")) {
                                 uriHandler.openUri(currentUrl)
+                                // GA4: Rastrear clique em imagem externa
+                                AnalyticsManager.logEvent("click_external_link", mapOf("url" to currentUrl, "type" to "image"))
                             }
                         }
                     },
@@ -344,7 +354,15 @@ fun PageComponentRenderer(
         is PageComponent.Button -> {
             Box(Modifier.padding(vertical = 12.dp)) {
                 Button(
-                    onClick = { uriHandler.openUri(component.url) },
+                    onClick = { 
+                        uriHandler.openUri(component.url)
+                        // GA4: Rastrear clique em botão de link
+                        AnalyticsManager.logEvent("click_external_link", mapOf(
+                            "url" to component.url,
+                            "button_text" to component.text,
+                            "icon" to (component.iconName ?: "none")
+                        ))
+                    },
                     modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
@@ -359,7 +377,7 @@ fun PageComponentRenderer(
                         "instagram" -> Icons.Default.CameraAlt
                         else -> null
                     }
-                    if (icon != null) { Icon(icon, null); Spacer(Modifier.width(8.dp)) }
+                    if (icon != null) { Icon(icon, null); Spacer(Modifier.width(12.dp)) }
                     Text(component.text, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
             }
@@ -377,7 +395,15 @@ fun ProductCard(
     onAddToCart: (() -> Unit)? = null
 ) {
     Card(
-        modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke(product) },
+        modifier = modifier.clickable(enabled = onClick != null) { 
+            onClick?.invoke(product)
+            // GA4: Rastrear visualização rápida de produto
+            AnalyticsManager.logEvent("select_item", mapOf(
+                "item_id" to product.id,
+                "item_name" to product.name,
+                "item_category" to product.category
+            ))
+        },
         shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent

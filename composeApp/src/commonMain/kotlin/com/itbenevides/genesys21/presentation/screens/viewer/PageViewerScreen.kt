@@ -47,7 +47,6 @@ fun PageViewerScreen(
     AppTheme(themeConfig = page.theme) {
         var filterQuery by remember { mutableStateOf("") }
 
-        // Usamos Box para permitir sobreposição fora do padding do Scaffold
         Box(modifier = Modifier.fillMaxSize()) {
             
             Scaffold(
@@ -99,16 +98,14 @@ fun PageViewerScreen(
                 }
             }
 
-            // BOTÃO DA ENGRENAGEM (FORA DO PADDING)
-            // Usamos offset negativo ou posicionamento absoluto no Box pai
+            // BOTÃO DA ENGRENAGEM (CORRIGIDO PARA ÁREA CLICÁVEL)
             if (isLoggedIn) {
                 IconButton(
                     onClick = { router.navigateTo(Route.WhiteLabel(page)) },
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(top = 8.dp)
-                        .offset(x = (-12).dp) // Move para fora do padding de 16dp do App.kt
-                        .alpha(0.4f)
+                        .statusBarsPadding() // GARANTE QUE FIQUE ABAIXO DA HORA NO IOS/ANDROID
+                        .padding(start = 8.dp, top = 8.dp) // Pequeno respiro da borda
+                        .alpha(0.6f) // Um pouco mais visível que antes
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings, 

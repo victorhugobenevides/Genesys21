@@ -42,7 +42,7 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Seu Carrinho", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text("Seu Carrinho", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -57,9 +57,10 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
             if (cartItems.isNotEmpty()) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    tonalElevation = 8.dp,
-                    shadowElevation = 16.dp,
-                    color = MaterialTheme.colorScheme.surface
+                    tonalElevation = 12.dp,
+                    shadowElevation = 24.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                 ) {
                     Column(
                         Modifier
@@ -71,17 +72,22 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Total do Pedido", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "Total do Pedido", 
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                             Text(
                                 "R$ ${total}", 
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.ExtraBold, 
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = (-0.5).sp
                                 )
                             )
                         }
                         
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(24.dp))
                         
                         Button(
                             onClick = { 
@@ -102,8 +108,8 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
                             Icon(Icons.Default.ShoppingCart, null)
                             Spacer(Modifier.width(12.dp))
                             Text(
-                                if (whatsappNumber.isNullOrBlank()) "WhatsApp não configurado" else "Finalizar pelo WhatsApp", 
-                                fontSize = 16.sp, 
+                                if (whatsappNumber.isNullOrBlank()) "WhatsApp não configurado" else "Enviar Pedido no WhatsApp", 
+                                fontSize = 17.sp, 
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -125,47 +131,53 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart, 
-                        contentDescription = null, 
-                        modifier = Modifier.size(100.dp), 
-                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                    )
-                    Spacer(Modifier.height(16.dp))
+                    Surface(
+                        modifier = Modifier.size(120.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart, 
+                                contentDescription = null, 
+                                modifier = Modifier.size(48.dp), 
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(24.dp))
                     Text(
                         "Seu carrinho está vazio", 
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(32.dp))
                     OutlinedButton(
                         onClick = onBack,
-                        shape = CircleShape
+                        shape = CircleShape,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Explorar Produtos")
+                        Text("Explorar Produtos", fontWeight = FontWeight.Bold)
                     }
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier
-                        .widthIn(max = 600.dp)
+                        .widthIn(max = 800.dp)
                         .fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(cartItems) { item ->
-                        // CORRIGIDO: Usa imageUrls (lista) no .copy()
-                        val fullUrls = item.product.imageUrls.map { url ->
-                            if (url.startsWith("/")) "$backendUrl$url" else url
-                        }
                         CartItemRow(
-                            item = item.copy(product = item.product.copy(imageUrls = fullUrls)),
+                            item = item,
+                            backendUrl = backendUrl,
                             onIncrease = { viewModel.updateCartQuantity(item.product.id, item.quantity + 1) },
                             onDecrease = { viewModel.updateCartQuantity(item.product.id, item.quantity - 1) },
                             onRemove = { viewModel.removeFromCart(item.product.id) }
                         )
                     }
-                    item { Spacer(Modifier.height(100.dp)) }
+                    item { Spacer(Modifier.height(120.dp)) }
                 }
             }
         }
@@ -175,76 +187,101 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
 @Composable
 fun CartItemRow(
     item: CartItem,
+    backendUrl: String,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit,
     onRemove: () -> Unit
 ) {
+    val displayImageUrl = remember(item.product.imageUrls) {
+        val first = item.product.imageUrls.firstOrNull() ?: ""
+        if (first.startsWith("/")) "$backendUrl$first" else first
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp), 
+            modifier = Modifier.padding(20.dp), 
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Imagem do Produto maior (140.dp)
             Box(
                 modifier = Modifier
-                    .size(90.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    .size(140.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (item.product.imageUrls.isNotEmpty()) {
+                if (displayImageUrl.isNotEmpty()) {
                     AsyncImage(
-                        model = item.product.imageUrl, // O helper .imageUrl pega a primeira da lista
+                        model = displayImageUrl,
                         contentDescription = item.product.name,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.ShoppingCart, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                    Icon(
+                        Icons.Default.ShoppingCart, 
+                        null, 
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
                 }
             }
             
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(24.dp))
             
             Column(Modifier.weight(1f)) {
                 Text(
                     text = item.product.name, 
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1, 
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 2, 
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = "R$ ${item.product.price}", 
-                    style = MaterialTheme.typography.bodyMedium.copy(
+                    style = MaterialTheme.typography.headlineSmall.copy(
                         color = MaterialTheme.colorScheme.primary, 
                         fontWeight = FontWeight.ExtraBold
                     )
                 )
                 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(20.dp))
                 
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = CircleShape
+                // Controles de Quantidade Premium (Maiores)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    Surface(
+                        onClick = onDecrease,
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ) {
-                        IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Remove, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Remove, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                         }
-                        Text(
-                            text = "${item.quantity}", 
-                            modifier = Modifier.padding(horizontal = 8.dp), 
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    }
+                    
+                    Text(
+                        text = "${item.quantity}", 
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+                    )
+                    
+                    Surface(
+                        onClick = onIncrease,
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -252,9 +289,10 @@ fun CartItemRow(
             
             IconButton(
                 onClick = onRemove,
-                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
+                modifier = Modifier.align(Alignment.Top),
+                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
             ) {
-                Icon(Icons.Default.Delete, null)
+                Icon(Icons.Default.Delete, null, modifier = Modifier.size(28.dp))
             }
         }
     }

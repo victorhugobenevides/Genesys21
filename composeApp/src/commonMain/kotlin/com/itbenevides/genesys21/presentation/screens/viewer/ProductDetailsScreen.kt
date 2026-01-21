@@ -29,6 +29,7 @@ import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -48,6 +49,15 @@ fun ProductDetailsScreen(
 
     // Estado do Pager para o Carrossel de Imagens
     val pagerState = rememberPagerState(pageCount = { product.imageUrls.size.coerceAtLeast(1) })
+
+    // GA4: Rastrear visualização detalhada do produto
+    LaunchedEffect(product.id) {
+        AnalyticsManager.logEvent("view_item", mapOf(
+            "item_id" to product.id,
+            "item_name" to product.name,
+            "price" to product.price
+        ))
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -70,7 +80,7 @@ fun ProductDetailsScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier.widthIn(max = 800.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // CARROSSEL DE IMAGENS
@@ -107,6 +117,8 @@ fun ProductDetailsScreen(
                                             scope.launch {
                                                 val prevPage = if (pagerState.currentPage > 0) pagerState.currentPage - 1 else product.imageUrls.size - 1
                                                 pagerState.animateScrollToPage(prevPage)
+                                                // GA4: Rastrear interação com carrossel
+                                                AnalyticsManager.logEvent("view_item_media", mapOf("item_id" to product.id, "direction" to "prev"))
                                             }
                                         },
                                         modifier = Modifier.padding(start = 8.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
@@ -119,6 +131,8 @@ fun ProductDetailsScreen(
                                             scope.launch {
                                                 val nextPage = if (pagerState.currentPage < product.imageUrls.size - 1) pagerState.currentPage + 1 else 0
                                                 pagerState.animateScrollToPage(nextPage)
+                                                // GA4: Rastrear interação com carrossel
+                                                AnalyticsManager.logEvent("view_item_media", mapOf("item_id" to product.id, "direction" to "next"))
                                             }
                                         },
                                         modifier = Modifier.padding(end = 8.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
@@ -198,8 +212,18 @@ fun ProductDetailsScreen(
                         Button(
                             onClick = { 
                                 val success = viewModel.addToCart(product)
-                                if (success) { showSuccessDialog = true } 
-                                else { scope.launch { snackbarHostState.showSnackbar("Não há estoque suficiente disponível!") } }
+                                if (success) { 
+                                    showSuccessDialog = true 
+                                } else { 
+                                    scope.launch { 
+                                        snackbarHostState.showSnackbar("Não há estoque suficiente disponível!") 
+                                        // GA4: Rastrear alerta de falta de estoque
+                                        AnalyticsManager.logEvent("out_of_stock_alert", mapOf(
+                                            "item_id" to product.id,
+                                            "item_name" to product.name
+                                        ))
+                                    } 
+                                }
                             },
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             shape = CircleShape,

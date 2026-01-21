@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.usecase.*
+import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -55,7 +56,7 @@ class PageViewModel(
         products.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // --- AÇÕES DO CARRINHO ---
+    // --- AÇÕES DO CARRINHO COM TRACKING ---
     fun addToCart(product: Product): Boolean {
         val current = _cart.value.toMutableList()
         val existing = current.find { it.product.id == product.id }
@@ -70,11 +71,29 @@ class PageViewModel(
             current.add(CartItem(product, 1))
         }
         _cart.value = current
+
+        // GA4: Tracking de Adição ao Carrinho
+        AnalyticsManager.logEvent("add_to_cart", mapOf(
+            "item_id" to product.id,
+            "item_name" to product.name,
+            "price" to product.price,
+            "currency" to "BRL"
+        ))
+
         return true
     }
 
     fun removeFromCart(productId: String) {
+        val removedItem = _cart.value.find { it.product.id == productId }
         _cart.value = _cart.value.filter { it.product.id != productId }
+
+        // GA4: Tracking de Remoção
+        removedItem?.let {
+            AnalyticsManager.logEvent("remove_from_cart", mapOf(
+                "item_id" to it.product.id,
+                "item_name" to it.product.name
+            ))
+        }
     }
 
     fun updateCartQuantity(productId: String, quantity: Int): Boolean {
@@ -93,16 +112,25 @@ class PageViewModel(
 
     fun generateWhatsappMessage(whatsapp: String?): String? {
         if (whatsapp.isNullOrBlank() || _cart.value.isEmpty()) return null
+        
+        // GA4: Tracking de Início de Checkout / Conversão
+        AnalyticsManager.logEvent("begin_checkout", mapOf(
+            "value" to cartTotal.value,
+            "currency" to "BRL",
+            "items_count" to cartCount.value
+        ))
+
         val sb = StringBuilder().append("Olá! Gostaria de fazer um pedido:\n\n")
         _cart.value.forEach { item ->
             val stockWarning = if (item.quantity > item.product.stock) " (Aviso: Qtd excede estoque)" else ""
             sb.append("• ${item.quantity}x ${item.product.name} - R$ ${item.product.price * item.quantity}$stockWarning\n")
         }
         sb.append("\n*Total: R$ ${cartTotal.value}*")
+        
         return "https://wa.me/$whatsapp?text=${sb.toString().replace(" ", "%20").replace("\n", "%0A")}"
     }
 
-    // --- OPERAÇÕES DE PÁGINAS (USE CASES) ---
+    // --- OPERAÇÕES DE PÁGINAS ---
     fun loadPages() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -158,12 +186,18 @@ class PageViewModel(
     fun signIn(email: String, pass: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         viewModelScope.launch {
             authRepository.signIn(email, pass)
-                .onSuccess { onSuccess() }
+                .onSuccess { 
+                    AnalyticsManager.logEvent("login", mapOf("method" to "email"))
+                    onSuccess() 
+                }
                 .onFailure { onFailure(it.message ?: "Erro desconhecido") }
         }
     }
 
     fun signOut() {
-        viewModelScope.launch { authRepository.signOut() }
+        viewModelScope.launch { 
+            AnalyticsManager.logEvent("logout")
+            authRepository.signOut() 
+        }
     }
 }

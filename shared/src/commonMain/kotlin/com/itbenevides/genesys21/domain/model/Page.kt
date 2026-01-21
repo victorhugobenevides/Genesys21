@@ -58,6 +58,7 @@ sealed class PageComponent {
         val size: Int = 200,
         val destinationPageId: String? = null,
         val isFullWidth: Boolean = false,
+        val isRounded: Boolean = false, // ADICIONADO
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
