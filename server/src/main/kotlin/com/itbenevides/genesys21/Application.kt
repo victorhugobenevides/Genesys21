@@ -14,6 +14,8 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.compression.*
+import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.request.*
@@ -40,11 +42,37 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // Pasta de uploads absoluta
     val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
-    logger.info("UPLOAD_DIR_PATH: ${uploadDir.absolutePath}")
+    logger.info(">>> BACKEND GENESYS21 OTIMIZADO")
+
+    // 1. OTIMIZAÇÃO: COMPRESSÃO DE DADOS (GZIP)
+    // Reduz drasticamente o tamanho das respostas JSON e HTML
+    install(Compression) {
+        gzip {
+            priority = 1.0
+        }
+        deflate {
+            priority = 10.0
+            minimumSize(1024) // Só comprime se for maior que 1KB
+        }
+    }
+
+    // 2. OTIMIZAÇÃO: CACHE DE IMAGENS E ARQUIVOS ESTÁTICOS
+    install(CachingHeaders) {
+        options { call, outgoingContent ->
+            when (outgoingContent.contentType?.withoutParameters()) {
+                ContentType.Image.JPEG, 
+                ContentType.Image.PNG,
+                ContentType.Image.GIF -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 7 * 24 * 60 * 60)) // 7 Dias de Cache
+                ContentType.Text.CSS,
+                ContentType.Application.JavaScript,
+                ContentType.Text.Html -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 24 * 60 * 60)) // 1 Dia para Assets Web
+                else -> null
+            }
+        }
+    }
 
     install(ContentNegotiation) { 
         json(Json {
@@ -83,16 +111,26 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA DE IMAGENS COM IDENTIFICADOR DE BACKEND
+        // ROTA DE IMAGENS OTIMIZADA
         get("/uploads/{filename...}") {
-            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
-            val file = File(uploadDir, filename)
+            val pathParams = call.parameters.getAll("filename")
+            val filename = pathParams?.joinToString("/") ?: ""
+            val file = File(uploadDir, filename).absoluteFile
             
             if (file.exists() && file.isFile) {
+                // Define o Content-Type explicitamente para ativar o Cache
+                val contentType = when (file.extension.lowercase()) {
+                    "jpg", "jpeg" -> ContentType.Image.JPEG
+                    "png" -> ContentType.Image.PNG
+                    "webp" -> ContentType.parse("image/webp")
+                    "gif" -> ContentType.Image.GIF
+                    else -> ContentType.Application.OctetStream
+                }
+                
+                // O plugin CachingHeaders cuidará do header automaticamente baseado no ContentType
                 call.respondFile(file)
             } else {
-                // Se o usuário ver essa mensagem, a requisição CHEGOU no Ktor mas ele não achou o arquivo
-                call.respondText("Genesys21-Ktor-Error: File not found on disk at ${file.absolutePath}", status = HttpStatusCode.NotFound)
+                call.respond(HttpStatusCode.NotFound, "Imagem não encontrada")
             }
         }
 
@@ -102,11 +140,12 @@ fun Application.module() {
 
         get("/api/debug/files") {
             val fileNames = uploadDir.listFiles()?.map { it.name } ?: emptyList()
-            call.respondText("DIR: ${uploadDir.absolutePath}\nFILES: ${fileNames.joinToString(", ")}")
+            val response = "DIR: ${uploadDir.absolutePath}\nFILES: ${fileNames.joinToString(", ")}"
+            call.respondText(response)
         }
 
         get("/") {
-            call.respondText("Genesys21 API Online.")
+            call.respondText("Genesys21 API Online (GZIP Active)")
         }
 
         authenticate("firebase") {
@@ -127,11 +166,12 @@ fun Application.module() {
                     val file = File(uploadDir, fileName)
                     try {
                         val outputStream = ByteArrayOutputStream()
+                        // Redimensiona para no máximo 1200px e reduz qualidade para 80% (Equilíbrio visual/tamanho)
                         Thumbnails.of(ByteArrayInputStream(fileBytes))
                             .size(1200, 1200)
                             .keepAspectRatio(true)
                             .outputFormat("jpg")
-                            .outputQuality(0.85)
+                            .outputQuality(0.80) 
                             .toOutputStream(outputStream)
                         file.writeBytes(outputStream.toByteArray())
                     } catch (e: Exception) {

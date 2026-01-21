@@ -2,15 +2,27 @@ package com.itbenevides.genesys21
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
+import com.itbenevides.genesys21.presentation.AppError
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen
@@ -32,10 +44,12 @@ fun App() {
         val viewModel: PageViewModel = koinViewModel()
         val router: Router = koinInject()
         val currentRoute = router.currentRoute
-
-        val savedCategories by viewModel.allAvailableCategories.collectAsState()
         
-        val allCategories by remember(savedCategories, currentRoute) {
+        val currentError by viewModel.currentError.collectAsState()
+
+        val savedCategories: List<String> by viewModel.allAvailableCategories.collectAsState(initial = emptyList())
+        
+        val allCategories: List<String> by remember(savedCategories, currentRoute) {
             derivedStateOf {
                 val page = when (currentRoute) {
                     is Route.WhiteLabel -> currentRoute.page
@@ -49,7 +63,7 @@ fun App() {
                     ?.map { it.category }
                     ?.filter { it.isNotBlank() } ?: emptyList()
                 
-                (savedCategories + currentSessionCategories).distinct().filterNotNull().sorted()
+                (savedCategories + currentSessionCategories).distinct().sorted()
             }
         }
 
@@ -88,25 +102,21 @@ fun App() {
         AppTheme(themeConfig = themeConfig) {
             LaunchedEffect(Unit) {
                 router.handleDeepLink()
-                onUrlChange {
-                    launch { router.handleDeepLink() }
-                }
+                onUrlChange { launch { router.handleDeepLink() } }
             }
 
-            LaunchedEffect(currentRoute) {
-                router.forceSyncUrl()
-            }
+            LaunchedEffect(currentRoute) { router.forceSyncUrl() }
 
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                
+                currentError?.let { error ->
+                    GlobalErrorDialog(error = error, onDismiss = { viewModel.clearError() })
+                }
+
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     val maxWidth = if (currentRoute is Route.Login || currentRoute is Route.Splash) 400.dp else 1200.dp
                     
-                    // APLICADO PADDING LATERAL PADRONIZADO (16.dp)
-                    Box(modifier = Modifier
-                        .fillMaxHeight()
-                        .widthIn(max = maxWidth)
-                        .padding(horizontal = 16.dp)
-                    ) {
+                    Box(modifier = Modifier.fillMaxHeight().widthIn(max = maxWidth).padding(horizontal = 16.dp)) {
                         AnimatedContent(targetState = currentRoute) { route ->
                             when (route) {
                                 is Route.Splash -> SplashScreen()
@@ -169,6 +179,49 @@ fun App() {
             }
         }
     }
+}
+
+@Composable
+fun GlobalErrorDialog(error: AppError, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.ErrorOutline, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
+        title = { Text(error.title, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(error.message, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                
+                error.stackTrace?.let { trace ->
+                    Spacer(Modifier.height(16.dp))
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.05f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = trace,
+                            modifier = Modifier.padding(12.dp),
+                            style = TextStyle(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 10.sp,
+                                color = Color.Gray
+                            )
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text("Entendi")
+            }
+        },
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    )
 }
 
 @Composable

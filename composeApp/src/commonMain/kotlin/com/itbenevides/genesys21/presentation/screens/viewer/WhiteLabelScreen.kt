@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,10 +48,10 @@ fun WhiteLabelScreen(
     onBack: () -> Unit,
     onEditProduct: (Product?, Int?) -> Unit
 ) {
-    val isLoading by viewModel.isLoading.collectAsState()
-    val serverProducts by viewModel.allAvailableProducts.collectAsState()
+    val isLoading: Boolean by viewModel.isLoading.collectAsState()
+    val serverProducts: List<Product> by viewModel.allAvailableProducts.collectAsState()
 
-    val liveInventory by remember(serverProducts, page) {
+    val liveInventory: List<Product> by remember(serverProducts, page) {
         derivedStateOf {
             val sessionProducts = page.components
                 .filterIsInstance<PageComponent.ProductList>()
@@ -58,9 +60,9 @@ fun WhiteLabelScreen(
         }
     }
 
-    val savedCategories by viewModel.allAvailableCategories.collectAsState()
+    val savedCategories: List<String> by viewModel.allAvailableCategories.collectAsState(initial = emptyList())
     
-    val allCategoriesList by remember(savedCategories, page) {
+    val allCategoriesList: List<String> by remember(savedCategories, page) {
         derivedStateOf {
             val currentSessionCategories = page.components
                 .filterIsInstance<PageComponent.ProductList>()
@@ -916,7 +918,7 @@ fun ComponentCatalogModal(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
                         PageComponent.Image(url = "", string = "", size = 80, destinationPageId = null, isFullWidth = false, isRounded = true, customLabel = null, isFilterable = false), 
-                        PageComponent.Header(title = "Bem-vindo à Loja!", fontSize = 34, textAlign = "CENTER", customLabel = null, isFilterable = false), 
+                        PageComponent.Header(title = "Bem-vindo à Loja!", fontSize = 34, textAlign = "CENTER", isFilterable = false), 
                         PageComponent.Filter(placeholder = "Buscar na loja..."),
                         PageComponent.CategoryFilter(),
                         PageComponent.ProductList(products = mockCarouselProducts, isHorizontal = true, customLabel = "Destaques"),
@@ -937,11 +939,11 @@ fun ComponentCatalogModal(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
                         PageComponent.Image(url = "", string = "", size = 120, destinationPageId = null, isFullWidth = false, isRounded = true, customLabel = "Foto de Perfil", isFilterable = false), 
-                        PageComponent.Header(title = "Seu Nome Aqui", fontSize = 28, textAlign = "CENTER", customLabel = null, isFilterable = false), 
+                        PageComponent.Header(title = "Seu Nome Aqui", fontSize = 28, textAlign = "CENTER", isFilterable = false), 
                         PageComponent.Text(content = "Sua biografia curta e inspiradora aparece aqui.", fontSize = 16, textAlign = "CENTER"),
                         PageComponent.Button(text = "WhatsApp", url = "https://wa.me/seunumeroaqui", iconName = "whatsapp"),
                         PageComponent.Button(text = "Instagram", url = "https://instagram.com/seuuser", iconName = "instagram"),
-                        PageComponent.Button("Email", "mailto:seuemail@exemplo.com", "email"),
+                        PageComponent.Button(text = "Email", url = "mailto:seuemail@exemplo.com", iconName = "email"),
                         PageComponent.Button(text = "Portfólio", url = "https://seusite.com", iconName = "web")
                     )) 
                 }, 
