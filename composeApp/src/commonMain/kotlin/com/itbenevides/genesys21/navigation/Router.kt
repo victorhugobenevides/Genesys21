@@ -12,8 +12,18 @@ import com.itbenevides.genesys21.navigateBack
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getHostname
 import com.itbenevides.genesys21.util.AnalyticsManager
+import kotlinx.coroutines.*
 
+/**
+ * Router re-arquitetado: O Navegador é o Boss.
+ * O app apenas observa a URL e muda a tela de acordo.
+ */
 class Router(val viewModel: PageViewModel) {
+    
+    private val navigationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var navigationJob: Job? = null
+
+    // O Compose observa esse estado para saber qual tela mostrar
     var currentRoute by mutableStateOf<Route>(Route.Splash)
         private set
 
@@ -21,29 +31,35 @@ class Router(val viewModel: PageViewModel) {
 
     fun getHistory(): List<Route> = historyStack.toList()
 
+    // Navegação Interna: Quando você clica num botão
     fun navigateTo(route: Route) {
-        if (currentRoute != route) {
-            if (currentRoute !is Route.Splash && historyStack.lastOrNull() != currentRoute) {
-                historyStack.add(currentRoute)
-            }
-            currentRoute = route
-            trackRoute(route) // TRACKING DE PÁGINA
+        if (currentRoute == route) return
+        println("ROUTER_LOG: [Ação UI] -> Solicitando $route")
+        
+        if (currentRoute !is Route.Splash) {
+            historyStack.add(currentRoute)
         }
+
+        // Em vez de mudar a tela aqui, deixamos que o forceSyncUrl mude a URL 
+        // e o Navegador então nos dirá para mudar a tela (Fluxo Unidirecional)
+        applyRouteState(route)
+        forceSyncUrl()
     }
 
     fun goBack() {
         if (historyStack.isNotEmpty()) {
-            currentRoute = historyStack.removeAt(historyStack.size - 1)
-            trackRoute(currentRoute) // TRACKING AO VOLTAR
+            val last = historyStack.removeAt(historyStack.size - 1)
+            applyRouteState(last)
+            forceSyncUrl()
         } else {
-            when (val route = currentRoute) {
-                is Route.Cart -> navigateTo(Route.PageList)
-                is Route.ProductDetails -> navigateTo(route.fromRoute)
-                is Route.WhiteLabel -> navigateTo(Route.PageList)
-                is Route.PageEditor -> navigateTo(Route.PageList)
-                is Route.PublicViewer -> navigateTo(Route.PageList)
-                else -> navigateBack()
-            }
+            navigateBack() // Apenas pede ao navegador para voltar
+        }
+    }
+
+    private fun applyRouteState(route: Route) {
+        if (currentRoute != route) {
+            currentRoute = route
+            trackRoute(route)
         }
     }
 
@@ -56,13 +72,15 @@ class Router(val viewModel: PageViewModel) {
             is Route.WhiteLabel -> "Admin - ${route.page.title}"
             is Route.PublicViewer -> "Vitrine - ${route.page.title}"
             is Route.ProductDetails -> "Detalhes - ${route.product.name}"
-            is Route.ProductEditor -> "Editor de Produto - ${route.product?.name ?: "Novo"}"
+            is Route.ProductEditor -> "Editor de Produto"
             is Route.Cart -> "Carrinho"
         }
         AnalyticsManager.trackPageView(pageName)
     }
 
     fun forceSyncUrl() {
+        if (currentRoute is Route.Splash) return
+
         val (pageId, productId) = when (val route = currentRoute) {
             is Route.PageEditor -> route.page?.id to null
             is Route.WhiteLabel -> route.page.id to null
@@ -73,7 +91,6 @@ class Router(val viewModel: PageViewModel) {
                 pId to route.product.id
             }
             is Route.ProductEditor -> route.page.id to route.product?.id
-            is Route.Cart -> null to null
             else -> null to null
         }
         
@@ -92,74 +109,62 @@ class Router(val viewModel: PageViewModel) {
         syncUrlWithScreen(screen, pageId, productId)
     }
 
-    suspend fun handleDeepLink() {
-        val urlPath = getInitialUrlPath() ?: "/"
-        val currentDomain = getHostname().lowercase().removePrefix("www.")
-        
-        if ((urlPath == "/" || urlPath == "") && currentDomain != "localhost" && currentDomain != "127.0.0.1") {
-            viewModel.loadPageByDomain(currentDomain)?.let { page ->
-                currentRoute = Route.PublicViewer(page)
-                trackRoute(currentRoute)
-                return
+    /**
+     * O CORAÇÃO DO ROTEAMENTO:
+     * Lê a URL atual do navegador e força o app a mostrar a tela certa.
+     */
+    fun handleDeepLink() {
+        navigationJob?.cancel()
+        navigationJob = navigationScope.launch {
+            val urlPath = getInitialUrlPath() ?: "/"
+            println("ROUTER_LOG: [O Navegador manda] Lendo URL: $urlPath")
+            
+            val currentDomain = getHostname().lowercase().removePrefix("www.")
+            
+            // 1. Prioridade absoluta: Domínio Customizado
+            if ((urlPath == "/" || urlPath == "") && currentDomain != "localhost" && currentDomain != "127.0.0.1") {
+                viewModel.loadPageByDomain(currentDomain)?.let { page ->
+                    applyRouteState(Route.PublicViewer(page))
+                    return@launch
+                }
             }
-        }
 
-        val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
-        val productId = urlPath.extractId("/product/")
+            val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
+            val productId = urlPath.extractId("/product/")
 
-        if (pageId != null && pageId != "new") {
-            viewModel.loadPublicPage(pageId)?.let { page ->
-                if (productId != null) {
-                    val product = findProductInPage(page, productId)
-                    if (product != null) {
-                        currentRoute = Route.ProductDetails(product, Route.PublicViewer(page))
-                        trackRoute(currentRoute)
-                        return
+            // 2. Rota por ID (Garante que compartilhamento e voltar funcionem)
+            if (pageId != null && pageId != "new" && pageId.length >= 4) {
+                val page = viewModel.loadPublicPage(pageId)
+                if (page != null) {
+                    if (productId != null) {
+                        findProductInPage(page, productId)?.let { product ->
+                            applyRouteState(Route.ProductDetails(product, Route.PublicViewer(page)))
+                            return@launch
+                        }
                     }
-                }
-                currentRoute = when {
-                    urlPath.contains("/p/") -> Route.PublicViewer(page)
-                    urlPath.contains("/view/") -> Route.WhiteLabel(page)
-                    urlPath.contains("/editor/") -> Route.PageEditor(page)
-                    else -> Route.PublicViewer(page)
-                }
-                trackRoute(currentRoute)
-                return
-            }
-        }
-
-        if (urlPath == "/" || urlPath == "" || urlPath.startsWith("/login")) {
-            val token = viewModel.getCurrentUserToken()
-            if (token != null) {
-                val userPages = viewModel.getPagesSync()
-                if (userPages.isNotEmpty()) {
-                    currentRoute = Route.PublicViewer(userPages.first())
-                } else {
-                    currentRoute = Route.PageList
-                }
-            } else {
-                viewModel.loadFirstPublicPage()?.let { firstPage ->
-                    currentRoute = Route.PublicViewer(firstPage)
-                } ?: run {
-                    currentRoute = Route.Login
+                    val target = when {
+                        urlPath.contains("/view/") -> Route.WhiteLabel(page)
+                        urlPath.contains("/editor/") -> Route.PageEditor(page)
+                        else -> Route.PublicViewer(page)
+                    }
+                    applyRouteState(target)
+                    return@launch
                 }
             }
-            trackRoute(currentRoute)
-            return
-        }
 
-        try {
-            when {
-                urlPath.startsWith("/list") -> currentRoute = Route.PageList
+            // 3. Fallback inteligente
+            val finalRoute = when {
+                urlPath.startsWith("/login") -> Route.Login
+                urlPath.startsWith("/list") -> Route.PageList
                 else -> {
                     val token = viewModel.getCurrentUserToken()
-                    currentRoute = if (token != null) Route.PageList else Route.Login
+                    if (token != null) Route.PageList 
+                    else {
+                        viewModel.loadFirstPublicPage()?.let { Route.PublicViewer(it) } ?: Route.Login
+                    }
                 }
             }
-            trackRoute(currentRoute)
-        } catch (e: Exception) {
-            currentRoute = Route.Login
-            trackRoute(currentRoute)
+            applyRouteState(finalRoute)
         }
     }
 

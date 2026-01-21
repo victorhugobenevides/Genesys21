@@ -82,12 +82,12 @@ fun App() {
                         }
                     }
                     is Route.Cart -> {
-                        val lastPage = router.getHistory().reversed().firstNotNullOfOrNull { 
-                            when (it) {
-                                is Route.PublicViewer -> it.page
-                                is Route.WhiteLabel -> it.page
+                        val lastPage = router.getHistory().reversed().firstNotNullOfOrNull { r ->
+                            when (r) {
+                                is Route.PublicViewer -> r.page
+                                is Route.WhiteLabel -> r.page
                                 is Route.ProductDetails -> {
-                                    (it.fromRoute as? Route.PublicViewer)?.page ?: (it.fromRoute as? Route.WhiteLabel)?.page
+                                    (r.fromRoute as? Route.PublicViewer)?.page ?: (r.fromRoute as? Route.WhiteLabel)?.page
                                 }
                                 else -> null
                             }
@@ -102,7 +102,10 @@ fun App() {
         AppTheme(themeConfig = themeConfig) {
             LaunchedEffect(Unit) {
                 router.handleDeepLink()
-                onUrlChange { launch { router.handleDeepLink() } }
+                // ESCUTA O BOTÃO VOLTAR DO NAVEGADOR
+                onUrlChange { 
+                    router.handleDeepLink() 
+                }
             }
 
             LaunchedEffect(currentRoute) { router.forceSyncUrl() }

@@ -307,7 +307,13 @@ fun PageComponentRenderer(
         is PageComponent.Image -> {
             val scope = rememberCoroutineScope()
             val imgModifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.widthIn(max = 600.dp).wrapContentSize()
-            val imgShape = RoundedCornerShape(if (component.isFullWidth) 0.dp else 28.dp)
+            
+            // CORREÇÃO: Aplica CircleShape se isRounded for true
+            val imgShape = when {
+                component.isRounded -> CircleShape
+                component.isFullWidth -> RoundedCornerShape(0.dp)
+                else -> RoundedCornerShape(28.dp)
+            }
 
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Surface(

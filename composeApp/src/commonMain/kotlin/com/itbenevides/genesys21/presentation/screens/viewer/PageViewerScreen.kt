@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
@@ -35,6 +36,9 @@ fun PageViewerScreen(
     val router: Router = koinInject()
     var isLoggedIn by remember { mutableStateOf(false) }
     val cartCount by router.viewModel.cartCount.collectAsState()
+    
+    // Verifica se existe histórico para mostrar o botão voltar
+    val hasHistory = remember(router.currentRoute) { router.getHistory().isNotEmpty() }
 
     LaunchedEffect(Unit) {
         isLoggedIn = router.viewModel.getCurrentUserToken() != null
@@ -98,20 +102,46 @@ fun PageViewerScreen(
                 }
             }
 
-            // BOTÃO DA ENGRENAGEM (CORRIGIDO PARA ÁREA CLICÁVEL)
-            if (isLoggedIn) {
-                IconButton(
-                    onClick = { router.navigateTo(Route.WhiteLabel(page)) },
-                    modifier = Modifier
-                        .statusBarsPadding() // GARANTE QUE FIQUE ABAIXO DA HORA NO IOS/ANDROID
-                        .padding(start = 8.dp, top = 8.dp) // Pequeno respiro da borda
-                        .alpha(0.6f) // Um pouco mais visível que antes
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings, 
-                        contentDescription = "Configurações", 
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+            // BARRA DE AÇÕES SUPERIOR (Voltar e Configurações)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // BOTÃO VOLTAR (Aparece se houver histórico de navegação interna)
+                if (hasHistory) {
+                    IconButton(
+                        onClick = { router.goBack() },
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Voltar", 
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                } else {
+                    Spacer(Modifier.width(48.dp))
+                }
+
+                // BOTÃO DA ENGRENAGEM (Admin)
+                if (isLoggedIn) {
+                    IconButton(
+                        onClick = { router.navigateTo(Route.WhiteLabel(page)) },
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
+                            .alpha(0.8f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings, 
+                            contentDescription = "Configurações", 
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }
