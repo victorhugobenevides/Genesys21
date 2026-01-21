@@ -122,8 +122,8 @@ android {
         applicationId = "com.itbenevides.genesys21"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
     }
     buildFeatures { buildConfig = true }
