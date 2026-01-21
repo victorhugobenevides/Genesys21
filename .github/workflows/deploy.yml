@@ -92,13 +92,10 @@ jobs:
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
             
-            # 1. PARADA TOTAL PARA LIBERAR ARQUIVOS TRAVADOS
             docker compose down --remove-orphans || true
-            
-            # 2. REMOÇÃO RADICAL DAS PASTAS FANTASMAS (O "Capeta")
             sudo rm -rf nginx.prod.conf nginx.conf
             
-            # 3. CRIAÇÃO DO ARQUIVO DE CONFIGURAÇÃO (Força ser arquivo, não pasta)
+            # Nginx de Produção Corrigido (Proxy Robusto)
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -125,7 +122,7 @@ jobs:
                     root /usr/share/nginx/html;
                     index index.html;
 
-                    # ROTA DE IMAGENS - Servida diretamente pelo disco (Resolve o 404)
+                    # ROTA DE IMAGENS
                     location /uploads/ {
                         alias /usr/share/nginx/html/uploads/;
                         try_files \$uri @backend_fallback;
@@ -138,8 +135,19 @@ jobs:
                         proxy_set_header Host \$host;
                     }
 
-                    location /api {
-                        proxy_pass http://server:8080/api;
+                    # PROXY ROBUSTO PARA API (Pages, etc)
+                    # O uso da barra no final do proxy_pass é crítico para o encaminhamento correto de PUT/POST
+                    location /pages {
+                        proxy_pass http://server:8080/pages;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                        proxy_http_version 1.1;
+                    }
+
+                    location /api/ {
+                        proxy_pass http://server:8080/api/;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
                         proxy_set_header X-Forwarded-Proto \$scheme;
@@ -148,6 +156,8 @@ jobs:
                     location /upload {
                         proxy_pass http://server:8080/upload;
                         proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
                     }
 
                     location / {
@@ -162,7 +172,6 @@ jobs:
             }
             EOF
 
-            # 4. CRIAÇÃO DO DOCKER COMPOSE DE PRODUÇÃO
             cat <<EOF > docker-compose.yml
             services:
               server:
@@ -193,7 +202,6 @@ jobs:
                 driver: bridge
             EOF
             
-            # 5. PERMISSÕES E INICIALIZAÇÃO
             sudo chmod -R 777 ~/app/uploads
             docker compose pull
             docker compose up -d --force-recreate
