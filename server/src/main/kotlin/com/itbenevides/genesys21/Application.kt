@@ -21,7 +21,6 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.http.content.*
 import kotlinx.serialization.json.Json
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
@@ -43,6 +42,7 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
+    // Caminho absoluto fixo para o container
     val uploadDir = File("/app/uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
@@ -83,10 +83,21 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // Servir arquivos da pasta uploads
-        static("/uploads") {
-            staticRootFolder = File("/app/uploads")
-            files(".")
+        // ROTA EXPLÍCITA DE UPLOADS - Para garantir entrega pelo IP:8080
+        get("/uploads/{filename...}") {
+            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
+            val file = File(uploadDir, filename)
+            
+            if (file.exists() && file.isFile) {
+                call.respondFile(file)
+            } else {
+                logger.error("Arquivo não encontrado no disco: ${file.absolutePath}")
+                call.respond(HttpStatusCode.NotFound, "Imagem não encontrada")
+            }
+        }
+
+        get("/favicon.ico") {
+            call.respondBytes(ByteArray(0), ContentType.Image.XIcon)
         }
 
         get("/api/debug/files") {
