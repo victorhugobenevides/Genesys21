@@ -95,7 +95,7 @@ jobs:
             docker compose down --remove-orphans || true
             sudo rm -rf nginx.prod.conf nginx.conf
             
-            # Nginx de Produção Corrigido (Proxy Robusto)
+            # Nginx de Produção Otimizado para Métodos HTTP (POST/PUT)
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -122,7 +122,35 @@ jobs:
                     root /usr/share/nginx/html;
                     index index.html;
 
-                    # ROTA DE IMAGENS
+                    # 1. PRIORIDADE PARA API E PAGES (Evita 405)
+                    location ^~ /pages {
+                        proxy_pass http://server:8080;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                        proxy_http_version 1.1;
+                        proxy_set_header Connection "";
+                    }
+
+                    location ^~ /api/ {
+                        proxy_pass http://server:8080;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                        proxy_http_version 1.1;
+                    }
+
+                    location ^~ /upload {
+                        proxy_pass http://server:8080;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                    }
+
+                    # 2. ROTA DE IMAGENS ESTÁTICAS
                     location /uploads/ {
                         alias /usr/share/nginx/html/uploads/;
                         try_files \$uri @backend_fallback;
@@ -135,31 +163,7 @@ jobs:
                         proxy_set_header Host \$host;
                     }
 
-                    # PROXY ROBUSTO PARA API (Pages, etc)
-                    # O uso da barra no final do proxy_pass é crítico para o encaminhamento correto de PUT/POST
-                    location /pages {
-                        proxy_pass http://server:8080/pages;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                        proxy_http_version 1.1;
-                    }
-
-                    location /api/ {
-                        proxy_pass http://server:8080/api/;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                    }
-
-                    location /upload {
-                        proxy_pass http://server:8080/upload;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                    }
-
+                    # 3. FRONTEND SPA
                     location / {
                         try_files \$uri \$uri/ /index.html;
                     }
