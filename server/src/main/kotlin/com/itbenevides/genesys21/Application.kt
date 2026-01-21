@@ -21,6 +21,7 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.http.content.*
 import kotlinx.serialization.json.Json
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
@@ -42,28 +43,12 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    // FORÇAR CAMINHO ABSOLUTO PARA O DOCKER
     val uploadDir = File("/app/uploads").absoluteFile
-    if (!uploadDir.exists()) {
-        val created = uploadDir.mkdirs()
-        logger.info("Diretório de uploads criado em ${uploadDir.absolutePath}: $created")
-    }
+    if (!uploadDir.exists()) uploadDir.mkdirs()
     
-    logger.info(">>> BACKEND GENESYS21 INICIADO EM: ${uploadDir.absolutePath}")
-
     install(Compression) {
         gzip { priority = 1.0 }
         deflate { priority = 10.0; minimumSize(1024) }
-    }
-
-    install(CachingHeaders) {
-        options { call, outgoingContent ->
-            when (outgoingContent.contentType?.withoutParameters()) {
-                ContentType.Image.JPEG, ContentType.Image.PNG, ContentType.Image.GIF -> 
-                    CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 7 * 24 * 60 * 60))
-                else -> null
-            }
-        }
     }
 
     install(ContentNegotiation) { 
@@ -75,10 +60,7 @@ fun Application.module() {
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
         allowMethod(HttpMethod.Options)
-        allowMethod(HttpMethod.Get)
-        allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpHeaders.AccessControlAllowOrigin)
         allowCredentials = true
     }
 
@@ -98,16 +80,10 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA DE IMAGENS - Servindo do caminho absoluto
-        get("/uploads/{filename...}") {
-            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
-            val file = File(uploadDir, filename)
-            
-            if (file.exists() && file.isFile) {
-                call.respondFile(file)
-            } else {
-                call.respond(HttpStatusCode.NotFound, "Arquivo não encontrado no servidor: $filename")
-            }
+        // SERVIR ARQUIVOS ESTÁTICOS DE FORMA NATIVA (Mais robusto que o GET manual)
+        static("/uploads") {
+            staticRootFolder = File("/app")
+            files("uploads")
         }
 
         get("/api/debug/files") {
