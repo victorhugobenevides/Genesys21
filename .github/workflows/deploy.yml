@@ -92,7 +92,10 @@ jobs:
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
             
-            # Nginx de Produção com Proxy Reverso para API
+            # Limpeza de possíveis diretórios fantasmas criados pelo Docker
+            sudo rm -rf nginx.prod.conf nginx.conf
+            
+            # Nginx de Produção corrigido para servir /uploads/
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -119,7 +122,19 @@ jobs:
                     root /usr/share/nginx/html;
                     index index.html;
 
-                    # Proxy para a API (Importante para evitar ERR_SSL_PROTOCOL_ERROR)
+                    # ROTA DE IMAGENS - Servida diretamente pelo disco
+                    location /uploads/ {
+                        alias /usr/share/nginx/html/uploads/;
+                        try_files \$uri @backend_fallback;
+                        expires 30d;
+                        add_header Cache-Control "public";
+                    }
+
+                    location @backend_fallback {
+                        proxy_pass http://server:8080;
+                        proxy_set_header Host \$host;
+                    }
+
                     location /pages {
                         proxy_pass http://server:8080/pages;
                         proxy_set_header Host \$host;
@@ -142,11 +157,6 @@ jobs:
                         proxy_set_header X-Real-IP \$remote_addr;
                         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                         proxy_set_header X-Forwarded-Proto \$scheme;
-                    }
-
-                    location /uploads {
-                        proxy_pass http://server:8080/uploads;
-                        proxy_set_header Host \$host;
                     }
 
                     location / {
@@ -182,6 +192,7 @@ jobs:
                   - "443:443"
                 volumes:
                   - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+                  - ./uploads:/usr/share/nginx/html/uploads:ro
                   - ./certbot/conf:/etc/letsencrypt:ro
                   - ./certbot/www:/var/www/certbot:ro
                 restart: unless-stopped
@@ -191,6 +202,10 @@ jobs:
               genesys-network:
                 driver: bridge
             EOF
+            
+            # Dá permissão na pasta de uploads para o Nginx conseguir ler
+            sudo chmod -R 755 ~/app/uploads
+            
             docker compose pull
-            docker compose up -d
+            docker compose up -d --force-recreate
             docker image prune -f
