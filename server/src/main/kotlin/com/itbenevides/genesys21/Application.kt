@@ -60,7 +60,10 @@ fun Application.module() {
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
         allowMethod(HttpMethod.Options)
-        allowMethod(HttpHeaders.AccessControlAllowOrigin)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
         allowCredentials = true
     }
 
@@ -80,10 +83,10 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // SERVIR ARQUIVOS ESTÁTICOS DE FORMA NATIVA (Mais robusto que o GET manual)
+        // Servir arquivos da pasta uploads
         static("/uploads") {
-            staticRootFolder = File("/app")
-            files("uploads")
+            staticRootFolder = File("/app/uploads")
+            files(".")
         }
 
         get("/api/debug/files") {
