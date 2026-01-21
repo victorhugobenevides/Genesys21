@@ -42,44 +42,32 @@ fun Application.module() {
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
 
-    val uploadDir = File("uploads").absoluteFile
-    if (!uploadDir.exists()) uploadDir.mkdirs()
+    // FORÇAR CAMINHO ABSOLUTO PARA O DOCKER
+    val uploadDir = File("/app/uploads").absoluteFile
+    if (!uploadDir.exists()) {
+        val created = uploadDir.mkdirs()
+        logger.info("Diretório de uploads criado em ${uploadDir.absolutePath}: $created")
+    }
     
-    logger.info(">>> BACKEND GENESYS21 OTIMIZADO")
+    logger.info(">>> BACKEND GENESYS21 INICIADO EM: ${uploadDir.absolutePath}")
 
-    // 1. OTIMIZAÇÃO: COMPRESSÃO DE DADOS (GZIP)
-    // Reduz drasticamente o tamanho das respostas JSON e HTML
     install(Compression) {
-        gzip {
-            priority = 1.0
-        }
-        deflate {
-            priority = 10.0
-            minimumSize(1024) // Só comprime se for maior que 1KB
-        }
+        gzip { priority = 1.0 }
+        deflate { priority = 10.0; minimumSize(1024) }
     }
 
-    // 2. OTIMIZAÇÃO: CACHE DE IMAGENS E ARQUIVOS ESTÁTICOS
     install(CachingHeaders) {
         options { call, outgoingContent ->
             when (outgoingContent.contentType?.withoutParameters()) {
-                ContentType.Image.JPEG, 
-                ContentType.Image.PNG,
-                ContentType.Image.GIF -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 7 * 24 * 60 * 60)) // 7 Dias de Cache
-                ContentType.Text.CSS,
-                ContentType.Application.JavaScript,
-                ContentType.Text.Html -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 24 * 60 * 60)) // 1 Dia para Assets Web
+                ContentType.Image.JPEG, ContentType.Image.PNG, ContentType.Image.GIF -> 
+                    CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 7 * 24 * 60 * 60))
                 else -> null
             }
         }
     }
 
     install(ContentNegotiation) { 
-        json(Json {
-            ignoreUnknownKeys = true 
-            isLenient = true
-            encodeDefaults = true
-        }) 
+        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }) 
     }
     
     install(CORS) {
@@ -101,7 +89,6 @@ fun Application.module() {
                     val decodedToken = FirebaseAuth.getInstance().verifyIdToken(credential.token)
                     UserIdPrincipal(decodedToken.uid)
                 } catch (e: Exception) {
-                    logger.error("Auth Failure: ${e.message}")
                     null
                 }
             }
@@ -111,42 +98,24 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA DE IMAGENS OTIMIZADA
+        // ROTA DE IMAGENS - Servindo do caminho absoluto
         get("/uploads/{filename...}") {
-            val pathParams = call.parameters.getAll("filename")
-            val filename = pathParams?.joinToString("/") ?: ""
-            val file = File(uploadDir, filename).absoluteFile
+            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
+            val file = File(uploadDir, filename)
             
             if (file.exists() && file.isFile) {
-                // Define o Content-Type explicitamente para ativar o Cache
-                val contentType = when (file.extension.lowercase()) {
-                    "jpg", "jpeg" -> ContentType.Image.JPEG
-                    "png" -> ContentType.Image.PNG
-                    "webp" -> ContentType.parse("image/webp")
-                    "gif" -> ContentType.Image.GIF
-                    else -> ContentType.Application.OctetStream
-                }
-                
-                // O plugin CachingHeaders cuidará do header automaticamente baseado no ContentType
                 call.respondFile(file)
             } else {
-                call.respond(HttpStatusCode.NotFound, "Imagem não encontrada")
+                call.respond(HttpStatusCode.NotFound, "Arquivo não encontrado no servidor: $filename")
             }
         }
 
-        get("/favicon.ico") {
-            call.respondBytes(ByteArray(0), ContentType.Image.XIcon)
-        }
-
         get("/api/debug/files") {
-            val fileNames = uploadDir.listFiles()?.map { it.name } ?: emptyList()
-            val response = "DIR: ${uploadDir.absolutePath}\nFILES: ${fileNames.joinToString(", ")}"
-            call.respondText(response)
+            val files = uploadDir.listFiles()?.map { "${it.name} (${it.length()} bytes)" } ?: emptyList()
+            call.respondText("DIR: ${uploadDir.absolutePath}\nFILES:\n${files.joinToString("\n")}")
         }
 
-        get("/") {
-            call.respondText("Genesys21 API Online (GZIP Active)")
-        }
+        get("/") { call.respondText("Genesys21 API Online") }
 
         authenticate("firebase") {
             post("/upload") {
@@ -156,7 +125,8 @@ fun Application.module() {
 
                 multipart.forEachPart { part ->
                     if (part is PartData.FileItem) {
-                        fileName = "${UUID.randomUUID()}.${part.originalFileName?.substringAfterLast(".") ?: "jpg"}"
+                        val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
+                        fileName = "${UUID.randomUUID()}.$ext"
                         fileBytes = part.streamProvider().readBytes()
                     }
                     part.dispose()
@@ -166,11 +136,9 @@ fun Application.module() {
                     val file = File(uploadDir, fileName)
                     try {
                         val outputStream = ByteArrayOutputStream()
-                        // Redimensiona para no máximo 1200px e reduz qualidade para 80% (Equilíbrio visual/tamanho)
                         Thumbnails.of(ByteArrayInputStream(fileBytes))
                             .size(1200, 1200)
                             .keepAspectRatio(true)
-                            .outputFormat("jpg")
                             .outputQuality(0.80) 
                             .toOutputStream(outputStream)
                         file.writeBytes(outputStream.toByteArray())
@@ -179,7 +147,7 @@ fun Application.module() {
                     }
                     call.respondText("/uploads/$fileName")
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, "Arquivo não enviado")
+                    call.respond(HttpStatusCode.BadRequest, "Arquivo inválido")
                 }
             }
         }
@@ -194,15 +162,11 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
         val stream = this::class.java.classLoader.getResourceAsStream(fileName)
             ?: if (File(fileName).exists()) File(fileName).inputStream() else null
 
-        if (stream == null) return
-
-        val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.fromStream(stream))
-            .build()
-
-        if (FirebaseApp.getApps().isEmpty()) {
-            FirebaseApp.initializeApp(options)
-            logger.info("Firebase Admin inicializado!")
+        if (stream != null) {
+            val options = FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.fromStream(stream))
+                .build()
+            if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
         }
     } catch (e: Exception) {
         logger.error("Erro Firebase: ${e.message}")
