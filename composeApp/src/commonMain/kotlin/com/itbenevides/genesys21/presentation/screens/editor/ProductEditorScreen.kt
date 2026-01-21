@@ -3,24 +3,28 @@ package com.itbenevides.genesys21.presentation.screens.editor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -38,7 +42,7 @@ fun ProductEditorScreen(
 ) {
     var name by remember { mutableStateOf(product?.name ?: "") }
     var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
-    var imageUrl by remember { mutableStateOf(product?.imageUrl ?: "") }
+    var imageUrls by remember { mutableStateOf(product?.imageUrls ?: emptyList<String>()) }
     var description by remember { mutableStateOf(product?.description ?: "") }
     var category by remember { mutableStateOf(product?.category ?: "") }
     var stock by remember { mutableStateOf(product?.stock?.toString() ?: "0") }
@@ -47,10 +51,12 @@ fun ProductEditorScreen(
 
     val launchImagePicker = rememberImagePicker { bytes ->
         bytes?.let {
-            isUploading = true
-            viewModel.uploadImage(it, "prod_${Random.nextInt()}.jpg") { uploadedUrl ->
-                imageUrl = uploadedUrl
-                isUploading = false
+            if (imageUrls.size < 5) {
+                isUploading = true
+                viewModel.uploadImage(it, "prod_${Random.nextInt()}.jpg") { uploadedUrl ->
+                    imageUrls = imageUrls + uploadedUrl
+                    isUploading = false
+                }
             }
         }
     }
@@ -60,136 +66,160 @@ fun ProductEditorScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(if (product == null) "Novo Produto" else "Editar Produto", style = MaterialTheme.typography.titleMedium) },
+                title = { 
+                    Text(
+                        if (product == null) "Novo Produto" else "Editar Produto", 
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
+                    ) 
+                },
                 navigationIcon = {
                     TextButton(onClick = onBack) {
-                        Text("Cancelar", color = MaterialTheme.colorScheme.error)
+                        Text("Cancelar", color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
                     }
                 },
                 actions = {
-                    TextButton(
+                    Button(
                         onClick = {
                             val finalProduct = Product(
                                 id = product?.id ?: Random.nextInt().toString(),
                                 name = name,
                                 price = price.toDoubleOrNull() ?: 0.0,
-                                imageUrl = imageUrl,
+                                imageUrls = imageUrls,
                                 description = description,
                                 category = category,
                                 stock = stock.toIntOrNull() ?: 0
                             )
                             onSave(finalProduct)
                         },
-                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading
+                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading,
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp),
+                        modifier = Modifier.padding(end = 8.dp).height(36.dp)
                     ) {
                         Text("Salvar", fontWeight = FontWeight.Bold)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(padding),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Seção de Imagem (Estilo Consistente com Detalhes)
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1.2f)
-                        .clickable { launchImagePicker() },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                // SEÇÃO DE FOTOS
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Fotos do Produto (${imageUrls.size}/5)", 
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        if (isUploading) {
-                            CircularProgressIndicator()
-                        } else if (imageUrl.isNotEmpty()) {
-                            AsyncImage(
-                                model = imageUrl,
-                                contentDescription = "Preview",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Default.Image, 
-                                    null, 
-                                    modifier = Modifier.size(60.dp), 
-                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text("Clique para adicionar foto", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            contentPadding = PaddingValues(end = 16.dp)
+                        ) {
+                            items(imageUrls) { url ->
+                                Box(modifier = Modifier.size(110.dp)) {
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                    // Botão de remover refinado
+                                    Surface(
+                                        onClick = { imageUrls = imageUrls.filter { it != url } },
+                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(24.dp),
+                                        shape = CircleShape,
+                                        color = Color.Black.copy(alpha = 0.6f),
+                                        contentColor = Color.White
+                                    ) {
+                                        Icon(Icons.Default.Close, null, modifier = Modifier.padding(4.dp))
+                                    }
+                                }
+                            }
+                            
+                            if (imageUrls.size < 5) {
+                                item {
+                                    Surface(
+                                        modifier = Modifier.size(110.dp).clickable { launchImagePicker() },
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (isUploading) {
+                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                                            } else {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                                                    Spacer(Modifier.height(4.dp))
+                                                    Text("Adicionar", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                // Card de Informações
+                // FORMULÁRIO
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text("Detalhes do Produto", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                        Text("Informações Gerais", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
 
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
                             label = { Text("Nome do Produto") },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            textStyle = TextStyle(fontSize = 16.sp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                            )
                         )
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             OutlinedTextField(
                                 value = price,
-                                onValueChange = { input ->
-                                    if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) {
-                                        price = input
-                                    }
-                                },
+                                onValueChange = { input -> if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) price = input },
                                 label = { Text("Preço") },
-                                prefix = { Text("R$ ") },
+                                prefix = { Text("R$ ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                             OutlinedTextField(
                                 value = stock,
-                                onValueChange = { input ->
-                                    if (input.isEmpty() || input.all { it.isDigit() }) {
-                                        stock = input
-                                    }
-                                },
+                                onValueChange = { input -> if (input.isEmpty() || input.all { it.isDigit() }) stock = input },
                                 label = { Text("Estoque") },
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(16.dp)
                             )
                         }
 
@@ -200,18 +230,15 @@ fun ProductEditorScreen(
                         ) {
                             OutlinedTextField(
                                 value = category,
-                                onValueChange = { 
-                                    category = it
-                                    expanded = true
-                                },
+                                onValueChange = { category = it; expanded = true },
                                 label = { Text("Categoria") },
                                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 trailingIcon = {
-                                    Row {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
                                         if (category.isNotEmpty()) {
                                             IconButton(onClick = { category = ""; expanded = true }) {
-                                                Icon(Icons.Default.Clear, "Limpar")
+                                                Icon(Icons.Default.Clear, "Limpar", modifier = Modifier.size(20.dp))
                                             }
                                         }
                                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -223,16 +250,14 @@ fun ProductEditorScreen(
                             if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
                                 ExposedDropdownMenu(
                                     expanded = expanded,
-                                    onDismissRequest = { expanded = false }
+                                    onDismissRequest = { expanded = false },
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                                 ) {
                                     val optionsToShow = if (category.isEmpty()) existingCategories else filteredOptions
                                     optionsToShow.forEach { selectionOption ->
                                         DropdownMenuItem(
                                             text = { Text(selectionOption) },
-                                            onClick = {
-                                                category = selectionOption
-                                                expanded = false
-                                            }
+                                            onClick = { category = selectionOption; expanded = false }
                                         )
                                     }
                                 }
@@ -245,11 +270,10 @@ fun ProductEditorScreen(
                             label = { Text("Descrição") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 4,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(16.dp)
                         )
                     }
                 }
-                
                 Spacer(modifier = Modifier.height(40.dp))
             }
         }

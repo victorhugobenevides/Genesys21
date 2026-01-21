@@ -53,14 +53,38 @@ fun App() {
             }
         }
 
-        val themeConfig = when (currentRoute) {
-            is Route.WhiteLabel -> currentRoute.page.theme
-            is Route.PublicViewer -> currentRoute.page.theme
-            is Route.ProductDetails -> {
-                val from = currentRoute.fromRoute
-                if (from is Route.PublicViewer) from.page.theme else PageThemeConfig.DEFAULT
+        // LÓGICA DE TEMA PERSISTENTE E HERDADA
+        val themeConfig by remember(currentRoute) {
+            derivedStateOf {
+                when (currentRoute) {
+                    is Route.WhiteLabel -> currentRoute.page.theme
+                    is Route.PublicViewer -> currentRoute.page.theme
+                    is Route.ProductEditor -> currentRoute.page.theme
+                    is Route.ProductDetails -> {
+                        val from = currentRoute.fromRoute
+                        when (from) {
+                            is Route.PublicViewer -> from.page.theme
+                            is Route.WhiteLabel -> from.page.theme
+                            else -> PageThemeConfig.DEFAULT
+                        }
+                    }
+                    is Route.Cart -> {
+                        // Tenta herdar o tema da última tela do histórico (View ou Edit)
+                        val lastPage = router.getHistory().reversed().firstNotNullOfOrNull { 
+                            when (it) {
+                                is Route.PublicViewer -> it.page
+                                is Route.WhiteLabel -> it.page
+                                is Route.ProductDetails -> {
+                                    (it.fromRoute as? Route.PublicViewer)?.page ?: (it.fromRoute as? Route.WhiteLabel)?.page
+                                }
+                                else -> null
+                            }
+                        }
+                        lastPage?.theme ?: PageThemeConfig.DEFAULT
+                    }
+                    else -> PageThemeConfig.DEFAULT
+                }
             }
-            else -> PageThemeConfig.DEFAULT
         }
 
         AppTheme(themeConfig = themeConfig) {
@@ -79,7 +103,7 @@ fun App() {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     val maxWidth = if (currentRoute is Route.Login || currentRoute is Route.Splash) 400.dp else 1200.dp
                     
-                    Box(modifier = Modifier.fillMaxHeight().widthIn(max = maxWidth)) {
+                    Box(modifier = Modifier.fillMaxHeight().widthIn()) {
                         AnimatedContent(targetState = currentRoute) { route ->
                             when (route) {
                                 is Route.Splash -> SplashScreen()

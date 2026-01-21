@@ -82,17 +82,17 @@ fun PageComponentRenderer(
 
     when (component) {
         is PageComponent.CategoryFilter -> {
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
                 Text(
-                    text = "Categorias",
+                    text = "Explorar Categorias",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
                 )
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     FilterChip(
                         selected = filterQuery.isEmpty(),
@@ -101,8 +101,10 @@ fun PageComponentRenderer(
                         shape = CircleShape,
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                        )
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        ),
+                        border = null
                     )
                     
                     allAvailableCategories.forEach { category ->
@@ -113,39 +115,45 @@ fun PageComponentRenderer(
                                 else onFilterQueryChange(category)
                             },
                             label = { Text(category) },
-                            shape = CircleShape
+                            shape = CircleShape,
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            ),
+                            border = null
                         )
                     }
                 }
             }
         }
         is PageComponent.Filter -> {
-            OutlinedTextField(
-                value = filterQuery,
-                onValueChange = onFilterQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .shadow(if (component.isTransparent) 0.dp else 2.dp, CircleShape),
-                textStyle = TextStyle(fontSize = 15.sp),
-                placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
-                trailingIcon = {
-                    if (filterQuery.isNotEmpty()) {
-                        IconButton(onClick = { onFilterQueryChange("") }) {
-                            Icon(Icons.Default.Close, null)
+            Box(Modifier.padding(vertical = 16.dp)) {
+                OutlinedTextField(
+                    value = filterQuery,
+                    onValueChange = onFilterQueryChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(if (component.isTransparent) 0.dp else 4.dp, CircleShape),
+                    textStyle = TextStyle(fontSize = 16.sp),
+                    placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
+                    trailingIcon = {
+                        if (filterQuery.isNotEmpty()) {
+                            IconButton(onClick = { onFilterQueryChange("") }) {
+                                Icon(Icons.Default.Close, null)
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                shape = CircleShape,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = Color.Transparent
+                    },
+                    singleLine = true,
+                    shape = CircleShape,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        unfocusedBorderColor = Color.Transparent
+                    )
                 )
-            )
+            }
         }
         is PageComponent.ProductList -> {
             val productsToDisplay = if (filterQuery.isBlank() || !component.isFilterable) {
@@ -162,10 +170,14 @@ fun PageComponentRenderer(
             }
 
             if (productsToDisplay.isNotEmpty()) {
-                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val maxColumns = if (maxWidth > 800.dp) 3 else 2
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+                    // Responsividade: 2 colunas no celular, 3 em tablet, 4 no desktop/web grande
+                    val maxColumns = if (maxWidth > 1000.dp) 4 else if (maxWidth > 600.dp) 3 else 2
                     
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // Largura dinâmica para o Carrossel (Horizontal)
+                    val horizontalItemWidth = if (maxWidth > 1000.dp) 240.dp else if (maxWidth > 600.dp) 200.dp else 170.dp
+
+                    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         if (component.isHorizontal) {
                             val listState = rememberLazyListState()
                             val coroutineScope = rememberCoroutineScope()
@@ -175,15 +187,17 @@ fun PageComponentRenderer(
                                     state = listState,
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                                    contentPadding = PaddingValues(vertical = 8.dp)
                                 ) {
                                     items(productsToDisplay) { product ->
-                                        val fullImageUrl = if (product.imageUrl.startsWith("/")) "$backendUrl${product.imageUrl}" else product.imageUrl
+                                        val fullUrls = product.imageUrls.map { url ->
+                                            if (url.startsWith("/")) "$backendUrl$url" else url
+                                        }
                                         ProductCard(
-                                            product = product.copy(imageUrl = fullImageUrl),
-                                            shape = RoundedCornerShape(20.dp),
+                                            product = product.copy(imageUrls = fullUrls),
+                                            shape = RoundedCornerShape(24.dp),
                                             isTransparent = component.isTransparent,
-                                            modifier = Modifier.width(180.dp),
+                                            modifier = Modifier.width(horizontalItemWidth),
                                             onClick = onProductClick,
                                             onAddToCart = { viewModel.addToCart(product) }
                                         )
@@ -198,20 +212,20 @@ fun PageComponentRenderer(
                                         if (listState.firstVisibleItemIndex > 0) {
                                             IconButton(
                                                 onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex - 1) } },
-                                                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
+                                                modifier = Modifier.padding(start = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape).shadow(2.dp, CircleShape)
                                             ) {
-                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null)
+                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
                                             }
-                                        } else { Spacer(Modifier.width(40.dp)) }
+                                        } else { Spacer(Modifier.width(48.dp)) }
 
                                         if (listState.canScrollForward) {
                                             IconButton(
                                                 onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex + 1) } },
-                                                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
+                                                modifier = Modifier.padding(end = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape).shadow(2.dp, CircleShape)
                                             ) {
-                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
+                                                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
                                             }
-                                        } else { Spacer(Modifier.width(40.dp)) }
+                                        } else { Spacer(Modifier.width(48.dp)) }
                                     }
                                 }
                             }
@@ -219,10 +233,12 @@ fun PageComponentRenderer(
                             productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     rowProducts.forEach { product ->
-                                        val fullImageUrl = if (product.imageUrl.startsWith("/")) "$backendUrl${product.imageUrl}" else product.imageUrl
+                                        val fullUrls = product.imageUrls.map { url ->
+                                            if (url.startsWith("/")) "$backendUrl$url" else url
+                                        }
                                         ProductCard(
-                                            product = product.copy(imageUrl = fullImageUrl),
-                                            shape = RoundedCornerShape(20.dp),
+                                            product = product.copy(imageUrls = fullUrls),
+                                            shape = RoundedCornerShape(24.dp),
                                             isTransparent = component.isTransparent,
                                             modifier = Modifier.weight(1f),
                                             onClick = onProductClick,
@@ -242,27 +258,30 @@ fun PageComponentRenderer(
         is PageComponent.Header -> {
             Text(
                 text = component.title.ifBlank { "Título" }, 
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold), 
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp
+                ), 
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp)
             )
         }
         is PageComponent.Text -> {
             Text(
                 text = component.content.ifBlank { "Conteúdo..." }, 
-                style = MaterialTheme.typography.bodyLarge, 
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp), 
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
         }
         is PageComponent.Image -> {
             val scope = rememberCoroutineScope()
-            val imgModifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.wrapContentSize().padding(16.dp)
-            val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(if (component.isFullWidth) 0.dp else 24.dp)
+            val imgModifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.widthIn(max = 600.dp).wrapContentSize()
+            val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(if (component.isFullWidth) 0.dp else 28.dp)
 
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Surface(
                     modifier = imgModifier.clickable {
                         val destId = (component as? PageComponent.Image)?.destinationPageId
@@ -273,13 +292,18 @@ fun PageComponentRenderer(
                                     else router.navigateTo(Route.PublicViewer(targetPage))
                                 }
                             }
+                        } else {
+                            val currentUrl = (component as? PageComponent.Image)?.url ?: ""
+                            if (currentUrl.startsWith("http")) {
+                                uriHandler.openUri(currentUrl)
+                            }
                         }
                     },
                     shape = imgShape,
-                    color = if (component.isTransparent) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    tonalElevation = if (component.isTransparent) 0.dp else 2.dp
+                    color = Color.Transparent,
+                    tonalElevation = 0.dp
                 ) {
-                    Box(Modifier.padding(if (component.url.isNotEmpty() || component.isFullWidth) 0.dp else 40.dp), contentAlignment = Alignment.Center) {
+                    Box(contentAlignment = Alignment.Center) {
                         if (component.url.isNotEmpty()) {
                             val fullImageUrl = if (component.url.startsWith("/")) "$backendUrl${component.url}" else component.url
                             AsyncImage(
@@ -289,26 +313,30 @@ fun PageComponentRenderer(
                                 contentScale = if (component.isFullWidth) ContentScale.FillWidth else ContentScale.Crop
                             )
                         } else {
-                            Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(component.size.dp))
+                            Box(Modifier.size(component.size.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), imgShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(48.dp))
+                            }
                         }
                     }
                 }
             }
         }
         is PageComponent.Button -> {
-            Button(
-                onClick = { uriHandler.openUri(component.url) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = CircleShape,
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-            ) {
-                val icon = when (component.iconName?.lowercase()) {
-                    "whatsapp" -> Icons.AutoMirrored.Filled.Chat
-                    "instagram" -> Icons.Default.CameraAlt
-                    else -> null
+            Box(Modifier.padding(vertical = 12.dp)) {
+                Button(
+                    onClick = { uriHandler.openUri(component.url) },
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    shape = CircleShape,
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
+                ) {
+                    val icon = when (component.iconName?.lowercase()) {
+                        "whatsapp" -> Icons.AutoMirrored.Filled.Chat
+                        "instagram" -> Icons.Default.CameraAlt
+                        else -> null
+                    }
+                    if (icon != null) { Icon(icon, null); Spacer(Modifier.width(12.dp)) }
+                    Text(component.text, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
-                if (icon != null) { Icon(icon, null); Spacer(Modifier.width(8.dp)) }
-                Text(component.text, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
         else -> {}
@@ -328,17 +356,17 @@ fun ProductCard(
         modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke(product) },
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = if (isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTransparent) 0.dp else 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isTransparent) 0.dp else 6.dp)
     ) {
         Column {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (product.imageUrl.isNotEmpty()) {
+                if (product.imageUrls.isNotEmpty()) {
                     AsyncImage(
                         model = product.imageUrl,
                         contentDescription = product.name,
@@ -346,55 +374,69 @@ fun ProductCard(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), modifier = Modifier.size(48.dp))
+                    Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), modifier = Modifier.size(56.dp))
                 }
                 
+                // Botão de adicionar refinado
                 if (onAddToCart != null && product.stock > 0) {
-                    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomEnd) {
-                        SmallFloatingActionButton(
+                    Box(Modifier.fillMaxSize().padding(10.dp), contentAlignment = Alignment.BottomEnd) {
+                        Surface(
                             onClick = onAddToCart,
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(40.dp),
                             shape = CircleShape,
-                            modifier = Modifier.size(36.dp)
+                            color = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            tonalElevation = 4.dp,
+                            shadowElevation = 4.dp
                         ) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Add, null, modifier = Modifier.size(24.dp))
+                            }
                         }
                     }
                 }
             }
             
-            Column(Modifier.padding(12.dp)) {
+            Column(Modifier.padding(16.dp)) {
                 Text(
                     text = product.name, 
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), 
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), 
                     maxLines = 1, 
                     overflow = TextOverflow.Ellipsis
                 )
                 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "R$ ${product.price}", 
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), 
-                        color = MaterialTheme.colorScheme.primary
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     )
                     
                     if (product.stock <= 0) {
                         Surface(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            shape = RoundedCornerShape(4.dp)
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
                                 "ESGOTADO", 
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 9.sp
+                                ),
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     } else if (product.stock < 5) {
-                        Text("Só ${product.stock} un!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                        Text(
+                            "Só ${product.stock} un!", 
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), 
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }

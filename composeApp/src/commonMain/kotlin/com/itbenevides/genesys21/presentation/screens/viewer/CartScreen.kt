@@ -154,9 +154,12 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(cartItems) { item ->
-                        val imageUrl = if (item.product.imageUrl.startsWith("/")) "$backendUrl${item.product.imageUrl}" else item.product.imageUrl
+                        // CORRIGIDO: Usa imageUrls (lista) no .copy()
+                        val fullUrls = item.product.imageUrls.map { url ->
+                            if (url.startsWith("/")) "$backendUrl$url" else url
+                        }
                         CartItemRow(
-                            item = item.copy(product = item.product.copy(imageUrl = imageUrl)),
+                            item = item.copy(product = item.product.copy(imageUrls = fullUrls)),
                             onIncrease = { viewModel.updateCartQuantity(item.product.id, item.quantity + 1) },
                             onDecrease = { viewModel.updateCartQuantity(item.product.id, item.quantity - 1) },
                             onRemove = { viewModel.removeFromCart(item.product.id) }
@@ -193,9 +196,9 @@ fun CartItemRow(
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (item.product.imageUrl.isNotEmpty()) {
+                if (item.product.imageUrls.isNotEmpty()) {
                     AsyncImage(
-                        model = item.product.imageUrl,
+                        model = item.product.imageUrl, // O helper .imageUrl pega a primeira da lista
                         contentDescription = item.product.name,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

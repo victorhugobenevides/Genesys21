@@ -10,7 +10,7 @@ import com.itbenevides.genesys21.onUrlChange
 import com.itbenevides.genesys21.syncUrlWithScreen
 import com.itbenevides.genesys21.navigateBack
 import com.itbenevides.genesys21.presentation.PageViewModel
-import kotlinx.browser.window
+import com.itbenevides.genesys21.di.getHostname
 
 class Router(val viewModel: PageViewModel) {
     var currentRoute by mutableStateOf<Route>(Route.Splash)
@@ -18,8 +18,17 @@ class Router(val viewModel: PageViewModel) {
 
     private val historyStack = mutableListOf<Route>()
 
+    /**
+     * Retorna o histórico de navegação atual.
+     */
+    fun getHistory(): List<Route> = historyStack.toList()
+
+    /**
+     * Navega para uma nova rota, adicionando a anterior ao histórico.
+     */
     fun navigateTo(route: Route) {
         if (currentRoute != route) {
+            // Evita salvar Splash ou duplicatas na pilha de histórico
             if (currentRoute !is Route.Splash && historyStack.lastOrNull() != currentRoute) {
                 historyStack.add(currentRoute)
             }
@@ -27,21 +36,28 @@ class Router(val viewModel: PageViewModel) {
         }
     }
 
+    /**
+     * Volta para a tela anterior baseada no histórico interno ou fallback inteligente.
+     */
     fun goBack() {
         if (historyStack.isNotEmpty()) {
             currentRoute = historyStack.removeAt(historyStack.size - 1)
         } else {
+            // Fallback robusto baseado na rota atual
             when (val route = currentRoute) {
                 is Route.Cart -> currentRoute = Route.PageList
                 is Route.ProductDetails -> currentRoute = route.fromRoute
                 is Route.WhiteLabel -> currentRoute = Route.PageList
                 is Route.PageEditor -> currentRoute = Route.PageList
                 is Route.PublicViewer -> currentRoute = Route.PageList
-                else -> navigateBack()
+                else -> navigateBack() // Fallback de sistema
             }
         }
     }
 
+    /**
+     * Sincroniza a rota atual com a URL do navegador.
+     */
     fun forceSyncUrl() {
         val (pageId, productId) = when (val route = currentRoute) {
             is Route.PageEditor -> route.page?.id to null
@@ -72,20 +88,22 @@ class Router(val viewModel: PageViewModel) {
         syncUrlWithScreen(screen, pageId, productId)
     }
 
+    /**
+     * Trata Deep Links e o redirecionamento inicial.
+     */
     suspend fun handleDeepLink() {
         val urlPath = getInitialUrlPath() ?: "/"
-        val currentDomain = window.location.hostname.lowercase().removePrefix("www.")
+        val currentDomain = getHostname().lowercase().removePrefix("www.")
         
-        // 1. Tenta carregar pelo domínio customizado (Agora liberado para localhost também)
-        if (urlPath == "/" || urlPath == "") {
-            val pageByDomain = viewModel.loadPageByDomain(currentDomain)
-            if (pageByDomain != null) {
-                currentRoute = Route.PublicViewer(pageByDomain)
+        // 1. Prioridade: Domínio Customizado (AWS/Produção)
+        if ((urlPath == "/" || urlPath == "") && currentDomain != "localhost" && currentDomain != "127.0.0.1") {
+            viewModel.loadPageByDomain(currentDomain)?.let { page ->
+                currentRoute = Route.PublicViewer(page)
                 return
             }
         }
 
-        // 2. Lógica de caminhos específicos (/p/, /product/, etc)
+        // 2. Extração de IDs da URL
         val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
         val productId = urlPath.extractId("/product/")
 
@@ -108,8 +126,8 @@ class Router(val viewModel: PageViewModel) {
             }
         }
 
-        // 3. Fallback para Raiz "/"
-        if (urlPath == "/" || urlPath == "") {
+        // 3. Fallback para Raiz "/" ou erros
+        if (urlPath == "/" || urlPath == "" || urlPath.startsWith("/login")) {
             val token = viewModel.getCurrentUserToken()
             if (token != null) {
                 val userPages = viewModel.getPagesSync()
@@ -128,9 +146,9 @@ class Router(val viewModel: PageViewModel) {
             return
         }
 
+        // 4. Mapeamento de rotas genéricas
         try {
             when {
-                urlPath.startsWith("/login") -> currentRoute = Route.Login
                 urlPath.startsWith("/list") -> currentRoute = Route.PageList
                 else -> {
                     val token = viewModel.getCurrentUserToken()

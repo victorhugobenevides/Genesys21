@@ -8,16 +8,22 @@ data class Product(
     val id: String,
     val name: String,
     val price: Double,
-    val imageUrl: String,
+    val imageUrls: List<String> = emptyList(), // ALTERADO PARA LISTA
     val description: String = "",
     val category: String = "",
     val stock: Int = 0
-)
+) {
+    // Helper para manter compatibilidade com código que espera apenas uma URL
+    val imageUrl: String get() = imageUrls.firstOrNull() ?: ""
+}
 
 @Serializable
 enum class PageThemeConfig {
-    DEFAULT, OCEAN, FOREST, CANDY, DARK,
-    SUNSET, BERRY, MINIMAL, VINTAGE, NEON
+    ROYAL, OCEAN, FOREST, CANDY, SUNSET, 
+    BERRY, MINIMAL, VINTAGE, NORDIC, COFFEE,
+    SOFT_LAVENDER, SKY_BLUE, MINT_GREEN, PEACH, LEMON,
+    DARK_MODE, MIDNIGHT, NEON, DEEP_SPACE, LUXURY_GOLD,
+    DEFAULT 
 }
 
 @Serializable
@@ -120,7 +126,7 @@ data class Page(
     val title: String,
     val ownerId: String? = null,
     val customDomain: String? = null,
-    val whatsapp: String? = null, // NOVO CAMPO PARA PEDIDOS
+    val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
-    val theme: PageThemeConfig = PageThemeConfig.DEFAULT
+    val theme: PageThemeConfig = PageThemeConfig.ROYAL
 )

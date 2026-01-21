@@ -35,3 +35,4 @@ val dataModule = module {
 
 expect fun getAuthRepository(): AuthRepository
 expect fun getBaseUrl(): String
+expect fun getHostname(): String // NOVA FUNÇÃO EXPECT

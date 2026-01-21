@@ -60,7 +60,7 @@ fun WhiteLabelScreen(
 
     val savedCategories by viewModel.allAvailableCategories.collectAsState()
     
-    val allCategories by remember(savedCategories, page) {
+    val allCategoriesList by remember(savedCategories, page) {
         derivedStateOf {
             val currentSessionCategories = page.components
                 .filterIsInstance<PageComponent.ProductList>()
@@ -77,7 +77,7 @@ fun WhiteLabelScreen(
             viewModel = viewModel,
             page = page,
             availableProducts = liveInventory,
-            allAvailableCategories = allCategories, 
+            allAvailableCategories = allCategoriesList, 
             isLoading = isLoading,
             onPageUpdate = onPageChange,
             onPublish = { viewModel.savePage(page, true) { onBack() } },
@@ -249,8 +249,6 @@ fun WhiteLabelContent(
                         if (newComponent is PageComponent.ProductList) {
                             val newList = page.components + newComponent
                             onPageUpdate(page.copy(components = newList))
-                            // Não definimos editingComponentIndex aqui para evitar o crash de índice fora de limites
-                            // O usuário poderá editar clicando no botão de editar do componente após a lista atualizar
                         } else {
                             pendingNewComponent = newComponent
                         }
@@ -280,7 +278,6 @@ fun WhiteLabelContent(
             }
 
             editingComponentIndex?.let { index ->
-                // Adicionada verificação de segurança de índice
                 if (index < page.components.size) {
                     val component = page.components[index]
                     if (component is PageComponent.ProductList) {
@@ -320,7 +317,6 @@ fun WhiteLabelContent(
                         )
                     }
                 } else {
-                    // Limpa o índice se ele se tornou inválido
                     editingComponentIndex = null
                 }
             }
@@ -422,25 +418,14 @@ fun ComponentWrapper(
             }
         }
 
-        val isImage = component is PageComponent.Image
-        val shape = if (component.isRounded && component !is PageComponent.ProductList) CircleShape else RoundedCornerShape(12.dp)
-        
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = shape,
-            color = if (component.isTransparent || isImage) Color.Transparent else MaterialTheme.colorScheme.surface,
-            border = if (component.isTransparent || isImage) null else androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-            shadowElevation = if (component.isTransparent || isImage) 0.dp else 1.dp
-        ) {
-            Box(Modifier.padding(if (component.isTransparent || isImage) 0.dp else 16.dp)) {
-                PageComponentRenderer(
-                    component = component,
-                    filterQuery = filterQuery,
-                    onFilterQueryChange = onFilterQueryChange,
-                    onProductClick = onProductClick,
-                    allAvailableCategories = allAvailableCategories 
-                )
-            }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            PageComponentRenderer(
+                component = component,
+                filterQuery = filterQuery,
+                onFilterQueryChange = onFilterQueryChange,
+                onProductClick = onProductClick,
+                allAvailableCategories = allAvailableCategories 
+            )
         }
     }
 }
@@ -693,7 +678,7 @@ fun ProductListManagementModal(
                                     border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray.copy(alpha = 0.5f))
                                 ) {
                                     Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        if (product.imageUrl.isNotEmpty()) {
+                                        if (product.imageUrls.isNotEmpty()) {
                                             AsyncImage(
                                                 model = product.imageUrl,
                                                 contentDescription = null,
@@ -724,7 +709,7 @@ fun ProductListManagementModal(
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            if (product.imageUrl.isNotEmpty()) {
+                            if (product.imageUrls.isNotEmpty()) {
                                 AsyncImage(
                                     model = product.imageUrl,
                                     contentDescription = null,
@@ -798,16 +783,26 @@ fun ThemeSelectorModal(
             Spacer(Modifier.height(20.dp))
             
             val themes = listOf(
-                Triple(PageThemeConfig.DEFAULT, "Royal", Color(0xFF2D3142)),
-                Triple(PageThemeConfig.OCEAN, "Soft Ocean", Color(0xFF4A90E2)),
-                Triple(PageThemeConfig.FOREST, "Eco Forest", Color(0xFF386641)),
-                Triple(PageThemeConfig.CANDY, "Rose Gold", Color(0xFFB08968)),
-                Triple(PageThemeConfig.DARK, "Midnight", Color(0xFFE0E1DD)),
-                Triple(PageThemeConfig.SUNSET, "Sunset", Color(0xFFF4A261)),
-                Triple(PageThemeConfig.BERRY, "Berry", Color(0xFF9D0208)),
+                Triple(PageThemeConfig.ROYAL, "Royal", Color(0xFF14213D)),
+                Triple(PageThemeConfig.OCEAN, "Soft Ocean", Color(0xFF00ADB5)),
+                Triple(PageThemeConfig.FOREST, "Eco Forest", Color(0xFF283618)),
+                Triple(PageThemeConfig.CANDY, "Rose Gold", Color(0xFFD81159)),
+                Triple(PageThemeConfig.SUNSET, "Sunset", Color(0xFFE76F51)),
+                Triple(PageThemeConfig.BERRY, "Berry", Color(0xFF6A0572)),
                 Triple(PageThemeConfig.MINIMAL, "Minimal", Color(0xFF000000)),
-                Triple(PageThemeConfig.VINTAGE, "Vintage", Color(0xFF6D597A)),
-                Triple(PageThemeConfig.NEON, "Neon", Color(0xFF39FF14))
+                Triple(PageThemeConfig.VINTAGE, "Vintage", Color(0xFF8B5E3C)),
+                Triple(PageThemeConfig.NORDIC, "Nordic", Color(0xFF4A90E2)),
+                Triple(PageThemeConfig.COFFEE, "Coffee", Color(0xFF6F4E37)),
+                Triple(PageThemeConfig.SOFT_LAVENDER, "Lavender", Color(0xFF967BB6)),
+                Triple(PageThemeConfig.SKY_BLUE, "Sky Blue", Color(0xFF039BE5)),
+                Triple(PageThemeConfig.MINT_GREEN, "Mint Green", Color(0xFF00C853)),
+                Triple(PageThemeConfig.PEACH, "Peach", Color(0xFFFF8A65)),
+                Triple(PageThemeConfig.LEMON, "Lemon", Color(0xFFFBC02D)),
+                Triple(PageThemeConfig.DARK_MODE, "Dark Mode", Color(0xFFBB86FC)),
+                Triple(PageThemeConfig.MIDNIGHT, "Midnight", Color(0xFFE94560)),
+                Triple(PageThemeConfig.NEON, "Neon", Color(0xFF39FF14)),
+                Triple(PageThemeConfig.DEEP_SPACE, "Deep Space", Color(0xFF00D1FF)),
+                Triple(PageThemeConfig.LUXURY_GOLD, "Luxury Gold", Color(0xFFD4AF37))
             )
             
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -890,10 +885,10 @@ fun ComponentCatalogModal(
             Text("Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             
             val mockCarouselProducts = (1..10).map { 
-                Product(id = "c$it", name = "Produto Carrossel $it", price = 10.0 * it, imageUrl = "", category = "template") 
+                Product(id = "c$it", name = "Produto Carrossel $it", price = 10.0 * it, imageUrls = emptyList(), category = "template") 
             }
             val mockListProducts = (1..10).map { 
-                Product(id = "l$it", name = "Produto Lista $it", price = 15.0 * it, imageUrl = "", category = "template") 
+                Product(id = "l$it", name = "Produto Lista $it", price = 15.0 * it, imageUrls = emptyList(), category = "template") 
             }
 
             Surface(
