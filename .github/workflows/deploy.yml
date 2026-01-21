@@ -92,10 +92,13 @@ jobs:
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
             
-            # Limpeza de possíveis diretórios fantasmas criados pelo Docker
+            # 1. PARADA TOTAL PARA LIBERAR ARQUIVOS TRAVADOS
+            docker compose down --remove-orphans || true
+            
+            # 2. REMOÇÃO RADICAL DAS PASTAS FANTASMAS (O "Capeta")
             sudo rm -rf nginx.prod.conf nginx.conf
             
-            # Nginx de Produção corrigido para servir /uploads/
+            # 3. CRIAÇÃO DO ARQUIVO DE CONFIGURAÇÃO (Força ser arquivo, não pasta)
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -122,7 +125,7 @@ jobs:
                     root /usr/share/nginx/html;
                     index index.html;
 
-                    # ROTA DE IMAGENS - Servida diretamente pelo disco
+                    # ROTA DE IMAGENS - Servida diretamente pelo disco (Resolve o 404)
                     location /uploads/ {
                         alias /usr/share/nginx/html/uploads/;
                         try_files \$uri @backend_fallback;
@@ -135,35 +138,23 @@ jobs:
                         proxy_set_header Host \$host;
                     }
 
-                    location /pages {
-                        proxy_pass http://server:8080/pages;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                    }
-
                     location /api {
                         proxy_pass http://server:8080/api;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                         proxy_set_header X-Forwarded-Proto \$scheme;
                     }
 
                     location /upload {
                         proxy_pass http://server:8080/upload;
                         proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
                     }
 
                     location / {
                         try_files \$uri \$uri/ /index.html;
                     }
 
-                    location ~* \.(js|mjs|wasm|css|png|jpg|jpeg|gif|ico|svg)$ {
+                    location ~* \.(js|mjs|wasm|css|png|jpg|jpeg|gif|ico|svg)\$ {
                         expires 1h;
                         add_header Cache-Control "public, no-transform";
                     }
@@ -171,14 +162,13 @@ jobs:
             }
             EOF
 
+            # 4. CRIAÇÃO DO DOCKER COMPOSE DE PRODUÇÃO
             cat <<EOF > docker-compose.yml
             services:
               server:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
                 expose:
                   - "8080"
-                environment:
-                  - PUBLIC_HOST=victorbenevides.dev
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
@@ -203,9 +193,8 @@ jobs:
                 driver: bridge
             EOF
             
-            # Dá permissão na pasta de uploads para o Nginx conseguir ler
-            sudo chmod -R 755 ~/app/uploads
-            
+            # 5. PERMISSÕES E INICIALIZAÇÃO
+            sudo chmod -R 777 ~/app/uploads
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
