@@ -8,23 +8,26 @@ data class Product(
     val id: String,
     val name: String,
     val price: Double,
-    val imageUrl: String,
+    val imageUrls: List<String> = emptyList(),
     val description: String = "",
     val category: String = "",
     val stock: Int = 0
-)
+) {
+    val imageUrl: String get() = imageUrls.firstOrNull() ?: ""
+}
 
 @Serializable
 enum class PageThemeConfig {
-    DEFAULT, OCEAN, FOREST, CANDY, DARK,
-    SUNSET, BERRY, MINIMAL, VINTAGE, NEON
+    ROYAL, OCEAN, FOREST, CANDY, SUNSET, 
+    BERRY, MINIMAL, VINTAGE, NORDIC, COFFEE,
+    SOFT_LAVENDER, SKY_BLUE, MINT_GREEN, PEACH, LEMON,
+    DARK_MODE, MIDNIGHT, NEON, DEEP_SPACE, LUXURY_GOLD,
+    DEFAULT 
 }
 
 @Serializable
 sealed class PageComponent {
     abstract val customLabel: String?
-    abstract val isTransparent: Boolean
-    abstract val isRounded: Boolean
     abstract val isFilterable: Boolean
 
     @Serializable
@@ -32,9 +35,8 @@ sealed class PageComponent {
     data class Text(
         val content: String, 
         val fontSize: Int = 16,
+        val textAlign: String = "LEFT", // "LEFT", "CENTER", "RIGHT"
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -42,9 +44,9 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Header")
     data class Header(
         val title: String,
+        val fontSize: Int = 28,
+        val textAlign: String = "LEFT", // "LEFT", "CENTER", "RIGHT"
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -56,9 +58,8 @@ sealed class PageComponent {
         val size: Int = 200,
         val destinationPageId: String? = null,
         val isFullWidth: Boolean = false,
+        val isRounded: Boolean = false, // ADICIONADO
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -69,8 +70,6 @@ sealed class PageComponent {
         val url: String,
         val iconName: String? = null,
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = true,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -80,8 +79,6 @@ sealed class PageComponent {
         val products: List<Product>,
         val isHorizontal: Boolean = false,
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = true
     ) : PageComponent()
 
@@ -90,8 +87,6 @@ sealed class PageComponent {
     data class Filter(
         val placeholder: String = "Filtrar conteúdo...",
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -99,8 +94,6 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
     data class CategoryFilter(
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -108,8 +101,6 @@ sealed class PageComponent {
     @SerialName("unknown")
     data class Unknown(
         override val customLabel: String? = "Componente Antigo",
-        override val isTransparent: Boolean = true,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 }
@@ -120,7 +111,7 @@ data class Page(
     val title: String,
     val ownerId: String? = null,
     val customDomain: String? = null,
-    val whatsapp: String? = null, // NOVO CAMPO PARA PEDIDOS
+    val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
-    val theme: PageThemeConfig = PageThemeConfig.DEFAULT
+    val theme: PageThemeConfig = PageThemeConfig.ROYAL
 )

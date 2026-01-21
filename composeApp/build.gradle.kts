@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import java.net.InetAddress
 
 plugins {
@@ -45,7 +46,23 @@ kotlin {
     
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        browser()
+        browser {
+            commonWebpackConfig {
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                    static = (static ?: mutableListOf()).apply {
+                        add(project.file("src/webMain/resources").canonicalPath)
+                    }
+                    
+                    // CORREÇÃO: Passando mutableListOf<String> para o contexto do Proxy
+                    proxy = mutableListOf(
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/api"), "http://localhost:8080"),
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/pages"), "http://localhost:8080"),
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/upload"), "http://localhost:8080"),
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/uploads"), "http://localhost:8080")
+                    )
+                }
+            }
+        }
         binaries.executable()
     }
     
@@ -68,7 +85,6 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             
-            // Image Loading
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
         }
@@ -92,14 +108,6 @@ kotlin {
             implementation(libs.peekaboo.image.picker)
         }
 
-        wasmJsMain.dependencies {
-            // No mobile-only dependencies
-        }
-
-        jsMain.dependencies {
-            // No mobile-only dependencies
-        }
-
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
@@ -114,8 +122,8 @@ android {
         applicationId = "com.itbenevides.genesys21"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
     }
     buildFeatures { buildConfig = true }

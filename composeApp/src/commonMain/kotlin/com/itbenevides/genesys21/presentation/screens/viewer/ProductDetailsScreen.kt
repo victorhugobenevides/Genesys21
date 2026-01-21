@@ -2,12 +2,16 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.*
@@ -25,6 +29,7 @@ import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -42,9 +47,16 @@ fun ProductDetailsScreen(
     
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // Resolve a URL da imagem se for um caminho relativo
-    val fullImageUrl = remember(product.imageUrl) {
-        if (product.imageUrl.startsWith("/")) "$backendUrl${product.imageUrl}" else product.imageUrl
+    // Estado do Pager para o Carrossel de Imagens
+    val pagerState = rememberPagerState(pageCount = { product.imageUrls.size.coerceAtLeast(1) })
+
+    // GA4: Rastrear visualização detalhada do produto
+    LaunchedEffect(product.id) {
+        AnalyticsManager.logEvent("view_item", mapOf(
+            "item_id" to product.id,
+            "item_name" to product.name,
+            "price" to product.price
+        ))
     }
 
     Scaffold(
@@ -64,44 +76,89 @@ fun ProductDetailsScreen(
         }
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(padding),
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
+                modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // CARROSSEL DE IMAGENS
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1.1f),
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1.1f),
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (fullImageUrl.isNotEmpty()) {
-                            AsyncImage(
-                                model = fullImageUrl,
-                                contentDescription = product.name,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (product.imageUrls.isNotEmpty()) {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize()
+                            ) { index ->
+                                val url = product.imageUrls[index]
+                                val fullUrl = if (url.startsWith("/")) "$backendUrl$url" else url
+                                AsyncImage(
+                                    model = fullUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                            
+                            // Botões de navegação laterais (Próximo e Anterior)
+                            if (product.imageUrls.size > 1) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch {
+                                                val prevPage = if (pagerState.currentPage > 0) pagerState.currentPage - 1 else product.imageUrls.size - 1
+                                                pagerState.animateScrollToPage(prevPage)
+                                                // GA4: Rastrear interação com carrossel
+                                                AnalyticsManager.logEvent("view_item_media", mapOf("item_id" to product.id, "direction" to "prev"))
+                                            }
+                                        },
+                                        modifier = Modifier.padding(start = 8.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
+                                    ) {
+                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null)
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            scope.launch {
+                                                val nextPage = if (pagerState.currentPage < product.imageUrls.size - 1) pagerState.currentPage + 1 else 0
+                                                pagerState.animateScrollToPage(nextPage)
+                                                // GA4: Rastrear interação com carrossel
+                                                AnalyticsManager.logEvent("view_item_media", mapOf("item_id" to product.id, "direction" to "next"))
+                                            }
+                                        },
+                                        modifier = Modifier.padding(end = 8.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f), CircleShape)
+                                    ) {
+                                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
+                                    }
+                                }
+
+                                // Indicador de Páginas (Pontinhos)
+                                Row(
+                                    Modifier.height(50.dp).fillMaxWidth().align(Alignment.BottomCenter),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    repeat(product.imageUrls.size) { iteration ->
+                                        val color = if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else Color.LightGray
+                                        Box(
+                                            modifier = Modifier.padding(4.dp).clip(CircleShape).background(color).size(8.dp)
+                                        )
+                                    }
+                                }
+                            }
                         } else {
                             Icon(
                                 Icons.Default.ShoppingBag,
                                 contentDescription = null,
-                                modifier = Modifier.size(100.dp),
+                                modifier = Modifier.size(100.dp).align(Alignment.Center),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                             )
                         }
@@ -110,6 +167,7 @@ fun ProductDetailsScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                // Product Info Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -135,83 +193,50 @@ fun ProductDetailsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         if (product.stock <= 0) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    "ESGOTADO", 
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
+                            Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(8.dp)) {
+                                Text("ESGOTADO", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onErrorContainer)
                             }
                         } else {
-                            Surface(
-                                color = if (product.stock < 5) MaterialTheme.colorScheme.error.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = if (product.stock < 5) "Restam apenas ${product.stock} unidades!" else "Estoque disponível: ${product.stock}",
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = if (product.stock < 5) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
-                                )
+                            Surface(color = if (product.stock < 5) MaterialTheme.colorScheme.error.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
+                                Text(text = if (product.stock < 5) "Restam apenas ${product.stock} unidades!" else "Estoque disponível: ${product.stock}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = if (product.stock < 5) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary)
                             }
                         }
                         
                         Spacer(modifier = Modifier.height(24.dp))
-                        
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        
+                        Text(text = "Descrição", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = "Descrição",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = product.description.ifBlank { "Este é um produto premium disponível na Genesys21." },
-                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                        
+                        Text(text = product.description.ifBlank { "Este é um produto premium disponível na Genesys21." }, style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                         Spacer(modifier = Modifier.height(32.dp))
                         
                         Button(
                             onClick = { 
                                 val success = viewModel.addToCart(product)
-                                if (success) {
-                                    showSuccessDialog = true
-                                } else {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Não há estoque suficiente disponível!")
-                                    }
+                                if (success) { 
+                                    showSuccessDialog = true 
+                                } else { 
+                                    scope.launch { 
+                                        snackbarHostState.showSnackbar("Não há estoque suficiente disponível!") 
+                                        // GA4: Rastrear alerta de falta de estoque
+                                        AnalyticsManager.logEvent("out_of_stock_alert", mapOf(
+                                            "item_id" to product.id,
+                                            "item_name" to product.name
+                                        ))
+                                    } 
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().height(60.dp),
                             shape = CircleShape,
                             enabled = product.stock > 0,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
                             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                         ) {
                             Icon(Icons.Default.ShoppingBag, null)
                             Spacer(Modifier.width(12.dp))
-                            Text(
-                                if (product.stock > 0) "Adicionar ao Carrinho" else "Produto Indisponível", 
-                                fontSize = 18.sp, 
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text(if (product.stock > 0) "Adicionar ao Carrinho" else "Produto Indisponível", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
-                
                 Spacer(modifier = Modifier.height(48.dp))
             }
         }
@@ -222,32 +247,10 @@ fun ProductDetailsScreen(
                 onDismissRequest = { showSuccessDialog = false },
                 icon = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(60.dp)) },
                 title = { Text("Ótima escolha!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                text = { Text("${product.name} foi adicionado com sucesso. Deseja finalizar agora ou continuar escolhendo?", textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyMedium) },
-                confirmButton = {
-                    Button(
-                        onClick = { 
-                            showSuccessDialog = false
-                            onNavigateToCart() 
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = CircleShape
-                    ) {
-                        Text("Ir para o Carrinho")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { 
-                            showSuccessDialog = false
-                            onBack() 
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Continuar Comprando")
-                    }
-                },
-                shape = RoundedCornerShape(28.dp),
-                containerColor = MaterialTheme.colorScheme.surface
+                text = { Text("${product.name} foi adicionado com sucesso.", textAlign = TextAlign.Center) },
+                confirmButton = { Button(onClick = { showSuccessDialog = false; onNavigateToCart() }, modifier = Modifier.fillMaxWidth(), shape = CircleShape) { Text("Ir para o Carrinho") } },
+                dismissButton = { TextButton(onClick = { showSuccessDialog = false; onBack() }, modifier = Modifier.fillMaxWidth()) { Text("Continuar Comprando") } },
+                shape = RoundedCornerShape(28.dp)
             )
         }
     }

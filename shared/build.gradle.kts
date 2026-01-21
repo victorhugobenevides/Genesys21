@@ -18,8 +18,6 @@ kotlin {
     
     jvm()
     
-    // Alvos iOS configurados apenas como bibliotecas (sem framework próprio)
-    // para evitar conflito de resolução de KLIB no umbrella framework (ComposeApp)
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -39,24 +37,28 @@ kotlin {
             implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.ktor.clientSerialization)
             implementation(libs.koin.core)
+            // Removido analytics do commonMain para não quebrar o WasmJs
         }
 
         androidMain.dependencies {
             implementation(libs.firebase.auth.kmp)
+            implementation("dev.gitlive:firebase-analytics:2.4.0") // Adicionado aqui
         }
         
         val iosMain by getting {
             dependencies {
                 implementation(libs.firebase.auth.kmp)
+                implementation("dev.gitlive:firebase-analytics:2.4.0") // Adicionado aqui
             }
         }
         
         jsMain.dependencies {
             implementation(libs.firebase.auth.kmp)
+            implementation("dev.gitlive:firebase-analytics:2.4.0") // Adicionado aqui (opcional para JS)
         }
 
         wasmJsMain.dependencies {
-            // JS Interop manual
+            // WasmJs continua via Interop JS puro (Analytics.wasmJs.kt)
         }
         
         commonTest.dependencies {
