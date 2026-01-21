@@ -47,67 +47,74 @@ fun PageViewerScreen(
     AppTheme(themeConfig = page.theme) {
         var filterQuery by remember { mutableStateOf("") }
 
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            containerColor = MaterialTheme.colorScheme.background,
-            floatingActionButton = {
-                // Carrinho como um FAB (Floating Action Button) - Super Visível e Padrão de Mercado
-                if (hasProductList || cartCount > 0) {
-                    BadgedBox(
-                        badge = {
-                            if (cartCount > 0) {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError,
-                                    modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
-                                ) {
-                                    Text(cartCount.toString(), fontSize = 12.sp)
+        // Usamos Box para permitir sobreposição fora do padding do Scaffold
+        Box(modifier = Modifier.fillMaxSize()) {
+            
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                containerColor = MaterialTheme.colorScheme.background,
+                floatingActionButton = {
+                    if (hasProductList || cartCount > 0) {
+                        BadgedBox(
+                            badge = {
+                                if (cartCount > 0) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError,
+                                        modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
+                                    ) {
+                                        Text(cartCount.toString(), fontSize = 12.sp)
+                                    }
                                 }
                             }
+                        ) {
+                            ExtendedFloatingActionButton(
+                                onClick = { router.navigateTo(Route.Cart(page.whatsapp)) },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                shape = CircleShape,
+                                icon = { Icon(Icons.Default.ShoppingCart, "Carrinho") },
+                                text = { Text("Ver Carrinho") }
+                            )
                         }
+                    }
+                }
+            ) { padding ->
+                Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        ExtendedFloatingActionButton(
-                            onClick = { router.navigateTo(Route.Cart(page.whatsapp)) },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            shape = CircleShape,
-                            icon = { Icon(Icons.Default.ShoppingCart, "Carrinho") },
-                            text = { Text("Ver Carrinho") }
-                        )
+                        items(page.components) { component ->
+                            PageComponentRenderer(
+                                component = component,
+                                onProductClick = onProductClick,
+                                filterQuery = filterQuery,
+                                onFilterQueryChange = { filterQuery = it },
+                                allAvailableCategories = allAvailableCategories
+                            )
+                        }
                     }
                 }
             }
-        ) { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(page.components) { component ->
-                        PageComponentRenderer(
-                            component = component,
-                            onProductClick = onProductClick,
-                            filterQuery = filterQuery,
-                            onFilterQueryChange = { filterQuery = it },
-                            allAvailableCategories = allAvailableCategories
-                        )
-                    }
-                    // Espaçador final para o FAB não cobrir o último item
-                    item { Spacer(Modifier.height(80.dp)) }
-                }
 
-                // Botão de Admin sutil no topo
-                if (isLoggedIn) {
-                    IconButton(
-                        onClick = { router.navigateTo(Route.WhiteLabel(page)) },
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp)
-                            .alpha(0.4f)
-                    ) {
-                        Icon(Icons.Default.Settings, "Configurações", tint = MaterialTheme.colorScheme.onSurface)
-                    }
+            // BOTÃO DA ENGRENAGEM (FORA DO PADDING)
+            // Usamos offset negativo ou posicionamento absoluto no Box pai
+            if (isLoggedIn) {
+                IconButton(
+                    onClick = { router.navigateTo(Route.WhiteLabel(page)) },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(top = 8.dp)
+                        .offset(x = (-12).dp) // Move para fora do padding de 16dp do App.kt
+                        .alpha(0.4f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings, 
+                        contentDescription = "Configurações", 
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }

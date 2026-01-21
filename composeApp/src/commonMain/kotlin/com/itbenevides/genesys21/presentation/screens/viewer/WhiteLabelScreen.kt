@@ -459,19 +459,25 @@ fun EditComponentModal(
             Spacer(Modifier.height(16.dp))
 
             var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
-            var isTransparent by remember { mutableStateOf(component.isTransparent) }
-            var isRounded by remember { mutableStateOf(component.isRounded) }
             var isFilterable by remember { mutableStateOf(component.isFilterable) }
             var headerTitle by remember { mutableStateOf(if (component is PageComponent.Header) component.title else "") }
+            var headerFontSize by remember { mutableIntStateOf(if (component is PageComponent.Header) component.fontSize else 28) }
+            var headerAlign by remember { mutableStateOf(if (component is PageComponent.Header) component.textAlign else "LEFT") }
+            
             var textContent by remember { mutableStateOf(if (component is PageComponent.Text) component.content else "") }
+            var textFontSize by remember { mutableIntStateOf(if (component is PageComponent.Text) component.fontSize else 16) }
+            var textAlign by remember { mutableStateOf(if (component is PageComponent.Text) component.textAlign else "LEFT") }
+
             var imageUrl by remember { mutableStateOf(if (component is PageComponent.Image) component.url else "") }
             var imageDesc by remember { mutableStateOf(if (component is PageComponent.Image) component.string else "") }
-            var imageSize by remember { mutableStateOf(if (component is PageComponent.Image) component.size.toString() else "200") }
+            var imageSize by remember { mutableIntStateOf(if (component is PageComponent.Image) component.size else 200) }
             var destPageId by remember { mutableStateOf(if (component is PageComponent.Image) component.destinationPageId ?: "" else "") }
             var isFullWidth by remember { mutableStateOf(if (component is PageComponent.Image) component.isFullWidth else false) }
+            
             var btnText by remember { mutableStateOf(if (component is PageComponent.Button) component.text else "") }
             var btnUrl by remember { mutableStateOf(if (component is PageComponent.Button) component.url else "") }
             var btnIcon by remember { mutableStateOf(if (component is PageComponent.Button) component.iconName ?: "" else "") }
+            
             var filterPlaceholder by remember { mutableStateOf(if (component is PageComponent.Filter) component.placeholder else "Filtrar conteúdo...") }
 
             var isUploading by remember { mutableStateOf(false) }
@@ -487,12 +493,12 @@ fun EditComponentModal(
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 val previewComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
-                    is PageComponent.Image -> PageComponent.Image(url = imageUrl, string = imageDesc, size = imageSize.toIntOrNull() ?: 200, destinationPageId = destPageId.ifBlank { null }, isFullWidth = isFullWidth, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
-                    is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Header -> PageComponent.Header(title = headerTitle, fontSize = headerFontSize, textAlign = headerAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(content = textContent, fontSize = textFontSize, textAlign = textAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(url = imageUrl, string = imageDesc, size = imageSize, destinationPageId = destPageId.ifBlank { null }, isFullWidth = isFullWidth, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isFilterable)
                     else -> component
                 }
 
@@ -506,17 +512,27 @@ fun EditComponentModal(
 
                 OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
-                    Checkbox(checked = isTransparent, onCheckedChange = { isTransparent = it })
-                    Text("Fundo Transparente", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.width(16.dp))
-                    Checkbox(checked = isRounded, onCheckedChange = { isRounded = it })
-                    Text("Redondo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                }
-
                 when (component) {
-                    is PageComponent.Header -> OutlinedTextField(value = headerTitle, onValueChange = { headerTitle = it }, label = { Text("Texto do Título") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                    is PageComponent.Text -> OutlinedTextField(value = textContent, onValueChange = { textContent = it }, label = { Text("Conteúdo") }, modifier = Modifier.fillMaxWidth(), minLines = 4, shape = RoundedCornerShape(10.dp))
+                    is PageComponent.Header -> {
+                        OutlinedTextField(value = headerTitle, onValueChange = { headerTitle = it }, label = { Text("Texto do Título") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        Spacer(Modifier.height(16.dp))
+                        Text("Formatação", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Tamanho: $headerFontSize")
+                            Slider(value = headerFontSize.toFloat(), onValueChange = { headerFontSize = it.toInt() }, valueRange = 12f..64f, modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
+                        }
+                        TextAlignSelector(headerAlign) { headerAlign = it }
+                    }
+                    is PageComponent.Text -> {
+                        OutlinedTextField(value = textContent, onValueChange = { textContent = it }, label = { Text("Conteúdo") }, modifier = Modifier.fillMaxWidth(), minLines = 4, shape = RoundedCornerShape(10.dp))
+                        Spacer(Modifier.height(16.dp))
+                        Text("Formatação", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Tamanho: $textFontSize")
+                            Slider(value = textFontSize.toFloat(), onValueChange = { textFontSize = it.toInt() }, valueRange = 8f..32f, modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
+                        }
+                        TextAlignSelector(textAlign) { textAlign = it }
+                    }
                     is PageComponent.Image -> {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
                             Checkbox(checked = isFullWidth, onCheckedChange = { isFullWidth = it })
@@ -554,7 +570,10 @@ fun EditComponentModal(
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = imageSize, onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() }) imageSize = it }, label = { Text("Tamanho (px)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Tamanho: ${imageSize}px")
+                            Slider(value = imageSize.toFloat(), onValueChange = { imageSize = it.toInt() }, valueRange = 50f..1000f, modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
+                        }
                     }
                     is PageComponent.Button -> {
                         OutlinedTextField(value = btnText, onValueChange = { btnText = it }, label = { Text("Texto do Botão") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
@@ -570,16 +589,30 @@ fun EditComponentModal(
 
             ActionButtons(isNew, true, {
                 val finalComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(headerTitle, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Text -> PageComponent.Text(textContent, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
-                    is PageComponent.Image -> PageComponent.Image(url = imageUrl, string = imageDesc, size = imageSize.toIntOrNull() ?: 200, destinationPageId = destPageId.ifBlank { null }, isFullWidth = isFullWidth, customLabel = currentCustomLabel.ifBlank { null }, isTransparent = isTransparent, isRounded = isRounded, isFilterable = isFilterable)
-                    is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
-                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isTransparent, isRounded, isFilterable)
+                    is PageComponent.Header -> PageComponent.Header(title = headerTitle, fontSize = headerFontSize, textAlign = headerAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(content = textContent, fontSize = textFontSize, textAlign = textAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(url = imageUrl, string = imageDesc, size = imageSize, destinationPageId = destPageId.ifBlank { null }, isFullWidth = isFullWidth, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isFilterable)
                     else -> component
                 }
                 onComponentUpdated(finalComp)
             }, onDeleteRequest)
+        }
+    }
+}
+
+@Composable
+fun TextAlignSelector(current: String, onSelected: (String) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+        val options = listOf("LEFT" to Icons.Default.FormatAlignLeft, "CENTER" to Icons.Default.FormatAlignCenter, "RIGHT" to Icons.Default.FormatAlignRight)
+        options.forEach { (valStr, icon) ->
+            FilterChip(
+                selected = current == valStr,
+                onClick = { onSelected(valStr) },
+                label = { Icon(icon, null, modifier = Modifier.size(20.dp)) }
+            )
         }
     }
 }
@@ -612,8 +645,6 @@ fun ProductListManagementModal(
             Spacer(Modifier.height(16.dp))
 
             var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
-            var isTransparent by remember { mutableStateOf(component.isTransparent) }
-            var isRounded by remember { mutableStateOf(component.isRounded) }
             var isHorizontal by remember { mutableStateOf(component.isHorizontal) }
             var isFilterable by remember { mutableStateOf(component.isFilterable) }
 
@@ -630,20 +661,6 @@ fun ProductListManagementModal(
                 )
                 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
-                    Checkbox(checked = isTransparent, onCheckedChange = { 
-                        isTransparent = it
-                        onComponentUpdated(component.copy(isTransparent = it))
-                    })
-                    Text("Transparente", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.width(16.dp))
-                    Checkbox(checked = isRounded, onCheckedChange = { 
-                        isRounded = it
-                        onComponentUpdated(component.copy(isRounded = it))
-                    })
-                    Text("Redondo", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
                     Checkbox(checked = isHorizontal, onCheckedChange = { 
                         isHorizontal = it
                         onComponentUpdated(component.copy(isHorizontal = it))
@@ -894,12 +911,12 @@ fun ComponentCatalogModal(
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
-                        PageComponent.Image(url = "", string = "", size = 80, destinationPageId = null, isFullWidth = false, customLabel = null, isTransparent = true, isRounded = true), 
-                        PageComponent.Header("Bem-vindo à Loja!", isTransparent = true), 
-                        PageComponent.Filter("Buscar na loja...", isRounded = true),
-                        PageComponent.CategoryFilter(isRounded = true),
-                        PageComponent.ProductList(mockCarouselProducts, isHorizontal = true, customLabel = "Destaques", isTransparent = true),
-                        PageComponent.ProductList(mockListProducts, isHorizontal = false, customLabel = "Nossos Produtos", isTransparent = true)
+                        PageComponent.Image(url = "", string = "", size = 80, destinationPageId = null, isFullWidth = false, customLabel = null, isFilterable = false), 
+                        PageComponent.Header(title = "Bem-vindo à Loja!", fontSize = 34, textAlign = "CENTER", isFilterable = false), 
+                        PageComponent.Filter("Buscar na loja..."),
+                        PageComponent.CategoryFilter(),
+                        PageComponent.ProductList(mockCarouselProducts, isHorizontal = true, customLabel = "Destaques"),
+                        PageComponent.ProductList(mockListProducts, isHorizontal = false, customLabel = "Nossos Produtos")
                     )) 
                 }, 
                 shape = RoundedCornerShape(12.dp), 
@@ -915,13 +932,13 @@ fun ComponentCatalogModal(
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
-                        PageComponent.Image(url = "", string = "", size = 120, destinationPageId = null, isFullWidth = false, customLabel = "Foto de Perfil", isTransparent = true, isRounded = true), 
-                        PageComponent.Header("Seu Nome Aqui", isTransparent = true), 
-                        PageComponent.Text("Sua biografia curta e inspiradora aparece aqui.", isTransparent = true, isRounded = false),
-                        PageComponent.Button("WhatsApp", "https://wa.me/seunumeroaqui", "whatsapp", isTransparent = false),
-                        PageComponent.Button("Instagram", "https://instagram.com/seuuser", "instagram", isTransparent = false),
-                        PageComponent.Button("Email", "mailto:seuemail@exemplo.com", "email", isTransparent = false),
-                        PageComponent.Button("Portfólio", "https://seusite.com", "web", isTransparent = true)
+                        PageComponent.Image(url = "", string = "", size = 120, destinationPageId = null, isFullWidth = false, customLabel = "Foto de Perfil", isFilterable = false), 
+                        PageComponent.Header(title = "Seu Nome Aqui", fontSize = 28, textAlign = "CENTER", isFilterable = false), 
+                        PageComponent.Text(content = "Sua biografia curta e inspiradora aparece aqui.", fontSize = 16, textAlign = "CENTER"),
+                        PageComponent.Button("WhatsApp", "https://wa.me/seunumeroaqui", "whatsapp"),
+                        PageComponent.Button("Instagram", "https://instagram.com/seuuser", "instagram"),
+                        PageComponent.Button("Email", "mailto:seuemail@exemplo.com", "email"),
+                        PageComponent.Button("Portfólio", "https://seusite.com", "web")
                     )) 
                 }, 
                 shape = RoundedCornerShape(12.dp), 

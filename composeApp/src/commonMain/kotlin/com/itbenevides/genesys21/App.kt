@@ -53,7 +53,6 @@ fun App() {
             }
         }
 
-        // LÓGICA DE TEMA PERSISTENTE E HERDADA
         val themeConfig by remember(currentRoute) {
             derivedStateOf {
                 when (currentRoute) {
@@ -69,7 +68,6 @@ fun App() {
                         }
                     }
                     is Route.Cart -> {
-                        // Tenta herdar o tema da última tela do histórico (View ou Edit)
                         val lastPage = router.getHistory().reversed().firstNotNullOfOrNull { 
                             when (it) {
                                 is Route.PublicViewer -> it.page
@@ -103,7 +101,12 @@ fun App() {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                     val maxWidth = if (currentRoute is Route.Login || currentRoute is Route.Splash) 400.dp else 1200.dp
                     
-                    Box(modifier = Modifier.fillMaxHeight().widthIn()) {
+                    // APLICADO PADDING LATERAL PADRONIZADO (16.dp)
+                    Box(modifier = Modifier
+                        .fillMaxHeight()
+                        .widthIn(max = maxWidth)
+                        .padding(horizontal = 16.dp)
+                    ) {
                         AnimatedContent(targetState = currentRoute) { route ->
                             when (route) {
                                 is Route.Splash -> SplashScreen()

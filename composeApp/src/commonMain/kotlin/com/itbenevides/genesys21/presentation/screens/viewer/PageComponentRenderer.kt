@@ -18,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
@@ -47,7 +46,7 @@ fun PageComponentRenderer(
     onFilterQueryChange: (String) -> Unit = {},
     allAvailableCategories: List<String> = emptyList()
 ) {
-    val commonShape = if (component.isRounded) CircleShape else RoundedCornerShape(16.dp)
+    val commonShape = RoundedCornerShape(16.dp)
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
     val viewModel = router.viewModel
@@ -84,7 +83,7 @@ fun PageComponentRenderer(
         is PageComponent.CategoryFilter -> {
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
                 Text(
-                    text = "Explorar Categorias",
+                    text = "Categorias",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
@@ -102,9 +101,13 @@ fun PageComponentRenderer(
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            containerColor = Color.Transparent
                         ),
-                        border = null
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true, 
+                            selected = filterQuery.isEmpty(), 
+                            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        )
                     )
                     
                     allAvailableCategories.forEach { category ->
@@ -117,9 +120,15 @@ fun PageComponentRenderer(
                             label = { Text(category) },
                             shape = CircleShape,
                             colors = FilterChipDefaults.filterChipColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = Color.Transparent
                             ),
-                            border = null
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true, 
+                                selected = filterQuery.equals(category, ignoreCase = true), 
+                                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
                         )
                     }
                 }
@@ -132,8 +141,7 @@ fun PageComponentRenderer(
                     onValueChange = onFilterQueryChange,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .shadow(if (component.isTransparent) 0.dp else 4.dp, CircleShape),
+                        .height(56.dp),
                     textStyle = TextStyle(fontSize = 16.sp),
                     placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
@@ -147,10 +155,10 @@ fun PageComponentRenderer(
                     singleLine = true,
                     shape = CircleShape,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
                         focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                     )
                 )
             }
@@ -171,10 +179,7 @@ fun PageComponentRenderer(
 
             if (productsToDisplay.isNotEmpty()) {
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-                    // Responsividade: 2 colunas no celular, 3 em tablet, 4 no desktop/web grande
                     val maxColumns = if (maxWidth > 1000.dp) 4 else if (maxWidth > 600.dp) 3 else 2
-                    
-                    // Largura dinâmica para o Carrossel (Horizontal)
                     val horizontalItemWidth = if (maxWidth > 1000.dp) 240.dp else if (maxWidth > 600.dp) 200.dp else 170.dp
 
                     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -196,7 +201,6 @@ fun PageComponentRenderer(
                                         ProductCard(
                                             product = product.copy(imageUrls = fullUrls),
                                             shape = RoundedCornerShape(24.dp),
-                                            isTransparent = component.isTransparent,
                                             modifier = Modifier.width(horizontalItemWidth),
                                             onClick = onProductClick,
                                             onAddToCart = { viewModel.addToCart(product) }
@@ -212,7 +216,7 @@ fun PageComponentRenderer(
                                         if (listState.firstVisibleItemIndex > 0) {
                                             IconButton(
                                                 onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex - 1) } },
-                                                modifier = Modifier.padding(start = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape).shadow(2.dp, CircleShape)
+                                                modifier = Modifier.padding(start = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape)
                                             ) {
                                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
                                             }
@@ -221,7 +225,7 @@ fun PageComponentRenderer(
                                         if (listState.canScrollForward) {
                                             IconButton(
                                                 onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex + 1) } },
-                                                modifier = Modifier.padding(end = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape).shadow(2.dp, CircleShape)
+                                                modifier = Modifier.padding(end = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape)
                                             ) {
                                                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
                                             }
@@ -239,7 +243,6 @@ fun PageComponentRenderer(
                                         ProductCard(
                                             product = product.copy(imageUrls = fullUrls),
                                             shape = RoundedCornerShape(24.dp),
-                                            isTransparent = component.isTransparent,
                                             modifier = Modifier.weight(1f),
                                             onClick = onProductClick,
                                             onAddToCart = { viewModel.addToCart(product) }
@@ -256,30 +259,47 @@ fun PageComponentRenderer(
             }
         }
         is PageComponent.Header -> {
+            val alignment = when (component.textAlign) {
+                "CENTER" -> TextAlign.Center
+                "RIGHT" -> TextAlign.Right
+                else -> TextAlign.Start
+            }
             Text(
                 text = component.title.ifBlank { "Título" }, 
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp
+                    fontSize = component.fontSize.sp
                 ), 
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp)
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = alignment,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, bottom = 8.dp)
             )
         }
         is PageComponent.Text -> {
+            val alignment = when (component.textAlign) {
+                "CENTER" -> TextAlign.Center
+                "RIGHT" -> TextAlign.Right
+                else -> TextAlign.Start
+            }
             Text(
                 text = component.content.ifBlank { "Conteúdo..." }, 
-                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp), 
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    lineHeight = (component.fontSize * 1.5).sp,
+                    fontSize = component.fontSize.sp
+                ), 
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                textAlign = if (component.isRounded) TextAlign.Center else TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                textAlign = alignment,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
             )
         }
         is PageComponent.Image -> {
             val scope = rememberCoroutineScope()
             val imgModifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.widthIn(max = 600.dp).wrapContentSize()
-            val imgShape = if (component.isRounded) CircleShape else RoundedCornerShape(if (component.isFullWidth) 0.dp else 28.dp)
+            val imgShape = RoundedCornerShape(if (component.isFullWidth) 0.dp else 28.dp)
 
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Surface(
@@ -327,14 +347,19 @@ fun PageComponentRenderer(
                     onClick = { uriHandler.openUri(component.url) },
                     modifier = Modifier.fillMaxWidth().height(60.dp),
                     shape = CircleShape,
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp, pressedElevation = 6.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+                    elevation = null
                 ) {
                     val icon = when (component.iconName?.lowercase()) {
                         "whatsapp" -> Icons.AutoMirrored.Filled.Chat
                         "instagram" -> Icons.Default.CameraAlt
                         else -> null
                     }
-                    if (icon != null) { Icon(icon, null); Spacer(Modifier.width(12.dp)) }
+                    if (icon != null) { Icon(icon, null); Spacer(Modifier.width(8.dp)) }
                     Text(component.text, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 }
             }
@@ -347,7 +372,6 @@ fun PageComponentRenderer(
 fun ProductCard(
     product: Product,
     shape: androidx.compose.ui.graphics.Shape,
-    isTransparent: Boolean,
     modifier: Modifier = Modifier,
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null
@@ -355,8 +379,11 @@ fun ProductCard(
     Card(
         modifier = modifier.clickable(enabled = onClick != null) { onClick?.invoke(product) },
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = if (isTransparent) Color.Transparent else MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isTransparent) 0.dp else 6.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column {
             Box(
@@ -377,7 +404,6 @@ fun ProductCard(
                     Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), modifier = Modifier.size(56.dp))
                 }
                 
-                // Botão de adicionar refinado
                 if (onAddToCart != null && product.stock > 0) {
                     Box(Modifier.fillMaxSize().padding(10.dp), contentAlignment = Alignment.BottomEnd) {
                         Surface(

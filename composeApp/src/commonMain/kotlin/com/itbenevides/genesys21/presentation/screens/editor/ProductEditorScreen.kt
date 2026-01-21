@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
@@ -47,6 +46,7 @@ fun ProductEditorScreen(
     var category by remember { mutableStateOf(product?.category ?: "") }
     var stock by remember { mutableStateOf(product?.stock?.toString() ?: "0") }
 
+    val isLoading by viewModel.isLoading.collectAsState()
     var isUploading by remember { mutableStateOf(false) }
 
     val launchImagePicker = rememberImagePicker { bytes ->
@@ -73,8 +73,8 @@ fun ProductEditorScreen(
                     ) 
                 },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Cancelar", color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.Close, null)
                     }
                 },
                 actions = {
@@ -91,12 +91,12 @@ fun ProductEditorScreen(
                             )
                             onSave(finalProduct)
                         },
-                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading,
+                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading && !isLoading,
                         shape = CircleShape,
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp),
-                        modifier = Modifier.padding(end = 8.dp).height(36.dp)
+                        modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Salvar", fontWeight = FontWeight.Bold)
+                        if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        else Text("Salvar", fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -108,69 +108,64 @@ fun ProductEditorScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                modifier = Modifier
+                    .widthIn(max = 800.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // SEÇÃO DE FOTOS
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        "Fotos do Produto (${imageUrls.size}/5)", 
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                    
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                SectionHeader("Fotos do Produto", "${imageUrls.size}/5")
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        contentPadding = PaddingValues(end = 16.dp)
                     ) {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentPadding = PaddingValues(end = 16.dp)
-                        ) {
-                            items(imageUrls) { url ->
-                                Box(modifier = Modifier.size(110.dp)) {
-                                    AsyncImage(
-                                        model = url,
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                    // Botão de remover refinado
-                                    Surface(
-                                        onClick = { imageUrls = imageUrls.filter { it != url } },
-                                        modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(24.dp),
-                                        shape = CircleShape,
-                                        color = Color.Black.copy(alpha = 0.6f),
-                                        contentColor = Color.White
-                                    ) {
-                                        Icon(Icons.Default.Close, null, modifier = Modifier.padding(4.dp))
-                                    }
+                        items(imageUrls) { url ->
+                            Box(modifier = Modifier.size(120.dp)) {
+                                AsyncImage(
+                                    model = url,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Surface(
+                                    onClick = { imageUrls = imageUrls.filter { it != url } },
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp),
+                                    shape = CircleShape,
+                                    color = Color.Black.copy(alpha = 0.6f),
+                                    contentColor = Color.White
+                                ) {
+                                    Icon(Icons.Default.Close, null, modifier = Modifier.padding(4.dp))
                                 }
                             }
-                            
-                            if (imageUrls.size < 5) {
-                                item {
-                                    Surface(
-                                        modifier = Modifier.size(110.dp).clickable { launchImagePicker() },
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            if (isUploading) {
-                                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
-                                            } else {
-                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                    Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                                                    Spacer(Modifier.height(4.dp))
-                                                    Text("Adicionar", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                                }
+                        }
+                        
+                        if (imageUrls.size < 5) {
+                            item {
+                                Surface(
+                                    modifier = Modifier.size(120.dp).clickable { launchImagePicker() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        if (isUploading) {
+                                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                                        } else {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                                                Text("Adicionar", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                                             }
                                         }
                                     }
@@ -180,7 +175,9 @@ fun ProductEditorScreen(
                     }
                 }
 
-                // FORMULÁRIO
+                // SEÇÃO DE INFORMAÇÕES
+                SectionHeader("Informações Gerais")
+                
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -188,19 +185,12 @@ fun ProductEditorScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                        Text("Informações Gerais", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
                             label = { Text("Nome do Produto") },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            textStyle = TextStyle(fontSize = 16.sp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                            )
+                            shape = RoundedCornerShape(16.dp)
                         )
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -250,8 +240,7 @@ fun ProductEditorScreen(
                             if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
                                 ExposedDropdownMenu(
                                     expanded = expanded,
-                                    onDismissRequest = { expanded = false },
-                                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                                    onDismissRequest = { expanded = false }
                                 ) {
                                     val optionsToShow = if (category.isEmpty()) existingCategories else filteredOptions
                                     optionsToShow.forEach { selectionOption ->
@@ -275,6 +264,34 @@ fun ProductEditorScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(40.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, badge: String? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title, 
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        )
+        if (badge != null) {
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = CircleShape
+            ) {
+                Text(
+                    text = badge,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

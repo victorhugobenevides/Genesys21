@@ -8,12 +8,11 @@ data class Product(
     val id: String,
     val name: String,
     val price: Double,
-    val imageUrls: List<String> = emptyList(), // ALTERADO PARA LISTA
+    val imageUrls: List<String> = emptyList(),
     val description: String = "",
     val category: String = "",
     val stock: Int = 0
 ) {
-    // Helper para manter compatibilidade com código que espera apenas uma URL
     val imageUrl: String get() = imageUrls.firstOrNull() ?: ""
 }
 
@@ -29,8 +28,6 @@ enum class PageThemeConfig {
 @Serializable
 sealed class PageComponent {
     abstract val customLabel: String?
-    abstract val isTransparent: Boolean
-    abstract val isRounded: Boolean
     abstract val isFilterable: Boolean
 
     @Serializable
@@ -38,9 +35,8 @@ sealed class PageComponent {
     data class Text(
         val content: String, 
         val fontSize: Int = 16,
+        val textAlign: String = "LEFT", // "LEFT", "CENTER", "RIGHT"
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -48,9 +44,9 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Header")
     data class Header(
         val title: String,
+        val fontSize: Int = 28,
+        val textAlign: String = "LEFT", // "LEFT", "CENTER", "RIGHT"
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -63,8 +59,6 @@ sealed class PageComponent {
         val destinationPageId: String? = null,
         val isFullWidth: Boolean = false,
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -75,8 +69,6 @@ sealed class PageComponent {
         val url: String,
         val iconName: String? = null,
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = true,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -86,8 +78,6 @@ sealed class PageComponent {
         val products: List<Product>,
         val isHorizontal: Boolean = false,
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = true
     ) : PageComponent()
 
@@ -96,8 +86,6 @@ sealed class PageComponent {
     data class Filter(
         val placeholder: String = "Filtrar conteúdo...",
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -105,8 +93,6 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
     data class CategoryFilter(
         override val customLabel: String? = null,
-        override val isTransparent: Boolean = false,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 
@@ -114,8 +100,6 @@ sealed class PageComponent {
     @SerialName("unknown")
     data class Unknown(
         override val customLabel: String? = "Componente Antigo",
-        override val isTransparent: Boolean = true,
-        override val isRounded: Boolean = false,
         override val isFilterable: Boolean = false
     ) : PageComponent()
 }

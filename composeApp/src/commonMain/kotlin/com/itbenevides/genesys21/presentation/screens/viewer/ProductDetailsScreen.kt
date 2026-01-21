@@ -70,7 +70,7 @@ fun ProductDetailsScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier.widthIn(max = 600.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                modifier = Modifier.widthIn(max = 800.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // CARROSSEL DE IMAGENS
