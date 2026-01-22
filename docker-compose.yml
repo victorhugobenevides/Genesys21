@@ -14,13 +14,12 @@ services:
     networks:
       - genesys-network
 
-
   web:
     build:
       context: .
       dockerfile: Dockerfile.web
     ports:
-      - "80:80"
+      - "8081:80" # Voltamos para 8081 para evitar conflitos no localhost
     volumes:
       # Mantemos apenas o volume das fotos. 
       # A config do Nginx agora vai dentro da imagem para evitar erros na AWS.

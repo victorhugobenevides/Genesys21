@@ -22,7 +22,7 @@ val viewModelModule = module {
     // PageViewModel como SINGLE para compartilhar o estado do carrinho e dados entre todas as telas
     single { 
         PageViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
         ) 
     }
 

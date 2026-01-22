@@ -2,11 +2,16 @@ package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.navigation.Screen
 import kotlinx.browser.window
+import org.w3c.dom.events.Event
 
-// Evita que o app tente gravar na URL algo que acabou de vir do navegador
-private var isInternalNav = true 
-
+/**
+ * Sincroniza o estado do Compose COM o Navegador.
+ * Na nova lógica, o Navegador manda. Esta função apenas empurra a URL se necessário.
+ */
 actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?) {
+    // Splash não gera histórico para evitar que o botão voltar caia numa tela branca
+    if (screen == Screen.Splash) return
+
     val path = when (screen) {
         Screen.Splash -> "/"
         Screen.Login -> "/login"
@@ -20,16 +25,18 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?
             else "/product"
         }
         Screen.ProductEditor -> "/product/edit"
+        Screen.Cart -> "/cart" // CORREÇÃO: Adicionada rota para o Carrinho
+        else -> "/"
     }
     
-    val browserPath = window.location.pathname.removeSuffix("/")
+    val currentPath = window.location.pathname.removeSuffix("/")
     val targetPath = path.removeSuffix("/")
     
-    if (browserPath != targetPath && isInternalNav) {
-        println("WASM: [UI -> Browser] pushState: $path")
+    // Se a UI mudou e a URL ainda não reflete isso, atualizamos a URL sem disparar eventos circulares
+    if (currentPath != targetPath) {
+        println("WASM_LOG: [UI -> Browser] URL atualizada para: $path")
         window.history.pushState(null, "", path)
     }
-    isInternalNav = true
 }
 
 actual fun getInitialUrlPath(): String? = window.location.pathname
@@ -37,11 +44,11 @@ actual fun getInitialUrlPath(): String? = window.location.pathname
 actual fun getWebBaseUrl(): String = "${window.location.protocol}//${window.location.host}"
 
 actual fun onUrlChange(callback: () -> Unit) {
-    window.addEventListener("popstate", {
-        println("WASM: [Browser -> UI] Popstate detectado: ${window.location.pathname}")
-        isInternalNav = false
+    // O navegador avisa aqui quando o usuário clica em Voltar ou Avançar
+    window.onpopstate = {
+        println("WASM_LOG: [Browser -> UI] O Navegador mudou a URL para: ${window.location.pathname}")
         callback()
-    })
+    }
 }
 
 actual fun navigateBack() {

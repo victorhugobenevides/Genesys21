@@ -5,7 +5,11 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
+import com.itbenevides.genesys21.data.repository.SqliteCartRepository
+import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.data.repository.SqlitePageRepository
+import com.itbenevides.genesys21.routes.cartRoutes
+import com.itbenevides.genesys21.routes.orderRoutes
 import com.itbenevides.genesys21.routes.pageRoutes
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -41,6 +45,8 @@ fun Application.module() {
     
     DatabaseFactory.init()
     val pageRepository = SqlitePageRepository()
+    val cartRepository = SqliteCartRepository()
+    val orderRepository = SqliteOrderRepository()
 
     // Caminho absoluto fixo para o container
     val uploadDir = File("/app/uploads").absoluteFile
@@ -143,6 +149,8 @@ fun Application.module() {
         }
 
         pageRoutes(pageRepository)
+        cartRoutes(cartRepository)
+        orderRoutes(orderRepository)
     }
 }
 
