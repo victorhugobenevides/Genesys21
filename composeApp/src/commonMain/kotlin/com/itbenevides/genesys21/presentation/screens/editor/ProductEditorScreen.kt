@@ -69,16 +69,16 @@ fun ProductEditorScreen(
                 title = { 
                     Text(
                         if (product == null) "Novo Produto" else "Editar Produto", 
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     ) 
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, null)
+                    TextButton(onClick = onBack) {
+                        Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
                     }
                 },
                 actions = {
-                    Button(
+                    TextButton(
                         onClick = {
                             val finalProduct = Product(
                                 id = product?.id ?: Random.nextInt().toString(),
@@ -92,11 +92,10 @@ fun ProductEditorScreen(
                             onSave(finalProduct)
                         },
                         enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading && !isLoading,
-                        shape = CircleShape,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Text("Salvar", fontWeight = FontWeight.Bold)
+                        else Text("Concluir", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
