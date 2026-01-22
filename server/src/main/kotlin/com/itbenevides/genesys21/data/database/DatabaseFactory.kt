@@ -20,8 +20,7 @@ object DatabaseFactory {
         setupDatabaseDirectory()
         createBackup()
         
-        // Aplica todas as otimizações via conexão JDBC direta antes de iniciar o pool
-        // Isso evita erros de "cannot change ... inside a transaction" do Hikari/Exposed
+        // Aplica otimizações SQLite antes de iniciar o pool
         applySqliteOptimizations()
 
         val dataSource = hikari()
@@ -40,15 +39,11 @@ object DatabaseFactory {
             Class.forName("org.sqlite.JDBC")
             java.sql.DriverManager.getConnection("jdbc:sqlite:$DB_PATH").use { conn ->
                 conn.createStatement().use { stmt ->
-                    // Estas pragmas alteram o arquivo de banco de dados ou estado global da conexão
-                    // e devem ser feitas fora de transações.
                     stmt.execute("PRAGMA journal_mode=WAL;")
                     stmt.execute("PRAGMA synchronous=NORMAL;")
                     stmt.execute("PRAGMA temp_store=MEMORY;")
-                    stmt.execute("PRAGMA mmap_size=30000000000;") // Otimização de mapeamento de memória
                 }
             }
-            println("DatabaseFactory: Otimizações SQLite aplicadas com sucesso.")
         } catch (e: Exception) {
             println("DatabaseFactory: Falha ao aplicar otimizações - ${e.message}")
         }
@@ -66,7 +61,6 @@ object DatabaseFactory {
             val backupFile = File(backupFolder, "genesys21_backup_$timestamp.db")
 
             Files.copy(dbFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            println("DatabaseFactory: Backup de segurança criado em ${backupFile.path}")
             
             val files = backupFolder.listFiles()?.sortedByDescending { it.lastModified() }
             if (files != null && files.size > 5) {
@@ -82,20 +76,14 @@ object DatabaseFactory {
         config.driverClassName = "org.sqlite.JDBC"
         config.jdbcUrl = "jdbc:sqlite:$DB_PATH"
         config.maximumPoolSize = 3 
-        
-        // Deixamos autoCommit como true por padrão para o pool, 
-        // o Exposed gerenciará as transações explicitamente.
         config.isAutoCommit = true
-        
-        // Removido connectionInitSql para evitar conflitos com transações automáticas do driver
-        
         config.validate()
         return HikariDataSource(config)
     }
 
     private fun runMigrations() {
         transaction {
-            SchemaUtils.createMissingTablesAndColumns(PagesTable)
+            SchemaUtils.createMissingTablesAndColumns(PagesTable, CartsTable, OrdersTable) // ADICIONADO OrdersTable
             fixCustomDomainConstraint()
         }
     }

@@ -12,5 +12,5 @@ sealed class Route {
     data class PublicViewer(val page: Page) : Route()
     data class ProductDetails(val product: Product, val fromRoute: Route) : Route()
     data class ProductEditor(val page: Page, val product: Product? = null, val componentIndex: Int? = null) : Route()
-    data class Cart(val whatsapp: String?) : Route() // Ajustado para receber o contato
+    data class Cart(val page: Page?) : Route() // Agora recebe a página completa
 }

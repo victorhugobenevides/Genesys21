@@ -103,7 +103,7 @@ class Router(val viewModel: PageViewModel) {
             is Route.PublicViewer -> Screen.PublicViewer
             is Route.ProductDetails -> Screen.ProductDetails
             is Route.ProductEditor -> Screen.ProductEditor
-            is Route.Cart -> Screen.List
+            is Route.Cart -> Screen.Cart
         }
         
         syncUrlWithScreen(screen, pageId, productId)
@@ -120,7 +120,9 @@ class Router(val viewModel: PageViewModel) {
             println("ROUTER_LOG: [O Navegador manda] Lendo URL: $urlPath")
             
             val currentDomain = getHostname().lowercase().removePrefix("www.")
-            
+            val token = viewModel.getCurrentUserToken()
+            val isLoggedIn = token != null
+
             // 1. Prioridade absoluta: Domínio Customizado
             if ((urlPath == "/" || urlPath == "") && currentDomain != "localhost" && currentDomain != "127.0.0.1") {
                 viewModel.loadPageByDomain(currentDomain)?.let { page ->
@@ -143,8 +145,12 @@ class Router(val viewModel: PageViewModel) {
                         }
                     }
                     val target = when {
-                        urlPath.contains("/view/") -> Route.WhiteLabel(page)
-                        urlPath.contains("/editor/") -> Route.PageEditor(page)
+                        urlPath.contains("/view/") -> {
+                            if (isLoggedIn) Route.WhiteLabel(page) else Route.Login
+                        }
+                        urlPath.contains("/editor/") -> {
+                            if (isLoggedIn) Route.PageEditor(page) else Route.Login
+                        }
                         else -> Route.PublicViewer(page)
                     }
                     applyRouteState(target)
@@ -152,13 +158,13 @@ class Router(val viewModel: PageViewModel) {
                 }
             }
 
-            // 3. Fallback inteligente
+            // 3. Fallback inteligente com proteção de rotas privadas
             val finalRoute = when {
                 urlPath.startsWith("/login") -> Route.Login
-                urlPath.startsWith("/list") -> Route.PageList
+                urlPath.startsWith("/list") -> if (isLoggedIn) Route.PageList else Route.Login
+                urlPath.startsWith("/cart") -> Route.Cart(null)
                 else -> {
-                    val token = viewModel.getCurrentUserToken()
-                    if (token != null) Route.PageList 
+                    if (isLoggedIn) Route.PageList 
                     else {
                         viewModel.loadFirstPublicPage()?.let { Route.PublicViewer(it) } ?: Route.Login
                     }

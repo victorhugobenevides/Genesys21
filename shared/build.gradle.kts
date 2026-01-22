@@ -37,17 +37,18 @@ kotlin {
             implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.ktor.clientSerialization)
             implementation(libs.koin.core)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
         }
 
         androidMain.dependencies {
             implementation(libs.firebase.auth.kmp)
-            implementation("dev.gitlive:firebase-analytics:2.1.0") // Sincronizado com firebaseKmp (2.1.0)
+            implementation("dev.gitlive:firebase-analytics:2.1.0")
         }
         
         val iosMain by getting {
             dependencies {
                 implementation(libs.firebase.auth.kmp)
-                implementation("dev.gitlive:firebase-analytics:2.1.0") // Sincronizado com firebaseKmp (2.1.0)
+                implementation("dev.gitlive:firebase-analytics:2.1.0")
             }
         }
         
@@ -57,7 +58,6 @@ kotlin {
         }
 
         wasmJsMain.dependencies {
-            // WasmJs continua via Interop JS puro (Analytics.wasmJs.kt)
         }
         
         commonTest.dependencies {

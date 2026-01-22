@@ -82,17 +82,7 @@ fun App() {
                         }
                     }
                     is Route.Cart -> {
-                        val lastPage = router.getHistory().reversed().firstNotNullOfOrNull { r ->
-                            when (r) {
-                                is Route.PublicViewer -> r.page
-                                is Route.WhiteLabel -> r.page
-                                is Route.ProductDetails -> {
-                                    (r.fromRoute as? Route.PublicViewer)?.page ?: (r.fromRoute as? Route.WhiteLabel)?.page
-                                }
-                                else -> null
-                            }
-                        }
-                        lastPage?.theme ?: PageThemeConfig.DEFAULT
+                        currentRoute.page?.theme ?: PageThemeConfig.DEFAULT
                     }
                     else -> PageThemeConfig.DEFAULT
                 }
@@ -149,9 +139,9 @@ fun App() {
                                     product = route.product,
                                     onBack = { router.goBack() },
                                     onNavigateToCart = { 
-                                        val whatsapp = (route.fromRoute as? Route.PublicViewer)?.page?.whatsapp 
-                                            ?: (route.fromRoute as? Route.WhiteLabel)?.page?.whatsapp
-                                        router.navigateTo(Route.Cart(whatsapp))
+                                        val page = (route.fromRoute as? Route.PublicViewer)?.page 
+                                            ?: (route.fromRoute as? Route.WhiteLabel)?.page
+                                        router.navigateTo(Route.Cart(page))
                                     }
                                 )
                                 is Route.ProductEditor -> ProductEditorScreen(
@@ -174,7 +164,7 @@ fun App() {
                                     },
                                     onBack = { router.navigateTo(Route.WhiteLabel(route.page)) }
                                 )
-                                is Route.Cart -> CartScreen(whatsappNumber = route.whatsapp, onBack = { router.goBack() })
+                                is Route.Cart -> CartScreen(page = route.page, onBack = { router.goBack() })
                             }
                         }
                     }

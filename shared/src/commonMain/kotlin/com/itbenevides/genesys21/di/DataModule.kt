@@ -1,8 +1,11 @@
 package com.itbenevides.genesys21.di
 
 import com.itbenevides.genesys21.data.repository.KtorPageRepository
+import com.itbenevides.genesys21.data.repository.KtorOrderRepository
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.PageRepository
+import com.itbenevides.genesys21.domain.repository.CartRepository
+import com.itbenevides.genesys21.domain.repository.OrderRepository
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
@@ -31,8 +34,9 @@ val dataModule = module {
     
     single<AuthRepository> { getAuthRepository() }
     single<PageRepository> { KtorPageRepository(get(), getBaseUrl()) }
+    single<OrderRepository> { KtorOrderRepository(get(), getBaseUrl()) }
 }
 
 expect fun getAuthRepository(): AuthRepository
 expect fun getBaseUrl(): String
-expect fun getHostname(): String // NOVA FUNÇÃO EXPECT
+expect fun getHostname(): String 

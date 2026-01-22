@@ -58,7 +58,9 @@ kotlin {
                         KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/api"), "http://localhost:8080"),
                         KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/pages"), "http://localhost:8080"),
                         KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/upload"), "http://localhost:8080"),
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/uploads"), "http://localhost:8080")
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/uploads"), "http://localhost:8080"),
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/cart"), "http://localhost:8080"),
+                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/orders"), "http://localhost:8080")
                     )
                 }
             }
@@ -87,6 +89,7 @@ kotlin {
             
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
         }
 
         androidMain.dependencies {
@@ -116,7 +119,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.itbenevides.genesys21"
+    namespace = "com.itbenevides"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         applicationId = "com.itbenevides.genesys21"

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,13 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.CartItem
+import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
+fun CartScreen(page: Page? = null, onBack: () -> Unit) {
     val viewModel: PageViewModel = koinViewModel()
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
@@ -113,14 +115,16 @@ fun CartScreen(whatsappNumber: String? = null, onBack: () -> Unit) {
                             Spacer(Modifier.height(20.dp))
                             Button(
                                 onClick = { 
-                                    val url = viewModel.generateWhatsappMessage(whatsappNumber)
+                                    // NOVO FLUXO: Salva pedido no servidor antes de ir para o WhatsApp
+                                    viewModel.submitOrder(page)
+                                    val url = viewModel.generateWhatsappMessage(page?.whatsapp)
                                     if (url != null) uriHandler.openUri(url)
                                 },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                enabled = !whatsappNumber.isNullOrBlank()
+                                enabled = !page?.whatsapp.isNullOrBlank()
                             ) {
-                                Icon(Icons.Default.Send, null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(12.dp))
                                 Text("Finalizar via WhatsApp", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             }

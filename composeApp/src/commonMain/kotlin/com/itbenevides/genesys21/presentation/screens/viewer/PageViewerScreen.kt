@@ -89,7 +89,7 @@ fun PageViewerScreen(
                         }
                     ) {
                         ExtendedFloatingActionButton(
-                            onClick = { router.navigateTo(Route.Cart(page.whatsapp)) },
+                            onClick = { router.navigateTo(Route.Cart(page)) }, // CORREÇÃO: Passando a página
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                             shape = CircleShape,

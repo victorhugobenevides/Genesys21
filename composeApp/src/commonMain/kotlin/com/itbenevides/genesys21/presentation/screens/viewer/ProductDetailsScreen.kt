@@ -167,7 +167,7 @@ fun ProductDetailsScreen(
             title = { Text("Adicionado!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
             text = { Text("${product.name} foi adicionado ao carrinho.", textAlign = TextAlign.Center) },
             confirmButton = { Button(onClick = { showSuccessDialog = false; onNavigateToCart() }, modifier = Modifier.fillMaxWidth(), shape = CircleShape) { Text("Ver Carrinho") } },
-            dismissButton = { TextButton(onClick = { showSuccessDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("Continuar Comprando") } },
+            dismissButton = { TextButton(onClick = { showSuccessDialog = false; onBack() }, modifier = Modifier.fillMaxWidth()) { Text("Continuar Comprando") } },
             shape = RoundedCornerShape(28.dp)
         )
     }

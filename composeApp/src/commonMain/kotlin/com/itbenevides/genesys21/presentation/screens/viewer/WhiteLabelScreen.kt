@@ -131,7 +131,7 @@ fun WhiteLabelContent(
                 },
                 navigationIcon = {
                     TextButton(onClick = onBack) {
-                        Text("Voltar", color = MaterialTheme.colorScheme.primary)
+                        Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
                     }
                 },
                 actions = {
@@ -149,7 +149,7 @@ fun WhiteLabelContent(
                             },
                             modifier = Modifier.padding(end = 12.dp)
                         ) {
-                            IconButton(onClick = { router.navigateTo(Route.Cart(page.whatsapp)) }) {
+                            IconButton(onClick = { router.navigateTo(Route.Cart(page)) }) {
                                 Icon(Icons.Default.ShoppingCart, "Carrinho", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
@@ -160,7 +160,7 @@ fun WhiteLabelContent(
                     }
                     TextButton(onClick = onPublish, enabled = !isLoading) {
                         if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Text("Publicar", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        else Text("Publicar", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
