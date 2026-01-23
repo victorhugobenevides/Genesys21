@@ -47,6 +47,9 @@ fun App() {
         
         val currentError by viewModel.currentError.collectAsState()
 
+        // Estado persistente para evitar re-carregamento no resize do teclado Android
+        var isDeepLinkProcessed by remember { mutableStateOf(false) }
+
         val savedCategories: List<String> by viewModel.allAvailableCategories.collectAsState(initial = emptyList())
         
         val allCategories: List<String> by remember(savedCategories, currentRoute) {
@@ -91,14 +94,23 @@ fun App() {
 
         AppTheme(themeConfig = themeConfig) {
             LaunchedEffect(Unit) {
-                router.handleDeepLink()
+                if (!isDeepLinkProcessed) {
+                    router.handleDeepLink()
+                    isDeepLinkProcessed = true
+                }
+                
                 // ESCUTA O BOTÃO VOLTAR DO NAVEGADOR
                 onUrlChange { 
                     router.handleDeepLink() 
                 }
             }
 
-            LaunchedEffect(currentRoute) { router.forceSyncUrl() }
+            // Sincroniza a URL do navegador apenas se não estivermos no boot inicial
+            LaunchedEffect(currentRoute) { 
+                if (isDeepLinkProcessed) {
+                    router.forceSyncUrl() 
+                }
+            }
 
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 

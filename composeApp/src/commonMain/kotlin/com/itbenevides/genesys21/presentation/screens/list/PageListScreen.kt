@@ -8,10 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
-import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -234,7 +233,7 @@ fun OrderCard(order: Order) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Chat, null) // CORRIGIDO: AutoMirrored
+                    Icon(Icons.AutoMirrored.Filled.Chat, null) 
                     Spacer(Modifier.width(8.dp))
                     Text("Falar com Cliente")
                 }
@@ -302,8 +301,21 @@ fun GlobalSettingsDialog(initialDomain: String, initialWhatsapp: String, onDismi
         title = { Text("Configurações Globais", fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(value = domain, onValueChange = { domain = it }, label = { Text("Domínio Customizado") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = whatsapp, onValueChange = { whatsapp = it }, label = { Text("WhatsApp") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = domain, 
+                    onValueChange = { domain = it }, 
+                    label = { Text("Domínio Customizado") },
+                    placeholder = { Text("ex: meusite.com") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = whatsapp, 
+                    onValueChange = { whatsapp = it }, 
+                    label = { Text("WhatsApp") },
+                    placeholder = { Text("Ex: 5511999999999") },
+                    supportingText = { Text("Digite apenas números com DDD") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = { Button(onClick = { onConfirm(domain, whatsapp) }) { Text("Salvar") } },

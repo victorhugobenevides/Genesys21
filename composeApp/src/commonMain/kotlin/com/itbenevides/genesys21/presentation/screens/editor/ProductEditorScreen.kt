@@ -39,6 +39,7 @@ fun ProductEditorScreen(
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
+    // Estados estabilizados para evitar bugs de input no WasmJs
     var name by remember { mutableStateOf(product?.name ?: "") }
     var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
     var imageUrls by remember { mutableStateOf(product?.imageUrls ?: emptyList<String>()) }
@@ -82,16 +83,16 @@ fun ProductEditorScreen(
                         onClick = {
                             val finalProduct = Product(
                                 id = product?.id ?: Random.nextInt().toString(),
-                                name = name,
-                                price = price.toDoubleOrNull() ?: 0.0,
+                                name = name.trim(),
+                                price = price.replace(",", ".").toDoubleOrNull() ?: 0.0,
                                 imageUrls = imageUrls,
-                                description = description,
-                                category = category,
+                                description = description.trim(),
+                                category = category.trim(),
                                 stock = stock.toIntOrNull() ?: 0
                             )
                             onSave(finalProduct)
                         },
-                        enabled = name.isNotBlank() && price.toDoubleOrNull() != null && !isUploading && !isLoading,
+                        enabled = name.isNotBlank() && !isUploading && !isLoading,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
@@ -186,75 +187,66 @@ fun ProductEditorScreen(
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         OutlinedTextField(
                             value = name,
-                            onValueChange = { name = it },
+                            onValueChange = { name = it }, 
                             label = { Text("Nome do Produto") },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true
                         )
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             OutlinedTextField(
                                 value = price,
-                                onValueChange = { input -> if (input.isEmpty() || input.matches(Regex("""^\d*\.?\d*$"""))) price = input },
+                                onValueChange = { price = it },
                                 label = { Text("Preço") },
                                 prefix = { Text("R$ ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(16.dp),
+                                singleLine = true
                             )
                             OutlinedTextField(
                                 value = stock,
-                                onValueChange = { input -> if (input.isEmpty() || input.all { it.isDigit() }) stock = input },
+                                onValueChange = { stock = it },
                                 label = { Text("Estoque") },
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(16.dp),
+                                singleLine = true
                             )
                         }
 
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = it },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        Column {
                             OutlinedTextField(
                                 value = category,
-                                onValueChange = { category = it; expanded = true },
+                                onValueChange = { category = it; expanded = it.isNotEmpty() },
                                 label = { Text("Categoria") },
-                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
+                                singleLine = true,
                                 trailingIcon = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        if (category.isNotEmpty()) {
-                                            IconButton(onClick = { category = ""; expanded = true }) {
-                                                Icon(Icons.Default.Clear, "Limpar", modifier = Modifier.size(20.dp))
-                                            }
-                                        }
-                                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                                    IconButton(onClick = { expanded = !expanded }) {
+                                        Icon(if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown, null)
                                     }
                                 }
                             )
-
-                            val filteredOptions = existingCategories.filter { it.contains(category, ignoreCase = true) }
-                            if (filteredOptions.isNotEmpty() || existingCategories.isNotEmpty()) {
-                                ExposedDropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
-                                ) {
-                                    val optionsToShow = if (category.isEmpty()) existingCategories else filteredOptions
-                                    optionsToShow.forEach { selectionOption ->
-                                        DropdownMenuItem(
-                                            text = { Text(selectionOption) },
-                                            onClick = { category = selectionOption; expanded = false }
-                                        )
-                                    }
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false },
+                                modifier = Modifier.width(300.dp)
+                            ) {
+                                existingCategories.forEach { cat ->
+                                    DropdownMenuItem(
+                                        text = { Text(cat) },
+                                        onClick = { category = cat; expanded = false }
+                                    )
                                 }
                             }
                         }
 
                         OutlinedTextField(
                             value = description,
-                            onValueChange = { description = it },
+                            onValueChange = { description = it }, // Atribuição direta sem processamento
                             label = { Text("Descrição") },
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 4,
