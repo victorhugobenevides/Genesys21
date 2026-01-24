@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
 
@@ -39,7 +40,6 @@ fun ProductEditorScreen(
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
-    // Estados estabilizados para evitar bugs de input no WasmJs
     var name by remember { mutableStateOf(product?.name ?: "") }
     var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
     var imageUrls by remember { mutableStateOf(product?.imageUrls ?: emptyList<String>()) }
@@ -49,6 +49,7 @@ fun ProductEditorScreen(
 
     val isLoading by viewModel.isLoading.collectAsState()
     var isUploading by remember { mutableStateOf(false) }
+    val backendUrl = remember { getBaseUrl() }
 
     val launchImagePicker = rememberImagePicker { bytes ->
         bytes?.let {
@@ -65,24 +66,18 @@ fun ProductEditorScreen(
     var expanded by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        if (product == null) "Novo Produto" else "Editar Produto", 
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    ) 
-                },
+                title = { Text(if (product == null) "Novo Produto" else "Editar Detalhes", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
-                    }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBackIosNew, "Voltar", modifier = Modifier.size(20.dp)) }
                 },
                 actions = {
                     TextButton(
                         onClick = {
                             val finalProduct = Product(
-                                id = product?.id ?: Random.nextInt().toString(),
+                                id = product?.id ?: "P-${Random.nextInt(1000, 9999)}",
                                 name = name.trim(),
                                 price = price.replace(",", ".").toDoubleOrNull() ?: 0.0,
                                 imageUrls = imageUrls,
@@ -92,81 +87,52 @@ fun ProductEditorScreen(
                             )
                             onSave(finalProduct)
                         },
-                        enabled = name.isNotBlank() && !isUploading && !isLoading,
-                        modifier = Modifier.padding(end = 8.dp)
+                        enabled = name.isNotBlank() && !isUploading && !isLoading
                     ) {
                         if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Text("Concluir", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
+                        else Text("Salvar", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                }
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(padding),
-            contentAlignment = Alignment.TopCenter
-        ) {
+        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(
-                modifier = Modifier
-                    .widthIn(max = 800.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.widthIn(max = 800.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // SEÇÃO DE FOTOS
-                SectionHeader("Fotos do Produto", "${imageUrls.size}/5")
-                
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        contentPadding = PaddingValues(end = 16.dp)
-                    ) {
+                // SEÇÃO DE FOTOS COM PREFIXO DE URL
+                Column(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Fotos do Produto", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.Gray)
+                        Text("${imageUrls.size}/5", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                    
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                         items(imageUrls) { url ->
-                            Box(modifier = Modifier.size(120.dp)) {
-                                AsyncImage(
-                                    model = url,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                                    contentScale = ContentScale.Crop
-                                )
-                                Surface(
+                            val fullUrl = if (url.startsWith("/")) "$backendUrl$url" else url
+                            Box(modifier = Modifier.size(140.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+                                AsyncImage(model = fullUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                IconButton(
                                     onClick = { imageUrls = imageUrls.filter { it != url } },
-                                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp),
-                                    shape = CircleShape,
-                                    color = Color.Black.copy(alpha = 0.6f),
-                                    contentColor = Color.White
-                                ) {
-                                    Icon(Icons.Default.Close, null, modifier = Modifier.padding(4.dp))
-                                }
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(28.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                                ) { Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(16.dp)) }
                             }
                         }
-                        
                         if (imageUrls.size < 5) {
                             item {
                                 Surface(
-                                    modifier = Modifier.size(120.dp).clickable { launchImagePicker() },
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                    modifier = Modifier.size(140.dp).clickable { launchImagePicker() },
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        if (isUploading) {
-                                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
-                                        } else {
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Icon(Icons.Default.AddAPhoto, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                                                Text("Adicionar", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                            }
+                                        if (isUploading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                        else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(Icons.Default.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                                            Text("Adicionar", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -175,115 +141,44 @@ fun ProductEditorScreen(
                     }
                 }
 
-                // SEÇÃO DE INFORMAÇÕES
-                SectionHeader("Informações Gerais")
-                
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 1.dp
                 ) {
-                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it }, 
-                            label = { Text("Nome do Produto") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            singleLine = true
-                        )
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            OutlinedTextField(
-                                value = price,
-                                onValueChange = { price = it },
-                                label = { Text("Preço") },
-                                prefix = { Text("R$ ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = stock,
-                                onValueChange = { stock = it },
-                                label = { Text("Estoque") },
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
-                            )
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                        Text("Informações Gerais", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        EditorTextField(value = name, onValueChange = { name = it }, label = "Nome do Produto", icon = Icons.Default.Inventory)
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            EditorTextField(value = price, onValueChange = { price = it }, label = "Preço", modifier = Modifier.weight(1f), icon = Icons.Default.Payments, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                            EditorTextField(value = stock, onValueChange = { stock = it }, label = "Estoque", modifier = Modifier.weight(1f), icon = Icons.Default.Numbers, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                         }
-
-                        Column {
-                            OutlinedTextField(
-                                value = category,
-                                onValueChange = { category = it; expanded = it.isNotEmpty() },
-                                label = { Text("Categoria") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true,
-                                trailingIcon = {
-                                    IconButton(onClick = { expanded = !expanded }) {
-                                        Icon(if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown, null)
-                                    }
-                                }
-                            )
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
-                                modifier = Modifier.width(300.dp)
-                            ) {
+                        Box {
+                            EditorTextField(value = category, onValueChange = { category = it; expanded = true }, label = "Categoria", icon = Icons.Default.Category, trailingIcon = {
+                                IconButton(onClick = { expanded = !expanded }) { Icon(if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown, null) }
+                            })
+                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(300.dp)) {
                                 existingCategories.forEach { cat ->
-                                    DropdownMenuItem(
-                                        text = { Text(cat) },
-                                        onClick = { category = cat; expanded = false }
-                                    )
+                                    DropdownMenuItem(text = { Text(cat) }, onClick = { category = cat; expanded = false })
                                 }
                             }
                         }
-
-                        OutlinedTextField(
-                            value = description,
-                            onValueChange = { description = it }, // Atribuição direta sem processamento
-                            label = { Text("Descrição") },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 4,
-                            shape = RoundedCornerShape(16.dp)
-                        )
+                        EditorTextField(value = description, onValueChange = { description = it }, label = "Descrição", icon = Icons.Default.Description, singleLine = false, minLines = 4)
                     }
                 }
-                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
 }
 
 @Composable
-private fun SectionHeader(title: String, badge: String? = null) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = title, 
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
-        if (badge != null) {
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                shape = CircleShape
-            ) {
-                Text(
-                    text = badge,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
+fun EditorTextField(value: String, onValueChange: (String) -> Unit, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, singleLine: Boolean = true, minLines: Int = 1, trailingIcon: @Composable (() -> Unit)? = null) {
+    OutlinedTextField(
+        value = value, onValueChange = onValueChange, label = { Text(label) },
+        leadingIcon = { Icon(icon, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary) },
+        trailingIcon = trailingIcon, modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp), singleLine = singleLine, minLines = minLines, keyboardOptions = keyboardOptions,
+        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f))
+    )
 }

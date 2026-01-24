@@ -10,26 +10,28 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.cartRoutes(cartRepository: SqliteCartRepository) {
-    // Rota de carrinho agora é pública, mas identifica o usuário se houver token
-    route("/cart") {
+    route("/api/cart") {
         
-        // Função auxiliar para pegar o ID do carrinho (Auth UID ou Session Header)
-        fun ApplicationCall.getCartIdentifier(): String? {
-            val authUser = principal<UserIdPrincipal>()?.name
+        fun getCartIdentifier(call: ApplicationCall): String? {
+            val authUser = call.principal<UserIdPrincipal>()?.name
             if (authUser != null) return authUser
             
-            return request.headers["X-Cart-Session-Id"] // ID gerado pelo cliente
+            return call.request.headers["X-Cart-Session-Id"] ?: call.request.queryParameters["sessionId"]
         }
 
         authenticate("firebase", optional = true) {
             get {
-                val cartId = call.getCartIdentifier() ?: return@get call.respond(HttpStatusCode.BadRequest, "ID de sessão ausente")
+                val cartId = getCartIdentifier(call)
+                if (cartId == null) {
+                    call.respond(emptyList<CartItem>())
+                    return@get
+                }
                 val cart = cartRepository.getCart(cartId)
                 call.respond(cart)
             }
 
             post {
-                val cartId = call.getCartIdentifier() ?: return@post call.respond(HttpStatusCode.BadRequest, "ID de sessão ausente")
+                val cartId = getCartIdentifier(call) ?: return@post call.respond(HttpStatusCode.BadRequest, "Sessão inválida")
                 val items = call.receive<List<CartItem>>()
                 cartRepository.saveCart(cartId, items)
                 call.respond(HttpStatusCode.OK)

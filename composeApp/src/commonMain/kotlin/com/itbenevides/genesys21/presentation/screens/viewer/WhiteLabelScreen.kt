@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +37,7 @@ import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.util.rememberImagePicker
 import org.koin.compose.koinInject
 
@@ -111,11 +112,6 @@ fun WhiteLabelContent(
     
     var filterQuery by remember { mutableStateOf("") }
     val userPages by viewModel.pages.collectAsState()
-    val cartCount by viewModel.cartCount.collectAsState()
-
-    val hasProductList = remember(page.components) {
-        page.components.any { it is PageComponent.ProductList }
-    }
 
     Scaffold(
         topBar = {
@@ -124,8 +120,8 @@ fun WhiteLabelContent(
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { showPageSettings = true }) {
                         Text(page.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Título da Página", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                            Icon(Icons.Default.Edit, null, modifier = Modifier.size(12.dp).padding(start = 2.dp), tint = MaterialTheme.colorScheme.primary)
+                            Text("Ajustes da Página", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Default.ExpandMore, null, modifier = Modifier.size(12.dp).padding(start = 2.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -135,24 +131,8 @@ fun WhiteLabelContent(
                     }
                 },
                 actions = {
-                    if (hasProductList || cartCount > 0) {
-                        BadgedBox(
-                            badge = { 
-                                if (cartCount > 0) {
-                                    Badge(
-                                        containerColor = MaterialTheme.colorScheme.error,
-                                        contentColor = MaterialTheme.colorScheme.onError
-                                    ) { 
-                                        Text(cartCount.toString()) 
-                                    } 
-                                }
-                            },
-                            modifier = Modifier.padding(end = 12.dp)
-                        ) {
-                            IconButton(onClick = { router.navigateTo(Route.Cart(page)) }) {
-                                Icon(Icons.Default.ShoppingCart, "Carrinho", tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
+                    IconButton(onClick = { router.navigateTo(Route.PageList) }) {
+                        Icon(Icons.Default.Settings, "Administração", tint = MaterialTheme.colorScheme.primary)
                     }
 
                     IconButton(onClick = { showThemeSelector = true }) {
@@ -174,54 +154,65 @@ fun WhiteLabelContent(
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, null)
+                    Icon(Icons.Default.Add, "Adicionar Bloco")
                 }
             }
         }
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            if (page.components.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        "Comece a montar sua página\nclicando no botão +",
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
-                    verticalArrangement = Arrangement.spacedBy(32.dp)
-                ) {
-                    itemsIndexed(page.components) { index, component ->
-                        ComponentWrapper(
-                            component = component,
-                            onDelete = {
-                                val newList = page.components.toMutableList().apply { removeAt(index) }
-                                onPageUpdate(page.copy(components = newList))
-                            },
-                            onEdit = { editingComponentIndex = index },
-                            onMoveUp = if (index > 0) { {
-                                val newList = page.components.toMutableList()
-                                val temp = newList[index]
-                                newList[index] = newList[index - 1]
-                                newList[index - 1] = temp
-                                onPageUpdate(page.copy(components = newList))
-                            } } else null,
-                            onMoveDown = if (index < page.components.size - 1) { {
-                                val newList = page.components.toMutableList()
-                                val temp = newList[index]
-                                newList[index] = newList[index + 1]
-                                newList[index + 1] = temp
-                                onPageUpdate(page.copy(components = newList))
-                            } } else null,
-                            filterQuery = filterQuery,
-                            onFilterQueryChange = { query: String -> filterQuery = query },
-                            onProductClick = { product: Product -> onEditProduct(product, index) },
-                            allAvailableCategories = allAvailableCategories 
-                        )
+        Box(
+            modifier = Modifier.padding(padding).fillMaxSize().background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 1000.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp)
+            ) {
+                if (page.components.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        EmptyEditorState { showCatalog = true }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        itemsIndexed(page.components) { index, component ->
+                            ComponentWrapper(
+                                component = component,
+                                onDelete = {
+                                    val newList = page.components.toMutableList().apply { removeAt(index) }
+                                    onPageUpdate(page.copy(components = newList))
+                                },
+                                onDuplicate = {
+                                    val newList = page.components.toMutableList().apply { add(index + 1, component) }
+                                    onPageUpdate(page.copy(components = newList))
+                                },
+                                onEdit = { editingComponentIndex = index },
+                                onMoveUp = if (index > 0) { {
+                                    val newList = page.components.toMutableList()
+                                    val temp = newList[index]
+                                    newList[index] = newList[index - 1]
+                                    newList[index - 1] = temp
+                                    onPageUpdate(page.copy(components = newList))
+                                } } else null,
+                                onMoveDown = if (index < page.components.size - 1) { {
+                                    val newList = page.components.toMutableList()
+                                    val temp = newList[index]
+                                    newList[index] = newList[index + 1]
+                                    newList[index + 1] = temp
+                                    onPageUpdate(page.copy(components = newList))
+                                } } else null,
+                                filterQuery = filterQuery,
+                                onFilterQueryChange = { query: String -> filterQuery = query },
+                                onProductClick = { product: Product -> 
+                                    onEditProduct(product, index) 
+                                },
+                                allAvailableCategories = allAvailableCategories 
+                            )
+                        }
                     }
                 }
             }
@@ -249,8 +240,7 @@ fun WhiteLabelContent(
                 ComponentCatalogModal(
                     onComponentSelected = { newComponent: PageComponent ->
                         if (newComponent is PageComponent.ProductList) {
-                            val newList = page.components + newComponent
-                            onPageUpdate(page.copy(components = newList))
+                            onPageUpdate(page.copy(components = page.components + newComponent))
                         } else {
                             pendingNewComponent = newComponent
                         }
@@ -326,45 +316,32 @@ fun WhiteLabelContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PageSettingsModal(
-    page: Page,
-    onUpdate: (Page) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState()
-    var title by remember { mutableStateOf(page.title) }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState
+fun EmptyEditorState(onAddClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(Modifier.fillMaxWidth().padding(24.dp).navigationBarsPadding()) {
-            Text("Nome da Página", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(24.dp))
-            
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Título exibido no topo") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-            
-            Spacer(Modifier.height(32.dp))
-            
-            Button(
-                onClick = { 
-                    onUpdate(page.copy(title = title))
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Salvar Título")
-            }
-            Spacer(Modifier.height(16.dp))
+        Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "Sua vitrine está vazia",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            "Adicione blocos de título, imagens ou listas de produtos para começar a vender.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Spacer(Modifier.height(32.dp))
+        Button(onClick = onAddClick, shape = RoundedCornerShape(12.dp)) {
+            Icon(Icons.Default.Add, null)
+            Spacer(Modifier.width(8.dp))
+            Text("Adicionar Primeiro Bloco")
         }
     }
 }
@@ -373,6 +350,7 @@ fun PageSettingsModal(
 fun ComponentWrapper(
     component: PageComponent,
     onDelete: () -> Unit,
+    onDuplicate: () -> Unit,
     onEdit: () -> Unit,
     onMoveUp: (() -> Unit)? = null,
     onMoveDown: (() -> Unit)? = null,
@@ -381,54 +359,88 @@ fun ComponentWrapper(
     onProductClick: (Product) -> Unit,
     allAvailableCategories: List<String> = emptyList() 
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    var showConfirmDelete by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp, start = 4.dp, end = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text(
-                    text = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                
+                IconButton(onClick = onEdit, modifier = Modifier.padding(start = 8.dp).size(32.dp)) {
+                    Icon(Icons.Default.Edit, "Configurações do Bloco", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.secondary)
+                }
             }
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (onMoveUp != null) {
-                    IconButton(onClick = onMoveUp, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.ArrowUpward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = onMoveUp, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.ArrowUpward, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
                     }
                 }
                 if (onMoveDown != null) {
-                    IconButton(onClick = onMoveDown, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.ArrowDownward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    IconButton(onClick = onMoveDown, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.ArrowDownward, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
                     }
                 }
-                Spacer(Modifier.width(8.dp))
-                IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                IconButton(onClick = onDuplicate, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.ContentCopy, "Duplicar", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                IconButton(onClick = { showConfirmDelete = true }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.DeleteOutline, "Excluir", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
                 }
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            PageComponentRenderer(
-                component = component,
-                filterQuery = filterQuery,
-                onFilterQueryChange = onFilterQueryChange,
-                onProductClick = onProductClick,
-                allAvailableCategories = allAvailableCategories 
-            )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.Transparent,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
+        ) {
+            Box(Modifier.padding(8.dp)) {
+                PageComponentRenderer(
+                    component = component,
+                    filterQuery = filterQuery,
+                    onFilterQueryChange = onFilterQueryChange,
+                    onProductClick = onProductClick,
+                    allAvailableCategories = allAvailableCategories,
+                    isEditMode = true,
+                    onEditClick = onEdit 
+                )
+            }
         }
+    }
+
+    if (showConfirmDelete) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDelete = false },
+            title = { Text("Excluir Bloco?") },
+            text = { Text("Você tem certeza que deseja remover este conteúdo da sua página?") },
+            confirmButton = { 
+                TextButton(onClick = { onDelete(); showConfirmDelete = false }) { 
+                    Text("Excluir", color = MaterialTheme.colorScheme.error) 
+                } 
+            },
+            dismissButton = { 
+                TextButton(onClick = { showConfirmDelete = false }) { Text("Cancelar") } 
+            }
+        )
     }
 }
 
@@ -449,13 +461,12 @@ fun EditComponentModal(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
+                Text(if (isNew) "Configurar" else "Ajustar Bloco", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onDismiss) { Text("Concluir", fontWeight = FontWeight.Bold) }
             }
             
             Spacer(Modifier.height(16.dp))
@@ -496,9 +507,9 @@ fun EditComponentModal(
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 val previewComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(title = headerTitle, fontSize = headerFontSize, textAlign = headerAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
-                    is PageComponent.Text -> PageComponent.Text(content = textContent, fontSize = textFontSize, textAlign = textAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
-                    is PageComponent.Image -> PageComponent.Image(url = imageUrl, string = imageDesc, size = imageSize, destinationPageId = destPageId.ifBlank { null }, isFullWidth = isFullWidth, isRounded = isRounded, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Header -> PageComponent.Header(headerTitle, headerFontSize, headerAlign, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(textContent, textFontSize, textAlign, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize, destPageId.ifBlank { null }, isFullWidth, isRounded, currentCustomLabel.ifBlank { null }, isFilterable)
                     is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isFilterable)
                     is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isFilterable)
                     is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isFilterable)
@@ -513,60 +524,53 @@ fun EditComponentModal(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 Spacer(Modifier.height(16.dp))
 
-                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                OutlinedTextField(value = currentCustomLabel, onValueChange = { currentCustomLabel = it }, label = { Text("Nome de Identificação (Interno)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                 
                 when (component) {
                     is PageComponent.Header -> {
                         OutlinedTextField(value = headerTitle, onValueChange = { headerTitle = it }, label = { Text("Texto do Título") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("Formatação", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Tamanho: $headerFontSize")
-                            Slider(value = headerFontSize.toFloat(), onValueChange = { headerFontSize = it.toInt() }, valueRange = 12f..64f, modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
-                        }
+                        Text("Tamanho da Fonte: $headerFontSize", style = MaterialTheme.typography.labelMedium)
+                        Slider(value = headerFontSize.toFloat(), onValueChange = { headerFontSize = it.toInt() }, valueRange = 12f..64f)
                         TextAlignSelector(headerAlign) { headerAlign = it }
                     }
                     is PageComponent.Text -> {
                         OutlinedTextField(value = textContent, onValueChange = { textContent = it }, label = { Text("Conteúdo") }, modifier = Modifier.fillMaxWidth(), minLines = 4, shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(16.dp))
-                        Text("Formatação", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Tamanho: $textFontSize")
-                            Slider(value = textFontSize.toFloat(), onValueChange = { textFontSize = it.toInt() }, valueRange = 8f..32f, modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
-                        }
+                        Text("Tamanho da Fonte: $textFontSize", style = MaterialTheme.typography.labelMedium)
+                        Slider(value = textFontSize.toFloat(), onValueChange = { textFontSize = it.toInt() }, valueRange = 8f..32f)
                         TextAlignSelector(textAlign) { textAlign = it }
                     }
                     is PageComponent.Image -> {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = isFullWidth, onCheckedChange = { isFullWidth = it })
-                            Text("Banner (Largura Total)", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Largura Total", fontSize = 14.sp)
                             Spacer(Modifier.width(16.dp))
                             Checkbox(checked = isRounded, onCheckedChange = { isRounded = it })
-                            Text("Redondo", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Redondo", fontSize = 14.sp)
                         }
                         
                         Button(onClick = { picker() }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp)) {
                             Icon(Icons.Default.CloudUpload, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Selecionar Foto Local")
+                            Text("Mudar Foto")
                         }
+                        
                         Spacer(Modifier.height(12.dp))
-                        OutlinedTextField(value = imageUrl, onValueChange = { imageUrl = it }, label = { Text("URL da Imagem") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                        Spacer(Modifier.height(8.dp))
                         
                         var expanded by remember { mutableStateOf(false) }
                         Box {
                             OutlinedTextField(
-                                value = userPages.find { it.id == destPageId }?.title ?: "Nenhuma (Link Externo)",
+                                value = userPages.find { it.id == destPageId }?.title ?: "Nenhuma (Apenas Foto)",
                                 onValueChange = {},
-                                label = { Text("Página de Destino (Clique)") },
+                                label = { Text("Ao Clicar, abrir página:") },
                                 modifier = Modifier.fillMaxWidth(),
                                 readOnly = true,
                                 trailingIcon = { IconButton(onClick = { expanded = true }) { Icon(Icons.Default.ArrowDropDown, null) } },
                                 shape = RoundedCornerShape(10.dp)
                             )
                             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                                DropdownMenuItem(text = { Text("Nenhuma (Link Externo)") }, onClick = { destPageId = ""; expanded = false })
+                                DropdownMenuItem(text = { Text("Nenhuma (Apenas Foto)") }, onClick = { destPageId = ""; expanded = false })
                                 userPages.forEach { p ->
                                     DropdownMenuItem(text = { Text(p.title) }, onClick = { destPageId = p.id; expanded = false })
                                 }
@@ -574,19 +578,13 @@ fun EditComponentModal(
                         }
                         
                         Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = imageDesc, onValueChange = { imageDesc = it }, label = { Text("Legenda") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Tamanho: ${imageSize}px")
-                            Slider(value = imageSize.toFloat(), onValueChange = { imageSize = it.toInt() }, valueRange = 50f..1000f, modifier = Modifier.weight(1f).padding(horizontal = 16.dp))
-                        }
+                        Text("Tamanho da Imagem: ${imageSize}px", style = MaterialTheme.typography.labelMedium)
+                        Slider(value = imageSize.toFloat(), onValueChange = { imageSize = it.toInt() }, valueRange = 50f..1000f)
                     }
                     is PageComponent.Button -> {
                         OutlinedTextField(value = btnText, onValueChange = { btnText = it }, label = { Text("Texto do Botão") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                         Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = btnUrl, onValueChange = { btnUrl = it }, label = { Text("URL de Destino") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
-                        Spacer(Modifier.height(8.dp))
-                        OutlinedTextField(value = btnIcon, onValueChange = { btnIcon = it }, label = { Text("Nome do Ícone (opcional)") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
+                        OutlinedTextField(value = btnUrl, onValueChange = { btnUrl = it }, label = { Text("Link de Destino") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp))
                     }
                     else -> {}
                 }
@@ -595,9 +593,9 @@ fun EditComponentModal(
 
             ActionButtons(isNew, true, {
                 val finalComp = when (component) {
-                    is PageComponent.Header -> PageComponent.Header(title = headerTitle, fontSize = headerFontSize, textAlign = headerAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
-                    is PageComponent.Text -> PageComponent.Text(content = textContent, fontSize = textFontSize, textAlign = textAlign, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
-                    is PageComponent.Image -> PageComponent.Image(url = imageUrl, string = imageDesc, size = imageSize, destinationPageId = destPageId.ifBlank { null }, isFullWidth = isFullWidth, isRounded = isRounded, customLabel = currentCustomLabel.ifBlank { null }, isFilterable = isFilterable)
+                    is PageComponent.Header -> PageComponent.Header(headerTitle, headerFontSize, headerAlign, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.Text -> PageComponent.Text(textContent, textFontSize, textAlign, currentCustomLabel.ifBlank { null }, isFilterable)
+                    is PageComponent.Image -> PageComponent.Image(imageUrl, imageDesc, imageSize, destPageId.ifBlank { null }, isFullWidth, isRounded, currentCustomLabel.ifBlank { null }, isFilterable)
                     is PageComponent.Button -> PageComponent.Button(btnText, btnUrl, btnIcon.ifBlank { null }, currentCustomLabel.ifBlank { null }, isFilterable)
                     is PageComponent.Filter -> PageComponent.Filter(filterPlaceholder, currentCustomLabel.ifBlank { null }, isFilterable)
                     is PageComponent.CategoryFilter -> PageComponent.CategoryFilter(currentCustomLabel.ifBlank { null }, isFilterable)
@@ -612,7 +610,7 @@ fun EditComponentModal(
 @Composable
 fun TextAlignSelector(current: String, onSelected: (String) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-        val options = listOf("LEFT" to Icons.Default.FormatAlignLeft, "CENTER" to Icons.Default.FormatAlignCenter, "RIGHT" to Icons.Default.FormatAlignRight)
+        val options = listOf("LEFT" to Icons.AutoMirrored.Filled.FormatAlignLeft, "CENTER" to Icons.Default.FormatAlignCenter, "RIGHT" to Icons.AutoMirrored.Filled.FormatAlignRight)
         options.forEach { (valStr, icon) ->
             FilterChip(
                 selected = current == valStr,
@@ -635,6 +633,8 @@ fun ProductListManagementModal(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var productSearchQuery by remember { mutableStateOf("") }
+    val backendUrl = remember { getBaseUrl() }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -644,7 +644,7 @@ fun ProductListManagementModal(
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Gerenciar Produtos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Gerenciar Produtos", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
@@ -652,7 +652,6 @@ fun ProductListManagementModal(
 
             var currentCustomLabel by remember { mutableStateOf(component.customLabel ?: "") }
             var isHorizontal by remember { mutableStateOf(component.isHorizontal) }
-            var isFilterable by remember { mutableStateOf(component.isFilterable) }
 
             Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
@@ -671,27 +670,33 @@ fun ProductListManagementModal(
                         isHorizontal = it
                         onComponentUpdated(component.copy(isHorizontal = it))
                     })
-                    Text("Exibir Horizontalmente (Carrossel)", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
-                    Checkbox(checked = isFilterable, onCheckedChange = { 
-                        isFilterable = it
-                        onComponentUpdated(component.copy(isFilterable = it))
-                    })
-                    Text("Permitir Filtragem", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Exibir Horizontalmente (Carrossel)", fontSize = 14.sp)
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                 
                 if (availableProducts.isNotEmpty()) {
-                    val filteredSuggestions = availableProducts.filter { p -> component.products.none { it.id == p.id } }
+                    val filteredSuggestions = availableProducts
+                        .filter { p -> component.products.none { it.id == p.id } }
+                        .filter { p -> p.name.contains(productSearchQuery, ignoreCase = true) }
+
+                    Spacer(Modifier.height(16.dp))
+                    Text("Adicionar do Inventário", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    
+                    OutlinedTextField(
+                        value = productSearchQuery,
+                        onValueChange = { productSearchQuery = it },
+                        placeholder = { Text("Buscar no estoque...") },
+                        leadingIcon = { Icon(Icons.Default.Search, null, modifier = Modifier.size(18.dp)) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        shape = CircleShape,
+                        singleLine = true
+                    )
+
                     if (filteredSuggestions.isNotEmpty()) {
-                        Spacer(Modifier.height(16.dp))
-                        Text("Aproveitar do Inventário", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(Modifier.height(8.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(filteredSuggestions) { product ->
+                                val pImageUrl = product.imageUrls.firstOrNull()?.let { if (it.startsWith("/")) "$backendUrl$it" else it } ?: ""
                                 Surface(
                                     modifier = Modifier
                                         .width(140.dp)
@@ -701,17 +706,10 @@ fun ProductListManagementModal(
                                     border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.LightGray.copy(alpha = 0.5f))
                                 ) {
                                     Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        if (product.imageUrls.isNotEmpty()) {
-                                            AsyncImage(
-                                                model = product.imageUrl,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                        } else {
-                                            Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
+                                        if (pImageUrl.isNotEmpty()) {
+                                            AsyncImage(model = pImageUrl, contentDescription = null, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(4.dp)), contentScale = ContentScale.Crop)
                                         }
-                                        Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                                        Text(product.name, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
                                         Text("R$ ${product.price}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
@@ -721,10 +719,11 @@ fun ProductListManagementModal(
                 }
 
                 Spacer(Modifier.height(24.dp))
-                Text("Produtos nesta Lista", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Produtos nesta Lista", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
 
                 component.products.forEach { product ->
+                    val pImageUrl = product.imageUrls.firstOrNull()?.let { if (it.startsWith("/")) "$backendUrl$it" else it } ?: ""
                     Surface(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onEditProduct(product) },
                         shape = RoundedCornerShape(12.dp),
@@ -732,20 +731,13 @@ fun ProductListManagementModal(
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            if (product.imageUrls.isNotEmpty()) {
-                                AsyncImage(
-                                    model = product.imageUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(40.dp))
+                            if (pImageUrl.isNotEmpty()) {
+                                AsyncImage(model = pImageUrl, contentDescription = null, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(product.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                                Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(product.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge)
+                                Text("R$ ${product.price}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                             }
                             IconButton(onClick = {
                                 onComponentUpdated(component.copy(products = component.products.filter { it.id != product.id }))
@@ -757,23 +749,14 @@ fun ProductListManagementModal(
                 }
 
                 Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = onAddProduct,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
+                Button(onClick = onAddProduct, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
                     Icon(Icons.Default.Add, null)
                     Spacer(Modifier.width(8.dp))
                     Text("Cadastrar Novo Produto")
                 }
                 
                 Spacer(Modifier.height(16.dp))
-                OutlinedButton(
-                    onClick = onDeleteComponent,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
+                OutlinedButton(onClick = onDeleteComponent, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Text("Remover Todo o Bloco")
                 }
                 Spacer(Modifier.height(32.dp))
@@ -799,7 +782,7 @@ fun ThemeSelectorModal(
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Cores Harmonizadas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Estilo Visual", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 TextButton(onClick = onDismiss) { Text("OK", fontWeight = FontWeight.Bold) }
             }
             
@@ -816,15 +799,6 @@ fun ThemeSelectorModal(
                 Triple(PageThemeConfig.VINTAGE, "Vintage", Color(0xFF8B5E3C)),
                 Triple(PageThemeConfig.NORDIC, "Nordic", Color(0xFF4A90E2)),
                 Triple(PageThemeConfig.COFFEE, "Coffee", Color(0xFF6F4E37)),
-                Triple(PageThemeConfig.SOFT_LAVENDER, "Lavender", Color(0xFF967BB6)),
-                Triple(PageThemeConfig.SKY_BLUE, "Sky Blue", Color(0xFF039BE5)),
-                Triple(PageThemeConfig.MINT_GREEN, "Mint Green", Color(0xFF00C853)),
-                Triple(PageThemeConfig.PEACH, "Peach", Color(0xFFFF8A65)),
-                Triple(PageThemeConfig.LEMON, "Lemon", Color(0xFFFBC02D)),
-                Triple(PageThemeConfig.DARK_MODE, "Dark Mode", Color(0xFFBB86FC)),
-                Triple(PageThemeConfig.MIDNIGHT, "Midnight", Color(0xFFE94560)),
-                Triple(PageThemeConfig.NEON, "Neon", Color(0xFF39FF14)),
-                Triple(PageThemeConfig.DEEP_SPACE, "Deep Space", Color(0xFF00D1FF)),
                 Triple(PageThemeConfig.LUXURY_GOLD, "Luxury Gold", Color(0xFFD4AF37))
             )
             
@@ -845,7 +819,7 @@ fun ThemeSelectorModal(
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(24.dp).clip(CircleShape).background(color))
                             Spacer(Modifier.width(16.dp))
-                            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = if (currentTheme == config) FontWeight.Bold else FontWeight.Normal, color = MaterialTheme.colorScheme.onSurface)
+                            Text(label, style = MaterialTheme.typography.bodyLarge, fontWeight = if (currentTheme == config) FontWeight.Bold else FontWeight.Normal)
                             Spacer(Modifier.weight(1f))
                             if (currentTheme == config) Icon(Icons.Default.Check, null, tint = color)
                         }
@@ -882,7 +856,7 @@ fun ComponentCatalogModal(
     ) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp).navigationBarsPadding()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Adicionar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Adicionar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 TextButton(onClick = onDismiss) { Text("Fechar") }
             }
             Spacer(Modifier.height(16.dp))
@@ -907,22 +881,14 @@ fun ComponentCatalogModal(
             Spacer(Modifier.height(24.dp))
             Text("Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
             
-            val mockCarouselProducts = (1..10).map { 
-                Product(id = "c$it", name = "Produto Carrossel $it", price = 10.0 * it, imageUrls = emptyList(), category = "template") 
-            }
-            val mockListProducts = (1..10).map { 
-                Product(id = "l$it", name = "Produto Lista $it", price = 15.0 * it, imageUrls = emptyList(), category = "template") 
-            }
-
             Surface(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
                     onTemplateSelected(listOf(
                         PageComponent.Image(url = "", string = "", size = 80, destinationPageId = null, isFullWidth = false, isRounded = true, customLabel = null, isFilterable = false), 
-                        PageComponent.Header(title = "Bem-vindo à Loja!", fontSize = 34, textAlign = "CENTER", isFilterable = false), 
+                        PageComponent.Header(title = "Bem-vindo!", fontSize = 34, textAlign = "CENTER", isFilterable = false), 
                         PageComponent.Filter(placeholder = "Buscar na loja..."),
                         PageComponent.CategoryFilter(),
-                        PageComponent.ProductList(products = mockCarouselProducts, isHorizontal = true, customLabel = "Destaques"),
-                        PageComponent.ProductList(products = mockListProducts, isHorizontal = false, customLabel = "Nossos Produtos")
+                        PageComponent.ProductList(products = emptyList(), isHorizontal = true, customLabel = "Destaques")
                     )) 
                 }, 
                 shape = RoundedCornerShape(12.dp), 
@@ -931,29 +897,7 @@ fun ComponentCatalogModal(
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Dashboard, null, tint = MaterialTheme.colorScheme.secondary)
                     Spacer(Modifier.width(16.dp))
-                    Text("Loja Completa", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                }
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { 
-                    onTemplateSelected(listOf(
-                        PageComponent.Image(url = "", string = "", size = 120, destinationPageId = null, isFullWidth = false, isRounded = true, customLabel = "Foto de Perfil", isFilterable = false), 
-                        PageComponent.Header(title = "Seu Nome Aqui", fontSize = 28, textAlign = "CENTER", isFilterable = false), 
-                        PageComponent.Text(content = "Sua biografia curta e inspiradora aparece aqui.", fontSize = 16, textAlign = "CENTER"),
-                        PageComponent.Button(text = "WhatsApp", url = "https://wa.me/seunumeroaqui", iconName = "whatsapp"),
-                        PageComponent.Button(text = "Instagram", url = "https://instagram.com/seuuser", iconName = "instagram"),
-                        PageComponent.Button(text = "Email", url = "mailto:seuemail@exemplo.com", iconName = "email"),
-                        PageComponent.Button(text = "Portfólio", url = "https://seusite.com", iconName = "web")
-                    )) 
-                }, 
-                shape = RoundedCornerShape(12.dp), 
-                color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f)
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.tertiary)
-                    Spacer(Modifier.width(16.dp))
-                    Text("Perfil Profissional (Link in Bio)", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                    Text("Layout Loja Padrão", style = MaterialTheme.typography.titleSmall)
                 }
             }
         }
@@ -966,7 +910,50 @@ fun CatalogItemRow(name: String, icon: androidx.compose.ui.graphics.vector.Image
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(12.dp))
-            Text(name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(name, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PageSettingsModal(
+    page: Page,
+    onUpdate: (Page) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+    var title by remember { mutableStateOf(page.title) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(Modifier.fillMaxWidth().padding(24.dp).navigationBarsPadding()) {
+            Text("Nome da Página", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(24.dp))
+            
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Título da Vitrine") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+            
+            Spacer(Modifier.height(32.dp))
+            
+            Button(
+                onClick = { 
+                    onUpdate(page.copy(title = title))
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Salvar Nome")
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

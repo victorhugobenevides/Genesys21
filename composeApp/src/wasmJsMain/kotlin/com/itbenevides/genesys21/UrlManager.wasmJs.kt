@@ -25,7 +25,9 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?
             else "/product"
         }
         Screen.ProductEditor -> "/product/edit"
-        Screen.Cart -> "/cart" // CORREÇÃO: Adicionada rota para o Carrinho
+        Screen.Cart -> "/cart"
+        Screen.OrderTracking -> if (pageId != null) "/track/$pageId" else "/track"
+        Screen.OrderHistory -> "/history" // ADICIONADO
         else -> "/"
     }
     

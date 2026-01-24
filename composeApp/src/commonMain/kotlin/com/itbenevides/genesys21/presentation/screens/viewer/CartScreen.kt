@@ -27,16 +27,25 @@ import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(page: Page? = null, onBack: () -> Unit) {
+fun CartScreen(
+    page: Page? = null, 
+    onBack: () -> Unit,
+    onOrderSubmitted: (String) -> Unit = {}
+) {
     val viewModel: PageViewModel = koinViewModel()
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
-    val uriHandler = LocalUriHandler.current
     val backendUrl = remember { getBaseUrl() }
+    val customerName by viewModel.customerName.collectAsState()
+
+    LaunchedEffect(Unit) {
+        AnalyticsManager.trackPageView("Carrinho")
+    }
 
     Scaffold(
         topBar = {
@@ -51,52 +60,78 @@ fun CartScreen(page: Page? = null, onBack: () -> Unit) {
             )
         }
     ) { padding ->
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding)
+        Box(
+            modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.TopCenter
         ) {
-            val isDesktop = maxWidth > 800.dp
-            val horizontalPadding = if (isDesktop) (maxWidth - 600.dp) / 2 else 16.dp
-
-            if (cartItems.isEmpty()) {
-                EmptyCartView(onBack)
-            } else {
-                Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 1000.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp)
+            ) {
+                if (cartItems.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        EmptyCartView(onBack)
+                    }
+                } else {
                     LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(horizontal = horizontalPadding),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                         contentPadding = PaddingValues(vertical = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
+                        item {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 1.dp
+                            ) {
+                                Column(Modifier.padding(20.dp)) {
+                                    Text("Identificação", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.height(12.dp))
+                                    OutlinedTextField(
+                                        value = customerName,
+                                        onValueChange = { viewModel.saveCustomerName(it) },
+                                        label = { Text("Seu Nome") },
+                                        placeholder = { Text("Como gostaria de ser chamado?") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp),
+                                        singleLine = true,
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
                         items(cartItems) { item ->
                             ModernCartItemRow(
                                 item = item,
                                 backendUrl = backendUrl,
                                 onIncrease = { viewModel.updateCartQuantity(item.product.id, item.quantity + 1) },
                                 onDecrease = { viewModel.updateCartQuantity(item.product.id, item.quantity - 1) },
-                                onRemove = { viewModel.removeFromCart(item.product.id) }
+                                onRemove = { 
+                                    AnalyticsManager.logEvent("remove_from_cart", mapOf("item_id" to item.product.id, "item_name" to item.product.name))
+                                    viewModel.removeFromCart(item.product.id) 
+                                }
                             )
                         }
                     }
 
                     Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = if (isDesktop) horizontalPadding else 0.dp)
-                            .padding(bottom = if (isDesktop) 24.dp else 0.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surface,
                         tonalElevation = 8.dp,
                         shadowElevation = 16.dp,
-                        shape = if (isDesktop) RoundedCornerShape(24.dp) else RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                     ) {
                         Column(
                             Modifier
-                                .navigationBarsPadding()
                                 .padding(24.dp)
+                                .navigationBarsPadding()
                         ) {
                             Row(
                                 Modifier.fillMaxWidth(),
@@ -104,29 +139,31 @@ fun CartScreen(page: Page? = null, onBack: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("Total", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
-                                Text(
-                                    "R$ $total", 
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                )
+                                Text("R$ $total", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
                             }
                             Spacer(Modifier.height(20.dp))
                             Button(
                                 onClick = { 
-                                    // NOVO FLUXO: Salva pedido no servidor antes de ir para o WhatsApp
-                                    viewModel.submitOrder(page)
-                                    val url = viewModel.generateWhatsappMessage(page?.whatsapp)
-                                    if (url != null) uriHandler.openUri(url)
+                                    viewModel.submitOrder(page) { orderId ->
+                                        onOrderSubmitted(orderId)
+                                    }
                                 },
                                 modifier = Modifier.fillMaxWidth().height(56.dp),
                                 shape = RoundedCornerShape(16.dp),
-                                enabled = !page?.whatsapp.isNullOrBlank()
+                                enabled = customerName.isNotBlank()
                             ) {
-                                Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(12.dp))
-                                Text("Finalizar via WhatsApp", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("Finalizar Pedido", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            }
+                            if (customerName.isBlank()) {
+                                Text(
+                                    "Preencha seu nome para finalizar", 
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
                     }
@@ -151,9 +188,9 @@ fun ModernCartItemRow(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shape = RoundedCornerShape(20.dp),
-        shadowElevation = 1.dp
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
@@ -161,7 +198,7 @@ fun ModernCartItemRow(
         ) {
             Box(
                 modifier = Modifier
-                    .size(90.dp)
+                    .size(80.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
@@ -207,7 +244,7 @@ fun ModernCartItemRow(
             }
 
             IconButton(onClick = onRemove, modifier = Modifier.align(Alignment.Top)) {
-                Icon(Icons.Default.DeleteOutline, "Remover", tint = Color.LightGray)
+                Icon(Icons.Default.DeleteOutline, "Remover", tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
             }
         }
     }
@@ -220,7 +257,7 @@ fun QuantityButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClic
         modifier = Modifier.size(30.dp),
         shape = CircleShape,
         color = if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        contentColor = if (isPrimary) Color.White else MaterialTheme.colorScheme.onSurface
+        contentColor = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, null, modifier = Modifier.size(16.dp))
@@ -231,7 +268,6 @@ fun QuantityButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClic
 @Composable
 fun EmptyCartView(onBack: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

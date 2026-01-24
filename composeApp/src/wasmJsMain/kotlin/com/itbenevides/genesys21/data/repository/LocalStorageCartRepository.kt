@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlin.random.Random
 
 class LocalStorageCartRepository(
     private val httpClient: HttpClient,
@@ -28,8 +27,8 @@ class LocalStorageCartRepository(
     private val CART_STORAGE_KEY = "genesys21_cart"
     private val SESSION_STORAGE_KEY = "genesys21_session_id"
 
-    // Obtém ou gera um ID de sessão persistente no navegador do visitante
-    private fun getSessionId(): String {
+    // CORREÇÃO: Adicionado override e tornado public conforme a interface
+    override fun getSessionId(): String {
         var id = localStorage.getItem(SESSION_STORAGE_KEY)
         if (id == null) {
             id = "sess_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
@@ -39,7 +38,6 @@ class LocalStorageCartRepository(
     }
 
     override suspend fun loadInitialCart() {
-        // 1. Carrega o cache local para exibição instantânea
         val cached = localStorage.getItem(CART_STORAGE_KEY)
         if (cached != null) {
             try {
@@ -49,10 +47,9 @@ class LocalStorageCartRepository(
             }
         }
 
-        // 2. Sincroniza com o servidor (seja via UID ou SessionId)
         try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.get("$baseUrl/cart") {
+            val response = httpClient.get("$baseUrl/api/cart") {
                 if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
                 else header("X-Cart-Session-Id", getSessionId())
             }
@@ -108,7 +105,7 @@ class LocalStorageCartRepository(
     override suspend fun syncWithServer(): Result<Unit> {
         return try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.post("$baseUrl/cart") {
+            val response = httpClient.post("$baseUrl/api/cart") {
                 if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
                 else header("X-Cart-Session-Id", getSessionId())
                 

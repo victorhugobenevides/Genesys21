@@ -10,19 +10,15 @@ import org.koin.dsl.module
  */
 val viewModelModule = module {
     
-    // Use Cases
-    factory { GetPagesUseCase(get()) }
-    factory { SavePageUseCase(get()) }
-    factory { DeletePageUseCase(get()) }
-    factory { GetPublicPageUseCase(get()) }
-    factory { GetPageByDomainUseCase(get()) }
-    factory { GetFirstPublicPageUseCase(get()) }
-    factory { UploadImageUseCase(get()) }
+    // Use Cases - Note que já estão no domainModule, aqui apenas para referência
+    // Eles serão injetados no ViewModel
 
     // PageViewModel como SINGLE para compartilhar o estado do carrinho e dados entre todas as telas
     single { 
         PageViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), 
+            get(), get(), get(), get(), get(), 
+            get(), get(), get()
         ) 
     }
 

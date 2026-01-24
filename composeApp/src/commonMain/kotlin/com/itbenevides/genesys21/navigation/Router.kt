@@ -23,7 +23,6 @@ class Router(val viewModel: PageViewModel) {
     private val navigationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var navigationJob: Job? = null
 
-    // O Compose observa esse estado para saber qual tela mostrar
     var currentRoute by mutableStateOf<Route>(Route.Splash)
         private set
 
@@ -31,17 +30,24 @@ class Router(val viewModel: PageViewModel) {
 
     fun getHistory(): List<Route> = historyStack.toList()
 
-    // Navegação Interna: Quando você clica num botão
-    fun navigateTo(route: Route) {
-        if (currentRoute == route) return
-        println("ROUTER_LOG: [Ação UI] -> Solicitando $route")
+    fun navigateTo(route: Route, replace: Boolean = false) {
+        val current = currentRoute
+        if (current == route) return
         
-        if (currentRoute !is Route.Splash) {
-            historyStack.add(currentRoute)
+        // Proteção contra duplicidade: Se a nova rota for idêntica à atual, não faz nada
+        if (current::class == route::class) {
+             val isSameId = when {
+                 current is Route.WhiteLabel && route is Route.WhiteLabel -> current.page.id == route.page.id
+                 current is Route.PublicViewer && route is Route.PublicViewer -> current.page.id == route.page.id
+                 else -> false
+             }
+             if (isSameId && !replace) return
         }
 
-        // Em vez de mudar a tela aqui, deixamos que o forceSyncUrl mude a URL 
-        // e o Navegador então nos dirá para mudar a tela (Fluxo Unidirecional)
+        if (!replace && current !is Route.Splash) {
+            historyStack.add(current)
+        }
+
         applyRouteState(route)
         forceSyncUrl()
     }
@@ -52,7 +58,7 @@ class Router(val viewModel: PageViewModel) {
             applyRouteState(last)
             forceSyncUrl()
         } else {
-            navigateBack() // Apenas pede ao navegador para voltar
+            navigateBack()
         }
     }
 
@@ -74,27 +80,32 @@ class Router(val viewModel: PageViewModel) {
             is Route.ProductDetails -> "Detalhes - ${route.product.name}"
             is Route.ProductEditor -> "Editor de Produto"
             is Route.Cart -> "Carrinho"
+            is Route.OrderTracking -> "Acompanhamento de Pedido"
+            is Route.CustomerOrderHistory -> "Meus Pedidos"
         }
         AnalyticsManager.trackPageView(pageName)
     }
 
     fun forceSyncUrl() {
-        if (currentRoute is Route.Splash) return
+        val current = currentRoute
+        if (current is Route.Splash) return
 
-        val (pageId, productId) = when (val route = currentRoute) {
-            is Route.PageEditor -> route.page?.id to null
-            is Route.WhiteLabel -> route.page.id to null
-            is Route.PublicViewer -> route.page.id to null
+        val (pageId, productId) = when (current) {
+            is Route.PageEditor -> current.page?.id to null
+            is Route.WhiteLabel -> current.page.id to null
+            is Route.PublicViewer -> current.page.id to null
             is Route.ProductDetails -> {
-                val pId = (route.fromRoute as? Route.PublicViewer)?.page?.id 
-                    ?: (route.fromRoute as? Route.WhiteLabel)?.page?.id
-                pId to route.product.id
+                val pId = (current.fromRoute as? Route.PublicViewer)?.page?.id 
+                    ?: (current.fromRoute as? Route.WhiteLabel)?.page?.id
+                pId to current.product.id
             }
-            is Route.ProductEditor -> route.page.id to route.product?.id
+            is Route.ProductEditor -> current.page.id to current.product?.id
+            is Route.OrderTracking -> current.orderId to null
+            is Route.CustomerOrderHistory -> current.page?.id to null
             else -> null to null
         }
         
-        val screen = when (currentRoute) {
+        val screen = when (current) {
             Route.Splash -> Screen.Splash
             Route.Login -> Screen.Login
             Route.PageList -> Screen.List
@@ -104,26 +115,27 @@ class Router(val viewModel: PageViewModel) {
             is Route.ProductDetails -> Screen.ProductDetails
             is Route.ProductEditor -> Screen.ProductEditor
             is Route.Cart -> Screen.Cart
+            is Route.OrderTracking -> Screen.OrderTracking
+            is Route.CustomerOrderHistory -> Screen.OrderHistory
         }
         
         syncUrlWithScreen(screen, pageId, productId)
     }
 
-    /**
-     * O CORAÇÃO DO ROTEAMENTO:
-     * Lê a URL atual do navegador e força o app a mostrar a tela certa.
-     */
     fun handleDeepLink() {
         navigationJob?.cancel()
         navigationJob = navigationScope.launch {
             val urlPath = getInitialUrlPath() ?: "/"
-            println("ROUTER_LOG: [O Navegador manda] Lendo URL: $urlPath")
-            
             val currentDomain = getHostname().lowercase().removePrefix("www.")
             val token = viewModel.getCurrentUserToken()
             val isLoggedIn = token != null
 
-            // 1. Prioridade absoluta: Domínio Customizado
+            val orderId = urlPath.extractId("/track/")
+            if (orderId != null) {
+                applyRouteState(Route.OrderTracking(orderId))
+                return@launch
+            }
+
             if ((urlPath == "/" || urlPath == "") && currentDomain != "localhost" && currentDomain != "127.0.0.1") {
                 viewModel.loadPageByDomain(currentDomain)?.let { page ->
                     applyRouteState(Route.PublicViewer(page))
@@ -134,7 +146,6 @@ class Router(val viewModel: PageViewModel) {
             val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
             val productId = urlPath.extractId("/product/")
 
-            // 2. Rota por ID (Garante que compartilhamento e voltar funcionem)
             if (pageId != null && pageId != "new" && pageId.length >= 4) {
                 val page = viewModel.loadPublicPage(pageId)
                 if (page != null) {
@@ -145,12 +156,8 @@ class Router(val viewModel: PageViewModel) {
                         }
                     }
                     val target = when {
-                        urlPath.contains("/view/") -> {
-                            if (isLoggedIn) Route.WhiteLabel(page) else Route.Login
-                        }
-                        urlPath.contains("/editor/") -> {
-                            if (isLoggedIn) Route.PageEditor(page) else Route.Login
-                        }
+                        urlPath.contains("/view/") -> if (isLoggedIn) Route.WhiteLabel(page) else Route.Login
+                        urlPath.contains("/editor/") -> if (isLoggedIn) Route.PageEditor(page) else Route.Login
                         else -> Route.PublicViewer(page)
                     }
                     applyRouteState(target)
@@ -158,16 +165,14 @@ class Router(val viewModel: PageViewModel) {
                 }
             }
 
-            // 3. Fallback inteligente com proteção de rotas privadas
             val finalRoute = when {
                 urlPath.startsWith("/login") -> Route.Login
                 urlPath.startsWith("/list") -> if (isLoggedIn) Route.PageList else Route.Login
                 urlPath.startsWith("/cart") -> Route.Cart(null)
+                urlPath.startsWith("/history") -> Route.CustomerOrderHistory(null)
                 else -> {
                     if (isLoggedIn) Route.PageList 
-                    else {
-                        viewModel.loadFirstPublicPage()?.let { Route.PublicViewer(it) } ?: Route.Login
-                    }
+                    else viewModel.loadFirstPublicPage()?.let { Route.PublicViewer(it) } ?: Route.Login
                 }
             }
             applyRouteState(finalRoute)
