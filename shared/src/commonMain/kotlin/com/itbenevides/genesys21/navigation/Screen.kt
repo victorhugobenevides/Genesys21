@@ -10,6 +10,5 @@ enum class Screen {
     ProductDetails, 
     ProductEditor,
     Cart,
-    OrderTracking,
-    OrderHistory // ADICIONADO
+    OrderTracking // ADICIONADO
 }

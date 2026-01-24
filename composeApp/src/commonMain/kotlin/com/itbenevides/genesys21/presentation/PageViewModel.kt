@@ -2,15 +2,10 @@ package com.itbenevides.genesys21.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.itbenevides.genesys21.domain.model.CartItem
-import com.itbenevides.genesys21.domain.model.Order
-import com.itbenevides.genesys21.domain.model.OrderStatus
-import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
-import com.itbenevides.genesys21.domain.repository.OrderRepository
+import com.itbenevides.genesys21.domain.repository.CustomerRepository
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.flow.*
@@ -32,9 +27,14 @@ class PageViewModel(
     private val getPageByDomainUseCase: GetPageByDomainUseCase,
     private val getFirstPublicPageUseCase: GetFirstPublicPageUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
+    private val getOrdersUseCase: GetOrdersUseCase,
+    private val getCustomerOrdersUseCase: GetCustomerOrdersUseCase,
+    private val getOrderByIdUseCase: GetOrderByIdUseCase,
+    private val submitOrderUseCase: SubmitOrderUseCase,
+    private val updateOrderStatusUseCase: UpdateOrderStatusUseCase,
     private val authRepository: AuthRepository,
     private val cartRepository: CartRepository,
-    private val orderRepository: OrderRepository
+    private val customerRepository: CustomerRepository
 ) : ViewModel() {
 
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
@@ -43,39 +43,44 @@ class PageViewModel(
     private val _orders = MutableStateFlow<List<Order>>(emptyList())
     val orders: StateFlow<List<Order>> = _orders.asStateFlow()
 
+    private val _customerOrders = MutableStateFlow<List<Order>>(emptyList())
+    val customerOrders: StateFlow<List<Order>> = _customerOrders.asStateFlow()
+
+    private val _trackedOrder = MutableStateFlow<Order?>(null)
+    val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
     private val _currentError = MutableStateFlow<AppError?>(null)
     val currentError = _currentError.asStateFlow()
 
+    val customerName = customerRepository.customerName
+
     init {
         viewModelScope.launch {
             cartRepository.loadInitialCart()
+            customerRepository.loadName()
+        }
+    }
+
+    fun saveCustomerName(name: String) {
+        viewModelScope.launch {
+            customerRepository.saveName(name)
         }
     }
 
     fun clearError() { _currentError.value = null }
 
     private fun handleError(title: String, e: Throwable) {
-        val stackTrace = e.stackTraceToString()
-        _currentError.value = AppError(
-            title = title,
-            message = e.message ?: "Erro desconhecido",
-            stackTrace = if (stackTrace.length > 500) stackTrace.take(500) + "..." else stackTrace
-        )
+        _currentError.value = AppError(title, e.message ?: "Erro desconhecido", e.stackTraceToString())
         AnalyticsManager.logEvent("app_error", mapOf("title" to title, "exception" to (e::class.simpleName ?: "unknown")))
     }
 
-    // --- CARRINHO ---
+    // Cart
     val cart = cartRepository.cartItems
-
-    val cartTotal = cart.map { items -> 
-        items.sumOf { it.product.price * it.quantity } 
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
-
-    val cartCount = cart.map { items -> items.sumOf { it.quantity } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val cartTotal = cart.map { items -> items.sumOf { it.product.price * it.quantity } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+    val cartCount = cart.map { items -> items.sumOf { it.quantity } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun addToCart(product: Product): Boolean {
         if (product.stock <= 0) return false
@@ -90,51 +95,68 @@ class PageViewModel(
         viewModelScope.launch { cartRepository.removeFromCart(productId) }
     }
 
-    fun updateCartQuantity(productId: String, quantity: Int): Boolean {
+    fun updateCartQuantity(productId: String, quantity: Int) {
         viewModelScope.launch { cartRepository.updateQuantity(productId, quantity) }
-        return true
     }
 
-    // --- PEDIDOS ---
+    // Orders
     fun loadOrders() {
         viewModelScope.launch {
             val token = authRepository.getCurrentUserToken() ?: return@launch
-            println("ORDERS: Carregando pedidos para o token logado...")
-            orderRepository.getOrders(token).collect {
-                println("ORDERS: ${it.size} pedidos recebidos do servidor.")
-                _orders.value = it
-            }
+            getOrdersUseCase(token).collect { _orders.value = it }
         }
     }
 
-    fun submitOrder(page: Page?) {
-        val ownerId = page?.ownerId
-        val whatsapp = page?.whatsapp
-        
-        if (ownerId == null || cart.value.isEmpty()) {
-            println("ORDERS: Abortando salvar pedido. OwnerId=$ownerId, Itens=${cart.value.size}")
-            return
+    fun loadCustomerOrders() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            getCustomerOrdersUseCase(cartRepository.getSessionId()).onSuccess {
+                _customerOrders.value = it
+            }.onFailure {
+                handleError("Falha ao buscar histórico", it)
+            }
+            _isLoading.value = false
         }
+    }
+
+    fun trackOrder(orderId: String) {
+        viewModelScope.launch {
+            _trackedOrder.value = null
+            _isLoading.value = true
+            getOrderByIdUseCase(orderId).onSuccess {
+                _trackedOrder.value = it
+            }.onFailure {
+                handleError("Pedido não encontrado", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun submitOrder(page: Page?, onComplete: (String) -> Unit = {}) {
+        val ownerId = page?.ownerId
+        if (ownerId == null || cart.value.isEmpty()) return
         
         viewModelScope.launch {
             val orderId = "ORD-" + Random.nextInt(100000, 999999).toString()
             val newOrder = Order(
                 id = orderId,
-                userId = ownerId, // CRÍTICO: Vincula o pedido ao dono da página
+                userId = ownerId,
+                customerId = cartRepository.getSessionId(),
+                customerName = customerName.value,
                 items = cart.value,
                 total = cartTotal.value,
                 status = OrderStatus.PENDING,
                 createdAt = Clock.System.now().toEpochMilliseconds(),
-                whatsappContact = whatsapp
+                whatsappContact = page.whatsapp,
+                theme = page.theme
             )
             
-            println("ORDERS: Salvando pedido $orderId para o dono $ownerId")
-            orderRepository.createOrder(newOrder).onSuccess {
-                println("ORDERS: Pedido salvo com sucesso no servidor!")
+            submitOrderUseCase(newOrder).onSuccess {
                 cartRepository.clearCart()
                 AnalyticsManager.logEvent("purchase", mapOf("transaction_id" to orderId, "value" to cartTotal.value))
+                onComplete(orderId)
             }.onFailure {
-                println("ORDERS: Erro ao salvar pedido - ${it.message}")
+                handleError("Falha ao submeter pedido", it)
             }
         }
     }
@@ -142,127 +164,89 @@ class PageViewModel(
     fun updateOrderStatus(orderId: String, status: OrderStatus) {
         viewModelScope.launch {
             val token = authRepository.getCurrentUserToken() ?: return@launch
-            orderRepository.updateOrderStatus(token, orderId, status).onSuccess {
+            updateOrderStatusUseCase(token, orderId, status).onSuccess {
                 loadOrders()
+            }.onFailure { 
+                handleError("Falha ao atualizar status", it)
             }
         }
     }
 
-    fun generateWhatsappMessage(whatsapp: String?): String? {
-        if (whatsapp.isNullOrBlank() || cart.value.isEmpty()) return null
-        AnalyticsManager.logEvent("begin_checkout", mapOf("value" to cartTotal.value))
-        val sb = StringBuilder().append("Olá! Gostaria de fazer um pedido:\n\n")
-        cart.value.forEach { item -> sb.append("• ${item.quantity}x ${item.product.name} - R$ ${item.product.price * item.quantity}\n") }
-        sb.append("\n*Total: R$ ${cartTotal.value}*")
-        return "https://wa.me/$whatsapp?text=${sb.toString().replace(" ", "%20").replace("\n", "%0A")}"
-    }
-
-    // --- PÁGINAS ---
+    // Pages
     fun loadPages() {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
+            _isLoading.value = true
+            runCatching {
                 val token = authRepository.getCurrentUserToken() ?: ""
-                _pages.value = getPagesUseCase(token)
-            } catch (e: Exception) {
-                handleError("Falha ao carregar páginas", e)
-            } finally {
-                _isLoading.value = false
+                getPagesUseCase(token)
+            }.onSuccess {
+                _pages.value = it
+            }.onFailure {
+                handleError("Falha ao carregar páginas", it)
             }
+            _isLoading.value = false
         }
     }
 
     suspend fun loadPublicPage(id: String): Page? {
-        return getPublicPageUseCase(id).fold(
-            onSuccess = { it },
-            onFailure = { 
-                handleError("Erro na página pública", it)
-                null 
-            }
-        )
+        return getPublicPageUseCase(id).getOrElse {
+            handleError("Erro na página pública", it)
+            null
+        }
     }
 
-    suspend fun loadPageByDomain(domain: String): Page? {
-        return getPageByDomainUseCase(domain).fold(
-            onSuccess = { it },
-            onFailure = { null }
-        )
-    }
+    suspend fun loadPageByDomain(domain: String): Page? = getPageByDomainUseCase(domain).getOrNull()
 
     suspend fun loadFirstPublicPage(): Page? = getFirstPublicPageUseCase()
 
     fun savePage(page: Page, isEditing: Boolean, onComplete: () -> Unit) {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val token = authRepository.getCurrentUserToken() ?: ""
-                savePageUseCase(page, token, isEditing).fold(
-                    onSuccess = {
-                        loadPages()
-                        onComplete()
-                    },
-                    onFailure = { throw it }
-                )
-            } catch (e: Exception) {
-                handleError("Falha ao salvar página", e)
-            } finally {
-                _isLoading.value = false
+            _isLoading.value = true
+            savePageUseCase(page, authRepository.getCurrentUserToken() ?: "", isEditing).onSuccess {
+                loadPages()
+                onComplete()
+            }.onFailure {
+                handleError("Falha ao salvar página", it)
             }
+            _isLoading.value = false
         }
     }
 
     fun deletePage(id: String, onComplete: () -> Unit) {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val token = authRepository.getCurrentUserToken() ?: ""
-                deletePageUseCase(id, token).fold(
-                    onSuccess = {
-                        loadPages()
-                        onComplete()
-                    },
-                    onFailure = { throw it }
-                )
-            } catch (e: Exception) {
-                handleError("Falha ao excluir página", e)
-            } finally {
-                _isLoading.value = false
+            _isLoading.value = true
+            deletePageUseCase(id, authRepository.getCurrentUserToken() ?: "").onSuccess {
+                loadPages()
+                onComplete()
+            }.onFailure {
+                handleError("Falha ao excluir página", it)
             }
+            _isLoading.value = false
         }
     }
 
     fun uploadImage(bytes: ByteArray, fileName: String, onSuccess: (String) -> Unit) {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val token = authRepository.getCurrentUserToken() ?: ""
-                uploadImageUseCase(bytes, fileName, token).fold(
-                    onSuccess = { onSuccess(it) },
-                    onFailure = { throw it }
-                )
-            } catch (e: Exception) {
-                handleError("Erro no upload de imagem", e)
-            } finally {
-                _isLoading.value = false
+            _isLoading.value = true
+            uploadImageUseCase(bytes, fileName, authRepository.getCurrentUserToken() ?: "").onSuccess(onSuccess).onFailure {
+                handleError("Erro no upload de imagem", it)
             }
+            _isLoading.value = false
         }
     }
 
+    // Auth
     suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()
-    suspend fun getPagesSync(): List<Page> = getPagesUseCase(authRepository.getCurrentUserToken() ?: "")
-
+    
     fun signIn(email: String, pass: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         viewModelScope.launch {
-            authRepository.signIn(email, pass).fold(
-                onSuccess = { 
-                    AnalyticsManager.logEvent("login")
-                    onSuccess() 
-                },
-                onFailure = { 
-                    handleError("Erro de Login", it)
-                    onFailure(it.message ?: "Erro") 
-                }
-            )
+            authRepository.signIn(email, pass).onSuccess {
+                AnalyticsManager.logEvent("login")
+                onSuccess() 
+            }.onFailure { 
+                handleError("Erro de Login", it)
+                onFailure(it.message ?: "Erro") 
+            }
         }
     }
 
@@ -273,11 +257,17 @@ class PageViewModel(
         }
     }
 
-    // Derived states
-    val allAvailableProducts: StateFlow<List<Product>> = _pages.map { pages ->
-        pages.flatMap { page ->
-            page.components.filterIsInstance<PageComponent.ProductList>().flatMap { it.products }
-        }.distinctBy { it.id }
+    // Derived States
+    val allAvailableProducts: StateFlow<List<Product>> = _pages.map { pageList ->
+        val result = mutableListOf<Product>()
+        for (page in pageList) {
+            for (component in page.components) {
+                if (component is PageComponent.ProductList) {
+                    result.addAll(component.products)
+                }
+            }
+        }
+        result.distinctBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val allAvailableCategories: StateFlow<List<String>> = allAvailableProducts.map { products ->

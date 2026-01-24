@@ -9,12 +9,16 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("OrderRoutes")
 
 fun Route.orderRoutes(orderRepository: SqliteOrderRepository) {
     authenticate("firebase") {
-        route("/orders") {
+        route("/api/orders") { // Prefixo /api/ para evitar conflito com páginas
             get {
                 val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                logger.info("ADMIN: Buscando pedidos para o dono: ${principal.name}")
                 val orders = orderRepository.getOrders(principal.name)
                 call.respond(orders)
             }
@@ -24,17 +28,50 @@ fun Route.orderRoutes(orderRepository: SqliteOrderRepository) {
                 val id = call.parameters["id"] ?: return@patch call.respond(HttpStatusCode.BadRequest)
                 val status = call.receive<OrderStatus>()
                 
-                // TODO: Validar se o pedido pertence ao usuário principal.name se necessário
+                logger.info("ADMIN: Atualizando pedido $id para status $status")
                 orderRepository.updateOrderStatus(id, status)
                 call.respond(HttpStatusCode.OK)
             }
         }
     }
     
-    // Rota pública para criar pedido (clientes enviando pedido para a loja)
+    // Rota pública para criar pedido
     post("/api/public/orders") {
-        val order = call.receive<Order>()
-        orderRepository.saveOrder(order)
-        call.respond(HttpStatusCode.Created)
+        try {
+            val order = call.receive<Order>()
+            logger.info("PUBLIC: Recebendo novo pedido: ID=${order.id}, ParaDono=${order.userId}, Total=${order.total}")
+            
+            if (order.userId.isBlank()) {
+                logger.error("PUBLIC: Tentativa de salvar pedido sem userId (Dono)")
+                return@post call.respond(HttpStatusCode.BadRequest, "Proprietário da loja não identificado")
+            }
+
+            // Garante que o timestamp seja do servidor para evitar fraude de data no cliente
+            val orderWithServerTime = order.copy(createdAt = System.currentTimeMillis())
+            
+            orderRepository.saveOrder(orderWithServerTime)
+            call.respond(HttpStatusCode.Created)
+        } catch (e: Exception) {
+            logger.error("PUBLIC: Erro ao salvar pedido: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, "Erro no processamento do pedido")
+        }
+    }
+
+    // Rota pública para consultar UM pedido específico (Acompanhamento do cliente)
+    get("/api/public/orders/{id}") {
+        val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val order = orderRepository.getOrderById(id)
+        if (order != null) {
+            call.respond(order)
+        } else {
+            call.respond(HttpStatusCode.NotFound)
+        }
+    }
+
+    // Rota pública para consultar TODOS os pedidos de um cliente (Histórico do visitante)
+    get("/api/public/orders/customer/{sessionId}") {
+        val sessionId = call.parameters["sessionId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+        val orders = orderRepository.getCustomerOrders(sessionId)
+        call.respond(orders)
     }
 }

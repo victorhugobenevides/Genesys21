@@ -65,12 +65,15 @@ fun Application.module() {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
+        allowHeader("X-Cart-Session-Id") // Adicionado para suportar o header do carrinho
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch) // ADICIONADO: Necessário para atualização de status
         allowMethod(HttpMethod.Delete)
         allowCredentials = true
+        maxAgeInSeconds = 3600
     }
 
     install(Authentication) {

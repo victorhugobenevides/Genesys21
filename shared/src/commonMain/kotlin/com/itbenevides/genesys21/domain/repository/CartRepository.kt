@@ -11,4 +11,5 @@ interface CartRepository {
     suspend fun clearCart(): Result<Unit>
     suspend fun syncWithServer(): Result<Unit>
     suspend fun loadInitialCart()
+    fun getSessionId(): String
 }

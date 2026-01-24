@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-// Interoperação direta com o JavaScript para máxima compatibilidade no WasmJs
 @JsFun("(key) => window.localStorage.getItem(key)")
 private external fun jsGetItem(key: String): String?
 
@@ -36,7 +35,7 @@ class LocalStorageCartRepository(
     private val CART_STORAGE_KEY = "genesys21_cart"
     private val SESSION_STORAGE_KEY = "genesys21_session_id"
 
-    private fun getSessionId(): String {
+    override fun getSessionId(): String {
         var id = jsGetItem(SESSION_STORAGE_KEY)
         if (id == null) {
             id = "sess_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
@@ -57,7 +56,7 @@ class LocalStorageCartRepository(
 
         try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.get("$baseUrl/cart") {
+            val response = httpClient.get("$baseUrl/api/cart") {
                 if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
                 else header("X-Cart-Session-Id", getSessionId())
             }
@@ -113,7 +112,7 @@ class LocalStorageCartRepository(
     override suspend fun syncWithServer(): Result<Unit> {
         return try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.post("$baseUrl/cart") {
+            val response = httpClient.post("$baseUrl/api/cart") {
                 if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
                 else header("X-Cart-Session-Id", getSessionId())
                 

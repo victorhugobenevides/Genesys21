@@ -1,225 +1,187 @@
 package com.itbenevides.genesys21
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
+import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.presentation.AppError
-import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
-import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen
-import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
+import com.itbenevides.genesys21.presentation.screens.SplashScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.*
+import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
+import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.CartScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.CustomerOrderHistoryScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.OrderTrackingScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.ProductDetailsScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.WhiteLabelScreen
 import com.itbenevides.genesys21.ui.theme.AppTheme
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-@Preview
 fun App() {
-    KoinContext {
-        val viewModel: PageViewModel = koinViewModel()
-        val router: Router = koinInject()
-        val currentRoute = router.currentRoute
-        
-        val currentError by viewModel.currentError.collectAsState()
+    val router: Router = koinInject()
+    val currentRoute = router.currentRoute
+    val trackedOrder by router.viewModel.trackedOrder.collectAsState()
+    
+    var historySelectedOrderTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
 
-        val savedCategories: List<String> by viewModel.allAvailableCategories.collectAsState(initial = emptyList())
-        
-        val allCategories: List<String> by remember(savedCategories, currentRoute) {
-            derivedStateOf {
-                val page = when (currentRoute) {
-                    is Route.WhiteLabel -> currentRoute.page
-                    is Route.PublicViewer -> currentRoute.page
-                    is Route.ProductEditor -> currentRoute.page
-                    else -> null
-                }
-                val currentSessionCategories = page?.components
-                    ?.filterIsInstance<PageComponent.ProductList>()
-                    ?.flatMap { it.products }
-                    ?.map { it.category }
-                    ?.filter { it.isNotBlank() } ?: emptyList()
-                
-                (savedCategories + currentSessionCategories).distinct().sorted()
-            }
-        }
+    LaunchedEffect(Unit) {
+        router.handleDeepLink()
+        onUrlChange { router.handleDeepLink() }
+    }
 
-        val themeConfig by remember(currentRoute) {
-            derivedStateOf {
-                when (currentRoute) {
-                    is Route.WhiteLabel -> currentRoute.page.theme
-                    is Route.PublicViewer -> currentRoute.page.theme
-                    is Route.ProductEditor -> currentRoute.page.theme
-                    is Route.ProductDetails -> {
-                        val from = currentRoute.fromRoute
-                        when (from) {
-                            is Route.PublicViewer -> from.page.theme
-                            is Route.WhiteLabel -> from.page.theme
-                            else -> PageThemeConfig.DEFAULT
-                        }
-                    }
-                    is Route.Cart -> {
-                        currentRoute.page?.theme ?: PageThemeConfig.DEFAULT
-                    }
-                    else -> PageThemeConfig.DEFAULT
-                }
-            }
-        }
-
-        AppTheme(themeConfig = themeConfig) {
-            LaunchedEffect(Unit) {
-                router.handleDeepLink()
-                // ESCUTA O BOTÃO VOLTAR DO NAVEGADOR
-                onUrlChange { 
-                    router.handleDeepLink() 
-                }
-            }
-
-            LaunchedEffect(currentRoute) { router.forceSyncUrl() }
-
-            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                
-                currentError?.let { error ->
-                    GlobalErrorDialog(error = error, onDismiss = { viewModel.clearError() })
-                }
-
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                    val maxWidth = if (currentRoute is Route.Login || currentRoute is Route.Splash) 400.dp else 1200.dp
-                    
-                    Box(modifier = Modifier.fillMaxHeight().widthIn(max = maxWidth).padding(horizontal = 16.dp)) {
-                        AnimatedContent(targetState = currentRoute) { route ->
-                            when (route) {
-                                is Route.Splash -> SplashScreen()
-                                is Route.Login -> LoginScreen(viewModel, onLoginSuccess = { router.navigateTo(Route.PageList) })
-                                is Route.PageList -> PageListScreen(
-                                    viewModel = viewModel,
-                                    onAddPage = { router.navigateTo(Route.PageEditor()) },
-                                    onEditPage = { router.navigateTo(Route.WhiteLabel(it)) },
-                                    onViewPage = { router.navigateTo(Route.WhiteLabel(it)) },
-                                    onLogout = { viewModel.signOut(); router.navigateTo(Route.Login) }
-                                )
-                                is Route.PageEditor -> PageEditorScreen(viewModel, route.page, onBack = { router.navigateTo(Route.PageList) })
-                                is Route.WhiteLabel -> WhiteLabelScreen(
-                                    viewModel = viewModel,
-                                    page = route.page,
-                                    onPageChange = { router.navigateTo(Route.WhiteLabel(it)) },
-                                    onBack = { router.navigateTo(Route.PageList) },
-                                    onEditProduct = { prod, idx -> router.navigateTo(Route.ProductEditor(route.page, prod, idx)) }
-                                )
-                                is Route.PublicViewer -> PageViewerScreen(
-                                    page = route.page,
-                                    onBack = { router.navigateTo(Route.PageList) },
-                                    onProductClick = { router.navigateTo(Route.ProductDetails(it, route)) },
-                                    allAvailableCategories = allCategories
-                                )
-                                is Route.ProductDetails -> ProductDetailsScreen(
-                                    product = route.product,
-                                    onBack = { router.goBack() },
-                                    onNavigateToCart = { 
-                                        val page = (route.fromRoute as? Route.PublicViewer)?.page 
-                                            ?: (route.fromRoute as? Route.WhiteLabel)?.page
-                                        router.navigateTo(Route.Cart(page))
-                                    }
-                                )
-                                is Route.ProductEditor -> ProductEditorScreen(
-                                    viewModel = viewModel,
-                                    product = route.product,
-                                    existingCategories = allCategories,
-                                    onSave = { updatedProduct ->
-                                        val newComponents = route.page.components.toMutableList()
-                                        route.componentIndex?.let { idx ->
-                                            if (idx >= 0 && idx < newComponents.size) {
-                                                val component = newComponents[idx] as? PageComponent.ProductList
-                                                component?.let {
-                                                    val newProducts = if (route.product == null) it.products + updatedProduct
-                                                    else it.products.map { p -> if (p.id == updatedProduct.id) updatedProduct else p }
-                                                    newComponents[idx] = it.copy(products = newProducts)
-                                                }
-                                            }
-                                        }
-                                        router.navigateTo(Route.WhiteLabel(route.page.copy(components = newComponents)))
-                                    },
-                                    onBack = { router.navigateTo(Route.WhiteLabel(route.page)) }
-                                )
-                                is Route.Cart -> CartScreen(page = route.page, onBack = { router.goBack() })
-                            }
-                        }
-                    }
-                }
-            }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute !is Route.OrderTracking) {
+            historySelectedOrderTheme = null
         }
     }
-}
 
-@Composable
-fun GlobalErrorDialog(error: AppError, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.ErrorOutline, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
-        title = { Text(error.title, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(error.message, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
-                
-                error.stackTrace?.let { trace ->
-                    Spacer(Modifier.height(16.dp))
-                    Surface(
-                        color = Color.Black.copy(alpha = 0.05f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = trace,
-                            modifier = Modifier.padding(12.dp),
-                            style = TextStyle(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 10.sp,
-                                color = Color.Gray
-                            )
+    val currentTheme: PageThemeConfig = remember(currentRoute, trackedOrder, historySelectedOrderTheme) {
+        val theme = when (currentRoute) {
+            is Route.PublicViewer -> currentRoute.page.theme
+            is Route.WhiteLabel -> currentRoute.page.theme
+            is Route.ProductDetails -> {
+                (currentRoute.fromRoute as? Route.PublicViewer)?.page?.theme 
+                    ?: (currentRoute.fromRoute as? Route.WhiteLabel)?.page?.theme 
+            }
+            is Route.Cart -> currentRoute.page?.theme
+            is Route.OrderTracking -> {
+                val isCorrectOrder = trackedOrder?.id == currentRoute.orderId
+                if (isCorrectOrder) trackedOrder?.theme else historySelectedOrderTheme
+            }
+            is Route.CustomerOrderHistory -> {
+                val lastViewer = router.getHistory().filterIsInstance<Route.PublicViewer>().lastOrNull()
+                lastViewer?.page?.theme
+            }
+            else -> PageThemeConfig.ROYAL
+        }
+        theme ?: PageThemeConfig.ROYAL
+    }
+
+    AppTheme(themeConfig = currentTheme) {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize()) {
+                AnimatedContent(
+                    targetState = currentRoute,
+                    transitionSpec = {
+                        if (targetState is Route.Splash || initialState is Route.Splash) {
+                            EnterTransition.None togetherWith ExitTransition.None
+                        } else {
+                            fadeIn() togetherWith fadeOut()
+                        }
+                    },
+                    label = "AppNavigation"
+                ) { route ->
+                    when (route) {
+                        is Route.Splash -> SplashScreen()
+                        is Route.Login -> LoginScreen(
+                            viewModel = router.viewModel,
+                            onLoginSuccess = { router.navigateTo(Route.PageList) }
                         )
+                        is Route.PageList -> PageListScreen(
+                            viewModel = router.viewModel,
+                            onAddPage = { router.navigateTo(Route.PageEditor(null)) },
+                            onEditPage = { router.navigateTo(Route.WhiteLabel(it)) },
+                            onViewPage = { router.navigateTo(Route.PublicViewer(it)) },
+                            onLogout = { 
+                                router.viewModel.signOut()
+                                router.navigateTo(Route.Login) 
+                            }
+                        )
+                        is Route.PageEditor -> PageEditorScreen(
+                            viewModel = router.viewModel,
+                            page = route.page,
+                            onBack = { router.goBack() }
+                        )
+                        is Route.WhiteLabel -> {
+                            var editingPage by remember(route.page) { mutableStateOf(route.page) }
+                            
+                            AppTheme(themeConfig = editingPage.theme) {
+                                WhiteLabelScreen(
+                                    viewModel = router.viewModel,
+                                    page = editingPage,
+                                    onPageChange = { editingPage = it }, 
+                                    onBack = { router.goBack() },
+                                    onEditProduct = { product, componentIndex -> 
+                                        router.navigateTo(Route.ProductEditor(editingPage, product, componentIndex))
+                                    }
+                                )
+                            }
+                        }
+                        is Route.PublicViewer -> PageViewerScreen(
+                            page = route.page,
+                            onBack = { router.goBack() },
+                            onProductClick = { router.navigateTo(Route.ProductDetails(it, route)) }
+                        )
+                        is Route.ProductDetails -> ProductDetailsScreen(
+                            product = route.product,
+                            onBack = { router.goBack() },
+                            onNavigateToCart = { 
+                                val page = (route.fromRoute as? Route.PublicViewer)?.page 
+                                    ?: (route.fromRoute as? Route.WhiteLabel)?.page
+                                router.navigateTo(Route.Cart(page)) 
+                            }
+                        )
+                        is Route.Cart -> CartScreen(
+                            page = route.page,
+                            onBack = { router.goBack() },
+                            onOrderSubmitted = { orderId ->
+                                router.navigateTo(Route.OrderTracking(orderId), replace = true)
+                            }
+                        )
+                        is Route.OrderTracking -> OrderTrackingScreen(
+                            orderId = route.orderId,
+                            onBack = { router.goBack() }
+                        )
+                        is Route.CustomerOrderHistory -> CustomerOrderHistoryScreen(
+                            onBack = { router.goBack() },
+                            onOrderClick = { order ->
+                                historySelectedOrderTheme = order.theme
+                                router.navigateTo(Route.OrderTracking(order.id))
+                            }
+                        )
+                        is Route.ProductEditor -> {
+                            val categories by router.viewModel.allAvailableCategories.collectAsState()
+                            com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen(
+                                viewModel = router.viewModel,
+                                product = route.product,
+                                existingCategories = categories,
+                                onSave = { updatedProduct ->
+                                    val updatedComponents = route.page.components.toMutableList()
+                                    val index = route.componentIndex ?: 0
+                                    val comp = updatedComponents.getOrNull(index) as? PageComponent.ProductList
+                                    if (comp != null) {
+                                        val updatedProducts = comp.products.toMutableList()
+                                        val pIndex = updatedProducts.indexOfFirst { it.id == updatedProduct.id }
+                                        if (pIndex != -1) {
+                                            updatedProducts[pIndex] = updatedProduct
+                                        } else {
+                                            updatedProducts.add(0, updatedProduct) 
+                                        }
+                                        
+                                        updatedComponents[index] = comp.copy(products = updatedProducts)
+                                        val updatedPage = route.page.copy(components = updatedComponents)
+                                        
+                                        // CORREÇÃO: Primeiro voltamos para a WhiteLabel original e depois a substituímos
+                                        // Isso remove o editor do histórico e evita duplicidade da WhiteLabel.
+                                        router.goBack() 
+                                        router.navigateTo(Route.WhiteLabel(updatedPage), replace = true)
+                                    }
+                                },
+                                onBack = { router.goBack() }
+                            )
+                        }
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                Text("Entendi")
-            }
-        },
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface
-    )
-}
-
-@Composable
-fun SplashScreen() {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(strokeWidth = 3.dp)
+        }
     }
 }

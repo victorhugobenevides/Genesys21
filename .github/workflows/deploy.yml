@@ -67,13 +67,13 @@ jobs:
           window.firebaseSignOut = async () => await signOut(auth);
           EOF
 
-          # Gerar index.html COM GOOGLE ANALYTICS
+          # Gerar index.html COM TRAVA DE ZOOM, RESIZE E GOOGLE ANALYTICS
           cat <<EOF > deploy/web/index.html
           <!DOCTYPE html>
           <html>
           <head>
               <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
               <title>Genesys21</title>
               
               <!-- Google tag (gtag.js) -->
@@ -88,9 +88,22 @@ jobs:
               <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
               <script type="module" src="/firebase-bridge.js"></script>
               <style>
-                  html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background-color:#F2F2F7;}
-                  #ComposeTarget{width:100%;height:100%;}
-                  canvas { outline: none; width: 100% !important; height: 100% !important; }
+                  html, body {
+                      width: 100%;
+                      height: 100%;
+                      margin: 0;
+                      padding: 0;
+                      overflow: hidden;
+                      background-color: #F2F2F7;
+                      position: fixed;
+                      left: 0;
+                      top: 0;
+                      touch-action: manipulation;
+                      -webkit-text-size-adjust: 100%;
+                  }
+                  #ComposeTarget { width: 100%; height: 100%; }
+                  canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
+                  input, textarea, select { font-size: 16px !important; }
               </style>
           </head>
           <body>
@@ -161,6 +174,15 @@ jobs:
                     }
 
                     location ^~ /cart {
+                        proxy_pass http://server:8080;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
+                        proxy_http_version 1.1;
+                    }
+
+                    location ^~ /orders {
                         proxy_pass http://server:8080;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;

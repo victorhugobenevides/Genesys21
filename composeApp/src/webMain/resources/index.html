@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Genesys21</title>
 
     <!-- Google tag (gtag.js) -->
@@ -28,18 +28,30 @@
             padding: 0;
             overflow: hidden;
             background-color: #F2F2F7;
+            /* Impede que o navegador mova o corpo da página no resize do teclado */
+            position: fixed;
+            left: 0;
+            top: 0;
+            touch-action: none;
         }
         canvas {
             outline: none;
             width: 100% !important;
             height: 100% !important;
+            display: block;
         }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
+        
+        /* Ajuste para inputs no Android/iOS não dispararem zoom nativo */
+        input, textarea {
+            font-size: 16px !important;
+        }
     </style>
 </head>
 <body>
+    <canvas id="ComposeTarget"></canvas>
     <script src="/skiko.js"></script>
     <script src="/composeApp.js"></script>
 </body>
