@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +25,7 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.util.AnalyticsManager
 import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +41,21 @@ fun PageViewerScreen(
     val cartCount by router.viewModel.cartCount.collectAsState()
     
     val hasHistory = remember(router.currentRoute) { router.getHistory().isNotEmpty() }
+
+    // CORREÇÃO: Extrair as categorias dos produtos presentes na página se a lista externa estiver vazia
+    val categories = remember(page.components, allAvailableCategories) {
+        if (allAvailableCategories.isNotEmpty()) {
+            allAvailableCategories
+        } else {
+            page.components
+                .filterIsInstance<PageComponent.ProductList>()
+                .flatMap { it.products }
+                .map { it.category }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .sorted()
+        }
+    }
 
     LaunchedEffect(Unit) {
         isLoggedIn = router.viewModel.getCurrentUserToken() != null
@@ -60,15 +75,9 @@ fun PageViewerScreen(
             modifier = Modifier.fillMaxSize(),
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text(page.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
-                    navigationIcon = {
-                        if (hasHistory) {
-                            TextButton(onClick = { router.goBack() }) {
-                                Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
-                            }
-                        }
-                    },
+                GenesysTopAppBar(
+                    title = page.title,
+                    onBack = if (hasHistory) { { router.goBack() } } else null,
                     actions = {
                         IconButton(onClick = { 
                             AnalyticsManager.logEvent("open_order_history")
@@ -82,8 +91,7 @@ fun PageViewerScreen(
                                 Icon(Icons.Default.Settings, "Administração", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
+                    }
                 )
             },
             floatingActionButton = {
@@ -139,7 +147,7 @@ fun PageViewerScreen(
                             onProductClick = onProductClick,
                             filterQuery = filterQuery,
                             onFilterQueryChange = { filterQuery = it },
-                            allAvailableCategories = allAvailableCategories
+                            allAvailableCategories = categories // Passando a lista de categorias extraída/corrigida
                         )
                     }
                 }

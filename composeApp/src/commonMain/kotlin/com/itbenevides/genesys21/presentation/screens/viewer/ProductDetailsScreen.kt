@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material3.*
@@ -30,6 +29,13 @@ import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.badge.GenesysStockBadge
+import com.itbenevides.genesys21.ui.components.feedback.GenesysConfirmDialog
+import com.itbenevides.genesys21.ui.components.layout.GenesysSectionHeader
+import com.itbenevides.genesys21.ui.components.navigation.GenesysPagerIndicator
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,21 +71,9 @@ fun ProductDetailsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        "Detalhes", 
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    ) 
-                },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
-                )
+            GenesysTopAppBar(
+                title = "Detalhes",
+                onBack = onBack
             )
         }
     ) { padding ->
@@ -97,15 +91,14 @@ fun ProductDetailsScreen(
                     .padding(horizontal = horizontalPadding, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // CARROSSEL DE IMAGENS - Limitado a 500dp para não ficar gigante em telas largas
-                Card(
+                // CARROSSEL DE IMAGENS
+                GenesysCard(
                     modifier = Modifier
                         .widthIn(max = 700.dp)
                         .fillMaxWidth()
                         .aspectRatio(1f),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = 4.dp
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         if (product.imageUrls.isNotEmpty()) {
@@ -116,11 +109,11 @@ fun ProductDetailsScreen(
                             }
                             
                             if (product.imageUrls.size > 1) {
-                                Row(Modifier.height(50.dp).fillMaxWidth().align(Alignment.BottomCenter), horizontalArrangement = Arrangement.Center) {
-                                    repeat(product.imageUrls.size) { iteration ->
-                                        val color = if (pagerState.currentPage == iteration) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f)
-                                        Box(modifier = Modifier.padding(4.dp).clip(CircleShape).background(color).size(8.dp))
-                                    }
+                                Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) {
+                                    GenesysPagerIndicator(
+                                        count = product.imageUrls.size,
+                                        currentPage = pagerState.currentPage
+                                    )
                                 }
                             }
                         } else {
@@ -131,69 +124,48 @@ fun ProductDetailsScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                Card(
+                GenesysCard(
                     modifier = Modifier.widthIn(max = 600.dp).fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = 2.dp
                 ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Text(text = product.name.ifBlank { "Produto sem nome" }, style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold))
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "R$ ${product.price}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        if (product.stock <= 0) {
-                            Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(8.dp)) {
-                                Text("ESGOTADO", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onErrorContainer)
-                            }
-                        } else {
-                            Surface(color = if (product.stock < 5) MaterialTheme.colorScheme.error.copy(alpha = 0.1f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp)) {
-                                Text(text = if (product.stock < 5) "Restam apenas ${product.stock} unidades!" else "Estoque: ${product.stock}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = if (product.stock < 5) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary)
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(24.dp))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = "Descrição", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = product.description.ifBlank { "Este é um produto premium disponível na Genesys21." }, style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        Spacer(modifier = Modifier.height(32.dp))
-                        
-                        Button(
-                            onClick = { 
-                                scope.launch {
-                                    isAdding = true
-                                    if (viewModel.addToCart(product)) {
-                                        delay(300)
-                                        showSuccessDialog = true 
-                                    } else {
-                                        snackbarHostState.showSnackbar("Sem estoque disponível!") 
-                                    }
-                                    isAdding = false
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(60.dp).scale(buttonScale),
-                            shape = CircleShape,
-                            enabled = product.stock > 0 && !isAdding,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isAdding) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            AnimatedContent(targetState = isAdding) { adding ->
-                                if (adding) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                    Text(text = product.name.ifBlank { "Produto sem nome" }, style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "R$ ${product.price}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    GenesysStockBadge(stock = product.stock)
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    GenesysSectionHeader(title = "Descrição")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = product.description.ifBlank { "Este é um produto premium disponível na Genesys21." }, style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                     GenesysLoadingButton(
+                        text = "Adicionar ao Carrinho",
+                        onClick = { 
+                            scope.launch {
+                                isAdding = true
+                                if (viewModel.addToCart(product)) {
+                                    delay(300)
+                                    showSuccessDialog = true 
                                 } else {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.ShoppingBag, null)
-                                        Spacer(Modifier.width(12.dp))
-                                        Text("Adicionar ao Carrinho", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                                    }
+                                    snackbarHostState.showSnackbar("Sem estoque disponível!") 
                                 }
+                                isAdding = false
                             }
-                        }
-                    }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(60.dp).scale(buttonScale),
+                        isLoading = isAdding,
+                        enabled = product.stock > 0,
+                        icon = Icons.Default.ShoppingBag,
+                        shape = CircleShape
+                    )
                 }
                 Spacer(modifier = Modifier.height(48.dp))
             }
@@ -201,14 +173,21 @@ fun ProductDetailsScreen(
     }
 
     if (showSuccessDialog) {
-        AlertDialog(
+        GenesysConfirmDialog(
             onDismissRequest = { showSuccessDialog = false },
-            icon = { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(60.dp)) },
-            title = { Text("Adicionado!", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-            text = { Text("${product.name} foi adicionado ao carrinho.", textAlign = TextAlign.Center) },
-            confirmButton = { Button(onClick = { showSuccessDialog = false; onNavigateToCart() }, modifier = Modifier.fillMaxWidth(), shape = CircleShape) { Text("Ver Carrinho") } },
-            dismissButton = { TextButton(onClick = { showSuccessDialog = false; onBack() }, modifier = Modifier.fillMaxWidth()) { Text("Continuar Comprando") } },
-            shape = RoundedCornerShape(28.dp)
+            icon = Icons.Default.CheckCircle,
+            title = "Adicionado!",
+            text = "${product.name} foi adicionado ao carrinho.",
+            confirmButton = { 
+                Button(onClick = { showSuccessDialog = false; onNavigateToCart() }, modifier = Modifier.fillMaxWidth(), shape = CircleShape) { 
+                    Text("Ver Carrinho") 
+                } 
+            },
+            dismissButton = { 
+                TextButton(onClick = { showSuccessDialog = false; onBack() }, modifier = Modifier.fillMaxWidth()) { 
+                    Text("Continuar Comprando") 
+                } 
+            }
         )
     }
 }

@@ -23,11 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,14 +36,16 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
+import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.input.GenesysFilterChip
+import com.itbenevides.genesys21.ui.components.input.GenesysSearchBar
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PageComponentRenderer(
     component: PageComponent,
@@ -56,11 +56,9 @@ fun PageComponentRenderer(
     isEditMode: Boolean = false,
     onEditClick: (() -> Unit)? = null
 ) {
-    val commonShape = RoundedCornerShape(16.dp)
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
     val viewModel = router.viewModel
-    val scope = rememberCoroutineScope()
     val backendUrl = remember { getBaseUrl() }
     
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
@@ -81,7 +79,7 @@ fun PageComponentRenderer(
             }
             is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
             is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Image -> !isCategoryFilterActive && (component as PageComponent.Image).url.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
             is PageComponent.Button -> !isCategoryFilterActive && component.text.contains(filterQuery, ignoreCase = true)
             else -> true
         }
@@ -105,21 +103,14 @@ fun PageComponentRenderer(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        FilterChip(
+                        GenesysFilterChip(
                             selected = filterQuery.isEmpty(),
                             onClick = { onFilterQueryChange("") },
-                            label = { Text("Todos") },
-                            shape = CircleShape,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                containerColor = Color.Transparent
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(enabled = true, selected = filterQuery.isEmpty(), borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            label = "Todos"
                         )
                         
                         allAvailableCategories.forEach { category ->
-                            FilterChip(
+                            GenesysFilterChip(
                                 selected = filterQuery.equals(category, ignoreCase = true),
                                 onClick = { 
                                     if (filterQuery.equals(category, ignoreCase = true)) {
@@ -132,14 +123,7 @@ fun PageComponentRenderer(
                                         ))
                                     }
                                 },
-                                label = { Text(category) },
-                                shape = CircleShape,
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    containerColor = Color.Transparent
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(enabled = true, selected = filterQuery.equals(category, ignoreCase = true), borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                label = category
                             )
                         }
                     }
@@ -147,35 +131,16 @@ fun PageComponentRenderer(
             }
             is PageComponent.Filter -> {
                 Box(Modifier.padding(vertical = 16.dp)) {
-                    OutlinedTextField(
+                    GenesysSearchBar(
                         value = filterQuery,
-                        onValueChange = { 
-                            onFilterQueryChange(it)
-                            if (it.length > 3) {
-                                AnalyticsManager.logEvent("search", mapOf("search_term" to it))
+                        onValueChange = { newValue -> 
+                            onFilterQueryChange(newValue)
+                            if (newValue.length > 3) {
+                                AnalyticsManager.logEvent("search", mapOf("search_term" to newValue))
                             }
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        textStyle = TextStyle(fontSize = 16.sp),
-                        placeholder = { Text(component.placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
-                        leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary) },
-                        trailingIcon = {
-                            if (filterQuery.isNotEmpty()) {
-                                IconButton(onClick = { onFilterQueryChange("") }) {
-                                    Icon(Icons.Default.Close, null)
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = CircleShape,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
+                        placeholder = component.placeholder,
+                        onClear = { onFilterQueryChange("") }
                     )
                 }
             }
@@ -195,7 +160,6 @@ fun PageComponentRenderer(
 
                 if (productsToDisplay.isNotEmpty()) {
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-                        // Ajuste dinâmico de colunas para evitar cards muito largos
                         val maxColumns = if (maxWidth > 900.dp) 4 else if (maxWidth > 600.dp) 3 else 2
                         val horizontalItemWidth = if (maxWidth > 900.dp) 220.dp else if (maxWidth > 600.dp) 180.dp else 160.dp
 
@@ -252,7 +216,6 @@ fun PageComponentRenderer(
                                     }
                                 }
                             } else {
-                                // LISTA VERTICAL (GRID)
                                 productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
                                     Row(
                                         Modifier.fillMaxWidth(), 
@@ -265,13 +228,12 @@ fun PageComponentRenderer(
                                             ProductCard(
                                                 product = product.copy(imageUrls = fullUrls),
                                                 shape = RoundedCornerShape(24.dp),
-                                                modifier = Modifier.weight(1f).widthIn(max = 250.dp), // LIMITA LARGURA MÁXIMA PARA NÃO ACHATAR
+                                                modifier = Modifier.weight(1f).widthIn(max = 250.dp),
                                                 onClick = onProductClick,
                                                 onAddToCart = { viewModel.addToCart(product) },
                                                 isEditMode = isEditMode
                                             )
                                         }
-                                        // Preenche o espaço vazio se a linha não estiver cheia
                                         if (rowProducts.size < maxColumns) {
                                             repeat(maxColumns - rowProducts.size) { Spacer(Modifier.weight(1f)) }
                                         }
@@ -282,7 +244,6 @@ fun PageComponentRenderer(
                     }
                 }
             }
-            // ... (restante dos componentes permanece igual)
             is PageComponent.Header -> {
                 val alignment = when (component.textAlign) {
                     "CENTER" -> TextAlign.Center
@@ -442,24 +403,22 @@ fun ProductCard(
     
     val scale by animateFloatAsState(
         targetValue = if (isAdded) 1.2f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "ProductCardScale"
     )
 
-    Card(
-        modifier = modifier.clickable(enabled = onClick != null) { 
-            onClick?.invoke(product)
+    GenesysCard(
+        modifier = modifier,
+        shape = shape,
+        onClick = if (onClick != null) { {
+            onClick.invoke(product)
             AnalyticsManager.logEvent("select_item", mapOf(
                 "item_id" to product.id,
                 "item_name" to product.name,
                 "item_category" to product.category
             ))
-        },
-        shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        } } else null,
+        elevation = 2.dp
     ) {
         Column {
             Box(
@@ -519,7 +478,8 @@ fun ProductCard(
                                     targetState = isAdded,
                                     transitionSpec = {
                                         scaleIn() togetherWith scaleOut()
-                                    }
+                                    },
+                                    label = "AddToCartAnimation"
                                 ) { added ->
                                     if (added) {
                                         Icon(Icons.Default.Check, null, modifier = Modifier.size(24.dp))
@@ -553,20 +513,7 @@ fun ProductCard(
                     )
                     
                     if (product.stock <= 0) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                "ESGOTADO", 
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 9.sp
-                                ),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
+                        GenesysBadge(label = "ESGOTADO", color = MaterialTheme.colorScheme.error, showDot = false)
                     } else if (product.stock < 5) {
                         Text(
                             "Só ${product.stock} un!", 
