@@ -152,6 +152,7 @@ fun App() {
                             val categories by router.viewModel.allAvailableCategories.collectAsState()
                             com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen(
                                 viewModel = router.viewModel,
+                                page = route.page,
                                 product = route.product,
                                 existingCategories = categories,
                                 onSave = { updatedProduct ->

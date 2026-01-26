@@ -55,6 +55,7 @@ object GenesysStrings {
     const val ProductDescription = "Descrição"
     const val AddPhoto = "Adicionar Foto"
     const val PhotosTitle = "Fotos do Produto"
+    const val ProductGeneralInfo = "Informações Gerais"
 
     // Cart
     const val CartTitle = "Seu Carrinho"
