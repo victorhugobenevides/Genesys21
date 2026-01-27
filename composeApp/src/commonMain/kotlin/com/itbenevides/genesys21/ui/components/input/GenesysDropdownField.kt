@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.ui.components.input
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
@@ -15,6 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 
+/**
+ * Componente Dropdown do Design System com busca/filtro.
+ * Otimizado para WasmJs: A abertura do menu é controlada para não roubar o foco durante a digitação.
+ */
 @Composable
 fun GenesysDropdownField(
     value: String,
@@ -27,12 +30,18 @@ fun GenesysDropdownField(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    // Filtra as opções baseada no texto atual para facilitar a escolha
+    val filteredOptions = remember(value, options) {
+        if (value.isEmpty()) options 
+        else options.filter { it.contains(value, ignoreCase = true) }
+    }
+
     Box(modifier = modifier.fillMaxWidth()) {
         GenesysTextField(
             value = value,
             onValueChange = { 
                 onValueChange(it)
-                expanded = true 
+                // Não abrimos o menu automaticamente aqui para evitar o bug de foco do WasmJs
             },
             label = label,
             placeholder = placeholder,
@@ -41,25 +50,29 @@ fun GenesysDropdownField(
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                        contentDescription = null
+                        contentDescription = "Ver sugestões"
                     )
                 }
             }
         )
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.8f) // Ajuste proporcional
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onValueChange(option)
-                        expanded = false
-                    }
-                )
+        // O menu só aparece se houver opções filtradas e o usuário clicar na seta
+        if (filteredOptions.isNotEmpty()) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth(0.8f),
+                // focusable = false ajuda a manter o foco no TextField em algumas versões do Compose
+            ) {
+                filteredOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onValueChange(option)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }

@@ -127,7 +127,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 2
         versionName = "1.1"
-        buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
+        buildConfigField("String", "WEB_BASE_URL", "\"http://192.168.15.6:8081\"")
     }
     buildFeatures { buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }

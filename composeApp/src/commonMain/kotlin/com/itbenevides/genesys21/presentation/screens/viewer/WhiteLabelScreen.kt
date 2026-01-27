@@ -1,35 +1,41 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
-import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.presentation.screens.list.PageListEvent
+import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
-import com.itbenevides.genesys21.ui.components.button.GenesysFab
-import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.button.GenesysFab
 import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.feedback.GenesysBottomSheet
-import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.feedback.GenesysLoadingOverlay
+import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.feedback.GenesysBottomSheet
 import com.itbenevides.genesys21.ui.components.image.GenesysColorCircle
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
+import com.itbenevides.genesys21.ui.components.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
-import com.itbenevides.genesys21.ui.theme.AppTheme
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.util.rememberImagePicker
 import org.koin.compose.koinInject
 import kotlin.random.Random
@@ -138,7 +144,7 @@ private fun WhiteLabelContent(
                         contentDescription = GenesysStrings.AdminTitle,
                         onClick = { router.navigateTo(Route.PageList) }
                     )
-                    GenesysIconButton(
+                     GenesysIconButton(
                         icon = GenesysIcons.Palette, 
                         contentDescription = GenesysStrings.EditorThemes,
                         onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) }
@@ -164,25 +170,32 @@ private fun WhiteLabelContent(
         if (state.isLoading) {
             GenesysLoadingOverlay()
         } else {
-            GenesysColumn(usePadding = false) {
-                if (state.page.components.isEmpty()) {
-                    GenesysEmptyState(
-                        icon = GenesysIcons.Magic,
-                        title = GenesysStrings.EmptyEditorTitle,
-                        description = GenesysStrings.EmptyEditorDescription,
-                        action = {
-                            GenesysLoadingButton(
-                                text = GenesysStrings.AddBlockAction, 
-                                onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) }
-                            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                GenesysColumn(
+                    maxWidth = GenesysDimens.ViewerMaxWidth,
+                    usePadding = false,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (state.page.components.isEmpty()) {
+                        GenesysEmptyState(
+                            icon = GenesysIcons.Magic,
+                            title = GenesysStrings.EmptyEditorTitle,
+                            description = GenesysStrings.EmptyEditorDescription,
+                            action = {
+                                GenesysLoadingButton(
+                                    text = GenesysStrings.AddBlockAction, 
+                                    onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) }
+                                )
+                            }
+                        )
+                    } else {
+                        GenesysLazyColumnIndexed(
+                            items = state.page.components,
+                            maxWidth = GenesysDimens.ViewerMaxWidth
+                        ) { index, component ->
+                            val isEditing = state.editingComponentIndex == index
+                            ComponentWrapperUI(component, index, isEditing, onEvent)
                         }
-                    )
-                } else {
-                    GenesysLazyColumnIndexed(
-                        items = state.page.components,
-                        maxWidth = GenesysDimens.ViewerMaxWidth
-                    ) { index, component ->
-                        ComponentWrapperUI(component, index, onEvent)
                     }
                 }
             }
@@ -202,33 +215,51 @@ private fun WhiteLabelContent(
 private fun ComponentWrapperUI(
     component: PageComponent,
     index: Int,
+    isEditing: Boolean,
     onEvent: (WhiteLabelEvent) -> Unit
 ) {
-    GenesysColumn(usePadding = true) {
+    GenesysColumn(
+        usePadding = true,
+        modifier = Modifier.padding(bottom = GenesysDimens.SpacingSmall)
+    ) {
         GenesysRow {
             GenesysBadge(
                 label = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
-                color = Color.Unspecified 
+                color = if (isEditing) MaterialTheme.colorScheme.primary else Color.Unspecified
             )
             
             GenesysSpacer(GenesysSpacing.Small)
             
             GenesysIconButton(
                 icon = GenesysIcons.Edit, 
-                onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }
+                onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
+                tint = if (isEditing) MaterialTheme.colorScheme.primary else Color.Unspecified
             )
             
             GenesysWeightSpacer(1f)
             
             GenesysRow(fillWidth = false) {
-                GenesysIconButton(icon = GenesysIcons.ArrowUp, onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) })
-                GenesysIconButton(icon = GenesysIcons.ArrowDown, onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) })
+                GenesysIconButton(
+                    icon = GenesysIcons.ArrowUp, 
+                    onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) }
+                )
+                GenesysIconButton(
+                    icon = GenesysIcons.ArrowDown, 
+                    onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) }
+                )
                 GenesysIconButton(icon = GenesysIcons.Copy, onClick = { onEvent(WhiteLabelEvent.OnDuplicateComponent(index)) })
-                GenesysIconButton(icon = GenesysIcons.Delete, onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, tint = Color.Red)
+                GenesysIconButton(
+                    icon = GenesysIcons.Delete, 
+                    onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, 
+                    tint = Color.Red.copy(alpha = 0.7f)
+                )
             }
         }
 
-        GenesysCard(elevation = GenesysDimens.ElevationLow) {
+        GenesysCard(
+            elevation = if (isEditing) GenesysDimens.ElevationHigh else GenesysDimens.ElevationLow,
+            modifier = Modifier.animateContentSize()
+        ) {
             PageComponentRenderer(
                 component = component,
                 isEditMode = true,
@@ -248,7 +279,6 @@ private fun ComponentEditorUI(
     val component = state.page.components.getOrNull(index) ?: return
     var isUploading by remember { mutableStateOf(false) }
 
-    // CORREÇÃO: Chama a função diretamente sem o .launch()
     val imagePicker = rememberImagePicker { bytes ->
         bytes?.let {
             isUploading = true
@@ -266,61 +296,112 @@ private fun ComponentEditorUI(
     
     GenesysBottomSheet(
         onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
-        title = "Editar Bloco"
+        title = "Configurações do Bloco"
     ) {
         GenesysColumn(usePadding = false) {
+            GenesysText(
+                text = "Personalize como este conteúdo aparece na sua vitrine.", 
+                style = GenesysTextStyle.Label
+            )
+            
+            GenesysSpacer(GenesysSpacing.Medium)
+
             var customLabel by remember { mutableStateOf(component.customLabel ?: "") }
             
             GenesysTextField(
                 value = customLabel,
                 onValueChange = { customLabel = it },
-                label = "Nome do Bloco",
-                placeholder = "Nome interno"
+                label = "Nome do Bloco (Opcional)",
+                placeholder = "Ex: Promoções da Semana",
+                icon = GenesysIcons.Edit
             )
             
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysSpacing.Large)
+            GenesysDivider()
+            GenesysSpacer(GenesysSpacing.Large)
 
             when (component) {
                 is PageComponent.Header -> {
                     var title by remember { mutableStateOf(component.title) }
-                    GenesysTextField(value = title, onValueChange = { title = it }, label = "Título do Cabeçalho")
+                    GenesysTextField(value = title, onValueChange = { title = it }, label = "Texto do Título", icon = GenesysIcons.Description)
                     
                     GenesysSpacer(GenesysSpacing.Large)
-                    GenesysLoadingButton(text = "Salvar", onClick = {
-                        val updated = component.copy(title = title, customLabel = customLabel.ifBlank { null })
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    })
+                    GenesysLoadingButton(
+                        text = "Atualizar Título", 
+                        fillWidth = true,
+                        onClick = {
+                            val updated = component.copy(title = title, customLabel = customLabel.ifBlank { null })
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                        }
+                    )
                 }
                 
                 is PageComponent.Text -> {
                     var content by remember { mutableStateOf(component.content) }
-                    GenesysTextField(value = content, onValueChange = { content = it }, label = "Conteúdo do Texto", singleLine = false)
+                    GenesysTextField(
+                        value = content, 
+                        onValueChange = { content = it }, 
+                        label = "Texto do Bloco", 
+                        singleLine = false, 
+                        minLines = 5,
+                        icon = GenesysIcons.Description
+                    )
                     
                     GenesysSpacer(GenesysSpacing.Large)
-                    GenesysLoadingButton(text = "Salvar", onClick = {
-                        val updated = component.copy(content = content, customLabel = customLabel.ifBlank { null })
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    })
+                    GenesysLoadingButton(
+                        text = "Salvar Texto", 
+                        fillWidth = true,
+                        onClick = {
+                            val updated = component.copy(content = content, customLabel = customLabel.ifBlank { null })
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                        }
+                    )
                 }
 
                 is PageComponent.Image -> {
-                    GenesysText("Imagem atual:", style = GenesysTextStyle.Label)
-                    GenesysSpacer(GenesysSpacing.Small)
+                    // MESCLAGEM: Lógica para tratar links internos e externos em um único campo
+                    val pageOptions = remember(state.userPages) { state.userPages.map { it.title } }
                     
+                    // Estado inicial baseado no que já está salvo no componente
+                    var currentLinkValue by remember(component.string, component.destinationPageId, state.userPages) {
+                        val internalTitle = state.userPages.find { it.id == component.destinationPageId }?.title
+                        mutableStateOf(internalTitle ?: component.string)
+                    }
+
                     GenesysLoadingButton(
                         text = if (isUploading) "Enviando..." else "Trocar Imagem",
                         icon = GenesysIcons.CloudUpload,
-                        onClick = { imagePicker() }, // Chamada direta da função () -> Unit
-                        isLoading = isUploading
+                        onClick = { imagePicker() },
+                        isLoading = isUploading,
+                        fillWidth = true
+                    )
+
+                    GenesysSpacer(GenesysSpacing.Medium)
+
+                    // UX: Campo unificado que aceita seleção de página ou digitação de URL
+                    GenesysDropdownField(
+                        value = currentLinkValue,
+                        onValueChange = { currentLinkValue = it },
+                        label = "Destino do Clique (Link ou Página)",
+                        placeholder = "Selecione uma vitrine ou digite um link (https://...)",
+                        options = pageOptions,
+                        icon = GenesysIcons.Language
                     )
 
                     GenesysSpacer(GenesysSpacing.Large)
-                    GenesysLoadingButton(text = "Salvar Rótulo", onClick = {
-                        val updated = component.copy(customLabel = customLabel.ifBlank { null })
+                    GenesysLoadingButton(text = "Confirmar Alterações", fillWidth = true, onClick = {
+                        // Lógica para decidir se é página interna ou link externo
+                        val matchingPage = state.userPages.find { it.title == currentLinkValue }
+                        
+                        val updated = component.copy(
+                            string = if (matchingPage == null) currentLinkValue else "",
+                            destinationPageId = matchingPage?.id,
+                            customLabel = customLabel.ifBlank { null }
+                        )
                         val newList = state.page.components.toMutableList().apply { set(index, updated) }
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
                         onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
@@ -328,37 +409,42 @@ private fun ComponentEditorUI(
                 }
                 
                 is PageComponent.ProductList -> {
-                    GenesysText("Gerencie os produtos deste bloco:", style = GenesysTextStyle.Label)
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysText("Gerenciamento de Produtos", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                    GenesysSpacer(GenesysSpacing.Small)
                     
                     GenesysLoadingButton(
-                        text = "Adicionar Produto",
+                        text = "Cadastrar Novo Produto",
                         icon = GenesysIcons.Add,
                         onClick = { 
                             onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                             onEvent(WhiteLabelEvent.OnEditProductClicked(null, index)) 
-                        }
+                        },
+                        fillWidth = true
                     )
                     
-                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysSpacer(GenesysSpacing.Medium)
                     
-                    component.products.forEach { product ->
-                        GenesysCard(onClick = { 
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                            onEvent(WhiteLabelEvent.OnEditProductClicked(product, index)) 
-                        }) {
-                            GenesysRow {
-                                GenesysText(product.name, modifier = Modifier.weight(1f))
-                                GenesysIconButton(icon = GenesysIcons.Edit, onClick = {
+                    GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
+                        component.products.forEach { product ->
+                            GenesysCard(
+                                modifier = Modifier.padding(bottom = 4.dp),
+                                onClick = { 
                                     onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                                    onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
-                                })
+                                    onEvent(WhiteLabelEvent.OnEditProductClicked(product, index)) 
+                                }
+                            ) {
+                                GenesysRow {
+                                    GenesysWeightBox(1f) {
+                                        GenesysText(product.name)
+                                    }
+                                    GenesysIconButton(icon = GenesysIcons.Edit, onClick = {})
+                                }
                             }
                         }
-                        GenesysSpacer(GenesysSpacing.Small)
                     }
                     
-                    GenesysLoadingButton(text = "Salvar Rótulo", onClick = {
+                    GenesysSpacer(GenesysSpacing.Large)
+                    GenesysLoadingButton(text = "Salvar Rótulo da Lista", fillWidth = true, onClick = {
                         val updated = component.copy(customLabel = customLabel.ifBlank { null })
                         val newList = state.page.components.toMutableList().apply { set(index, updated) }
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
@@ -366,9 +452,7 @@ private fun ComponentEditorUI(
                     })
                 }
                 else -> {
-                    GenesysText("Edição básica disponível.")
-                    GenesysSpacer(GenesysSpacing.Large)
-                    GenesysLoadingButton(text = "Salvar Rótulo", onClick = {
+                    GenesysLoadingButton(text = "Salvar Alterações", fillWidth = true, onClick = {
                         val updated = when(component) {
                             is PageComponent.Button -> component.copy(customLabel = customLabel.ifBlank { null })
                             is PageComponent.Filter -> component.copy(customLabel = customLabel.ifBlank { null })
@@ -390,39 +474,51 @@ private fun PageSettingsUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) ->
     var title by remember { mutableStateOf(state.page.title) }
     GenesysBottomSheet(
         onDismiss = { onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false)) },
-        title = GenesysStrings.PageTitleLabel,
-        actions = {
-            GenesysTextButton(
+        title = GenesysStrings.PageTitleLabel
+    ) {
+        GenesysColumn(usePadding = false) {
+            GenesysTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = GenesysStrings.PageTitleLabel,
+                icon = GenesysIcons.Edit
+            )
+            
+            GenesysSpacer(GenesysSpacing.Large)
+            
+            GenesysLoadingButton(
                 text = GenesysStrings.Save, 
+                fillWidth = true,
                 onClick = { 
                     onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(title = title)))
                     onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false))
                 }
             )
         }
-    ) {
-        GenesysTextField(
-            value = title,
-            onValueChange = { newValue -> title = newValue },
-            label = GenesysStrings.PageTitleLabel
-        )
     }
 }
 
 @Composable
 private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -> Unit) {
     val themes = listOf(
-        Triple(PageThemeConfig.ROYAL, "Royal", Color(0xFF14213D)),
-        Triple(PageThemeConfig.OCEAN, "Ocean", Color(0xFF00ADB5)),
-        Triple(PageThemeConfig.FOREST, "Forest", Color(0xFF283618))
+        Triple(PageThemeConfig.ROYAL, "Royal Night", Color(0xFF14213D)),
+        Triple(PageThemeConfig.OCEAN, "Ocean Blue", Color(0xFF00ADB5)),
+        Triple(PageThemeConfig.FOREST, "Deep Forest", Color(0xFF283618)),
+        Triple(PageThemeConfig.CANDY, "Sweet Candy", Color(0xFFFF758F))
     )
     GenesysBottomSheet(
         onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false)) },
-        title = GenesysStrings.EditorThemes
+        title = "Personalizar Estilo"
     ) {
         GenesysColumn(usePadding = false, useScroll = true) {
+            GenesysText("Selecione a paleta de cores que melhor representa sua marca.", style = GenesysTextStyle.Label)
+            GenesysSpacer(GenesysSpacing.Medium)
+            
             themes.forEach { (config, label, color) ->
+                val isSelected = state.page.theme == config
                 GenesysCard(
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    backgroundColor = if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface,
                     onClick = { 
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(theme = config)))
                         onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false))
@@ -431,10 +527,15 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
                     GenesysRow {
                         GenesysColorCircle(color = color)
                         GenesysSpacer(GenesysSpacing.Medium)
-                        GenesysText(label, style = GenesysTextStyle.Body)
+                        GenesysText(
+                            text = label, 
+                            style = GenesysTextStyle.Body,
+                            fontWeight = if (isSelected) GenesysFontWeight.Bold else GenesysFontWeight.Normal
+                        )
+                        GenesysWeightSpacer(1f)
+                        if (isSelected) GenesysIconButton(icon = GenesysIcons.Check, onClick = {})
                     }
                 }
-                GenesysSpacer(GenesysSpacing.Small)
             }
         }
     }
@@ -444,31 +545,40 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
 private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -> Unit) {
      GenesysBottomSheet(
         onDismiss = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(false)) },
-        title = GenesysStrings.AddBlockAction
+        title = "Adicionar Bloco de Conteúdo"
     ) {
         GenesysColumn(usePadding = false, useScroll = true) {
+            GenesysText("Escolha o tipo de conteúdo para adicionar à sua vitrine.", style = GenesysTextStyle.Label)
+            GenesysSpacer(GenesysSpacing.Medium)
+            
             val catalogItems = listOf(
-                "Título" to PageComponent.Header("Novo Título"),
-                "Texto" to PageComponent.Text("Seu texto aqui"),
-                "Lista de Produtos" to PageComponent.ProductList(emptyList()),
-                "Imagem" to PageComponent.Image("", ""),
-                "Botão" to PageComponent.Button("Clique Aqui", ""),
-                "Barra de Pesquisa" to PageComponent.Filter()
+                Triple("Cabeçalho", "Um título grande para destacar seções.", PageComponent.Header("Novo Título")),
+                Triple("Texto", "Conte um pouco mais sobre seus produtos.", PageComponent.Text("Seu texto aqui...")),
+                Triple("Lista de Produtos", "Exiba seus itens disponíveis.", PageComponent.ProductList(emptyList())),
+                Triple("Imagem", "Destaque banners ou fotos.", PageComponent.Image("", "")),
+                Triple("Botão", "Crie links externos ou ações.", PageComponent.Button("Toque Aqui", "")),
+                Triple("Filtro", "Facilite a busca para seus clientes.", PageComponent.Filter())
             )
             
-            catalogItems.forEach { (label, component) ->
-                GenesysCard(onClick = {
-                    val newList = state.page.components.toMutableList().apply { add(component) }
-                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
-                }) {
+            catalogItems.forEach { (title, desc, component) ->
+                GenesysCard(
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    onClick = {
+                        val newList = state.page.components.toMutableList().apply { add(component) }
+                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
+                    }
+                ) {
                     GenesysRow {
-                        GenesysText(label, style = GenesysTextStyle.Body)
-                        GenesysWeightSpacer(1f)
+                        GenesysWeightBox(1f) {
+                            GenesysColumn(usePadding = false) {
+                                GenesysText(title, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                                GenesysText(desc, style = GenesysTextStyle.Label)
+                            }
+                        }
                         GenesysIconButton(icon = GenesysIcons.Add, onClick = {})
                     }
                 }
-                GenesysSpacer(GenesysSpacing.Small)
             }
         }
     }

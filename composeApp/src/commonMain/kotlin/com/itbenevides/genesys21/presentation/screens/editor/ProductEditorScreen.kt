@@ -129,95 +129,97 @@ private fun ProductEditorContent(
             usePadding = false
         ) {
             // Coluna de conteúdo com largura máxima controlada pelo DS
-            GenesysColumn(
-                maxWidth = GenesysDimens.EditorMaxWidth,
-                useScroll = true,
-                weightValue = 1f
-            ) {
-                GenesysSectionHeader(
-                    title = GenesysStrings.PhotosTitle,
-                    subtitle = "${state.imageUrls.size}/5"
-                )
+            // CORREÇÃO: Usando GenesysWeightBox para o preenchimento vertical estável no Wasm
+            GenesysWeightBox(1f) {
+                GenesysColumn(
+                    maxWidth = GenesysDimens.EditorMaxWidth,
+                    useScroll = true
+                ) {
+                    GenesysSectionHeader(
+                        title = GenesysStrings.PhotosTitle,
+                        subtitle = "${state.imageUrls.size}/5"
+                    )
 
-                GenesysSpacer(GenesysSpacing.Small)
+                    GenesysSpacer(GenesysSpacing.Small)
 
-                val displayUrls = remember(state.imageUrls, backendUrl) {
-                    state.imageUrls.map { url ->
-                        if (url.startsWith("/") && !url.startsWith("http")) "$backendUrl$url" else url
-                    }
-                }
-
-                GenesysPhotoPicker(
-                    urls = displayUrls,
-                    onAddClick = { onEvent(ProductEditorEvent.OnAddPhotoClicked) },
-                    onRemoveClick = { onEvent(ProductEditorEvent.OnRemovePhotoClicked(it)) },
-                    isUploading = state.isUploading
-                )
-
-                GenesysSpacer(GenesysSpacing.Large)
-
-                GenesysCard(elevation = GenesysDimens.ElevationLow) {
-                    GenesysColumn(usePadding = false) {
-                        GenesysText(
-                            text = GenesysStrings.ProductGeneralInfo, 
-                            style = GenesysTextStyle.Title
-                        )
-                         GenesysSpacer(GenesysSpacing.Medium)
-
-                        GenesysTextField(
-                            value = state.name,
-                            onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
-                            label = GenesysStrings.ProductName,
-                            icon = GenesysIcons.Inventory
-                        )
-
-                        GenesysSpacer(GenesysSpacing.Medium)
-
-                        // Uso do padrão DS para campos lado a lado
-                        GenesysRow {
-                            GenesysWeightBox(1f) {
-                                GenesysTextField(
-                                    value = state.price,
-                                    onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
-                                    label = GenesysStrings.ProductPrice,
-                                    icon = GenesysIcons.Payments
-                                )
-                            }
-                            GenesysSpacer(GenesysSpacing.Small)
-                            GenesysWeightBox(1f) {
-                                GenesysTextField(
-                                    value = state.stock,
-                                    onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
-                                    label = GenesysStrings.ProductStock,
-                                    icon = GenesysIcons.Numbers
-                                )
-                            }
+                    val displayUrls = remember(state.imageUrls, backendUrl) {
+                        state.imageUrls.map { url ->
+                            if (url.startsWith("/") && !url.startsWith("http")) "$backendUrl$url" else url
                         }
-
-                        GenesysSpacer(GenesysSpacing.Medium)
-
-                        GenesysDropdownField(
-                            value = state.category,
-                            onValueChange = { onEvent(ProductEditorEvent.OnCategoryChanged(it)) },
-                            label = GenesysStrings.ProductCategory,
-                            options = existingCategories,
-                            icon = GenesysIcons.Category
-                        )
-
-                        GenesysSpacer(GenesysSpacing.Medium)
-
-                        GenesysTextField(
-                            value = state.description,
-                            onValueChange = { onEvent(ProductEditorEvent.OnDescriptionChanged(it)) },
-                            label = GenesysStrings.ProductDescription,
-                            icon = GenesysIcons.Description,
-                            singleLine = false,
-                            minLines = 4
-                        )
                     }
+
+                    GenesysPhotoPicker(
+                        urls = displayUrls,
+                        onAddClick = { onEvent(ProductEditorEvent.OnAddPhotoClicked) },
+                        onRemoveClick = { onEvent(ProductEditorEvent.OnRemovePhotoClicked(it)) },
+                        isUploading = state.isUploading
+                    )
+
+                    GenesysSpacer(GenesysSpacing.Large)
+
+                    GenesysCard {
+                        GenesysColumn(usePadding = false) {
+                            GenesysText(
+                                text = GenesysStrings.ProductGeneralInfo, 
+                                style = GenesysTextStyle.Title
+                            )
+                             GenesysSpacer(GenesysSpacing.Medium)
+
+                            GenesysTextField(
+                                value = state.name,
+                                onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
+                                label = GenesysStrings.ProductName,
+                                icon = GenesysIcons.Inventory
+                            )
+
+                            GenesysSpacer(GenesysSpacing.Medium)
+
+                            // Uso do padrão DS para campos lado a lado com pesos estáveis
+                            GenesysRow {
+                                GenesysWeightBox(1f) {
+                                    GenesysTextField(
+                                        value = state.price,
+                                        onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
+                                        label = GenesysStrings.ProductPrice,
+                                        icon = GenesysIcons.Payments
+                                    )
+                                }
+                                GenesysSpacer(GenesysSpacing.Small)
+                                GenesysWeightBox(1f) {
+                                    GenesysTextField(
+                                        value = state.stock,
+                                        onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
+                                        label = GenesysStrings.ProductStock,
+                                        icon = GenesysIcons.Numbers
+                                    )
+                                }
+                            }
+
+                            GenesysSpacer(GenesysSpacing.Medium)
+
+                            GenesysDropdownField(
+                                value = state.category,
+                                onValueChange = { onEvent(ProductEditorEvent.OnCategoryChanged(it)) },
+                                label = GenesysStrings.ProductCategory,
+                                options = existingCategories,
+                                icon = GenesysIcons.Category
+                            )
+
+                            GenesysSpacer(GenesysSpacing.Medium)
+
+                            GenesysTextField(
+                                value = state.description,
+                                onValueChange = { onEvent(ProductEditorEvent.OnDescriptionChanged(it)) },
+                                label = GenesysStrings.ProductDescription,
+                                icon = GenesysIcons.Description,
+                                singleLine = false,
+                                minLines = 4
+                            )
+                        }
+                    }
+                    
+                    GenesysSpacer(GenesysSpacing.Huge)
                 }
-                
-                GenesysSpacer(GenesysSpacing.Huge)
             }
         }
     }
