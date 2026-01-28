@@ -1,9 +1,12 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -36,30 +39,64 @@ fun CartScreen(
     val viewModel: PageViewModel = koinViewModel()
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
-    val backendUrl = remember { getBaseUrl() }
     val customerName by viewModel.customerName.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val backendUrl = remember { getBaseUrl() }
+
+    var state by remember { mutableStateOf(CartScreenState()) }
+    
+    state = state.copy(
+        cartItems = cartItems,
+        total = total,
+        customerName = customerName,
+        isLoading = isLoading
+    )
 
     LaunchedEffect(Unit) {
         AnalyticsManager.trackPageView(GenesysStrings.CartTitle)
     }
 
+    val onEvent: (CartScreenEvent) -> Unit = { event ->
+        when (event) {
+            is CartScreenEvent.OnUpdateQuantity -> viewModel.updateCartQuantity(event.productId, event.newQuantity)
+            is CartScreenEvent.OnRemoveItem -> {
+                AnalyticsManager.logEvent("remove_from_cart", mapOf("item_id" to event.productId))
+                viewModel.removeFromCart(event.productId)
+            }
+            is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
+            is CartScreenEvent.OnCheckoutClicked -> {
+                viewModel.submitOrder(page) { orderId ->
+                    onOrderSubmitted(orderId)
+                }
+            }
+            is CartScreenEvent.OnBackClicked -> onBack()
+        }
+    }
+
+    CartContent(state, backendUrl, onEvent)
+}
+
+@Composable
+private fun CartContent(
+    state: CartScreenState,
+    backendUrl: String,
+    onEvent: (CartScreenEvent) -> Unit
+) {
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
                 title = GenesysStrings.CartTitle,
-                onBack = onBack
+                onBack = { onEvent(CartScreenEvent.OnBackClicked) }
             )
         }
     ) {
-        // Root que centraliza o conteúdo em telas largas (WasmJs)
         GenesysColumn(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = GenesysAlignment.Center,
             usePadding = false
         ) {
-            // Conteúdo limitado pela largura máxima do DS
             GenesysColumn(maxWidth = GenesysDimens.ContentMaxWidth) {
-                if (cartItems.isEmpty()) {
+                if (state.cartItems.isEmpty() && !state.isLoading) {
                     GenesysEmptyState(
                         icon = GenesysIcons.ShoppingBag,
                         title = GenesysStrings.EmptyCartTitle,
@@ -67,22 +104,21 @@ fun CartScreen(
                         action = {
                             GenesysLoadingButton(
                                 text = GenesysStrings.Back, 
-                                onClick = onBack
+                                onClick = { onEvent(CartScreenEvent.OnBackClicked) }
                             )
                         }
                     )
                 } else {
-                    // Usando GenesysWeightBox para garantir que a lista ocupe o espaço e role
                     GenesysWeightBox(1f) {
-                        GenesysColumn(usePadding = false, useScroll = true) {
+                        GenesysColumn(usePadding = true, useScroll = true) {
                             GenesysCard {
                                 GenesysColumn(usePadding = false) {
                                     GenesysText(GenesysStrings.Identification, style = GenesysTextStyle.Title)
                                     GenesysSpacer(GenesysSpacing.Medium)
                                     
                                     GenesysTextField(
-                                        value = customerName,
-                                        onValueChange = { newValue -> viewModel.saveCustomerName(newValue) },
+                                        value = state.customerName,
+                                        onValueChange = { onEvent(CartScreenEvent.OnCustomerNameChanged(it)) },
                                         label = GenesysStrings.CustomerNameLabel,
                                         placeholder = "Como gostaria de ser chamado?",
                                         icon = GenesysIcons.Person
@@ -92,16 +128,11 @@ fun CartScreen(
 
                             GenesysSpacer(GenesysSpacing.Large)
 
-                            cartItems.forEach { item ->
+                            state.cartItems.forEach { item ->
                                 ModernCartItemRow(
                                     item = item,
                                     backendUrl = backendUrl,
-                                    onIncrease = { viewModel.updateCartQuantity(item.product.id, item.quantity + 1) },
-                                    onDecrease = { viewModel.updateCartQuantity(item.product.id, item.quantity - 1) },
-                                    onRemove = {
-                                        AnalyticsManager.logEvent("remove_from_cart", mapOf("item_id" to item.product.id, "item_name" to item.product.name))
-                                        viewModel.removeFromCart(item.product.id)
-                                    }
+                                    onEvent = onEvent
                                 )
                                 GenesysSpacer(GenesysSpacing.Small)
                             }
@@ -113,37 +144,37 @@ fun CartScreen(
                     GenesysCard {
                         GenesysColumn(usePadding = false) {
                             GenesysRow {
+                                GenesysWeightBox(1f) {
+                                    GenesysText(
+                                        text = GenesysStrings.Total, 
+                                        style = GenesysTextStyle.Title
+                                    )
+                                }
                                 GenesysText(
-                                    text = GenesysStrings.Total, 
-                                    style = GenesysTextStyle.Title,
-                                    weightValue = 1f
-                                )
-                                GenesysText(
-                                    text = "R$ $total", 
+                                    text = "R$ ${state.total}", 
                                     style = GenesysTextStyle.Title, 
-                                    fontWeight = GenesysFontWeight.ExtraBold
+                                    fontWeight = GenesysFontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                             GenesysSpacer(GenesysSpacing.Large)
                             
                             GenesysLoadingButton(
                                 text = GenesysStrings.CheckoutButton,
-                                onClick = {
-                                    viewModel.submitOrder(page) { orderId ->
-                                        onOrderSubmitted(orderId)
-                                    }
-                                },
+                                onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
                                 fillWidth = true,
-                                enabled = customerName.isNotBlank(),
-                                icon = GenesysIcons.Check
+                                enabled = state.isCheckoutEnabled,
+                                icon = GenesysIcons.Check,
+                                isLoading = state.isLoading
                             )
                             
-                            if (customerName.isBlank()) {
+                            if (state.customerName.isBlank()) {
                                 GenesysSpacer(GenesysSpacing.Small)
                                 GenesysText(
                                     text = "Preencha seu nome para finalizar", 
                                     style = GenesysTextStyle.Label,
-                                    textAlign = GenesysTextAlign.Center
+                                    textAlign = GenesysTextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -155,12 +186,10 @@ fun CartScreen(
 }
 
 @Composable
-fun ModernCartItemRow(
+private fun ModernCartItemRow(
     item: CartItem,
     backendUrl: String,
-    onIncrease: () -> Unit,
-    onDecrease: () -> Unit,
-    onRemove: () -> Unit
+    onEvent: (CartScreenEvent) -> Unit
 ) {
     val displayImageUrl = remember(item.product.imageUrls) {
         val first = item.product.imageUrls.firstOrNull() ?: ""
@@ -168,41 +197,40 @@ fun ModernCartItemRow(
     }
 
     GenesysCard {
-        GenesysRow {
+        GenesysRow(verticalAlignment = Alignment.Top) {
             GenesysImage(
                 url = displayImageUrl,
-                size = GenesysDimens.IconLogo
+                size = 80.dp
             )
 
             GenesysSpacer(GenesysSpacing.Medium)
 
-            // Usando Column do DS sem weightValue, pois ele deve ser controlado pelo container pai se necessário
-            GenesysColumn(usePadding = false) {
-                GenesysText(
-                    text = item.product.name,
-                    style = GenesysTextStyle.Body,
-                    fontWeight = GenesysFontWeight.Bold
-                )
-                GenesysText(
-                    text = "R$ ${item.product.price}",
-                    style = GenesysTextStyle.Body,
-                    fontWeight = GenesysFontWeight.Bold
-                )
-                
-                GenesysSpacer(GenesysSpacing.Small)
+            GenesysWeightBox(1f) {
+                GenesysColumn(usePadding = false) {
+                    GenesysText(
+                        text = item.product.name,
+                        style = GenesysTextStyle.Body,
+                        fontWeight = GenesysFontWeight.Bold
+                    )
+                    GenesysText(
+                        text = "R$ ${item.product.price}",
+                        style = GenesysTextStyle.Body
+                    )
+                    
+                    GenesysSpacer(GenesysSpacing.Medium)
 
-                GenesysQuantitySelector(
-                    quantity = item.quantity,
-                    onIncrease = onIncrease,
-                    onDecrease = onDecrease
-                )
+                    GenesysQuantitySelector(
+                        quantity = item.quantity,
+                        onIncrease = { onEvent(CartScreenEvent.OnUpdateQuantity(item.product.id, item.quantity + 1)) },
+                        onDecrease = { onEvent(CartScreenEvent.OnUpdateQuantity(item.product.id, item.quantity - 1)) }
+                    )
+                }
             }
-
-            GenesysWeightSpacer(1f)
 
             GenesysIconButton(
                 icon = GenesysIcons.Delete,
-                onClick = onRemove
+                onClick = { onEvent(CartScreenEvent.OnRemoveItem(item.product.id)) },
+                tint = Color.Red.copy(alpha = 0.6f)
             )
         }
     }

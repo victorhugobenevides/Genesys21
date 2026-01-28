@@ -1,10 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
@@ -14,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Page
@@ -22,72 +17,81 @@ import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.ui.theme.AppTheme
-import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.util.AnalyticsManager
 import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageViewerScreen(
     page: Page, 
     onBack: () -> Unit,
-    onProductClick: (Product) -> Unit,
-    allAvailableCategories: List<String> = emptyList()
+    onProductClick: (Product) -> Unit
 ) {
     val router: Router = koinInject()
-    var isLoggedIn by remember { mutableStateOf(false) }
     val cartCount by router.viewModel.cartCount.collectAsState()
     
-    val hasHistory = remember(router.currentRoute) { router.getHistory().isNotEmpty() }
-
-    // CORREÇÃO: Extrair as categorias dos produtos presentes na página se a lista externa estiver vazia
-    val categories = remember(page.components, allAvailableCategories) {
-        if (allAvailableCategories.isNotEmpty()) {
-            allAvailableCategories
-        } else {
-            page.components
-                .filterIsInstance<PageComponent.ProductList>()
-                .flatMap { it.products }
-                .map { it.category }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .sorted()
-        }
-    }
-
+    // 1. State Holder
+    var state by remember { mutableStateOf(PageViewerScreenState(page = page)) }
+    
     LaunchedEffect(Unit) {
-        isLoggedIn = router.viewModel.getCurrentUserToken() != null
+        val isLoggedIn = router.viewModel.getCurrentUserToken() != null
+        state = state.copy(
+            isLoggedIn = isLoggedIn,
+            cartCount = cartCount
+        )
         AnalyticsManager.trackPageView("Vitrine Pública - ${page.title}")
     }
 
-    val hasProductList = remember(page.components) {
-        page.components.any { it is PageComponent.ProductList }
+    LaunchedEffect(cartCount) {
+        state = state.copy(cartCount = cartCount)
     }
 
-    AppTheme(themeConfig = page.theme) {
+    // 2. Event Orchestrator
+    val onEvent: (PageViewerScreenEvent) -> Unit = { event ->
+        when (event) {
+            is PageViewerScreenEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
+            is PageViewerScreenEvent.OnProductClicked -> onProductClick(event.product)
+            is PageViewerScreenEvent.OnOpenCartClicked -> {
+                AnalyticsManager.logEvent("open_cart")
+                router.navigateTo(Route.Cart(state.page))
+            }
+            is PageViewerScreenEvent.OnOpenHistoryClicked -> {
+                AnalyticsManager.logEvent("open_order_history")
+                router.navigateTo(Route.CustomerOrderHistory(state.page))
+            }
+            is PageViewerScreenEvent.OnAdminSettingsClicked -> router.navigateTo(Route.PageList)
+            is PageViewerScreenEvent.OnBackClicked -> router.goBack()
+        }
+    }
+
+    // 3. Render
+    PageViewerContent(state, onEvent)
+}
+
+@Composable
+private fun PageViewerContent(
+    state: PageViewerScreenState,
+    onEvent: (PageViewerScreenEvent) -> Unit
+) {
+    AppTheme(themeConfig = state.page.theme) {
         ThemeScrollbarEffectWrapper()
 
-        var filterQuery by remember { mutableStateOf("") }
-
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            containerColor = MaterialTheme.colorScheme.background,
+        GenesysPage(
             topBar = {
                 GenesysTopAppBar(
-                    title = page.title,
-                    onBack = if (hasHistory) { { router.goBack() } } else null,
+                    title = state.page.title,
+                    onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                     actions = {
-                        IconButton(onClick = { 
-                            AnalyticsManager.logEvent("open_order_history")
-                            router.navigateTo(Route.CustomerOrderHistory(page)) 
-                        }) {
+                        IconButton(onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }) {
                             Icon(Icons.Default.History, "Meus Pedidos", tint = MaterialTheme.colorScheme.primary)
                         }
 
-                        if (isLoggedIn) {
-                            IconButton(onClick = { router.navigateTo(Route.PageList) }) {
+                        if (state.isLoggedIn) {
+                            IconButton(onClick = { onEvent(PageViewerScreenEvent.OnAdminSettingsClicked) }) {
                                 Icon(Icons.Default.Settings, "Administração", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
@@ -95,61 +99,49 @@ fun PageViewerScreen(
                 )
             },
             floatingActionButton = {
-                if (hasProductList || cartCount > 0) {
+                if (state.hasProductList || state.cartCount > 0) {
                     BadgedBox(
                         badge = {
-                            if (cartCount > 0) {
+                            if (state.cartCount > 0) {
                                 Badge(
                                     containerColor = MaterialTheme.colorScheme.error,
                                     contentColor = MaterialTheme.colorScheme.onError,
                                     modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
                                 ) {
-                                    Text(cartCount.toString(), fontSize = 12.sp)
+                                    Text(state.cartCount.toString(), fontSize = 12.sp)
                                 }
                             }
                         }
                     ) {
                         ExtendedFloatingActionButton(
-                            onClick = { 
-                                AnalyticsManager.logEvent("open_cart")
-                                router.navigateTo(Route.Cart(page)) 
-                            },
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
-                            shape = CircleShape,
+                            shape = androidx.compose.foundation.shape.CircleShape,
                             icon = { Icon(Icons.Default.ShoppingCart, "Carrinho") },
                             text = { Text("Ver Carrinho") }
                         )
                     }
                 }
             }
-        ) { padding ->
-            BoxWithConstraints(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                val maxWidthContent = 1300.dp
-                val horizontalPadding = if (maxWidth > maxWidthContent) (maxWidth - maxWidthContent) / 2 else 12.dp
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = horizontalPadding,
-                        end = horizontalPadding,
-                        top = 8.dp,
-                        bottom = 100.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                GenesysColumn(
+                    maxWidth = GenesysDimens.ViewerMaxWidth,
+                    usePadding = false,
+                    useScroll = true
                 ) {
-                    items(page.components) { component ->
+                    state.page.components.forEach { component ->
                         PageComponentRenderer(
                             component = component,
-                            onProductClick = onProductClick,
-                            filterQuery = filterQuery,
-                            onFilterQueryChange = { filterQuery = it },
-                            allAvailableCategories = categories // Passando a lista de categorias extraída/corrigida
+                            onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
+                            filterQuery = state.filterQuery,
+                            onFilterQueryChange = { onEvent(PageViewerScreenEvent.OnFilterQueryChanged(it)) },
+                            allAvailableCategories = state.categories
                         )
                     }
+                    
+                    Spacer(modifier = Modifier.height(100.dp))
                 }
             }
         }

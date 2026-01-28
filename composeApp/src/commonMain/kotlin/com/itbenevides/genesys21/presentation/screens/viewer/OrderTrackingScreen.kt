@@ -2,7 +2,10 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -21,8 +24,6 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 
 @Composable
 fun OrderTrackingScreen(
@@ -34,92 +35,126 @@ fun OrderTrackingScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val clipboardManager = LocalClipboardManager.current
 
+    // 1. State Management
+    var state by remember { mutableStateOf(OrderTrackingState()) }
+    
+    state = state.copy(
+        order = order,
+        isLoading = isLoading
+    )
+
     LaunchedEffect(orderId) {
         viewModel.trackOrder(orderId)
     }
 
-    val themeToUse = order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL
-
-    AppTheme(themeConfig = themeToUse) {
-        GenesysPage(
-            topBar = {
-                GenesysTopAppBar(
-                    title = GenesysStrings.TrackOrderTitle,
-                    onBack = onBack
-                )
+    // 2. Event Handler
+    val onEvent: (OrderTrackingEvent) -> Unit = { event ->
+        when (event) {
+            is OrderTrackingEvent.OnTrackOrder -> viewModel.trackOrder(event.orderId)
+            is OrderTrackingEvent.OnCopyOrderIdClicked -> {
+                state.order?.id?.let { clipboardManager.setText(AnnotatedString(it)) }
             }
+            is OrderTrackingEvent.OnBackClicked -> onBack()
+        }
+    }
+
+    val themeToUse = state.order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL
+
+    // 3. Render
+    AppTheme(themeConfig = themeToUse) {
+        OrderTrackingContent(state, onEvent)
+    }
+}
+
+@Composable
+private fun OrderTrackingContent(
+    state: OrderTrackingState,
+    onEvent: (OrderTrackingEvent) -> Unit
+) {
+    GenesysPage(
+        topBar = {
+            GenesysTopAppBar(
+                title = GenesysStrings.TrackOrderTitle,
+                onBack = { onEvent(OrderTrackingEvent.OnBackClicked) }
+            )
+        }
+    ) {
+        GenesysColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = GenesysAlignment.Center,
+            usePadding = false
         ) {
-            // Root que centraliza o conteúdo em telas largas (WasmJs)
             GenesysColumn(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = GenesysAlignment.Center,
-                usePadding = false
+                maxWidth = GenesysDimens.ContentMaxWidth, 
+                useScroll = true
             ) {
-                // Conteúdo limitado pela largura máxima do DS
-                GenesysColumn(
-                    maxWidth = GenesysDimens.ContentMaxWidth, 
-                    useScroll = true
-                ) {
-                    if (order == null && !isLoading) {
-                        GenesysEmptyState(
-                            icon = GenesysIcons.SearchOff,
-                            title = GenesysStrings.OrderNotFound,
-                            description = "Não conseguimos localizar seu pedido.",
-                            action = { GenesysLoadingButton(text = GenesysStrings.Back, onClick = onBack) }
-                        )
-                    } else if (order != null) {
-                        val currentOrder = order!!
-                        
-                        GenesysCard(elevation = GenesysDimens.ElevationMedium) {
-                             GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
-                                GenesysText(text = GenesysStrings.OrderStatusLabel, style = GenesysTextStyle.Label)
-                                GenesysSpacer(GenesysSpacing.Medium)
-                                GenesysStatusBadge(currentOrder.status)
-                                
-                                GenesysSpacer(GenesysSpacing.Large)
-                                
-                                GenesysRow {
-                                    GenesysText(
-                                        text = "#${currentOrder.id.uppercase()}", 
-                                        style = GenesysTextStyle.Title, 
-                                        fontWeight = GenesysFontWeight.ExtraBold,
-                                        weightValue = 1f
-                                    )
-                                    GenesysIconButton(icon = GenesysIcons.Copy, onClick = { clipboardManager.setText(AnnotatedString(currentOrder.id)) })
-                                }
+                if (state.order == null && !state.isLoading) {
+                    GenesysEmptyState(
+                        icon = GenesysIcons.SearchOff,
+                        title = GenesysStrings.OrderNotFound,
+                        description = "Não conseguimos localizar seu pedido.",
+                        action = { 
+                            GenesysLoadingButton(
+                                text = GenesysStrings.Back, 
+                                onClick = { onEvent(OrderTrackingEvent.OnBackClicked) }
+                            ) 
+                        }
+                    )
+                } else if (state.order != null) {
+                    val currentOrder = state.order
+                    
+                    GenesysCard(elevation = GenesysDimens.ElevationMedium) {
+                         GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
+                            GenesysText(text = GenesysStrings.OrderStatusLabel, style = GenesysTextStyle.Label)
+                            GenesysSpacer(GenesysSpacing.Medium)
+                            GenesysStatusBadge(currentOrder.status)
+                            
+                            GenesysSpacer(GenesysSpacing.Large)
+                            
+                            GenesysRow {
+                                GenesysText(
+                                    text = "#${currentOrder.id.uppercase()}", 
+                                    style = GenesysTextStyle.Title, 
+                                    fontWeight = GenesysFontWeight.ExtraBold,
+                                    weightValue = 1f
+                                )
+                                GenesysIconButton(
+                                    icon = GenesysIcons.Copy, 
+                                    onClick = { onEvent(OrderTrackingEvent.OnCopyOrderIdClicked) }
+                                )
                             }
                         }
+                    }
 
-                        GenesysSpacer(GenesysSpacing.Large)
-                        GenesysTrackingTimeline(currentStatus = currentOrder.status)
-                        GenesysSpacer(GenesysSpacing.Large)
+                    GenesysSpacer(GenesysSpacing.Large)
+                    GenesysTrackingTimeline(currentStatus = currentOrder.status)
+                    GenesysSpacer(GenesysSpacing.Large)
 
-                        GenesysCard {
-                            GenesysColumn(usePadding = true) {
-                                GenesysSectionHeader(title = GenesysStrings.OrderSummary)
-                                GenesysSpacer(GenesysSpacing.Medium)
-                                
-                                currentOrder.items.forEach { item ->
-                                    GenesysRow {
-                                        GenesysText(
-                                            text = "${item.quantity}x ${item.product.name}", 
-                                            weightValue = 1f
-                                        )
-                                        GenesysText(
-                                            text = "R$ ${item.product.price * item.quantity}", 
-                                            fontWeight = GenesysFontWeight.Bold
-                                        )
-                                    }
-                                }
-                                
-                                GenesysSpacer(GenesysSpacing.Medium)
-                                GenesysDivider()
-                                GenesysSpacer(GenesysSpacing.Medium)
-                                
+                    GenesysCard {
+                        GenesysColumn(usePadding = true) {
+                            GenesysSectionHeader(title = GenesysStrings.OrderSummary)
+                            GenesysSpacer(GenesysSpacing.Medium)
+                            
+                            currentOrder.items.forEach { item ->
                                 GenesysRow {
-                                    GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title, weightValue = 1f)
-                                    GenesysText(text = "R$ ${currentOrder.total}", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                                    GenesysText(
+                                        text = "${item.quantity}x ${item.product.name}", 
+                                        weightValue = 1f
+                                    )
+                                    GenesysText(
+                                        text = "R$ ${item.product.price * item.quantity}", 
+                                        fontWeight = GenesysFontWeight.Bold
+                                    )
                                 }
+                            }
+                            
+                            GenesysSpacer(GenesysSpacing.Medium)
+                            GenesysDivider()
+                            GenesysSpacer(GenesysSpacing.Medium)
+                            
+                            GenesysRow {
+                                GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title, weightValue = 1f)
+                                GenesysText(text = "R$ ${currentOrder.total}", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
                             }
                         }
                     }

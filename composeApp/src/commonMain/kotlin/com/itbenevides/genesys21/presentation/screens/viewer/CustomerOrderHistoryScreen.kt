@@ -32,16 +32,44 @@ fun CustomerOrderHistoryScreen(
     val orders by viewModel.customerOrders.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    // 1. State Management
+    var state by remember { mutableStateOf(OrderHistoryState()) }
+    
+    state = state.copy(
+        orders = orders,
+        isLoading = isLoading
+    )
+
     LaunchedEffect(Unit) {
         viewModel.loadCustomerOrders()
         AnalyticsManager.trackPageView(GenesysStrings.OrderHistoryTitle)
     }
 
+    // 2. Event Handler
+    val onEvent: (OrderHistoryEvent) -> Unit = { event ->
+        when (event) {
+            is OrderHistoryEvent.OnBackClicked -> onBack()
+            is OrderHistoryEvent.OnOrderClicked -> {
+                AnalyticsManager.logEvent("view_order_from_history", mapOf("order_id" to event.order.id))
+                onOrderClick(event.order)
+            }
+        }
+    }
+
+    // 3. Render
+    OrderHistoryContent(state, onEvent)
+}
+
+@Composable
+private fun OrderHistoryContent(
+    state: OrderHistoryState,
+    onEvent: (OrderHistoryEvent) -> Unit
+) {
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
                 title = GenesysStrings.OrderHistoryTitle,
-                onBack = onBack
+                onBack = { onEvent(OrderHistoryEvent.OnBackClicked) }
             )
         }
     ) {
@@ -50,27 +78,27 @@ fun CustomerOrderHistoryScreen(
             horizontalAlignment = GenesysAlignment.Center,
             usePadding = false
         ) {
-            if (orders.isEmpty() && !isLoading) {
-                GenesysEmptyState(
+            if (state.orders.isEmpty() && !state.isLoading) {
+                 GenesysEmptyState(
                     icon = GenesysIcons.ShoppingBag,
                     title = GenesysStrings.NoOrdersFound,
                     description = "Você ainda não possui pedidos registrados.",
                     action = {
                         GenesysLoadingButton(
                             text = GenesysStrings.Back, 
-                            onClick = onBack
+                            onClick = { onEvent(OrderHistoryEvent.OnBackClicked) }
                         )
                     }
                 )
             } else {
                 GenesysLazyColumn(
-                    items = orders,
+                    items = state.orders,
                     maxWidth = GenesysDimens.ContentMaxWidth
                 ) { order ->
-                    HistoryOrderCard(order = order, onClick = { 
-                        AnalyticsManager.logEvent("view_order_from_history", mapOf("order_id" to order.id))
-                        onOrderClick(order) 
-                    })
+                    HistoryOrderCard(
+                        order = order, 
+                        onClick = { onEvent(OrderHistoryEvent.OnOrderClicked(order)) }
+                    )
                 }
             }
         }
@@ -90,7 +118,6 @@ private fun HistoryOrderCard(order: Order, onClick: () -> Unit) {
         onClick = onClick
     ) {
         GenesysRow {
-            // Usando GenesysWeightBox para alinhar o conteúdo à esquerda e o badge à direita
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
                     GenesysText(
@@ -111,11 +138,12 @@ private fun HistoryOrderCard(order: Order, onClick: () -> Unit) {
         GenesysSpacer(GenesysSpacing.Small)
         
         GenesysRow {
-            GenesysText(
-                text = "${order.items.sumOf { it.quantity }} itens", 
-                style = GenesysTextStyle.Body,
-                weightValue = 1f
-            )
+            GenesysWeightBox(1f) {
+                GenesysText(
+                    text = "${order.items.sumOf { it.quantity }} itens", 
+                    style = GenesysTextStyle.Body
+                )
+            }
             GenesysText(
                 text = "Total: R$ ${order.total}", 
                 style = GenesysTextStyle.Title,
