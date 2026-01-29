@@ -102,8 +102,14 @@ class PageViewModel(
     // Orders
     fun loadOrders() {
         viewModelScope.launch {
-            val token = authRepository.getCurrentUserToken() ?: return@launch
-            getOrdersUseCase(token).collect { _orders.value = it }
+            val token = authRepository.getCurrentUserToken() ?: ""
+            if (token.isNotBlank()) {
+                _isLoading.value = true
+                getOrdersUseCase(token).collect { 
+                    _orders.value = it 
+                    _isLoading.value = false
+                }
+            }
         }
     }
 
@@ -133,14 +139,19 @@ class PageViewModel(
     }
 
     fun submitOrder(page: Page?, onComplete: (String) -> Unit = {}) {
+        // CORREÇÃO: Garante que o userId do pedido seja o dono da página (lojista)
         val ownerId = page?.ownerId
-        if (ownerId == null || cart.value.isEmpty()) return
+        if (ownerId == null || cart.value.isEmpty()) {
+            _currentError.value = AppError("Erro no Pedido", "Não foi possível identificar o dono desta vitrine.")
+            return
+        }
         
         viewModelScope.launch {
+            _isLoading.value = true
             val orderId = "ORD-" + Random.nextInt(100000, 999999).toString()
             val newOrder = Order(
                 id = orderId,
-                userId = ownerId,
+                userId = ownerId, // Lojista
                 customerId = cartRepository.getSessionId(),
                 customerName = customerName.value,
                 items = cart.value,
@@ -158,6 +169,7 @@ class PageViewModel(
             }.onFailure {
                 handleError("Falha ao submeter pedido", it)
             }
+            _isLoading.value = false
         }
     }
 

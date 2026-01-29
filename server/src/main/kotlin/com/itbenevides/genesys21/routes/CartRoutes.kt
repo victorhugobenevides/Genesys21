@@ -10,7 +10,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.cartRoutes(cartRepository: SqliteCartRepository) {
-    route("/api/cart") {
+    // REMOVIDO /api/ pois já está no Application.kt
+    route("/cart") {
         
         fun getCartIdentifier(call: ApplicationCall): String? {
             val authUser = call.principal<UserIdPrincipal>()?.name

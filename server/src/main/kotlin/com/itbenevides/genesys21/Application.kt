@@ -19,17 +19,14 @@ import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.compression.*
-import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
-import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 
@@ -48,10 +45,16 @@ fun Application.module() {
     val cartRepository = SqliteCartRepository()
     val orderRepository = SqliteOrderRepository()
 
-    // Caminho absoluto fixo para o container
     val uploadDir = File("/app/uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            logger.error("Erro Interno: ${cause.message}", cause)
+            call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
+        }
+    }
+
     install(Compression) {
         gzip { priority = 1.0 }
         deflate { priority = 10.0; minimumSize(1024) }
@@ -65,12 +68,12 @@ fun Application.module() {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
-        allowHeader("X-Cart-Session-Id") // Adicionado para suportar o header do carrinho
+        allowHeader("X-Cart-Session-Id")
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Patch) // ADICIONADO: Necessário para atualização de status
+        allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
         allowCredentials = true
         maxAgeInSeconds = 3600
@@ -92,68 +95,44 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // ROTA EXPLÍCITA DE UPLOADS - Para garantir entrega pelo IP:8080
         get("/uploads/{filename...}") {
             val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
             val file = File(uploadDir, filename)
-            
-            if (file.exists() && file.isFile) {
-                call.respondFile(file)
-            } else {
-                logger.error("Arquivo não encontrado no disco: ${file.absolutePath}")
-                call.respond(HttpStatusCode.NotFound, "Imagem não encontrada")
-            }
-        }
-
-        get("/favicon.ico") {
-            call.respondBytes(ByteArray(0), ContentType.Image.XIcon)
-        }
-
-        get("/api/debug/files") {
-            val files = uploadDir.listFiles()?.map { "${it.name} (${it.length()} bytes)" } ?: emptyList()
-            call.respondText("DIR: ${uploadDir.absolutePath}\nFILES:\n${files.joinToString("\n")}")
+            if (file.exists() && file.isFile) call.respondFile(file)
+            else call.respond(HttpStatusCode.NotFound)
         }
 
         get("/") { call.respondText("Genesys21 API Online") }
 
-        authenticate("firebase") {
-            post("/upload") {
-                val multipart = call.receiveMultipart()
-                var fileName = ""
-                var fileBytes: ByteArray? = null
-
-                multipart.forEachPart { part ->
-                    if (part is PartData.FileItem) {
-                        val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
-                        fileName = "${UUID.randomUUID()}.$ext"
-                        fileBytes = part.streamProvider().readBytes()
+        route("/api") {
+            pageRoutes(pageRepository)
+            cartRoutes(cartRepository)
+            orderRoutes(orderRepository)
+            
+            authenticate("firebase") {
+                post("/upload") {
+                    val multipart = call.receiveMultipart()
+                    var fileName = ""
+                    var fileBytes: ByteArray? = null
+                    multipart.forEachPart { part ->
+                        if (part is PartData.FileItem) {
+                            val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
+                            fileName = "${UUID.randomUUID()}.$ext"
+                            // CORREÇÃO: Leitura estável de bytes para JVM
+                            fileBytes = part.streamProvider().readBytes()
+                        }
+                        part.dispose()
                     }
-                    part.dispose()
-                }
-
-                if (fileBytes != null) {
-                    val file = File(uploadDir, fileName)
-                    try {
-                        val outputStream = ByteArrayOutputStream()
-                        Thumbnails.of(ByteArrayInputStream(fileBytes))
-                            .size(1200, 1200)
-                            .keepAspectRatio(true)
-                            .outputQuality(0.80) 
-                            .toOutputStream(outputStream)
-                        file.writeBytes(outputStream.toByteArray())
-                    } catch (e: Exception) {
+                    if (fileBytes != null) {
+                        val file = File(uploadDir, fileName)
                         file.writeBytes(fileBytes!!)
+                        call.respondText("/uploads/$fileName")
+                    } else {
+                        call.respond(HttpStatusCode.BadRequest)
                     }
-                    call.respondText("/uploads/$fileName")
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, "Arquivo inválido")
                 }
             }
         }
-
-        pageRoutes(pageRepository)
-        cartRoutes(cartRepository)
-        orderRoutes(orderRepository)
     }
 }
 
@@ -162,11 +141,8 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
         val fileName = "firebase-adminsdk.json"
         val stream = this::class.java.classLoader.getResourceAsStream(fileName)
             ?: if (File(fileName).exists()) File(fileName).inputStream() else null
-
         if (stream != null) {
-            val options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(stream))
-                .build()
+            val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(stream)).build()
             if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
         }
     } catch (e: Exception) {

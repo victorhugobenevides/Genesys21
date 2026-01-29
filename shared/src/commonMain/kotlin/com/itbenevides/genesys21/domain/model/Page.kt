@@ -35,7 +35,7 @@ sealed class PageComponent {
     data class Text(
         val content: String, 
         val fontSize: Int = 16,
-        val textAlign: String = "LEFT", // "LEFT", "CENTER", "RIGHT"
+        val textAlign: String = "LEFT",
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -45,7 +45,7 @@ sealed class PageComponent {
     data class Header(
         val title: String,
         val fontSize: Int = 28,
-        val textAlign: String = "LEFT", // "LEFT", "CENTER", "RIGHT"
+        val textAlign: String = "LEFT",
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -54,11 +54,11 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Image")
     data class Image(
         val url: String, 
-        val string: String,
+        val string: String = "",
         val size: Int = 200,
         val destinationPageId: String? = null,
-        val isFullWidth: Boolean = false,
-        val isRounded: Boolean = false, // ADICIONADO
+        val isFullWidth: Boolean = true,
+        val isRounded: Boolean = true,
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -85,7 +85,7 @@ sealed class PageComponent {
     @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Filter")
     data class Filter(
-        val placeholder: String = "Filtrar conteúdo...",
+        val placeholder: String = "O que você procura hoje?",
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -114,4 +114,55 @@ data class Page(
     val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
     val theme: PageThemeConfig = PageThemeConfig.ROYAL
-)
+) {
+    companion object {
+        fun defaultTemplate(id: String, title: String): Page {
+            val categories = listOf("Lançamentos", "Mais Vendidos", "Promoções", "Coleção Verão", "Acessórios")
+            
+            val horizontalProducts = (1..10).map { i ->
+                Product(
+                    id = "H$i",
+                    name = "Produto Horizontal $i",
+                    price = (50..500).random().toDouble(),
+                    category = categories.random(),
+                    imageUrls = listOf("https://picsum.photos/seed/h$i/400/400")
+                )
+            }
+
+            val verticalProducts = (1..10).map { i ->
+                Product(
+                    id = "V$i",
+                    name = "Produto Vertical $i",
+                    price = (50..500).random().toDouble(),
+                    category = categories.random(),
+                    imageUrls = listOf("https://picsum.photos/seed/v$i/400/400")
+                )
+            }
+
+            return Page(
+                id = id,
+                title = title,
+                theme = PageThemeConfig.ROYAL,
+                components = listOf(
+                    PageComponent.Header(title = title, customLabel = "Nome da Loja"),
+                    PageComponent.Image(
+                        url = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000",
+                        customLabel = "Banner Principal"
+                    ),
+                    PageComponent.Filter(customLabel = "Barra de Pesquisa"),
+                    PageComponent.CategoryFilter(customLabel = "Categorias"),
+                    PageComponent.ProductList(
+                        products = horizontalProducts, 
+                        isHorizontal = true, 
+                        customLabel = "Destaques (Horizontal)"
+                    ),
+                    PageComponent.ProductList(
+                        products = verticalProducts, 
+                        isHorizontal = false, 
+                        customLabel = "Todos os Produtos (Vertical)"
+                    )
+                )
+            )
+        }
+    }
+}

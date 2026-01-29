@@ -11,7 +11,6 @@ import io.ktor.utils.io.core.*
 
 /**
  * Implementação do repositório de páginas usando Ktor Client.
- * O [baseUrl] deve ser provido via injeção de dependência dependendo da plataforma.
  */
 class KtorPageRepository(
     private val client: HttpClient,
@@ -19,7 +18,8 @@ class KtorPageRepository(
 ) : PageRepository {
 
     override suspend fun getPages(token: String): List<Page> {
-        val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/pages"
+        // CORREÇÃO: Usando prefixo /api padronizado no servidor
+        val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/api/pages"
         return try {
             val response = client.get(url) {
                 if (token.isNotBlank()) {
@@ -67,13 +67,13 @@ class KtorPageRepository(
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response = if (isEditing) {
-                client.put("$baseUrl/pages") {
+                client.put("$baseUrl/api/pages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(page)
                 }
             } else {
-                client.post("$baseUrl/pages") {
+                client.post("$baseUrl/api/pages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(page)
@@ -89,7 +89,7 @@ class KtorPageRepository(
     override suspend fun deletePage(id: String, token: String): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = client.delete("$baseUrl/pages/$id") {
+            val response = client.delete("$baseUrl/api/pages/$id") {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status.isSuccess()) Result.success(Unit)
@@ -103,7 +103,7 @@ class KtorPageRepository(
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response: String = client.submitFormWithBinaryData(
-                url = "$baseUrl/upload",
+                url = "$baseUrl/api/upload",
                 formData = formData {
                     append("image", bytes, Headers.build {
                         append(HttpHeaders.ContentType, "image/jpeg")

@@ -76,7 +76,14 @@ fun PageListScreen(
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                val newPage = Page(id, state.newPageTitle.trim())
+                
+                // Escolha entre template ou em branco
+                val newPage = if (event.useTemplate) {
+                    Page.defaultTemplate(id, state.newPageTitle.trim())
+                } else {
+                    Page(id, state.newPageTitle.trim())
+                }
+                
                 viewModel.savePage(newPage, false) {
                     state = state.copy(showCreateDialog = false, newPageTitle = "")
                     onEditPage(newPage)
@@ -406,19 +413,31 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
         onDismissRequest = { onEvent(PageListEvent.OnDismissCreateDialog) },
         title = GenesysStrings.NewPageTitle,
         confirmButton = { 
-            GenesysLoadingButton(
-                text = "Criar Vitrine", 
-                onClick = { onEvent(PageListEvent.OnConfirmCreatePage) }, 
-                enabled = state.newPageTitle.isNotBlank(),
-                isLoading = state.isLoading
-            ) 
+            // Layout vertical para os botões de criação
+            GenesysColumn(usePadding = false) {
+                GenesysLoadingButton(
+                    text = "Criar Vitrine Profissional", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(useTemplate = true)) }, 
+                    enabled = state.newPageTitle.isNotBlank(),
+                    isLoading = state.isLoading,
+                    fillWidth = true
+                ) 
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysTextButton(
+                    text = "Criar em Branco", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(useTemplate = false)) },
+                    enabled = state.newPageTitle.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         },
         dismissButton = { GenesysTextButton(text = GenesysStrings.Cancel, onClick = { onEvent(PageListEvent.OnDismissCreateDialog) }) }
     ) {
         GenesysTextField(
             value = state.newPageTitle, 
             onValueChange = { onEvent(PageListEvent.OnNewPageTitleChanged(it)) }, 
-            label = GenesysStrings.PageTitleLabel
+            label = GenesysStrings.PageTitleLabel,
+            placeholder = "Ex: Minha Loja Premium"
         )
     }
 }

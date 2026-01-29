@@ -1,22 +1,29 @@
 package com.itbenevides.genesys21.data.database
 
-import com.itbenevides.genesys21.domain.model.CartItem
-import com.itbenevides.genesys21.domain.model.OrderStatus
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.json.json
+import org.jetbrains.exposed.sql.ReferenceOption
 
 object OrdersTable : Table("orders") {
     val id = varchar("id", 50)
-    val userId = varchar("user_id", 100) // Dono da loja
-    val customerId = varchar("customer_id", 100).nullable() // ID da sessão do visitante
+    val userId = varchar("user_id", 100)
+    val customerId = varchar("customer_id", 100).nullable()
     val customerName = varchar("customer_name", 255).nullable()
-    val items = json<List<CartItem>>("items", Json { ignoreUnknownKeys = true })
     val total = double("total")
     val status = varchar("status", 50)
     val createdAt = long("created_at")
     val whatsappContact = varchar("whatsapp_contact", 50).nullable()
-    val theme = varchar("theme", 50).default("ROYAL") // ADICIONADO: Persiste o tema no pedido
+    val theme = varchar("theme", 50).default("ROYAL")
+
+    override val primaryKey = PrimaryKey(id)
+}
+
+object OrderItemsTable : Table("order_items") {
+    val id = integer("id").autoIncrement()
+    val orderId = varchar("order_id", 50).references(OrdersTable.id, onDelete = ReferenceOption.CASCADE)
+    val productId = varchar("product_id", 50)
+    val productName = varchar("product_name", 255)
+    val productPrice = double("product_price")
+    val quantity = integer("quantity")
 
     override val primaryKey = PrimaryKey(id)
 }

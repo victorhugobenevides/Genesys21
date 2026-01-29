@@ -11,10 +11,9 @@ import io.ktor.server.routing.*
 
 fun Route.pageRoutes(pageRepository: PageRepository) {
     
-    // Rotas Públicas
-    route("/api/public") {
+    // Rotas Públicas - O prefixo /api já vem do Application.kt
+    route("/public") {
         get("/pages/first") {
-            // Retorna a primeira página pública encontrada no sistema
             pageRepository.getPages("") 
                 .firstOrNull()?.let { call.respond(it) }
                 ?: call.respond(HttpStatusCode.NotFound, "Nenhuma página disponível")
@@ -35,7 +34,7 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
         }
     }
 
-    // Rotas Autenticadas
+    // Rotas Autenticadas - O prefixo /api já vem do Application.kt
     authenticate("firebase") {
         route("/pages") {
             get {

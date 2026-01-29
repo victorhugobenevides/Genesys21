@@ -29,7 +29,10 @@ sealed class PageListEvent {
     data class OnStatusFilterSelected(val status: OrderStatus?) : PageListEvent()
     object OnCreatePageClicked : PageListEvent()
     data class OnNewPageTitleChanged(val title: String) : PageListEvent()
-    object OnConfirmCreatePage : PageListEvent()
+    
+    // CORREÇÃO: Adicionado o parâmetro useTemplate
+    data class OnConfirmCreatePage(val useTemplate: Boolean) : PageListEvent()
+    
     object OnDismissCreateDialog : PageListEvent()
     object OnGlobalSettingsClicked : PageListEvent()
     object OnDismissGlobalSettings : PageListEvent()
