@@ -6,6 +6,7 @@ import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
+import com.itbenevides.genesys21.domain.repository.PageDraftRepository
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.flow.*
@@ -34,7 +35,8 @@ class PageViewModel(
     private val updateOrderStatusUseCase: UpdateOrderStatusUseCase,
     private val authRepository: AuthRepository,
     private val cartRepository: CartRepository,
-    private val customerRepository: CustomerRepository
+    private val customerRepository: CustomerRepository,
+    private val pageDraftRepository: PageDraftRepository
 ) : ViewModel() {
 
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
@@ -139,7 +141,6 @@ class PageViewModel(
     }
 
     fun submitOrder(page: Page?, onComplete: (String) -> Unit = {}) {
-        // CORREÇÃO: Garante que o userId do pedido seja o dono da página (lojista)
         val ownerId = page?.ownerId
         if (ownerId == null || cart.value.isEmpty()) {
             _currentError.value = AppError("Erro no Pedido", "Não foi possível identificar o dono desta vitrine.")
@@ -151,7 +152,7 @@ class PageViewModel(
             val orderId = "ORD-" + Random.nextInt(100000, 999999).toString()
             val newOrder = Order(
                 id = orderId,
-                userId = ownerId, // Lojista
+                userId = ownerId,
                 customerId = cartRepository.getSessionId(),
                 customerName = customerName.value,
                 items = cart.value,
@@ -215,6 +216,7 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             savePageUseCase(page, authRepository.getCurrentUserToken() ?: "", isEditing).onSuccess {
+                pageDraftRepository.clearDraft(page.id)
                 loadPages()
                 onComplete()
             }.onFailure {
@@ -228,6 +230,7 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             deletePageUseCase(id, authRepository.getCurrentUserToken() ?: "").onSuccess {
+                pageDraftRepository.clearDraft(id)
                 loadPages()
                 onComplete()
             }.onFailure {
@@ -245,6 +248,19 @@ class PageViewModel(
             }
             _isLoading.value = false
         }
+    }
+
+    // Drafts
+    fun saveDraft(page: Page) {
+        pageDraftRepository.saveDraft(page)
+    }
+
+    fun getDraft(pageId: String): Page? {
+        return pageDraftRepository.getDraft(pageId)
+    }
+
+    fun clearDraft(pageId: String) {
+        pageDraftRepository.clearDraft(pageId)
     }
 
     // Auth

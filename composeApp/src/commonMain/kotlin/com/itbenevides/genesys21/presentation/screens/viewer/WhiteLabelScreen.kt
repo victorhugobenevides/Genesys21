@@ -44,10 +44,15 @@ fun WhiteLabelScreen(
     val savedCategories by viewModel.allAvailableCategories.collectAsState()
     val userPages by viewModel.pages.collectAsState()
 
+    // Captura a página original apenas uma vez para comparação de rascunho
+    val pristinePage = remember(page.id) { page }
+
+    // Inicializa o estado, tentando recuperar rascunho do cache
     var state by remember { 
+        val draft = viewModel.getDraft(page.id)
         mutableStateOf(
             WhiteLabelState(
-                page = page,
+                page = draft ?: page,
                 isLoading = isLoading,
                 availableProducts = serverProducts,
                 allAvailableCategories = savedCategories,
@@ -56,14 +61,18 @@ fun WhiteLabelScreen(
         )
     }
 
-    LaunchedEffect(isLoading, serverProducts, savedCategories, userPages, page) {
+    LaunchedEffect(isLoading, serverProducts, savedCategories, userPages) {
         state = state.copy(
-            page = page,
             isLoading = isLoading,
             availableProducts = serverProducts,
             allAvailableCategories = savedCategories,
             userPages = userPages
         )
+    }
+
+    // Persiste o rascunho localmente sempre que a página mudar
+    LaunchedEffect(state.page) {
+        viewModel.saveDraft(state.page)
     }
 
     fun onEvent(event: WhiteLabelEvent) {
@@ -73,7 +82,10 @@ fun WhiteLabelScreen(
                 onPageChange(event.newPage)
             }
             is WhiteLabelEvent.OnPublishClicked -> {
-                viewModel.savePage(state.page, true) { onBack() }
+                viewModel.savePage(state.page, true) { 
+                    viewModel.clearDraft(state.page.id)
+                    onBack() 
+                }
             }
             is WhiteLabelEvent.OnBackClicked -> onBack()
             is WhiteLabelEvent.OnEditProductClicked -> onEditProduct(event.product, event.componentIndex)
@@ -115,7 +127,7 @@ fun WhiteLabelScreen(
     }
 
     AppTheme(themeConfig = state.page.theme) {
-        WhiteLabelContent(state, viewModel, ::onEvent)
+        WhiteLabelContent(state, viewModel, ::onEvent, originalPage = pristinePage)
     }
 }
 
@@ -123,7 +135,8 @@ fun WhiteLabelScreen(
 private fun WhiteLabelContent(
     state: WhiteLabelState,
     viewModel: PageViewModel,
-    onEvent: (WhiteLabelEvent) -> Unit
+    onEvent: (WhiteLabelEvent) -> Unit,
+    originalPage: Page
 ) {
     GenesysPage(
         topBar = {
@@ -136,6 +149,20 @@ private fun WhiteLabelContent(
                         contentDescription = GenesysStrings.EditorThemes,
                         onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) }
                     )
+                    
+                    // Botão Descartar Rascunho (apenas se houver mudanças)
+                    if (state.page != originalPage) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.Delete,
+                            contentDescription = GenesysStrings.DiscardDraft,
+                            tint = MaterialTheme.colorScheme.error,
+                            onClick = {
+                                viewModel.clearDraft(state.page.id)
+                                onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
+                            }
+                        )
+                    }
+
                     GenesysLoadingButton(
                         text = GenesysStrings.Publish,
                         onClick = { onEvent(WhiteLabelEvent.OnPublishClicked) },
@@ -199,7 +226,7 @@ private fun WhiteLabelContent(
                                 elevation = GenesysDimens.ElevationMedium
                             ) {
                                 state.editingComponentIndex?.let { index ->
-                                    ComponentEditorUI(state, viewModel, index, onEvent, isEmbedded = true)
+                                    ComponentEditorUI(state, viewModel, index, onEvent, isEmbedded = true, originalPage = originalPage)
                                 } ?: run {
                                     GenesysEmptyState(
                                         icon = GenesysIcons.Edit,
@@ -215,7 +242,7 @@ private fun WhiteLabelContent(
             
             if (!isWideScreen) {
                 state.editingComponentIndex?.let { index ->
-                    ComponentEditorUI(state, viewModel, index, onEvent, isEmbedded = false)
+                    ComponentEditorUI(state, viewModel, index, onEvent, isEmbedded = false, originalPage = originalPage)
                 }
             }
         }
@@ -294,12 +321,33 @@ private fun ComponentEditorUI(
     viewModel: PageViewModel,
     index: Int,
     onEvent: (WhiteLabelEvent) -> Unit,
-    isEmbedded: Boolean = false
+    isEmbedded: Boolean = false,
+    originalPage: Page
 ) {
     val component = state.page.components.getOrNull(index) ?: return
     
     val editorContent = @Composable {
         GenesysColumn(usePadding = isEmbedded, useScroll = isEmbedded) {
+            GenesysRow(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                GenesysWeightBox(1f) {
+                    GenesysText(text = GenesysStrings.BlockSettings, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                }
+                if (state.page != originalPage) {
+                    GenesysIconButton(
+                        icon = GenesysIcons.Delete,
+                        contentDescription = GenesysStrings.DiscardDraft,
+                        tint = MaterialTheme.colorScheme.error,
+                        onClick = {
+                            viewModel.clearDraft(state.page.id)
+                            onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                        }
+                    )
+                }
+            }
+            
+            GenesysSpacer(GenesysSpacing.Medium)
+
             var customLabel by remember(component) { mutableStateOf(component.customLabel ?: "") }
             
             GenesysTextField(

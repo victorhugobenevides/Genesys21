@@ -10,15 +10,12 @@ import org.koin.dsl.module
  */
 val viewModelModule = module {
     
-    // Use Cases - Note que já estão no domainModule, aqui apenas para referência
-    // Eles serão injetados no ViewModel
-
     // PageViewModel como SINGLE para compartilhar o estado do carrinho e dados entre todas as telas
     single { 
         PageViewModel(
             get(), get(), get(), get(), get(), get(), get(), 
             get(), get(), get(), get(), get(), 
-            get(), get(), get()
+            get(), get(), get(), get()
         ) 
     }
 

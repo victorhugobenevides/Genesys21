@@ -149,6 +149,6 @@ object GenesysStrings {
     const val AddToThisList = "Adicionar à Lista"
     const val RemoveFromThisList = "Remover da Lista"
     const val NoProductsInCatalog = "Nenhum outro produto no catálogo."
-    const val SaveLabel = "Salvar"
+    const val SaveLabel = "Salvar Rótulo"
     const val HorizontalListLabel = "Lista Horizontal?"
 }
