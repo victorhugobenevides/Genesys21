@@ -11,8 +11,6 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 
 /**
  * Container vertical padronizado do Design System.
- * Focado puramente em layout semântico. Proporções devem ser tratadas via
- * GenesysWeightBox para garantir estabilidade absoluta e evitar recursão no compilador WasmJs.
  */
 @Composable
 fun GenesysColumn(
@@ -22,6 +20,7 @@ fun GenesysColumn(
     horizontalAlignment: GenesysAlignment = GenesysAlignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     maxWidth: Dp? = null,
+    weightValue: Float = 0f,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val alignment = when (horizontalAlignment) {
@@ -30,24 +29,20 @@ fun GenesysColumn(
         GenesysAlignment.End -> Alignment.End
     }
 
-    var columnModifier: Modifier = modifier
-    
-    if (maxWidth != null) {
-        columnModifier = columnModifier.widthIn(max = maxWidth)
+    // Correção: Uso de weight fora de um escopo ColumnScope deve ser condicional
+    val columnModifier = if (maxWidth != null) {
+        modifier.widthIn(max = maxWidth)
     } else {
-        columnModifier = columnModifier.fillMaxWidth()
+        modifier.fillMaxWidth()
     }
 
-    if (usePadding) {
-        columnModifier = columnModifier.padding(GenesysDimens.SpacingLarge)
-    }
-    
-    if (useScroll) {
-        columnModifier = columnModifier.verticalScroll(rememberScrollState())
-    }
+    val finalModifier = columnModifier
+        .then(if (usePadding) Modifier.padding(GenesysDimens.SpacingLarge) else Modifier)
+        .then(if (useScroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
 
+    // Nota: O peso deve ser aplicado pelo pai que chama este componente se necessário
     Column(
-        modifier = columnModifier,
+        modifier = finalModifier,
         horizontalAlignment = alignment,
         verticalArrangement = verticalArrangement,
         content = content

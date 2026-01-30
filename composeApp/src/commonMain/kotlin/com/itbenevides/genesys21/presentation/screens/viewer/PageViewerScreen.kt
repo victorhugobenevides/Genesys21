@@ -1,28 +1,40 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.ui.theme.AppTheme
-import com.itbenevides.genesys21.util.AnalyticsManager
-import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysPage
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.text.GenesysText
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.koinInject
 
 @Composable
@@ -43,14 +55,14 @@ fun PageViewerScreen(
             isLoggedIn = isLoggedIn,
             cartCount = cartCount
         )
-        AnalyticsManager.trackPageView("Vitrine Pública - ${page.title}")
+        AnalyticsManager.trackPageView("${GenesysStrings.AppName} - ${page.title}")
     }
 
     LaunchedEffect(cartCount) {
         state = state.copy(cartCount = cartCount)
     }
 
-    // 2. Event Orchestrator
+    // 2. Orquestrador de Eventos
     val onEvent: (PageViewerScreenEvent) -> Unit = { event ->
         when (event) {
             is PageViewerScreenEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
@@ -68,8 +80,11 @@ fun PageViewerScreen(
         }
     }
 
-    // 3. Render
-    PageViewerContent(state, onEvent)
+    // 3. Renderização sob o tema da página
+    AppTheme(themeConfig = state.page.theme) {
+        ThemeScrollbarEffectWrapper()
+        PageViewerContent(state, onEvent)
+    }
 }
 
 @Composable
@@ -77,72 +92,80 @@ private fun PageViewerContent(
     state: PageViewerScreenState,
     onEvent: (PageViewerScreenEvent) -> Unit
 ) {
-    AppTheme(themeConfig = state.page.theme) {
-        ThemeScrollbarEffectWrapper()
+    GenesysPage(
+        topBar = {
+             GenesysTopAppBar(
+                title = state.page.title,
+                onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
+                actions = {
+                    GenesysIconButton(
+                        icon = GenesysIcons.List, 
+                        contentDescription = GenesysStrings.OrderHistoryTitle,
+                        onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }
+                    )
 
-        GenesysPage(
-            topBar = {
-                GenesysTopAppBar(
-                    title = state.page.title,
-                    onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
-                    actions = {
-                        IconButton(onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }) {
-                            Icon(Icons.Default.History, "Meus Pedidos", tint = MaterialTheme.colorScheme.primary)
-                        }
-
-                        if (state.isLoggedIn) {
-                            IconButton(onClick = { onEvent(PageViewerScreenEvent.OnAdminSettingsClicked) }) {
-                                Icon(Icons.Default.Settings, "Administração", tint = MaterialTheme.colorScheme.primary)
-                            }
-                        }
-                    }
-                )
-            },
-            floatingActionButton = {
-                if (state.hasProductList || state.cartCount > 0) {
-                    BadgedBox(
-                        badge = {
-                            if (state.cartCount > 0) {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.error,
-                                    contentColor = MaterialTheme.colorScheme.onError,
-                                    modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
-                                ) {
-                                    Text(state.cartCount.toString(), fontSize = 12.sp)
-                                }
-                            }
-                        }
-                    ) {
-                        ExtendedFloatingActionButton(
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            shape = androidx.compose.foundation.shape.CircleShape,
-                            icon = { Icon(Icons.Default.ShoppingCart, "Carrinho") },
-                            text = { Text("Ver Carrinho") }
+                    if (state.isLoggedIn) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.Settings, 
+                            contentDescription = GenesysStrings.AdminTitle,
+                            onClick = { onEvent(PageViewerScreenEvent.OnAdminSettingsClicked) }
                         )
                     }
+                }
+            )
+        },
+        floatingActionButton = {
+            if (state.hasProductList || state.cartCount > 0) {
+                BadgedBox(
+                    badge = {
+                        if (state.cartCount > 0) {
+                            Badge(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                                modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
+                            ) {
+                                GenesysText(text = state.cartCount.toString(), style = GenesysTextStyle.Label)
+                            }
+                        }
+                    }
+                ) {
+                    ExtendedFloatingActionButton(
+                        onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        icon = { Icon(GenesysIcons.ShoppingBag, null) },
+                        text = { GenesysText(text = GenesysStrings.ViewCart, style = GenesysTextStyle.Body) }
+                    )
                 }
             }
+        }
+    ) {
+        // Container Root centralizado
+        GenesysColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = GenesysAlignment.Center,
+            usePadding = false
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                GenesysColumn(
-                    maxWidth = GenesysDimens.ViewerMaxWidth,
-                    usePadding = false,
-                    useScroll = true
-                ) {
-                    state.page.components.forEach { component ->
-                        PageComponentRenderer(
-                            component = component,
-                            onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
-                            filterQuery = state.filterQuery,
-                            onFilterQueryChange = { onEvent(PageViewerScreenEvent.OnFilterQueryChanged(it)) },
-                            allAvailableCategories = state.categories
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(100.dp))
+            // Conteúdo da Vitrine com scroll e largura máxima
+            GenesysColumn(
+                maxWidth = GenesysDimens.ViewerMaxWidth,
+                usePadding = false,
+                useScroll = true,
+                weightValue = 1f
+            ) {
+                state.page.components.forEach { component ->
+                    PageComponentRenderer(
+                        component = component,
+                        onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
+                        filterQuery = state.filterQuery,
+                        onFilterQueryChange = { onEvent(PageViewerScreenEvent.OnFilterQueryChanged(it)) },
+                        allAvailableCategories = state.categories
+                    )
                 }
+                
+                // Espaço extra no final para não ficar colado no FAB
+                GenesysSpacer(GenesysSpacing.Huge)
             }
         }
     }

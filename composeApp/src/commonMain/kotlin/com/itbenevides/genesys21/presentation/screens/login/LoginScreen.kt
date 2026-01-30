@@ -1,14 +1,29 @@
 package com.itbenevides.genesys21.presentation.screens.login
 
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysPage
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.text.GenesysText
+import com.itbenevides.genesys21.ui.components.text.GenesysTextAlign
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -18,10 +33,8 @@ fun LoginScreen(
     viewModel: PageViewModel,
     onLoginSuccess: () -> Unit
 ) {
-    // 1. State Holder
     var state by remember { mutableStateOf(LoginState()) }
 
-    // 2. Orquestrador de Eventos
     val onEvent: (LoginEvent) -> Unit = { event ->
         when (event) {
             is LoginEvent.OnEmailChanged -> {
@@ -51,7 +64,6 @@ fun LoginScreen(
         }
     }
 
-    // 3. UI Pura
     LoginContent(state, onEvent)
 }
 
@@ -60,59 +72,77 @@ private fun LoginContent(
     state: LoginState,
     onEvent: (LoginEvent) -> Unit
 ) {
-    GenesysPage {
+     GenesysPage {
         GenesysColumn(
-            maxWidth = GenesysDimens.LoginMaxWidth,
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = GenesysAlignment.Center,
-            // Centralização vertical simulada
+            verticalArrangement = Arrangement.Center,
+            usePadding = true
         ) {
-            GenesysSpacer(GenesysSpacing.Huge)
-            
-            GenesysText(
-                text = GenesysStrings.Welcome,
-                style = GenesysTextStyle.Headline,
-                fontWeight = GenesysFontWeight.Bold
-            )
-             GenesysText(
-                text = GenesysStrings.LoginSubtitle,
-                style = GenesysTextStyle.Body
-            )
-
-            GenesysSpacer(GenesysSpacing.Huge)
-
-            GenesysTextField(
-                value = state.email, 
-                onValueChange = { newValue -> onEvent(LoginEvent.OnEmailChanged(newValue)) }, 
-                label = GenesysStrings.EmailLabel,
-                icon = GenesysIcons.Email
-            )
-            
-            GenesysSpacer(GenesysSpacing.Medium)
-            
-            GenesysTextField(
-                value = state.password,
-                onValueChange = { newValue -> onEvent(LoginEvent.OnPasswordChanged(newValue)) },
-                label = GenesysStrings.PasswordLabel,
-                icon = GenesysIcons.Lock,
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            GenesysSpacer(GenesysSpacing.Large)
-
-            GenesysLoadingButton(
-                text = GenesysStrings.LoginButton,
-                onClick = { onEvent(LoginEvent.OnLoginClicked) },
-                fillWidth = true,
-                isLoading = state.isLoading,
-                enabled = state.canLogin
-            )
-
-            if (state.errorMessage.isNotEmpty()) {
-                GenesysSpacer(GenesysSpacing.Medium)
-                GenesysText(
-                    text = state.errorMessage,
-                    style = GenesysTextStyle.Error
+            GenesysColumn(
+                maxWidth = GenesysDimens.LoginMaxWidth,
+                horizontalAlignment = GenesysAlignment.Center,
+                usePadding = false
+            ) {
+                GenesysIconButton(
+                    icon = GenesysIcons.Magic,
+                    modifier = Modifier.size(64.dp),
+                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    onClick = {}
                 )
+                
+                GenesysSpacer(GenesysSpacing.Medium)
+                
+                GenesysText(
+                    text = GenesysStrings.Welcome,
+                    style = GenesysTextStyle.Headline,
+                    fontWeight = GenesysFontWeight.ExtraBold,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                )
+                
+                GenesysText(
+                    text = GenesysStrings.LoginSubtitle,
+                    style = GenesysTextStyle.Body
+                )
+
+                GenesysSpacer(GenesysSpacing.ExtraLarge)
+
+                GenesysTextField(
+                    value = state.email, 
+                    onValueChange = { newValue -> onEvent(LoginEvent.OnEmailChanged(newValue)) }, 
+                    label = GenesysStrings.EmailLabel,
+                    icon = GenesysIcons.Email
+                )
+                
+                GenesysSpacer(GenesysSpacing.Medium)
+                
+                GenesysTextField(
+                    value = state.password,
+                    onValueChange = { newValue -> onEvent(LoginEvent.OnPasswordChanged(newValue)) },
+                    label = GenesysStrings.PasswordLabel,
+                    icon = GenesysIcons.Lock,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                GenesysSpacer(GenesysSpacing.Large)
+
+                GenesysLoadingButton(
+                    text = GenesysStrings.LoginButton,
+                    onClick = { onEvent(LoginEvent.OnLoginClicked) },
+                    fillWidth = true,
+                    isLoading = state.isLoading,
+                    enabled = state.canLogin,
+                    icon = GenesysIcons.Check
+                )
+
+                if (state.errorMessage.isNotEmpty()) {
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysText(
+                        text = state.errorMessage,
+                        style = GenesysTextStyle.Error,
+                        textAlign = GenesysTextAlign.Center
+                    )
+                }
             }
         }
     }

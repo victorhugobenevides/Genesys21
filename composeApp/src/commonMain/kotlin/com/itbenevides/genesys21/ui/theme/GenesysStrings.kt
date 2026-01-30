@@ -1,10 +1,7 @@
 package com.itbenevides.genesys21.ui.theme
 
-/**
- * Fonte única de verdade para todas as strings da interface.
- */
 object GenesysStrings {
-    // Ações e Termos Comuns
+    // Common
     const val AppName = "Genesys21"
     const val Back = "Voltar"
     const val Save = "Salvar"
@@ -14,8 +11,6 @@ object GenesysStrings {
     const val Edit = "Editar"
     const val Publish = "Publicar"
     const val Loading = "Carregando..."
-    const val Error = "Erro"
-    const val Success = "Sucesso"
     const val Total = "Total"
     const val SearchPlaceholder = "O que você procura hoje?"
     const val Categories = "Categorias"
@@ -24,10 +19,9 @@ object GenesysStrings {
     const val Identification = "Identificação"
     const val Details = "Detalhes"
     const val Description = "Descrição"
-    const val ProductWithoutName = "Produto sem nome"
     const val PricePrefix = "R$ "
-    const val SessionIdPrefix = "ID: "
     const val OrderPrefix = "PEDIDO #"
+    const val SessionIdPrefix = "ID: "
 
     // Login
     const val Welcome = "Bem-vindo"
@@ -37,7 +31,7 @@ object GenesysStrings {
     const val LoginButton = "Entrar"
     const val Logout = "Sair"
 
-    // Administração (Listagem)
+    // Page List & Admin
     const val AdminTitle = "Administração"
     const val ManageVitrines = "Gerenciar Vitrines"
     const val ManageVitrinesSubtitle = "Crie e gerencie seus canais de venda ativos."
@@ -50,63 +44,47 @@ object GenesysStrings {
     const val Pending = "Pendentes"
     const val VitrineTab = "Vitrine"
     const val OrdersTab = "Pedidos"
-
-    // Editores de Página
-    const val NewPageTitle = "Nova Página"
-    const val EditPageTitle = "Configurações da Vitrine"
-    const val PageTitleLabel = "Título da Página"
-    const val SavePageButton = "Salvar Alterações"
-    const val CreateProfessionalVitrine = "Criar Vitrine Profissional"
-    const val CreateEmptyVitrine = "Criar em Branco"
     const val GlobalSettings = "Configurações Globais"
     const val CustomDomainLabel = "Domínio Customizado"
     const val WhatsAppLabel = "WhatsApp"
+
+    // Editor (WhiteLabel)
+    const val NewPageTitle = "Nova Página"
+    const val EditPageTitle = "Configurações da Vitrine"
+    const val PageTitleLabel = "Título da Página"
     const val PageTitlePlaceholder = "Ex: Minha Loja Premium"
-    
-    // Editor de Blocos (WhiteLabel)
-    const val EditorThemes = "Estilos"
+    const val SavePageButton = "Salvar Alterações"
+    const val CreateProfessionalVitrine = "Criar Vitrine Profissional"
+    const val CreateEmptyVitrine = "Criar em Branco"
     const val EmptyEditorTitle = "Sua vitrine está vazia"
-    const val EmptyEditorDescription = "Comece adicionando blocos de conteúdo."
-    const val AddBlockAction = "Adicionar Bloco"
+    const val EmptyEditorDescription = "Adicione blocos de conteúdo para começar a montar sua página."
+
     const val BlockSettings = "Configurações do Bloco"
     const val BlockSettingsDescription = "Personalize como este conteúdo aparece na sua vitrine."
     const val BlockNameLabel = "Nome do Bloco (Opcional)"
     const val BlockNamePlaceholder = "Ex: Promoções da Semana"
-    const val ChangeImage = "Trocar Imagem"
-    const val ImageSize = "Tamanho (px)"
-    const val RoundImage = "Imagem Redonda?"
-    const val FullWidthImage = "Largura Total?"
-    const val ClickDestination = "Destino do Clique"
-    const val ClickDestinationPlaceholder = "Link ou Página"
-    const val UpdateTitle = "Atualizar Título"
-    const val SaveText = "Salvar Texto"
-    const val SaveLabel = "Salvar Rótulo"
+    const val SelectBlockToEdit = "Selecione um bloco"
+    const val SelectBlockToEditDesc = "Toque no ícone de lápis para editar."
+    const val PhotosLimit = "/5"
+    
+    const val TitleTextLabel = "Texto do Título"
+    const val ContentTextLabel = "Conteúdo do Texto"
     const val Alignment = "Alinhamento"
     const val FontSize = "Tamanho da Fonte"
     const val UppercaseOption = "Tudo Maiúsculo?"
     const val BrandColorOption = "Cor da Marca?"
     const val FontStyle = "Estilo"
-    const val TitleTextLabel = "Texto do Título"
-    const val ContentTextLabel = "Conteúdo do Texto"
+    const val UpdateTitle = "Salvar Título"
+    const val SaveText = "Salvar Texto"
     const val CustomizeStyle = "Personalizar Estilo"
     const val ThemeDescription = "Selecione a paleta de cores para sua marca."
     const val AddBlockTitle = "Adicionar Bloco"
     const val AddBlockDescription = "Escolha o tipo de conteúdo."
-    const val ComponentTypeHeader = "Cabeçalho"
-    const val ComponentTypeHeaderText = "Um título grande para destacar seções."
-    const val ComponentTypeText = "Texto"
-    const val ComponentTypeTextDesc = "Conte um pouco mais sobre seus produtos."
-    const val ComponentTypeProductList = "Lista de Produtos"
-    const val ComponentTypeProductListDesc = "Exiba seus itens disponíveis."
-    const val ComponentTypeImage = "Imagem"
-    const val ComponentTypeImageDesc = "Destaque banners ou fotos."
-    const val ComponentTypeButton = "Botão"
-    const val ComponentTypeButtonDesc = "Crie links externos ou ações."
-    const val ComponentTypeFilter = "Filtro"
-    const val ComponentTypeFilterDesc = "Facilite a busca para seus clientes."
+    const val EditorThemes = "Estilos"
+    const val AddBlockAction = "Adicionar Bloco"
     const val ButtonDefaultText = "Toque Aqui"
 
-    // Editor de Produtos
+    // Product & Cart
     const val NewProduct = "Novo Produto"
     const val EditProduct = "Editar Detalhes"
     const val ProductName = "Nome do Produto"
@@ -114,13 +92,8 @@ object GenesysStrings {
     const val ProductStock = "Estoque"
     const val ProductCategory = "Categoria"
     const val ProductDescription = "Descrição"
-    const val AddPhoto = "Adicionar Foto"
     const val PhotosTitle = "Fotos do Produto"
     const val ProductGeneralInfo = "Informações Gerais"
-    const val ManageProducts = "Gerenciamento de Produtos"
-    const val AddNewProduct = "Cadastrar Novo Produto"
-
-    // Carrinho e Checkout
     const val CartTitle = "Seu Carrinho"
     const val EmptyCartTitle = "Carrinho Vazio"
     const val EmptyCartDescription = "Adicione itens para continuar."
@@ -129,29 +102,51 @@ object GenesysStrings {
     const val CheckoutNameHint = "Como gostaria de ser chamado?"
     const val FillNameReminder = "Preencha seu nome para finalizar"
     const val AddedToCartTitle = "Adicionado!"
+    const val AddedToCartMessageSuffix = "foi adicionado ao carrinho."
     const val OutOfStockMessage = "Sem estoque disponível!"
     const val ContinueShopping = "Continuar Comprando"
     const val ViewCart = "Ver Carrinho"
     const val AddToCartAction = "Adicionar ao Carrinho"
     const val ProductDescriptionFallback = "Este é um produto premium disponível na Genesys21."
-    const val AddedToCartMessageSuffix = "foi adicionado ao carrinho."
-    const val PhotosLimit = "/5"
 
-    // Histórico e Acompanhamento
-    const val OrderDetails = "Detalhes do Pedido"
-    const val OrderStatusLabel = "STATUS ATUAL"
+    // Order History & Tracking
     const val OrderSummary = "Resumo do Pedido"
     const val OrderHistoryTitle = "Meus Pedidos"
     const val TrackOrderTitle = "Acompanhamento"
     const val OrderNotFound = "Pedido não localizado"
+    const val OrderStatusLabel = "STATUS ATUAL"
     const val OrderTotal = "Total do Pedido"
-    const val WhatsAppContactAction = "Conversar no WhatsApp"
+    const val WhatsAppContactAction = "WhatsApp"
     const val NoHistoryTitle = "Nenhum pedido"
     const val NoHistoryDescription = "Você ainda não possui pedidos registrados."
     
-    // Status Labels
     const val StatusPending = "Pendentes"
     const val StatusProcessing = "Em curso"
     const val StatusCompleted = "Concluídos"
     const val StatusCancelled = "Cancelados"
+
+    // Component Types
+    const val ComponentTypeHeader = "Cabeçalho"
+    const val ComponentTypeHeaderText = "Título grande."
+    const val ComponentTypeText = "Texto"
+    const val ComponentTypeTextDesc = "Conteúdo textual."
+    const val ComponentTypeProductList = "Lista de Produtos"
+    const val ComponentTypeProductListDesc = "Itens à venda."
+    const val ComponentTypeImage = "Imagem"
+    const val ComponentTypeImageDesc = "Banner visual."
+    const val ComponentTypeButton = "Botão"
+    const val ComponentTypeButtonDesc = "Link externo."
+    const val ComponentTypeFilter = "Filtro"
+    const val ComponentTypeFilterDesc = "Busca ativa."
+
+    // Product List Editor
+    const val ManageProducts = "Gerenciar Produtos"
+    const val AddNewProduct = "Novo Produto"
+    const val TabProductsInList = "Nesta Lista"
+    const val TabProductsInCatalog = "Do Catálogo"
+    const val AddToThisList = "Adicionar à Lista"
+    const val RemoveFromThisList = "Remover da Lista"
+    const val NoProductsInCatalog = "Nenhum outro produto no catálogo."
+    const val SaveLabel = "Salvar"
+    const val HorizontalListLabel = "Lista Horizontal?"
 }

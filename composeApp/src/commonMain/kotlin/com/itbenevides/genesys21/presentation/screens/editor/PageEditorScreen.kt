@@ -59,7 +59,6 @@ private fun PageEditorContent(
             )
         }
     ) {
-        // Root que centraliza o conteúdo em telas largas (WasmJs)
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             GenesysColumn(
                 maxWidth = GenesysDimens.EditorMaxWidth,

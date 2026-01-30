@@ -3,34 +3,18 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
@@ -38,9 +22,16 @@ import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.image.GenesysImage
 import com.itbenevides.genesys21.ui.components.input.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.input.GenesysSearchBar
+import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.components.text.*
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -58,7 +49,6 @@ fun PageComponentRenderer(
 ) {
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
-    val viewModel = router.viewModel
     val backendUrl = remember { getBaseUrl() }
     
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
@@ -78,38 +68,33 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
+            is PageComponent.Text -> !isCategoryFilterActive && (component as? PageComponent.Text)?.content?.contains(filterQuery, ignoreCase = true) == true
             is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
-            is PageComponent.Button -> !isCategoryFilterActive && component.text.contains(filterQuery, ignoreCase = true)
             else -> true
         }
     }
 
     if (!shouldShow && component !is PageComponent.Filter && component !is PageComponent.CategoryFilter) return
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    GenesysBox(modifier = Modifier.fillMaxWidth()) {
         when (component) {
             is PageComponent.CategoryFilter -> {
-                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-                    Text(
-                        text = "Categorias",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+                GenesysColumn(usePadding = true) {
+                    GenesysText(
+                        text = GenesysStrings.Categories,
+                        style = GenesysTextStyle.Label,
+                        fontWeight = GenesysFontWeight.Bold
                     )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysRow(modifier = Modifier.fillMaxWidth(), useHorizontalScroll = true) {
                         GenesysFilterChip(
                             selected = filterQuery.isEmpty(),
                             onClick = { onFilterQueryChange("") },
-                            label = "Todos"
+                            label = GenesysStrings.All
                         )
                         
                         allAvailableCategories.forEach { category ->
+                            GenesysSpacer(GenesysSpacing.Small)
                             GenesysFilterChip(
                                 selected = filterQuery.equals(category, ignoreCase = true),
                                 onClick = { 
@@ -117,10 +102,7 @@ fun PageComponentRenderer(
                                         onFilterQueryChange("")
                                     } else {
                                         onFilterQueryChange(category)
-                                        AnalyticsManager.logEvent("select_content", mapOf(
-                                            "content_type" to "category",
-                                            "item_id" to category
-                                        ))
+                                        AnalyticsManager.logEvent("select_category", mapOf("item_id" to category))
                                     }
                                 },
                                 label = category
@@ -130,15 +112,10 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Filter -> {
-                Box(Modifier.padding(vertical = 16.dp)) {
+                GenesysBox(Modifier.padding(vertical = GenesysDimens.SpacingMedium)) {
                     GenesysSearchBar(
                         value = filterQuery,
-                        onValueChange = { newValue -> 
-                            onFilterQueryChange(newValue)
-                            if (newValue.length > 3) {
-                                AnalyticsManager.logEvent("search", mapOf("search_term" to newValue))
-                            }
-                        },
+                        onValueChange = { onFilterQueryChange(it) },
                         placeholder = component.placeholder,
                         onClear = { onFilterQueryChange("") }
                     )
@@ -163,12 +140,10 @@ fun PageComponentRenderer(
                         val maxColumns = if (maxWidth > 900.dp) 4 else if (maxWidth > 600.dp) 3 else 2
                         val horizontalItemWidth = if (maxWidth > 900.dp) 220.dp else if (maxWidth > 600.dp) 180.dp else 160.dp
 
-                        Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                        GenesysColumn(usePadding = false) {
                             if (component.isHorizontal) {
                                 val listState = rememberLazyListState()
-                                val coroutineScope = rememberCoroutineScope()
-                                
-                                Box(modifier = Modifier.fillMaxWidth()) {
+                                GenesysBox(modifier = Modifier.fillMaxWidth()) {
                                     LazyRow(
                                         state = listState,
                                         modifier = Modifier.fillMaxWidth(),
@@ -176,68 +151,34 @@ fun PageComponentRenderer(
                                         contentPadding = PaddingValues(vertical = 8.dp)
                                     ) {
                                         items(productsToDisplay) { product ->
-                                            val fullUrls = product.imageUrls.map { url ->
-                                                if (url.startsWith("/")) "$backendUrl$url" else url
-                                            }
                                             ProductCard(
-                                                product = product.copy(imageUrls = fullUrls),
-                                                shape = RoundedCornerShape(24.dp),
+                                                product = product,
                                                 modifier = Modifier.width(horizontalItemWidth),
                                                 onClick = onProductClick,
-                                                onAddToCart = { viewModel.addToCart(product) },
+                                                onAddToCart = { router.viewModel.addToCart(product) },
                                                 isEditMode = isEditMode
                                             )
-                                        }
-                                    }
-                                    
-                                    if (productsToDisplay.size > 1) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().align(Alignment.Center),
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            if (listState.firstVisibleItemIndex > 0) {
-                                                IconButton(
-                                                    onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex - 1) } },
-                                                    modifier = Modifier.padding(start = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape)
-                                                ) {
-                                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = MaterialTheme.colorScheme.primary)
-                                                }
-                                            } else { Spacer(Modifier.width(48.dp)) }
-
-                                            if (listState.canScrollForward) {
-                                                IconButton(
-                                                    onClick = { coroutineScope.launch { listState.animateScrollToItem(listState.firstVisibleItemIndex + 1) } },
-                                                    modifier = Modifier.padding(end = 4.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), CircleShape)
-                                                ) {
-                                                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary)
-                                                }
-                                            } else { Spacer(Modifier.width(48.dp)) }
                                         }
                                     }
                                 }
                             } else {
                                 productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
-                                    Row(
-                                        Modifier.fillMaxWidth(), 
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                    ) {
+                                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                         rowProducts.forEach { product ->
-                                            val fullUrls = product.imageUrls.map { url ->
-                                                if (url.startsWith("/")) "$backendUrl$url" else url
+                                            GenesysWeightBox(1f) {
+                                                ProductCard(
+                                                    product = product,
+                                                    onClick = onProductClick,
+                                                    onAddToCart = { router.viewModel.addToCart(product) },
+                                                    isEditMode = isEditMode
+                                                )
                                             }
-                                            ProductCard(
-                                                product = product.copy(imageUrls = fullUrls),
-                                                shape = RoundedCornerShape(24.dp),
-                                                modifier = Modifier.weight(1f).widthIn(max = 250.dp),
-                                                onClick = onProductClick,
-                                                onAddToCart = { viewModel.addToCart(product) },
-                                                isEditMode = isEditMode
-                                            )
                                         }
                                         if (rowProducts.size < maxColumns) {
-                                            repeat(maxColumns - rowProducts.size) { Spacer(Modifier.weight(1f)) }
+                                            repeat(maxColumns - rowProducts.size) { GenesysWeightSpacer(1f) }
                                         }
                                     }
+                                    GenesysSpacer(GenesysSpacing.Medium)
                                 }
                             }
                         }
@@ -245,129 +186,71 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Header -> {
-                val alignment = when (component.textAlign) {
-                    "CENTER" -> TextAlign.Center
-                    "RIGHT" -> TextAlign.Right
-                    else -> TextAlign.Start
-                }
-                Text(
-                    text = component.title.ifBlank { "Título" }, 
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = component.fontSize.sp
-                    ), 
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = alignment,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp, bottom = 8.dp)
+                GenesysText(
+                    text = component.title.ifBlank { GenesysStrings.UpdateTitle }, 
+                    style = GenesysTextStyle.Headline,
+                    fontWeight = when(component.fontWeight) {
+                        "BOLD" -> GenesysFontWeight.Bold
+                        "EXTRA_BOLD" -> GenesysFontWeight.ExtraBold
+                        else -> GenesysFontWeight.Normal
+                    },
+                    textAlign = when(component.textAlign) {
+                        "CENTER" -> GenesysTextAlign.Center
+                        "RIGHT" -> GenesysTextAlign.End
+                        else -> GenesysTextAlign.Start
+                    },
+                    color = if (component.usePrimaryColor) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp)
                 )
             }
             is PageComponent.Text -> {
-                val alignment = when (component.textAlign) {
-                    "CENTER" -> TextAlign.Center
-                    "RIGHT" -> TextAlign.Right
-                    else -> TextAlign.Start
-                }
-                Text(
-                    text = component.content.ifBlank { "Conteúdo..." }, 
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        lineHeight = (component.fontSize * 1.5).sp,
-                        fontSize = component.fontSize.sp
-                    ), 
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    textAlign = alignment,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
+                GenesysText(
+                    text = component.content.ifBlank { GenesysStrings.Description }, 
+                    style = GenesysTextStyle.Body,
+                    fontWeight = when(component.fontWeight) {
+                        "BOLD" -> GenesysFontWeight.Bold
+                        else -> GenesysFontWeight.Normal
+                    },
+                    textAlign = when(component.textAlign) {
+                        "CENTER" -> GenesysTextAlign.Center
+                        "RIGHT" -> GenesysTextAlign.End
+                        else -> GenesysTextAlign.Start
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 )
             }
             is PageComponent.Image -> {
                 val scope = rememberCoroutineScope()
-                val imgModifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.widthIn(max = 600.dp).wrapContentSize()
-                
-                val imgShape = when {
-                    component.isRounded -> CircleShape
-                    component.isFullWidth -> RoundedCornerShape(0.dp)
-                    else -> RoundedCornerShape(28.dp)
-                }
-
-                Column(modifier = Modifier.fillMaxWidth().padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Surface(
-                        modifier = imgModifier.clickable {
+                GenesysColumn(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), 
+                    horizontalAlignment = GenesysAlignment.Center
+                ) {
+                    GenesysCard(
+                        onClick = {
                             if (isEditMode) {
                                 onEditClick?.invoke()
-                                return@clickable
+                                return@GenesysCard
                             }
-                            val destId = (component as? PageComponent.Image)?.destinationPageId
+                            val destId = component.destinationPageId
                             if (!destId.isNullOrBlank()) {
                                 scope.launch {
                                     router.viewModel.loadPublicPage(destId)?.let { targetPage ->
-                                        if (router.currentRoute is Route.WhiteLabel) router.navigateTo(Route.WhiteLabel(targetPage))
-                                        else router.navigateTo(Route.PublicViewer(targetPage))
+                                        router.navigateTo(Route.PublicViewer(targetPage))
                                     }
                                 }
-                            } else {
-                                val currentUrl = (component as? PageComponent.Image)?.url ?: ""
-                                if (currentUrl.startsWith("http")) {
-                                    uriHandler.openUri(currentUrl)
-                                    AnalyticsManager.logEvent("click_external_link", mapOf("url" to currentUrl, "type" to "image"))
-                                }
+                            } else if (component.url.startsWith("http")) {
+                                uriHandler.openUri(component.url)
                             }
                         },
-                        shape = imgShape,
-                        color = Color.Transparent,
-                        tonalElevation = 0.dp
+                        elevation = 0.dp,
+                        backgroundColor = Color.Transparent
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            if (component.url.isNotEmpty()) {
-                                val fullImageUrl = if (component.url.startsWith("/")) "$backendUrl${component.url}" else component.url
-                                AsyncImage(
-                                    model = fullImageUrl,
-                                    contentDescription = null,
-                                    modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.size(component.size.dp).clip(imgShape),
-                                    contentScale = if (component.isFullWidth) ContentScale.FillWidth else ContentScale.Crop
-                                )
-                            } else {
-                                Box(Modifier.size(component.size.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), imgShape), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Image, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), modifier = Modifier.size(48.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            is PageComponent.Button -> {
-                Box(Modifier.padding(vertical = 12.dp)) {
-                    Button(
-                        onClick = { 
-                            if (isEditMode) {
-                                onEditClick?.invoke()
-                                return@Button
-                            }
-                            uriHandler.openUri(component.url)
-                            AnalyticsManager.logEvent("click_external_link", mapOf(
-                                "url" to component.url,
-                                "button_text" to component.text,
-                                "icon" to (component.iconName ?: "none")
-                            ))
-                        },
-                        modifier = Modifier.fillMaxWidth().height(60.dp),
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                        elevation = null
-                    ) {
-                        val icon = when (component.iconName?.lowercase()) {
-                            "whatsapp" -> Icons.AutoMirrored.Filled.Chat
-                            "instagram" -> Icons.Default.CameraAlt
-                            else -> null
-                        }
-                        if (icon != null) { Icon(icon, null); Spacer(Modifier.width(12.dp)) }
-                        Text(component.text, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        GenesysImage(
+                            url = component.url,
+                            size = component.size.dp,
+                            isCircular = component.isCircular,
+                            modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier
+                        )
                     }
                 }
             }
@@ -375,15 +258,13 @@ fun PageComponentRenderer(
         }
 
         if (isEditMode && component !is PageComponent.ProductList) {
-            IconButton(
-                onClick = { onEditClick?.invoke() },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), CircleShape)
-                    .size(32.dp)
-            ) {
-                Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(16.dp))
+            GenesysBox(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+                GenesysIconButton(
+                    icon = GenesysIcons.Edit,
+                    onClick = { onEditClick?.invoke() },
+                    tint = Color.White,
+                    modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), androidx.compose.foundation.shape.CircleShape)
+                )
             }
         }
     }
@@ -392,7 +273,6 @@ fun PageComponentRenderer(
 @Composable
 fun ProductCard(
     product: Product,
-    shape: androidx.compose.ui.graphics.Shape,
     modifier: Modifier = Modifier,
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null,
@@ -400,126 +280,95 @@ fun ProductCard(
 ) {
     var isAdded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val backendUrl = remember { getBaseUrl() }
     
     val scale by animateFloatAsState(
         targetValue = if (isAdded) 1.2f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "ProductCardScale"
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
     )
 
     GenesysCard(
         modifier = modifier,
-        shape = shape,
-        onClick = if (onClick != null) { {
-            onClick.invoke(product)
-            AnalyticsManager.logEvent("select_item", mapOf(
-                "item_id" to product.id,
-                "item_name" to product.name,
-                "item_category" to product.category
-            ))
-        } } else null,
+        onClick = if (onClick != null) { { onClick.invoke(product) } } else null,
         elevation = 2.dp
     ) {
-        Column {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f) 
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+        GenesysColumn(usePadding = false) {
+            GenesysBox(
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (product.imageUrls.isNotEmpty()) {
-                    AsyncImage(
-                        model = product.imageUrl,
-                        contentDescription = product.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop 
-                    )
-                } else {
-                    Icon(Icons.Default.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), modifier = Modifier.size(56.dp))
+                val imageUrl = remember(product.imageUrls) {
+                    val first = product.imageUrls.firstOrNull() ?: ""
+                    if (first.startsWith("/")) "$backendUrl$first" else first
                 }
                 
+                GenesysImage(
+                    url = imageUrl,
+                    size = 200.dp,
+                    modifier = Modifier.fillMaxSize()
+                )
+                
+                // NOVO: Ícone de Edição no Modo Editor
                 if (isEditMode) {
-                    Box(Modifier.fillMaxSize().padding(10.dp), contentAlignment = Alignment.TopEnd) {
+                    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
                         Surface(
                             modifier = Modifier.size(32.dp),
-                            shape = CircleShape,
+                            shape = androidx.compose.foundation.shape.CircleShape,
                             color = MaterialTheme.colorScheme.secondary,
                             contentColor = Color.White,
                             tonalElevation = 4.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
+                                Icon(GenesysIcons.Edit, null, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
                 } else if (onAddToCart != null && product.stock > 0) {
-                    Box(Modifier.fillMaxSize().padding(10.dp), contentAlignment = Alignment.BottomEnd) {
+                    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomEnd) {
                         Surface(
-                            onClick = {
-                                if (!isAdded) {
-                                    isAdded = true
-                                    onAddToCart()
-                                    scope.launch {
-                                        delay(800)
-                                        isAdded = false
-                                    }
-                                }
-                            },
                             modifier = Modifier.size(40.dp).scale(scale),
-                            shape = CircleShape,
+                            shape = androidx.compose.foundation.shape.CircleShape,
                             color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            tonalElevation = 4.dp,
+                            contentColor = Color.White,
                             shadowElevation = 4.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                AnimatedContent(
-                                    targetState = isAdded,
-                                    transitionSpec = {
-                                        scaleIn() togetherWith scaleOut()
+                                GenesysIconButton(
+                                    icon = if (isAdded) GenesysIcons.Check else GenesysIcons.Add,
+                                    onClick = {
+                                        if (!isAdded) {
+                                            isAdded = true
+                                            onAddToCart()
+                                            scope.launch { delay(800); isAdded = false }
+                                        }
                                     },
-                                    label = "AddToCartAnimation"
-                                ) { added ->
-                                    if (added) {
-                                        Icon(Icons.Default.Check, null, modifier = Modifier.size(24.dp))
-                                    } else {
-                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(24.dp))
-                                    }
-                                }
+                                    tint = Color.White
+                                )
                             }
                         }
                     }
                 }
             }
             
-            Column(Modifier.padding(12.dp)) {
-                Text(
+            GenesysColumn(modifier = Modifier.padding(12.dp), usePadding = false) {
+                GenesysText(
                     text = product.name, 
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), 
-                    maxLines = 1, 
-                    overflow = TextOverflow.Ellipsis
+                    fontWeight = GenesysFontWeight.Bold, 
+                    modifier = Modifier.fillMaxWidth()
                 )
                 
-                Spacer(Modifier.height(4.dp))
+                GenesysSpacer(GenesysSpacing.Small)
                 
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "R$ ${product.price}", 
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                GenesysRow(horizontalArrangement = Arrangement.SpaceBetween) {
+                    GenesysText(
+                        text = "${GenesysStrings.PricePrefix}${product.price}", 
+                        fontWeight = GenesysFontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        weightValue = 1f
                     )
                     
                     if (product.stock <= 0) {
-                        GenesysBadge(label = "ESGOTADO", color = MaterialTheme.colorScheme.error, showDot = false)
-                    } else if (product.stock < 5) {
-                        Text(
-                            "Só ${product.stock} un!", 
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), 
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        GenesysBadge(label = "ESGOTADO", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }

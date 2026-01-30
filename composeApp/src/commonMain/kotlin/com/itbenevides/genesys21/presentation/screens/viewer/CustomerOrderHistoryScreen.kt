@@ -1,7 +1,14 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -10,10 +17,18 @@ import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
-import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysDivider
+import com.itbenevides.genesys21.ui.components.layout.GenesysLazyColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysPage
+import com.itbenevides.genesys21.ui.components.layout.GenesysRow
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -32,7 +47,6 @@ fun CustomerOrderHistoryScreen(
     val orders by viewModel.customerOrders.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    // 1. State Management
     var state by remember { mutableStateOf(OrderHistoryState()) }
     
     state = state.copy(
@@ -45,7 +59,6 @@ fun CustomerOrderHistoryScreen(
         AnalyticsManager.trackPageView(GenesysStrings.OrderHistoryTitle)
     }
 
-    // 2. Event Handler
     val onEvent: (OrderHistoryEvent) -> Unit = { event ->
         when (event) {
             is OrderHistoryEvent.OnBackClicked -> onBack()
@@ -56,7 +69,6 @@ fun CustomerOrderHistoryScreen(
         }
     }
 
-    // 3. Render
     OrderHistoryContent(state, onEvent)
 }
 
@@ -81,8 +93,8 @@ private fun OrderHistoryContent(
             if (state.orders.isEmpty() && !state.isLoading) {
                  GenesysEmptyState(
                     icon = GenesysIcons.ShoppingBag,
-                    title = GenesysStrings.NoOrdersFound,
-                    description = "Você ainda não possui pedidos registrados.",
+                    title = GenesysStrings.NoHistoryTitle,
+                    description = GenesysStrings.NoHistoryDescription,
                     action = {
                         GenesysLoadingButton(
                             text = GenesysStrings.Back, 
@@ -99,6 +111,7 @@ private fun OrderHistoryContent(
                         order = order, 
                         onClick = { onEvent(OrderHistoryEvent.OnOrderClicked(order)) }
                     )
+                    GenesysSpacer(GenesysSpacing.Medium)
                 }
             }
         }
@@ -107,48 +120,52 @@ private fun OrderHistoryContent(
 
 @Composable
 private fun HistoryOrderCard(order: Order, onClick: () -> Unit) {
-    val date = remember(order.createdAt) {
+    val dateText = remember(order.createdAt) {
         val instant = Instant.fromEpochMilliseconds(order.createdAt)
         val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-        "${dt.dayOfMonth.toString().padStart(2, '0')}/${dt.monthNumber.toString().padStart(2, '0')}/${dt.year} às ${dt.hour}:${dt.minute.toString().padStart(2, '0')}"
+        "${dt.dayOfMonth.toString().padStart(2, '0')}/${dt.monthNumber.toString().padStart(2, '0')}/${dt.year}"
     }
 
     GenesysCard(
         elevation = GenesysDimens.ElevationMedium,
         onClick = onClick
     ) {
-        GenesysRow {
-            GenesysWeightBox(1f) {
-                GenesysColumn(usePadding = false) {
+        GenesysColumn(usePadding = true) {
+            GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                 GenesysWeightBox(1f) {
+                    GenesysColumn(usePadding = false) {
+                        GenesysText(
+                            text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", 
+                            fontWeight = GenesysFontWeight.ExtraBold,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        )
+                        GenesysText(
+                            text = dateText, 
+                            style = GenesysTextStyle.Label
+                        )
+                    }
+                }
+                GenesysStatusBadge(order.status)
+            }
+            
+            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysDivider()
+            GenesysSpacer(GenesysSpacing.Medium)
+            
+             GenesysRow(verticalAlignment = Alignment.Bottom) {
+                GenesysWeightBox(1f) {
                     GenesysText(
-                        text = "Pedido #${order.id.takeLast(6).uppercase()}", 
-                        fontWeight = GenesysFontWeight.Bold
-                    )
-                    GenesysText(
-                        text = date, 
-                        style = GenesysTextStyle.Label
+                        text = "${order.items.sumOf { it.quantity }} itens", 
+                        style = GenesysTextStyle.Body
                     )
                 }
-            }
-            GenesysStatusBadge(order.status)
-        }
-        
-        GenesysSpacer(GenesysSpacing.Small)
-        GenesysDivider()
-        GenesysSpacer(GenesysSpacing.Small)
-        
-        GenesysRow {
-            GenesysWeightBox(1f) {
                 GenesysText(
-                    text = "${order.items.sumOf { it.quantity }} itens", 
-                    style = GenesysTextStyle.Body
+                    text = "${GenesysStrings.PricePrefix}${order.total}", 
+                    style = GenesysTextStyle.Title,
+                    fontWeight = GenesysFontWeight.ExtraBold,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
                 )
             }
-            GenesysText(
-                text = "Total: R$ ${order.total}", 
-                style = GenesysTextStyle.Title,
-                fontWeight = GenesysFontWeight.Bold
-            )
         }
     }
 }

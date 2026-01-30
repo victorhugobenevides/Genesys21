@@ -1,5 +1,7 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.background // IMPORT FALTANTE
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -17,10 +19,7 @@ import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
-import com.itbenevides.genesys21.ui.components.text.GenesysTextAlign
+import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -90,96 +89,189 @@ private fun CartContent(
             )
         }
     ) {
-        GenesysColumn(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = GenesysAlignment.Center,
-            usePadding = false
-        ) {
-            GenesysColumn(maxWidth = GenesysDimens.ContentMaxWidth) {
-                if (state.cartItems.isEmpty() && !state.isLoading) {
-                    GenesysEmptyState(
-                        icon = GenesysIcons.ShoppingBag,
-                        title = GenesysStrings.EmptyCartTitle,
-                        description = GenesysStrings.EmptyCartDescription,
-                        action = {
-                            GenesysLoadingButton(
-                                text = GenesysStrings.Back, 
-                                onClick = { onEvent(CartScreenEvent.OnBackClicked) }
-                            )
-                        }
-                    )
-                } else {
-                    GenesysWeightBox(1f) {
-                        GenesysColumn(usePadding = true, useScroll = true) {
-                            GenesysCard {
-                                GenesysColumn(usePadding = false) {
-                                    GenesysText(GenesysStrings.Identification, style = GenesysTextStyle.Title)
-                                    GenesysSpacer(GenesysSpacing.Medium)
-                                    
-                                    GenesysTextField(
-                                        value = state.customerName,
-                                        onValueChange = { onEvent(CartScreenEvent.OnCustomerNameChanged(it)) },
-                                        label = GenesysStrings.CustomerNameLabel,
-                                        placeholder = "Como gostaria de ser chamado?",
-                                        icon = GenesysIcons.Person
-                                    )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isWideScreen = maxWidth > 900.dp
+
+            if (state.cartItems.isEmpty() && !state.isLoading) {
+                GenesysEmptyState(
+                    icon = GenesysIcons.ShoppingBag,
+                    title = GenesysStrings.EmptyCartTitle,
+                    description = GenesysStrings.EmptyCartDescription,
+                    action = {
+                        GenesysLoadingButton(
+                            text = GenesysStrings.Back, 
+                            onClick = { onEvent(CartScreenEvent.OnBackClicked) }
+                        )
+                    }
+                )
+            } else {
+                if (isWideScreen) {
+                    GenesysRow(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.Top,
+                        usePadding = false
+                    ) {
+                        GenesysWeightBox(0.65f) {
+                            GenesysColumn(usePadding = true, useScroll = true) {
+                                GenesysText(
+                                    text = GenesysStrings.AppName, 
+                                    style = GenesysTextStyle.Title,
+                                    fontWeight = GenesysFontWeight.ExtraBold
+                                )
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                
+                                state.cartItems.forEach { item ->
+                                    ModernCartItemRow(item, backendUrl, onEvent)
+                                    GenesysSpacer(GenesysSpacing.Small)
                                 }
                             }
+                        }
 
-                            GenesysSpacer(GenesysSpacing.Large)
+                        GenesysSpacer(GenesysSpacing.Large)
 
-                            state.cartItems.forEach { item ->
-                                ModernCartItemRow(
-                                    item = item,
-                                    backendUrl = backendUrl,
-                                    onEvent = onEvent
-                                )
-                                GenesysSpacer(GenesysSpacing.Small)
+                        GenesysWeightBox(0.35f) {
+                            GenesysColumn(usePadding = true) {
+                                CheckoutSummarySection(state, onEvent)
                             }
                         }
                     }
-
-                    GenesysSpacer(GenesysSpacing.Medium)
-
-                    GenesysCard {
-                        GenesysColumn(usePadding = false) {
-                            GenesysRow {
-                                GenesysWeightBox(1f) {
-                                    GenesysText(
-                                        text = GenesysStrings.Total, 
-                                        style = GenesysTextStyle.Title
-                                    )
+                } else {
+                    GenesysColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = GenesysAlignment.Center,
+                        usePadding = false
+                    ) {
+                        GenesysWeightBox(1f) {
+                            GenesysColumn(usePadding = true, useScroll = true) {
+                                CartStepperUI(step = 1)
+                                GenesysSpacer(GenesysSpacing.Large)
+                                state.cartItems.forEach { item ->
+                                    ModernCartItemRow(item, backendUrl, onEvent)
+                                    GenesysSpacer(GenesysSpacing.Small)
                                 }
-                                GenesysText(
-                                    text = "R$ ${state.total}", 
-                                    style = GenesysTextStyle.Title, 
-                                    fontWeight = GenesysFontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                GenesysSpacer(GenesysSpacing.Large)
+                                IdentificationCard(state, onEvent)
+                                GenesysSpacer(GenesysSpacing.ExtraLarge)
                             }
-                            GenesysSpacer(GenesysSpacing.Large)
-                            
-                            GenesysLoadingButton(
-                                text = GenesysStrings.CheckoutButton,
-                                onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
-                                fillWidth = true,
-                                enabled = state.isCheckoutEnabled,
-                                icon = GenesysIcons.Check,
-                                isLoading = state.isLoading
-                            )
-                            
-                            if (state.customerName.isBlank()) {
-                                GenesysSpacer(GenesysSpacing.Small)
-                                GenesysText(
-                                    text = "Preencha seu nome para finalizar", 
-                                    style = GenesysTextStyle.Label,
-                                    textAlign = GenesysTextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+                        }
+
+                        GenesysCard(
+                            elevation = GenesysDimens.ElevationHigh,
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            MobileCheckoutFooter(state, onEvent)
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IdentificationCard(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysCard {
+        GenesysColumn(usePadding = false) {
+            GenesysText(
+                text = GenesysStrings.Identification, 
+                style = GenesysTextStyle.Title,
+                fontWeight = GenesysFontWeight.Bold
+            )
+            GenesysSpacer(GenesysSpacing.Medium)
+            
+            GenesysTextField(
+                value = state.customerName,
+                onValueChange = { onEvent(CartScreenEvent.OnCustomerNameChanged(it)) },
+                label = GenesysStrings.CustomerNameLabel,
+                placeholder = GenesysStrings.CheckoutNameHint,
+                icon = GenesysIcons.Person
+            )
+        }
+    }
+}
+
+@Composable
+private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysColumn(usePadding = false) {
+        IdentificationCard(state, onEvent)
+        GenesysSpacer(GenesysSpacing.Large)
+        GenesysCard(backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)) {
+            GenesysColumn(usePadding = false) {
+                GenesysRow {
+                    GenesysWeightBox(1f) {
+                        GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title)
+                    }
+                    GenesysText(
+                        text = "${GenesysStrings.PricePrefix}${state.total}", 
+                        style = GenesysTextStyle.Headline, 
+                        fontWeight = GenesysFontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Large)
+                GenesysLoadingButton(
+                    text = GenesysStrings.CheckoutButton,
+                    onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
+                    fillWidth = true,
+                    enabled = state.isCheckoutEnabled,
+                    icon = GenesysIcons.Check,
+                    isLoading = state.isLoading
+                )
+                if (state.customerName.isBlank()) {
+                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysText(
+                        text = GenesysStrings.FillNameReminder, 
+                        style = GenesysTextStyle.Label,
+                        textAlign = GenesysTextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MobileCheckoutFooter(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysColumn(usePadding = false) {
+        GenesysRow {
+            GenesysWeightBox(1f) {
+                GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Body)
+            }
+            GenesysText(
+                text = "${GenesysStrings.PricePrefix}${state.total}", 
+                style = GenesysTextStyle.Title, 
+                fontWeight = GenesysFontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysLoadingButton(
+            text = GenesysStrings.CheckoutButton,
+            onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
+            fillWidth = true,
+            enabled = state.isCheckoutEnabled,
+            icon = GenesysIcons.Check,
+            isLoading = state.isLoading
+        )
+    }
+}
+
+@Composable
+private fun CartStepperUI(step: Int) {
+    GenesysRow(horizontalArrangement = Arrangement.Center) {
+        repeat(3) { index ->
+            val active = index + 1 <= step
+            val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            Box(
+                modifier = Modifier
+                    .size(if (index + 1 == step) 12.dp else 8.dp)
+                    .background(color, androidx.compose.foundation.shape.CircleShape)
+            )
+            if (index < 2) {
+                Box(
+                    modifier = Modifier.width(24.dp).height(2.dp).background(MaterialTheme.colorScheme.outlineVariant).align(Alignment.CenterVertically)
+                )
             }
         }
     }
@@ -196,29 +288,18 @@ private fun ModernCartItemRow(
         if (first.startsWith("/")) "$backendUrl$first" else first
     }
 
-    GenesysCard {
+    GenesysCard(elevation = GenesysDimens.ElevationLow) {
         GenesysRow(verticalAlignment = Alignment.Top) {
             GenesysImage(
                 url = displayImageUrl,
-                size = 80.dp
+                size = 90.dp
             )
-
             GenesysSpacer(GenesysSpacing.Medium)
-
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
-                    GenesysText(
-                        text = item.product.name,
-                        style = GenesysTextStyle.Body,
-                        fontWeight = GenesysFontWeight.Bold
-                    )
-                    GenesysText(
-                        text = "R$ ${item.product.price}",
-                        style = GenesysTextStyle.Body
-                    )
-                    
+                    GenesysText(text = item.product.name, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                    GenesysText(text = "${GenesysStrings.PricePrefix}${item.product.price}", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.primary)
                     GenesysSpacer(GenesysSpacing.Medium)
-
                     GenesysQuantitySelector(
                         quantity = item.quantity,
                         onIncrease = { onEvent(CartScreenEvent.OnUpdateQuantity(item.product.id, item.quantity + 1)) },
@@ -226,7 +307,6 @@ private fun ModernCartItemRow(
                     )
                 }
             }
-
             GenesysIconButton(
                 icon = GenesysIcons.Delete,
                 onClick = { onEvent(CartScreenEvent.OnRemoveItem(item.product.id)) },
