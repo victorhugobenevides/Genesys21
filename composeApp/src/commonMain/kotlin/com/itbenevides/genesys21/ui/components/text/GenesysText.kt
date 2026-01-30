@@ -41,8 +41,7 @@ enum class GenesysTextAlign {
 }
 
 /**
- * Componente de texto base.
- * weightValue é mantido na assinatura para compatibilidade com a camada de Presentation.
+ * Componente de texto base do Design System.
  */
 @Composable
 fun GenesysText(
@@ -51,7 +50,7 @@ fun GenesysText(
     color: Color = Color.Unspecified,
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
-    weightValue: Float = 0f,
+    weightValue: Float = 0f, // Parâmetro opcional para pesos em layouts
     modifier: Modifier = Modifier
 ) {
     GenesysTextContent(
@@ -65,7 +64,7 @@ fun GenesysText(
 }
 
 /**
- * Implementação real do texto para evitar recursão infinita no compilador WasmJs.
+ * Implementação interna estável para evitar recursão infinita no compilador WasmJs.
  */
 @Composable
 internal fun GenesysTextContent(
@@ -110,7 +109,7 @@ internal fun GenesysTextContent(
 }
 
 /**
- * Extensão para RowScope que aplica o peso proporcional.
+ * Extensão para RowScope.
  */
 @Composable
 fun RowScope.GenesysText(
@@ -134,7 +133,7 @@ fun RowScope.GenesysText(
 }
 
 /**
- * Extensão para ColumnScope que aplica o peso proporcional.
+ * Extensão para ColumnScope.
  */
 @Composable
 fun ColumnScope.GenesysText(

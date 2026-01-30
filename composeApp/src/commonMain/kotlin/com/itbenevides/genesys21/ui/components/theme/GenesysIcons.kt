@@ -3,6 +3,8 @@ package com.itbenevides.genesys21.ui.components.theme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
+import androidx.compose.material.icons.automirrored.filled.FormatAlignRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -40,4 +42,11 @@ object GenesysIcons {
     val CloudUpload = Icons.Default.CloudUpload
     val ArrowDropDown = Icons.Default.ArrowDropDown
     val Magic = Icons.Default.AutoAwesome
+    val Straighten = Icons.Default.Straighten
+    
+    // Ícones de Formatação
+    val AlignLeft = Icons.AutoMirrored.Filled.FormatAlignLeft
+    val AlignCenter = Icons.Default.FormatAlignCenter
+    val AlignRight = Icons.AutoMirrored.Filled.FormatAlignRight
+    val Bold = Icons.Default.FormatBold
 }

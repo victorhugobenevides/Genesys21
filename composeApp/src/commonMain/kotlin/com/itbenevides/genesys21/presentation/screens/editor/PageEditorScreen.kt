@@ -12,6 +12,7 @@ import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.GenesysText
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
@@ -68,8 +69,8 @@ private fun PageEditorContent(
                 GenesysCard {
                     GenesysColumn(usePadding = false) {
                         GenesysText(
-                            text = "Configurações da Vitrine", 
-                            style = com.itbenevides.genesys21.ui.components.text.GenesysTextStyle.Title
+                            text = GenesysStrings.EditPageTitle, 
+                            style = GenesysTextStyle.Title
                         )
                         GenesysSpacer(GenesysSpacing.Medium)
                         
@@ -77,7 +78,7 @@ private fun PageEditorContent(
                             value = state.title, 
                             onValueChange = { newValue -> onEvent(PageEditorEvent.OnTitleChanged(newValue)) }, 
                             label = GenesysStrings.PageTitleLabel,
-                            placeholder = "Ex: Minha Loja de Verão"
+                            placeholder = GenesysStrings.PageTitlePlaceholder
                         )
                     }
                 }

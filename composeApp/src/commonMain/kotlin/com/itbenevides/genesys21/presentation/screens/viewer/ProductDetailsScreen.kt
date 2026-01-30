@@ -4,10 +4,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,13 +19,14 @@ import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.badge.GenesysStockBadge
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.feedback.GenesysConfirmDialog
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.navigation.GenesysPagerIndicator
 import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
-import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.util.AnalyticsManager
@@ -64,7 +61,7 @@ fun ProductDetailsScreen(
                         delay(300)
                         state = state.copy(showSuccessDialog = true)
                     } else {
-                        state = state.copy(error = "Sem estoque disponível!")
+                        state = state.copy(error = GenesysStrings.OutOfStockMessage)
                     }
                     state = state.copy(isAddingToCart = false)
                 }
@@ -102,7 +99,7 @@ private fun ProductDetailsContent(
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
-                title = "Detalhes",
+                title = GenesysStrings.Details,
                 onBack = { onEvent(ProductDetailsEvent.OnBackClicked) }
             )
         }
@@ -139,7 +136,13 @@ private fun ProductDetailsContent(
                                 }
                             }
                         } else {
-                            Icon(Icons.Default.ShoppingBag, null, modifier = Modifier.size(80.dp).align(Alignment.Center), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                            GenesysIconButton(
+                                icon = GenesysIcons.ShoppingBag,
+                                contentDescription = null,
+                                modifier = Modifier.size(80.dp).align(Alignment.Center),
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                onClick = {}
+                            )
                         }
                     }
                 }
@@ -149,7 +152,7 @@ private fun ProductDetailsContent(
                 GenesysCard(elevation = 2.dp) {
                     GenesysColumn(usePadding = false) {
                         GenesysText(
-                            text = state.product.name.ifBlank { "Produto sem nome" }, 
+                            text = state.product.name.ifBlank { GenesysStrings.ProductName }, 
                             style = GenesysTextStyle.Headline, 
                             fontWeight = GenesysFontWeight.ExtraBold
                         )
@@ -160,7 +163,7 @@ private fun ProductDetailsContent(
                             text = "R$ ${state.product.price}", 
                             style = GenesysTextStyle.Title, 
                             fontWeight = GenesysFontWeight.ExtraBold, 
-                            color = MaterialTheme.colorScheme.primary
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary
                         )
                         
                         GenesysSpacer(GenesysSpacing.Medium)
@@ -171,23 +174,23 @@ private fun ProductDetailsContent(
                         GenesysDivider()
                         GenesysSpacer(GenesysSpacing.Medium)
                         
-                        GenesysSectionHeader(title = "Descrição")
+                        GenesysSectionHeader(title = GenesysStrings.Description)
                         GenesysSpacer(GenesysSpacing.Small)
                         
                         GenesysText(
-                            text = state.product.description.ifBlank { "Este é um produto premium disponível na Genesys21." }, 
+                            text = state.product.description.ifBlank { GenesysStrings.ProductDescriptionFallback }, 
                             style = GenesysTextStyle.Body
                         )
                         
                         GenesysSpacer(GenesysSpacing.Large)
                         
                          GenesysLoadingButton(
-                            text = "Adicionar ao Carrinho",
+                            text = GenesysStrings.AddToCartAction,
                             onClick = { onEvent(ProductDetailsEvent.OnAddToCartClicked) },
                             modifier = Modifier.fillMaxWidth().scale(buttonScale),
                             isLoading = state.isAddingToCart,
                             enabled = state.product.stock > 0,
-                            icon = Icons.Default.ShoppingBag,
+                            icon = GenesysIcons.ShoppingBag,
                             fillWidth = true
                         )
                     }
@@ -201,19 +204,19 @@ private fun ProductDetailsContent(
     if (state.showSuccessDialog) {
         GenesysConfirmDialog(
             onDismissRequest = { onEvent(ProductDetailsEvent.OnDismissSuccessDialog) },
-            icon = Icons.Default.CheckCircle,
-            title = "Adicionado!",
-            text = "${state.product.name} foi adicionado ao carrinho.",
+            icon = GenesysIcons.Check,
+            title = GenesysStrings.AddedToCartTitle,
+            text = "${state.product.name} ${GenesysStrings.AddedToCartMessageSuffix}",
             confirmButton = { 
                 GenesysLoadingButton(
-                    text = "Ver Carrinho", 
+                    text = GenesysStrings.ViewCart, 
                     onClick = { onEvent(ProductDetailsEvent.OnViewCartClicked) },
                     fillWidth = true
                 ) 
             },
             dismissButton = { 
                 GenesysTextButton(
-                    text = "Continuar Comprando", 
+                    text = GenesysStrings.ContinueShopping, 
                     onClick = { onEvent(ProductDetailsEvent.OnContinueShoppingClicked) }
                 ) 
             }

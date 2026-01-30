@@ -3,6 +3,11 @@
 set -e
 export NODE_OPTIONS="--max-old-space-size=4096"
 
+echo "🧹 Limpando Docker (Caches e Snapshots)..."
+# Limpa o cache do build e imagens órfãs para evitar erros de snapshot
+docker builder prune -f
+docker image prune -f
+
 echo "🛑 Parando containers..."
 docker-compose down -v --remove-orphans
 
@@ -27,8 +32,6 @@ SERVER_INSTALL_DIR=$(find server/build/install -maxdepth 1 -mindepth 1 -type d |
 if [ -n "$SERVER_INSTALL_DIR" ]; then
     cp -R "$SERVER_INSTALL_DIR"/. deploy/server/
     
-    # CORREÇÃO CRÍTICA: Copiar o JSON para a raiz da pasta deploy/server
-    # O Dockerfile.server copiará tudo de deploy/server para /app/
     FIREBASE_JSON=$(find . -name "genesys21-32035-firebase-adminsdk-*.json" | head -n 1)
     if [ -n "$FIREBASE_JSON" ]; then
         echo "🔑 Copiando credenciais Firebase: $FIREBASE_JSON"

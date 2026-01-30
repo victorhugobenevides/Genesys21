@@ -36,6 +36,9 @@ sealed class PageComponent {
         val content: String, 
         val fontSize: Int = 16,
         val textAlign: String = "LEFT",
+        val fontWeight: String = "NORMAL", // NORMAL, BOLD, EXTRA_BOLD
+        val isUppercase: Boolean = false,
+        val usePrimaryColor: Boolean = false,
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -46,6 +49,9 @@ sealed class PageComponent {
         val title: String,
         val fontSize: Int = 28,
         val textAlign: String = "LEFT",
+        val fontWeight: String = "EXTRA_BOLD",
+        val isUppercase: Boolean = false,
+        val usePrimaryColor: Boolean = true,
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -59,6 +65,7 @@ sealed class PageComponent {
         val destinationPageId: String? = null,
         val isFullWidth: Boolean = true,
         val isRounded: Boolean = true,
+        val isCircular: Boolean = false,
         override val customLabel: String? = null,
         override val isFilterable: Boolean = false
     ) : PageComponent()
