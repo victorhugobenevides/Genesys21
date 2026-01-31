@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
@@ -187,7 +188,7 @@ fun PageComponentRenderer(
             }
             is PageComponent.Header -> {
                 GenesysText(
-                    text = component.title.ifBlank { GenesysStrings.UpdateTitle }, 
+                    text = if (component.isUppercase) component.title.uppercase().ifBlank { GenesysStrings.UpdateTitle } else component.title.ifBlank { GenesysStrings.UpdateTitle }, 
                     style = GenesysTextStyle.Headline,
                     fontWeight = when(component.fontWeight) {
                         "BOLD" -> GenesysFontWeight.Bold
@@ -200,12 +201,13 @@ fun PageComponentRenderer(
                         else -> GenesysTextAlign.Start
                     },
                     color = if (component.usePrimaryColor) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                    fontSize = component.fontSize.sp,
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp)
                 )
             }
             is PageComponent.Text -> {
                 GenesysText(
-                    text = component.content.ifBlank { GenesysStrings.Description }, 
+                    text = if (component.isUppercase) component.content.uppercase().ifBlank { GenesysStrings.Description } else component.content.ifBlank { GenesysStrings.Description }, 
                     style = GenesysTextStyle.Body,
                     fontWeight = when(component.fontWeight) {
                         "BOLD" -> GenesysFontWeight.Bold
@@ -216,14 +218,18 @@ fun PageComponentRenderer(
                         "RIGHT" -> GenesysTextAlign.End
                         else -> GenesysTextAlign.Start
                     },
+                    fontSize = component.fontSize.sp,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 )
             }
             is PageComponent.Image -> {
                 val scope = rememberCoroutineScope()
-                GenesysColumn(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), 
-                    horizontalAlignment = GenesysAlignment.Center
+                // CORREÇÃO: Garante a centralização da imagem usando Column com centralização horizontal
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = if (component.isFullWidth) 0.dp else 16.dp), 
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     GenesysCard(
                         onClick = {
@@ -243,13 +249,14 @@ fun PageComponentRenderer(
                             }
                         },
                         elevation = 0.dp,
-                        backgroundColor = Color.Transparent
+                        backgroundColor = Color.Transparent,
+                        modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.wrapContentWidth()
                     ) {
                         GenesysImage(
                             url = component.url,
                             size = component.size.dp,
                             isCircular = component.isCircular,
-                            modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier
+                            modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.align(Alignment.CenterHorizontally)
                         )
                     }
                 }

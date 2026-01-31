@@ -2,34 +2,21 @@ package com.itbenevides.genesys21.presentation.screens.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
@@ -44,24 +31,15 @@ import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.components.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.image.GenesysAvatar
 import com.itbenevides.genesys21.ui.components.input.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.input.GenesysStatusPicker
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.layout.GenesysBox
-import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
-import com.itbenevides.genesys21.ui.components.layout.GenesysDivider
-import com.itbenevides.genesys21.ui.components.layout.GenesysPage
-import com.itbenevides.genesys21.ui.components.layout.GenesysRow
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
-import com.itbenevides.genesys21.ui.components.navigation.GenesysTabData
-import com.itbenevides.genesys21.ui.components.navigation.GenesysTabRow
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.components.navigation.*
+import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable
@@ -164,27 +142,60 @@ private fun PageListContent(
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > 1000.dp
             
-            GenesysColumn(
+            LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                usePadding = false,
-                horizontalAlignment = GenesysAlignment.Center,
-                useScroll = true
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(bottom = 64.dp)
             ) {
-                GenesysColumn(
-                    modifier = Modifier.widthIn(max = 1200.dp),
-                    usePadding = false
-                ) {
-                    if (state.selectedTab == 0) {
-                        PagesTabUI(state, onEvent, onViewPage, onEditPage)
-                    } else {
-                        OrdersTabUI(state, onEvent, isWideScreen) 
+                item {
+                    GenesysColumn(
+                        modifier = Modifier.widthIn(max = 1200.dp),
+                        usePadding = false
+                    ) {
+                        if (state.selectedTab == 0) {
+                            PagesTabUI(state, onEvent, onViewPage, onEditPage)
+                        } else {
+                            OrdersHeaderUI(state, onEvent)
+                        }
                     }
-                    
+                }
+
+                if (state.selectedTab == 1) {
+                    val filteredOrders = state.orders.filter { order ->
+                        val matchesSearch = state.searchQuery.isBlank() || 
+                            order.id.contains(state.searchQuery, ignoreCase = true) ||
+                            (order.customerName?.contains(state.searchQuery, ignoreCase = true) == true)
+                        val matchesStatus = state.selectedStatusFilter == null || order.status == state.selectedStatusFilter
+                        matchesSearch && matchesStatus
+                    }
+
+                    if (filteredOrders.isEmpty() && !state.isLoading) {
+                        item {
+                            GenesysEmptyState(
+                                icon = GenesysIcons.SearchOff,
+                                title = GenesysStrings.NoOrdersFound,
+                                description = GenesysStrings.NoOrdersDescription
+                            )
+                        }
+                    } else {
+                        items(items = filteredOrders, key = { it.id }) { order ->
+                            GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
+                                OrderCardUI(
+                                    order = order, 
+                                    onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) }
+                                )
+                            }
+                            GenesysSpacer(GenesysSpacing.Medium)
+                        }
+                    }
+                }
+
+                item {
                     GenesysSpacer(GenesysSpacing.Huge)
                     GenesysTextButton(
                         text = GenesysStrings.Logout,
                         onClick = { onEvent(PageListEvent.OnLogoutClicked) },
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
                         color = MaterialTheme.colorScheme.error
                     )
                     GenesysSpacer(GenesysSpacing.Huge)
@@ -247,21 +258,10 @@ private fun PagesTabUI(
 }
 
 @Composable
-private fun OrdersTabUI(
+private fun OrdersHeaderUI(
     state: PageListState,
-    onEvent: (PageListEvent) -> Unit,
-    isWideScreen: Boolean
+    onEvent: (PageListEvent) -> Unit
 ) {
-    val filteredOrders = remember(state.orders, state.searchQuery, state.selectedStatusFilter) {
-        state.orders.filter { order ->
-            val matchesSearch = state.searchQuery.isBlank() || 
-                order.id.contains(state.searchQuery, ignoreCase = true) ||
-                (order.customerName?.contains(state.searchQuery, ignoreCase = true) == true)
-            val matchesStatus = state.selectedStatusFilter == null || order.status == state.selectedStatusFilter
-            matchesSearch && matchesStatus
-        }
-    }
-
     val totalRevenue = remember(state.orders) { state.orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.total } }
     val totalPending = remember(state.orders) { state.orders.count { it.status == OrderStatus.PENDING } }
 
@@ -318,26 +318,7 @@ private fun OrdersTabUI(
                 }
             }
         }
-
-        GenesysSpacer(GenesysSpacing.Large)
-
-        if (filteredOrders.isEmpty() && !state.isLoading) {
-            GenesysEmptyState(
-                icon = GenesysIcons.SearchOff,
-                title = GenesysStrings.NoOrdersFound,
-                description = GenesysStrings.NoOrdersDescription
-            )
-        } else {
-            GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-                filteredOrders.forEach { order ->
-                    OrderCardUI(
-                        order = order, 
-                        onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) }
-                    )
-                    GenesysSpacer(GenesysSpacing.Medium)
-                }
-            }
-        }
+        GenesysSpacer(GenesysSpacing.Medium)
     }
 }
 
@@ -355,7 +336,7 @@ private fun PageItemRow(
                 modifier = Modifier.fillMaxWidth(), 
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
+                GenesysBox(
                     modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -402,7 +383,6 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
         elevation = 2.dp
     ) {
         GenesysColumn(usePadding = false) {
-            // Cabeçalho
             GenesysRow(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -410,12 +390,10 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
                 val initials = remember(order.customerName) {
                     order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
                 }
-                // CORREÇÃO: Usando a chamada direta para evitar conflito de escopo do DS
                 GenesysBox(
                     modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Chamada sem RowScope implícito para evitar erro no WasmJs
                     com.itbenevides.genesys21.ui.components.text.GenesysText(
                         text = initials, 
                         style = GenesysTextStyle.Body, 
@@ -443,7 +421,7 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
                 
                 GenesysSpacer(GenesysSpacing.Small)
                 
-                Box(modifier = Modifier.wrapContentWidth()) {
+                GenesysBox(modifier = Modifier.wrapContentWidth()) {
                     GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
                 }
             }
@@ -452,7 +430,6 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
             GenesysDivider()
             GenesysSpacer(GenesysSpacing.Medium)
 
-            // Itens
             order.items.forEach { item ->
                 GenesysRow(
                     modifier = Modifier.fillMaxWidth(),
@@ -481,7 +458,6 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
             
             GenesysSpacer(GenesysSpacing.Medium)
             
-            // Rodapé
             GenesysRow(
                 modifier = Modifier
                     .fillMaxWidth()

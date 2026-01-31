@@ -9,19 +9,25 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
+import kotlinx.datetime.Clock
 
 /**
  * Implementação do repositório de páginas usando Ktor Client.
+ * Otimizado para evitar cache indesejado do navegador.
  */
 class KtorPageRepository(
     private val client: HttpClient,
     private val baseUrl: String = "http://localhost:8080"
 ) : PageRepository {
 
+    private fun getTimestamp() = Clock.System.now().toEpochMilliseconds()
+
     override suspend fun getPages(token: String): List<Page> {
         val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/api/pages"
         return try {
             val response = client.get(url) {
+                parameter("t", getTimestamp()) // Cache-busting
+                header(HttpHeaders.CacheControl, "no-cache")
                 if (token.isNotBlank()) {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }
@@ -39,7 +45,10 @@ class KtorPageRepository(
 
     override suspend fun getPublicPage(id: String): Result<Page> {
         return try {
-            val response = client.get("$baseUrl/api/public/pages/$id")
+            val response = client.get("$baseUrl/api/public/pages/$id") {
+                parameter("t", getTimestamp()) // Cache-busting
+                header(HttpHeaders.CacheControl, "no-cache")
+            }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -52,7 +61,10 @@ class KtorPageRepository(
 
     override suspend fun getPageByDomain(domain: String): Result<Page> {
         return try {
-            val response = client.get("$baseUrl/api/public/domain/$domain")
+            val response = client.get("$baseUrl/api/public/domain/$domain") {
+                parameter("t", getTimestamp())
+                header(HttpHeaders.CacheControl, "no-cache")
+            }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -123,6 +135,8 @@ class KtorPageRepository(
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response = client.get("$baseUrl/api/products") {
+                parameter("t", getTimestamp())
+                header(HttpHeaders.CacheControl, "no-cache")
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status.isSuccess()) {

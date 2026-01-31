@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 
 /**
  * Estilos de texto semânticos para a Presentation.
@@ -50,7 +52,7 @@ fun GenesysText(
     color: Color = Color.Unspecified,
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
-    weightValue: Float = 0f, // Parâmetro opcional para pesos em layouts
+    fontSize: TextUnit = TextUnit.Unspecified, // ADICIONADO: Suporte a tamanho customizado
     modifier: Modifier = Modifier
 ) {
     GenesysTextContent(
@@ -59,6 +61,7 @@ fun GenesysText(
         color = color,
         textAlign = textAlign,
         fontWeight = fontWeight,
+        fontSize = fontSize,
         modifier = modifier
     )
 }
@@ -73,6 +76,7 @@ internal fun GenesysTextContent(
     color: Color = Color.Unspecified,
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
+    fontSize: TextUnit = TextUnit.Unspecified,
     modifier: Modifier = Modifier
 ) {
     val textStyle = when (style) {
@@ -104,7 +108,8 @@ internal fun GenesysTextContent(
         color = color,
         modifier = modifier,
         textAlign = composeTextAlign,
-        fontWeight = composeFontWeight
+        fontWeight = composeFontWeight,
+        fontSize = fontSize // APLICA O TAMANHO CUSTOMIZADO
     )
 }
 
@@ -118,6 +123,7 @@ fun RowScope.GenesysText(
     color: Color = Color.Unspecified,
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
+    fontSize: TextUnit = TextUnit.Unspecified,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
@@ -128,6 +134,7 @@ fun RowScope.GenesysText(
         color = color,
         textAlign = textAlign,
         fontWeight = fontWeight,
+        fontSize = fontSize,
         modifier = finalModifier
     )
 }
@@ -142,6 +149,7 @@ fun ColumnScope.GenesysText(
     color: Color = Color.Unspecified,
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
+    fontSize: TextUnit = TextUnit.Unspecified,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
@@ -152,6 +160,7 @@ fun ColumnScope.GenesysText(
         color = color,
         textAlign = textAlign,
         fontWeight = fontWeight,
+        fontSize = fontSize,
         modifier = finalModifier
     )
 }

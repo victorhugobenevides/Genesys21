@@ -5,7 +5,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.input.GenesysSlider
@@ -28,24 +30,24 @@ fun TextComponentEditor(
     
     val primaryColor = MaterialTheme.colorScheme.primary
 
+    // Cria uma versão temporária do componente para renderizar na pre-visualização real
+    val previewComponent = remember(content, alignment, fontSize, weight) {
+        component.copy(
+            content = content,
+            textAlign = alignment,
+            fontSize = fontSize.toInt(),
+            fontWeight = weight
+        )
+    }
+
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
         
-        GenesysText(
-            text = content,
-            style = GenesysTextStyle.Body,
-            fontWeight = when(weight) {
-                "BOLD" -> GenesysFontWeight.Bold
-                "EXTRA_BOLD" -> GenesysFontWeight.ExtraBold
-                else -> GenesysFontWeight.Normal
-            },
-            textAlign = when(alignment) {
-                "CENTER" -> GenesysTextAlign.Center
-                "RIGHT" -> GenesysTextAlign.End
-                else -> GenesysTextAlign.Start
-            },
-            modifier = Modifier.fillMaxWidth().padding(8.dp)
+        // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
+        PageComponentRenderer(
+            component = previewComponent,
+            isEditMode = false
         )
 
         GenesysSpacer(GenesysSpacing.Large)
@@ -108,12 +110,7 @@ fun TextComponentEditor(
             text = GenesysStrings.SaveText, 
             fillWidth = true,
             onClick = {
-                onSave(component.copy(
-                    content = content, 
-                    textAlign = alignment, 
-                    fontSize = fontSize.toInt(),
-                    fontWeight = weight
-                ))
+                onSave(previewComponent)
             }
         )
     }

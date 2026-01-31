@@ -68,6 +68,7 @@ fun Application.module() {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.CacheControl) // ADICIONADO: Necessário para Cache-Busting no WasmJs
         allowHeader("X-Cart-Session-Id")
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)

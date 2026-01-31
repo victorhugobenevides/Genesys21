@@ -5,7 +5,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.input.GenesysSlider
@@ -30,25 +32,26 @@ fun HeaderComponentEditor(
     
     val primaryColor = MaterialTheme.colorScheme.primary
 
+    // Cria uma versão temporária do componente para renderizar na pre-visualização real
+    val previewComponent = remember(title, alignment, fontSize, isUppercase, usePrimaryColor) {
+        component.copy(
+            title = title,
+            textAlign = alignment,
+            fontSize = fontSize.toInt(),
+            isUppercase = isUppercase,
+            usePrimaryColor = usePrimaryColor
+        )
+    }
+
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
         
-        GenesysColumn(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            horizontalAlignment = when(alignment) {
-                "CENTER" -> GenesysAlignment.Center
-                "RIGHT" -> GenesysAlignment.End
-                else -> GenesysAlignment.Start
-            }
-        ) {
-            GenesysText(
-                text = if (isUppercase) title.uppercase() else title,
-                style = GenesysTextStyle.Headline,
-                fontWeight = GenesysFontWeight.ExtraBold,
-                color = if (usePrimaryColor) primaryColor else Color.Unspecified
-            )
-        }
+        // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
+        PageComponentRenderer(
+            component = previewComponent,
+            isEditMode = false
+        )
         
         GenesysSpacer(GenesysSpacing.Large)
         GenesysTextField(
@@ -105,13 +108,7 @@ fun HeaderComponentEditor(
             text = GenesysStrings.UpdateTitle, 
             fillWidth = true,
             onClick = {
-                onSave(component.copy(
-                    title = title, 
-                    textAlign = alignment, 
-                    fontSize = fontSize.toInt(),
-                    isUppercase = isUppercase, 
-                    usePrimaryColor = usePrimaryColor
-                ))
+                onSave(previewComponent)
             }
         )
     }

@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
@@ -17,6 +18,7 @@ import com.itbenevides.genesys21.ui.components.input.GenesysSlider
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable
 fun ImageComponentEditor(
@@ -36,18 +38,24 @@ fun ImageComponentEditor(
         mutableStateOf(internalTitle ?: component.string)
     }
 
+    // Cria uma versão temporária do componente para renderizar na pre-visualização real
+    val previewComponent = remember(component.url, sizeValue, isCircular, isFullWidth) {
+        component.copy(
+            size = sizeValue.toInt(),
+            isCircular = isCircular,
+            isFullWidth = isFullWidth
+        )
+    }
+
     GenesysColumn(usePadding = false) {
-        GenesysText("Pré-visualização", style = GenesysTextStyle.Label)
+        GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
         
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), horizontalAlignment = GenesysAlignment.Center) {
-            GenesysImage(
-                url = component.url,
-                size = (sizeValue / 2).dp,
-                isCircular = isCircular,
-                placeholderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            )
-        }
+        // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
+        PageComponentRenderer(
+            component = previewComponent,
+            isEditMode = false
+        )
         
         GenesysSpacer(GenesysSpacing.Large)
         GenesysLoadingButton(
