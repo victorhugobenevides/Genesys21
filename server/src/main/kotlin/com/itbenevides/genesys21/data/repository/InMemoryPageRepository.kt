@@ -1,6 +1,8 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.PageRepository
 import java.util.concurrent.ConcurrentHashMap
 
@@ -50,5 +52,16 @@ class InMemoryPageRepository : PageRepository {
 
     override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
         return Result.failure(Exception("Use /upload endpoint"))
+    }
+
+    override suspend fun getAllProducts(token: String): Result<List<Product>> {
+        val products = pagesDB.values
+            .filter { it.ownerId == token }
+            .flatMap { page ->
+                page.components.filterIsInstance<PageComponent.ProductList>().flatMap { it.products }
+            }
+            .distinctBy { it.id }
+        
+        return Result.success(products)
     }
 }

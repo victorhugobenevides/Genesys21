@@ -31,6 +31,7 @@ fun ProductListComponentEditor(
     var selectedTab by remember { mutableStateOf(0) }
     var customLabel by remember { mutableStateOf(component.customLabel ?: "") }
     var isHorizontal by remember { mutableStateOf(component.isHorizontal) }
+    var searchQuery by remember { mutableStateOf("") }
 
     GenesysColumn(usePadding = false) {
         GenesysText(GenesysStrings.ManageProducts, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
@@ -47,10 +48,25 @@ fun ProductListComponentEditor(
 
         GenesysSpacer(GenesysSpacing.Medium)
 
+        // Campo de busca para filtrar produtos nas abas
+        GenesysTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = GenesysStrings.SearchPlaceholder,
+            icon = GenesysIcons.Search
+        )
+
+        GenesysSpacer(GenesysSpacing.Medium)
+
         if (selectedTab == 0) {
             // ABA 1: Produtos Atuais
+            val filteredListProducts = component.products.filter { 
+                it.name.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true)
+            }
+
             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
-                component.products.forEachIndexed { index, product ->
+                filteredListProducts.forEach { product ->
+                    val index = component.products.indexOf(product)
                     GenesysCard(modifier = Modifier.padding(bottom = 4.dp)) {
                         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
                             GenesysWeightBox(1f) { GenesysText(product.name) }
@@ -100,7 +116,9 @@ fun ProductListComponentEditor(
             }
         } else {
             // ABA 2: Catálogo Global
-            val catalogToDisplay = allAvailableProducts.filter { p -> component.products.none { it.id == p.id } }
+            val catalogToDisplay = allAvailableProducts
+                .filter { p -> component.products.none { it.id == p.id } }
+                .filter { it.name.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true) }
             
             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
                 if (catalogToDisplay.isEmpty()) {

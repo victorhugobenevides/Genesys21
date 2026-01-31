@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.PageRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -18,7 +19,6 @@ class KtorPageRepository(
 ) : PageRepository {
 
     override suspend fun getPages(token: String): List<Page> {
-        // CORREÇÃO: Usando prefixo /api padronizado no servidor
         val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/api/pages"
         return try {
             val response = client.get(url) {
@@ -114,6 +114,22 @@ class KtorPageRepository(
                 header(HttpHeaders.Authorization, "Bearer $token")
             }.body()
             Result.success(response)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getAllProducts(token: String): Result<List<Product>> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        return try {
+            val response = client.get("$baseUrl/api/products") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Falha ao buscar produtos"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

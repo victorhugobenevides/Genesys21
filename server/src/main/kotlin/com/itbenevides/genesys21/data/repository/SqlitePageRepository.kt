@@ -126,6 +126,33 @@ class SqlitePageRepository : PageRepository {
         return Result.failure(Exception("Use /upload"))
     }
 
+    override suspend fun getAllProducts(token: String): Result<List<Product>> = try {
+        dbQuery {
+            val products = ProductsTable.selectAll()
+                .where { ProductsTable.ownerId eq token }
+                .map { row ->
+                    val productId = row[ProductsTable.id]
+                    val images = ProductImagesTable.selectAll()
+                        .where { ProductImagesTable.productId eq productId }
+                        .orderBy(ProductImagesTable.order to SortOrder.ASC)
+                        .map { it[ProductImagesTable.imageUrl] }
+
+                    Product(
+                        id = productId,
+                        name = row[ProductsTable.name],
+                        price = row[ProductsTable.price],
+                        imageUrls = images,
+                        description = row[ProductsTable.description] ?: "",
+                        category = row[ProductsTable.category] ?: "",
+                        stock = row[ProductsTable.stock]
+                    )
+                }
+            Result.success(products)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     private fun saveProductsForComponent(componentId: Int, products: List<Product>, ownerId: String) {
         products.forEachIndexed { index, product ->
             // 1. Upsert do Produto

@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.ui.components.card
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -22,24 +23,27 @@ fun GenesysCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val cardModifier = modifier // O modifier externo já costuma ter fillMaxWidth se necessário
+
     if (onClick != null) {
         Surface(
-            modifier = modifier,
+            modifier = cardModifier,
             shape = shape,
             color = backgroundColor,
             tonalElevation = elevation,
             onClick = onClick
         ) {
-            Column(Modifier.padding(16.dp), content = content)
+            // CORREÇÃO UX: O Column interno deve preencher a largura do Surface
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp), content = content)
         }
     } else {
         Surface(
-            modifier = modifier,
+            modifier = cardModifier,
             shape = shape,
             color = backgroundColor,
             tonalElevation = elevation
         ) {
-            Column(Modifier.padding(16.dp), content = content)
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp), content = content)
         }
     }
 }

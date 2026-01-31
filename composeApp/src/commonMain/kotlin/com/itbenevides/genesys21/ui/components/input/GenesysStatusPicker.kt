@@ -22,7 +22,8 @@ fun GenesysStatusPicker(
             shape = MaterialTheme.shapes.small,
             color = Color.Transparent
         ) {
-            GenesysRow {
+            // CORREÇÃO: fillWidth = false para não esmagar os vizinhos na Row
+            GenesysRow(fillWidth = false) {
                 GenesysStatusBadge(currentStatus)
                 Icon(GenesysIcons.ExpandMore, contentDescription = "Mudar status", tint = Color.Gray)
             }

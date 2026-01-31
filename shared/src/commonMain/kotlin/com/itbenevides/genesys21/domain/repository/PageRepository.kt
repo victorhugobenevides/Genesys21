@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.domain.repository
 
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
 
 interface PageRepository {
     suspend fun getPages(token: String): List<Page>
@@ -9,4 +10,5 @@ interface PageRepository {
     suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit>
     suspend fun deletePage(id: String, token: String): Result<Unit>
     suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String>
+    suspend fun getAllProducts(token: String): Result<List<Product>>
 }
