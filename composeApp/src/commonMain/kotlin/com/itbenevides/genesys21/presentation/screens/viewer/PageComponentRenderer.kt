@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
@@ -77,7 +77,7 @@ fun PageComponentRenderer(
 
     if (!shouldShow && component !is PageComponent.Filter && component !is PageComponent.CategoryFilter) return
 
-    GenesysBox(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth()) {
         when (component) {
             is PageComponent.CategoryFilter -> {
                 GenesysColumn(usePadding = true) {
@@ -224,7 +224,6 @@ fun PageComponentRenderer(
             }
             is PageComponent.Image -> {
                 val scope = rememberCoroutineScope()
-                // CORREÇÃO: Resolução de URL para imagens carregadas no servidor
                 val displayUrl = remember(component.url, backendUrl) {
                     if (component.url.startsWith("/") && !component.url.startsWith("http")) "$backendUrl${component.url}" else component.url
                 }
@@ -268,14 +267,24 @@ fun PageComponentRenderer(
             else -> {}
         }
 
-        if (isEditMode && component !is PageComponent.ProductList) {
-            GenesysBox(Modifier.align(Alignment.TopEnd).padding(4.dp)) {
-                GenesysIconButton(
-                    icon = GenesysIcons.Edit,
+        if (isEditMode) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp, end = 8.dp)
+            ) {
+                Surface(
                     onClick = { onEditClick?.invoke() },
-                    tint = Color.White,
-                    modifier = Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), androidx.compose.foundation.shape.CircleShape)
-                )
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    contentColor = Color.White,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(GenesysIcons.Edit, null, modifier = Modifier.size(20.dp))
+                    }
+                }
             }
         }
     }
@@ -323,7 +332,7 @@ fun ProductCard(
                     Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
                         Surface(
                             modifier = Modifier.size(32.dp),
-                            shape = androidx.compose.foundation.shape.CircleShape,
+                            shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondary,
                             contentColor = Color.White,
                             tonalElevation = 4.dp
@@ -337,7 +346,7 @@ fun ProductCard(
                     Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomEnd) {
                         Surface(
                             modifier = Modifier.size(40.dp).scale(scale),
-                            shape = androidx.compose.foundation.shape.CircleShape,
+                            shape = CircleShape,
                             color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
                             contentColor = Color.White,
                             shadowElevation = 4.dp
