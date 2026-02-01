@@ -32,6 +32,8 @@ import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.util.rememberImagePicker
+import kotlin.random.Random
 
 @Composable
 fun WhiteLabelScreen(
@@ -89,6 +91,26 @@ fun WhiteLabelScreen(
         (savedCategories + categoriesInDraft).filter { it.isNotBlank() }.distinct().sorted()
     }
 
+    // Configuração do Picker de Imagem para o Editor de Blocos
+    val imagePicker = rememberImagePicker { bytes ->
+        bytes?.let {
+            state = state.copy(isUploading = true)
+            viewModel.uploadImage(it, "banner_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
+                state.editingComponentIndex?.let { index ->
+                    val component = state.page.components[index] as? PageComponent.Image
+                    component?.let { img ->
+                        val updated = img.copy(url = uploadedUrl)
+                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                        state = state.copy(
+                            page = state.page.copy(components = newList),
+                            isUploading = false
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     fun onEvent(event: WhiteLabelEvent) {
         when (event) {
             is WhiteLabelEvent.OnPageUpdated -> {
@@ -109,6 +131,7 @@ fun WhiteLabelScreen(
             is WhiteLabelEvent.OnEditingComponentIndexChanged -> state = state.copy(editingComponentIndex = event.index)
             is WhiteLabelEvent.OnPendingNewComponentChanged -> state = state.copy(pendingNewComponent = event.component)
             is WhiteLabelEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
+            is WhiteLabelEvent.OnImageUploadStarted -> state = state.copy(isUploading = event.isUploading)
             
             is WhiteLabelEvent.OnDeleteComponent -> {
                 val newList = state.page.components.toMutableList().apply { removeAt(event.index) }
@@ -147,7 +170,8 @@ fun WhiteLabelScreen(
             onEvent = ::onEvent, 
             originalPage = pristinePage,
             displayCategories = effectiveCategories,
-            onManageCategories = { showCategoryManagement = true }
+            onManageCategories = { showCategoryManagement = true },
+            onPickImage = { imagePicker() }
         )
 
         if (showCategoryManagement) {
@@ -166,7 +190,8 @@ private fun WhiteLabelContent(
     onEvent: (WhiteLabelEvent) -> Unit,
     originalPage: Page,
     displayCategories: List<String>,
-    onManageCategories: () -> Unit
+    onManageCategories: () -> Unit,
+    onPickImage: () -> Unit
 ) {
     GenesysPage(
         topBar = {
@@ -262,7 +287,8 @@ private fun WhiteLabelContent(
                                         onEvent = onEvent, 
                                         isEmbedded = true, 
                                         originalPage = originalPage,
-                                        onManageCategories = onManageCategories
+                                        onManageCategories = onManageCategories,
+                                        onPickImage = onPickImage
                                     )
                                 } ?: run {
                                     GenesysEmptyState(
@@ -286,7 +312,8 @@ private fun WhiteLabelContent(
                         onEvent = onEvent, 
                         isEmbedded = false, 
                         originalPage = originalPage,
-                        onManageCategories = onManageCategories
+                        onManageCategories = onManageCategories,
+                        onPickImage = onPickImage
                     )
                 }
             }
@@ -370,7 +397,8 @@ private fun ComponentEditorUI(
     onEvent: (WhiteLabelEvent) -> Unit,
     isEmbedded: Boolean = false,
     originalPage: Page,
-    onManageCategories: () -> Unit
+    onManageCategories: () -> Unit,
+    onPickImage: () -> Unit
 ) {
     val component = state.page.components.getOrNull(index) ?: return
     val scrollState = rememberScrollState()
@@ -380,8 +408,6 @@ private fun ComponentEditorUI(
             usePadding = false, 
             modifier = Modifier.then(if (isEmbedded) Modifier.verticalScroll(scrollState) else Modifier)
         ) {
-            // CORREÇÃO: Cabeçalho renderizado apenas no modo EMBEDDED (WideScreen)
-            // No modo BottomSheet, o GenesysBottomSheet já renderiza o título.
             if (isEmbedded) {
                 GenesysRow(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     GenesysWeightBox(1f) {
@@ -447,8 +473,8 @@ private fun ComponentEditorUI(
                     ImageComponentEditor(
                         component = component,
                         userPages = state.userPages,
-                        isUploading = false,
-                        onPickImage = { /* Picker */ },
+                        isUploading = state.isUploading,
+                        onPickImage = onPickImage,
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
@@ -502,7 +528,6 @@ private fun ComponentEditorUI(
             onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
             title = GenesysStrings.BlockSettings,
             actions = {
-                // No mobile, o botão de descartar fica no cabeçalho do BottomSheet
                 if (state.page != originalPage) {
                     GenesysIconButton(
                         icon = GenesysIcons.Delete,
@@ -517,7 +542,6 @@ private fun ComponentEditorUI(
                 }
             }
         ) {
-            // Container com scroll para o conteúdo do editor no mobile
             Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
                 editorContent()
             }

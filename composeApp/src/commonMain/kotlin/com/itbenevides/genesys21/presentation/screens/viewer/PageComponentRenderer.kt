@@ -224,6 +224,11 @@ fun PageComponentRenderer(
             }
             is PageComponent.Image -> {
                 val scope = rememberCoroutineScope()
+                // CORREÇÃO: Resolução de URL para imagens carregadas no servidor
+                val displayUrl = remember(component.url, backendUrl) {
+                    if (component.url.startsWith("/") && !component.url.startsWith("http")) "$backendUrl${component.url}" else component.url
+                }
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -243,8 +248,8 @@ fun PageComponentRenderer(
                                         router.navigateTo(Route.PublicViewer(targetPage))
                                     }
                                 }
-                            } else if (component.url.startsWith("http")) {
-                                uriHandler.openUri(component.url)
+                            } else if (displayUrl.startsWith("http")) {
+                                uriHandler.openUri(displayUrl)
                             }
                         },
                         elevation = 0.dp,
@@ -252,7 +257,7 @@ fun PageComponentRenderer(
                         modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.wrapContentWidth()
                     ) {
                         GenesysImage(
-                            url = component.url,
+                            url = displayUrl,
                             size = component.size.dp,
                             isCircular = component.isCircular,
                             modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.align(Alignment.CenterHorizontally)
@@ -314,7 +319,6 @@ fun ProductCard(
                     modifier = Modifier.fillMaxSize()
                 )
                 
-                // NOVO: Ícone de Edição no Modo Editor
                 if (isEditMode) {
                     Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
                         Surface(
