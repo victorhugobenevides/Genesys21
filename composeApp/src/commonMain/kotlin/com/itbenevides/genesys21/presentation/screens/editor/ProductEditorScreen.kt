@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.input.GenesysDropdownField
@@ -50,14 +52,15 @@ fun ProductEditorScreen(
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
-    // 1. State Holder
     var state by remember { mutableStateOf(ProductEditorState.initial(product)) }
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
+    val categories by viewModel.categories.collectAsState()
+    
+    var showCategoryManagement by remember { mutableStateOf(false) }
 
     state = state.copy(isLoading = isGlobalLoading)
 
-    // 2. Orquestrador de Eventos
     val imagePicker = rememberImagePicker { bytes ->
         bytes?.let {
             if (state.imageUrls.size < 5) {
@@ -77,7 +80,10 @@ fun ProductEditorScreen(
             is ProductEditorEvent.OnNameChanged -> state = state.copy(name = event.name)
             is ProductEditorEvent.OnPriceChanged -> state = state.copy(price = InputValidator.validatePrice(event.price))
             is ProductEditorEvent.OnDescriptionChanged -> state = state.copy(description = event.description)
-            is ProductEditorEvent.OnCategoryChanged -> state = state.copy(category = event.category)
+            is ProductEditorEvent.OnCategoryChanged -> {
+                // CORREÇÃO: Sincroniza ID e Nome ao mesmo tempo no estado
+                state = state.copy(categoryId = event.categoryId, categoryName = event.categoryName)
+            }
             is ProductEditorEvent.OnStockChanged -> state = state.copy(stock = InputValidator.validateStock(event.stock))
             is ProductEditorEvent.OnAddPhotoClicked -> if (!state.isUploading && state.imageUrls.size < 5) imagePicker()
             is ProductEditorEvent.OnRemovePhotoClicked -> {
@@ -93,7 +99,8 @@ fun ProductEditorScreen(
                     price = InputValidator.parsePrice(state.price.replace(",", ".")),
                     imageUrls = state.imageUrls,
                     description = state.description.trim(),
-                    category = state.category.trim(),
+                    categoryId = state.categoryId,
+                    categoryName = state.categoryName,
                     stock = InputValidator.parseStock(state.stock)
                 )
                 onSave(finalProduct)
@@ -101,9 +108,26 @@ fun ProductEditorScreen(
         }
     }
 
-    // 3. Renderização sob o tema da vitrine
     AppTheme(themeConfig = page.theme) {
-        ProductEditorContent(state, backendUrl, existingCategories, onEvent, onBack)
+        ProductEditorContent(
+            state = state, 
+            backendUrl = backendUrl, 
+            categoryOptions = categories.map { it.name }, 
+            onEvent = onEvent, 
+            onBack = onBack, 
+            onManageCategories = { showCategoryManagement = true },
+            onCategorySelected = { name ->
+                val selectedCategory = categories.find { it.name == name }
+                onEvent(ProductEditorEvent.OnCategoryChanged(selectedCategory?.id, name))
+            }
+        )
+        
+        if (showCategoryManagement) {
+            CategoryManagementDialog(
+                viewModel = viewModel,
+                onDismiss = { showCategoryManagement = false }
+            )
+        }
     }
 }
 
@@ -111,9 +135,11 @@ fun ProductEditorScreen(
 private fun ProductEditorContent(
     state: ProductEditorState,
     backendUrl: String,
-    existingCategories: List<String>,
+    categoryOptions: List<String>,
     onEvent: (ProductEditorEvent) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onManageCategories: () -> Unit,
+    onCategorySelected: (String) -> Unit
 ) {
      GenesysPage(
         topBar = {
@@ -150,7 +176,7 @@ private fun ProductEditorContent(
                         GenesysColumn(usePadding = true, useScroll = !isWideScreen) {
                             GenesysSectionHeader(
                                 title = GenesysStrings.PhotosTitle,
-                                subtitle = "${state.imageUrls.size}/5" // String corrigida via DS
+                                subtitle = "${state.imageUrls.size}/5"
                             )
 
                             GenesysSpacer(GenesysSpacing.Small)
@@ -209,13 +235,24 @@ private fun ProductEditorContent(
 
                                     GenesysSpacer(GenesysSpacing.Medium)
 
-                                    GenesysDropdownField(
-                                        value = state.category,
-                                        onValueChange = { onEvent(ProductEditorEvent.OnCategoryChanged(it)) },
-                                        label = GenesysStrings.ProductCategory,
-                                        options = existingCategories,
-                                        icon = GenesysIcons.Category
-                                    )
+                                    // CAMPO DE CATEGORIA CORRIGIDO
+                                    GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            GenesysDropdownField(
+                                                value = state.categoryName,
+                                                onValueChange = onCategorySelected,
+                                                label = GenesysStrings.ProductCategory,
+                                                options = categoryOptions,
+                                                icon = GenesysIcons.Category
+                                            )
+                                        }
+                                        GenesysSpacer(GenesysSpacing.Small)
+                                        GenesysIconButton(
+                                            icon = GenesysIcons.Settings, 
+                                            onClick = onManageCategories,
+                                            contentDescription = "Gerenciar Categorias"
+                                        )
+                                    }
 
                                     GenesysSpacer(GenesysSpacing.Medium)
 

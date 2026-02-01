@@ -60,7 +60,6 @@ class SqlitePageRepository : PageRepository {
             val formattedDomain = page.customDomain?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
             val formattedWhatsapp = page.whatsapp?.trim()?.takeIf { it.isNotBlank() }
 
-            // 1. Centralização de Domínio e WhatsApp
             if (token.isNotBlank()) {
                 PagesTable.update({ PagesTable.ownerId eq token }) {
                     it[customDomain] = formattedDomain
@@ -68,7 +67,6 @@ class SqlitePageRepository : PageRepository {
                 }
             }
 
-            // 2. Upsert da Página
             val exists = PagesTable.selectAll().where { PagesTable.id eq page.id }.count() > 0
             if (exists) {
                 PagesTable.update({ PagesTable.id eq page.id }) {
@@ -89,7 +87,6 @@ class SqlitePageRepository : PageRepository {
                 }
             }
 
-            // 3. Normalização: Salvar Componentes e Produtos
             PageComponentsTable.deleteWhere { pageId eq page.id }
             
             page.components.forEachIndexed { index, component ->
@@ -128,24 +125,11 @@ class SqlitePageRepository : PageRepository {
 
     override suspend fun getAllProducts(token: String): Result<List<Product>> = try {
         dbQuery {
-            val products = ProductsTable.selectAll()
+            val products = (ProductsTable leftJoin CategoriesTable)
+                .selectAll()
                 .where { ProductsTable.ownerId eq token }
                 .map { row ->
-                    val productId = row[ProductsTable.id]
-                    val images = ProductImagesTable.selectAll()
-                        .where { ProductImagesTable.productId eq productId }
-                        .orderBy(ProductImagesTable.order to SortOrder.ASC)
-                        .map { it[ProductImagesTable.imageUrl] }
-
-                    Product(
-                        id = productId,
-                        name = row[ProductsTable.name],
-                        price = row[ProductsTable.price],
-                        imageUrls = images,
-                        description = row[ProductsTable.description] ?: "",
-                        category = row[ProductsTable.category] ?: "",
-                        stock = row[ProductsTable.stock]
-                    )
+                    fetchProductFromRow(row)
                 }
             Result.success(products)
         }
@@ -153,9 +137,75 @@ class SqlitePageRepository : PageRepository {
         Result.failure(e)
     }
 
+    override suspend fun getCategories(token: String): Result<List<Category>> = try {
+        dbQuery {
+            val categories = CategoriesTable.selectAll()
+                .where { CategoriesTable.ownerId eq token }
+                .map { row ->
+                    Category(
+                        id = row[CategoriesTable.id].value,
+                        ownerId = row[CategoriesTable.ownerId],
+                        name = row[CategoriesTable.name],
+                        icon = row[CategoriesTable.icon],
+                        color = row[CategoriesTable.color]
+                    )
+                }
+            Result.success(categories)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun saveCategory(category: Category, token: String): Result<Unit> = try {
+        dbQuery {
+            if (category.id != null) {
+                CategoriesTable.update({ (CategoriesTable.id eq category.id) and (CategoriesTable.ownerId eq token) }) {
+                    it[name] = category.name
+                    it[icon] = category.icon
+                    it[color] = category.color
+                }
+            } else {
+                CategoriesTable.insert {
+                    it[ownerId] = token
+                    it[name] = category.name
+                    it[icon] = category.icon
+                    it[color] = category.color
+                }
+            }
+            Result.success(Unit)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun deleteCategory(id: Int, token: String): Result<Unit> = try {
+        dbQuery {
+            val deleted = CategoriesTable.deleteWhere { (CategoriesTable.id eq id) and (ownerId eq token) }
+            if (deleted > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir categoria"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     private fun saveProductsForComponent(componentId: Int, products: List<Product>, ownerId: String) {
         products.forEachIndexed { index, product ->
-            // 1. Upsert do Produto
+            // LÓGICA DE AUTO-CRIAÇÃO DE CATEGORIA PARA TEMPLATES
+            var effectiveCategoryId = product.categoryId
+            if (effectiveCategoryId == null && !product.categoryName.isNullOrBlank()) {
+                val existingCat = CategoriesTable.selectAll()
+                    .where { (CategoriesTable.ownerId eq ownerId) and (CategoriesTable.name eq product.categoryName!!) }
+                    .firstOrNull()
+                
+                effectiveCategoryId = if (existingCat != null) {
+                    existingCat[CategoriesTable.id].value
+                } else {
+                    CategoriesTable.insertAndGetId {
+                        it[CategoriesTable.ownerId] = ownerId
+                        it[CategoriesTable.name] = product.categoryName!!
+                    }.value
+                }
+            }
+
             val productExists = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.count() > 0
             if (!productExists) {
                 ProductsTable.insert {
@@ -164,7 +214,7 @@ class SqlitePageRepository : PageRepository {
                     it[name] = product.name
                     it[price] = product.price
                     it[description] = product.description
-                    it[category] = product.category
+                    it[categoryId] = effectiveCategoryId
                     it[stock] = product.stock
                 }
             } else {
@@ -172,12 +222,11 @@ class SqlitePageRepository : PageRepository {
                     it[name] = product.name
                     it[price] = product.price
                     it[description] = product.description
-                    it[category] = product.category
+                    it[categoryId] = effectiveCategoryId
                     it[stock] = product.stock
                 }
             }
 
-            // 2. Normalização de Imagens do Produto
             ProductImagesTable.deleteWhere { productId eq product.id }
             product.imageUrls.forEachIndexed { imgIndex, url ->
                 ProductImagesTable.insert {
@@ -187,7 +236,6 @@ class SqlitePageRepository : PageRepository {
                 }
             }
 
-            // 3. Vincular ao Componente
             ComponentProductsTable.insert {
                 it[this.componentId] = componentId
                 it[productId] = product.id
@@ -215,26 +263,31 @@ class SqlitePageRepository : PageRepository {
     }
 
     private fun fetchProductsForComponent(componentId: Int): List<Product> {
-        return (ComponentProductsTable innerJoin ProductsTable)
+        return (ComponentProductsTable innerJoin ProductsTable leftJoin CategoriesTable)
             .selectAll().where { ComponentProductsTable.componentId eq componentId }
             .orderBy(ComponentProductsTable.order to SortOrder.ASC)
             .map { row ->
-                val productId = row[ProductsTable.id]
-                val images = ProductImagesTable.selectAll()
-                    .where { ProductImagesTable.productId eq productId }
-                    .orderBy(ProductImagesTable.order to SortOrder.ASC)
-                    .map { it[ProductImagesTable.imageUrl] }
-
-                Product(
-                    id = productId,
-                    name = row[ProductsTable.name],
-                    price = row[ProductsTable.price],
-                    imageUrls = images,
-                    description = row[ProductsTable.description] ?: "",
-                    category = row[ProductsTable.category] ?: "",
-                    stock = row[ProductsTable.stock]
-                )
+                fetchProductFromRow(row)
             }
+    }
+
+    private fun fetchProductFromRow(row: ResultRow): Product {
+        val productId = row[ProductsTable.id]
+        val images = ProductImagesTable.selectAll()
+            .where { ProductImagesTable.productId eq productId }
+            .orderBy(ProductImagesTable.order to SortOrder.ASC)
+            .map { it[ProductImagesTable.imageUrl] }
+
+        return Product(
+            id = productId,
+            name = row[ProductsTable.name],
+            price = row[ProductsTable.price],
+            imageUrls = images,
+            description = row[ProductsTable.description] ?: "",
+            categoryId = row[ProductsTable.categoryId]?.value,
+            categoryName = row.getOrNull(CategoriesTable.name),
+            stock = row[ProductsTable.stock]
+        )
     }
 
     private fun ResultRow.toPage(components: List<PageComponent>) = Page(

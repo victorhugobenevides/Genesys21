@@ -146,12 +146,14 @@ fun App() {
                             }
                         )
                         is Route.ProductEditor -> {
-                            val categories by router.viewModel.allAvailableCategories.collectAsState()
+                            // CORREÇÃO: Usa a lista global de nomes para o dropdown
+                            val categoriesNames by router.viewModel.allAvailableCategories.collectAsState()
+                            
                             com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen(
                                 viewModel = router.viewModel,
                                 page = route.page,
                                 product = route.product,
-                                existingCategories = categories,
+                                existingCategories = categoriesNames,
                                 onSave = { updatedProduct ->
                                     val updatedComponents = route.page.components.toMutableList()
                                     val index = route.componentIndex ?: 0
@@ -165,8 +167,12 @@ fun App() {
                                         updatedComponents[index] = comp.copy(products = updatedProducts)
                                         val updatedPage = route.page.copy(components = updatedComponents)
                                         
+                                        // IMPORTANTE: Atualiza o rascunho local antes de voltar
+                                        router.viewModel.saveDraft(updatedPage)
+                                        
                                         router.goBack() 
-                                        router.navigateTo(Route.WhiteLabel(updatedPage), replace = true)
+                                        // Não usamos navigateTo WhiteLabel aqui para evitar loops de estado, 
+                                        // o goBack + saveDraft cuidam de tudo.
                                     }
                                 },
                                 onBack = { router.goBack() }

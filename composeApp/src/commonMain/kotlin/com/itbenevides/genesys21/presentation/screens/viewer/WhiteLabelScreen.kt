@@ -44,10 +44,10 @@ fun WhiteLabelScreen(
     val savedCategories by viewModel.allAvailableCategories.collectAsState()
     val userPages by viewModel.pages.collectAsState()
 
-    // Captura a página original apenas uma vez para comparação de rascunho
     val pristinePage = remember(page.id) { page }
+    var showCategoryManagement by remember { mutableStateOf(false) }
 
-    // Inicializa o estado, tentando recuperar rascunho do cache
+    // Inicializa o estado com o draft se existir
     var state by remember { 
         val draft = viewModel.getDraft(page.id)
         mutableStateOf(
@@ -61,6 +61,13 @@ fun WhiteLabelScreen(
         )
     }
 
+    // CORREÇÃO: Força a atualização do estado quando voltamos de outra tela (ex: Editor de Produtos)
+    LaunchedEffect(Unit) {
+        viewModel.getDraft(page.id)?.let { updatedDraft ->
+            state = state.copy(page = updatedDraft)
+        }
+    }
+
     LaunchedEffect(isLoading, serverProducts, savedCategories, userPages) {
         state = state.copy(
             isLoading = isLoading,
@@ -70,9 +77,17 @@ fun WhiteLabelScreen(
         )
     }
 
-    // Persiste o rascunho localmente sempre que a página mudar
     LaunchedEffect(state.page) {
         viewModel.saveDraft(state.page)
+    }
+
+    // LÓGICA DE CATEGORIAS: Mescla categorias do banco com as do rascunho atual
+    val effectiveCategories = remember(savedCategories, state.page) {
+        val categoriesInDraft = state.page.components
+            .filterIsInstance<PageComponent.ProductList>()
+            .flatMap { it.products }
+            .mapNotNull { it.categoryName }
+        (savedCategories + categoriesInDraft).filter { it.isNotBlank() }.distinct().sorted()
     }
 
     fun onEvent(event: WhiteLabelEvent) {
@@ -127,7 +142,21 @@ fun WhiteLabelScreen(
     }
 
     AppTheme(themeConfig = state.page.theme) {
-        WhiteLabelContent(state, viewModel, ::onEvent, originalPage = pristinePage)
+        WhiteLabelContent(
+            state = state, 
+            viewModel = viewModel, 
+            onEvent = ::onEvent, 
+            originalPage = pristinePage,
+            displayCategories = effectiveCategories,
+            onManageCategories = { showCategoryManagement = true }
+        )
+
+        if (showCategoryManagement) {
+            CategoryManagementDialog(
+                viewModel = viewModel,
+                onDismiss = { showCategoryManagement = false }
+            )
+        }
     }
 }
 
@@ -136,7 +165,9 @@ private fun WhiteLabelContent(
     state: WhiteLabelState,
     viewModel: PageViewModel,
     onEvent: (WhiteLabelEvent) -> Unit,
-    originalPage: Page
+    originalPage: Page,
+    displayCategories: List<String>,
+    onManageCategories: () -> Unit
 ) {
     GenesysPage(
         topBar = {
@@ -150,7 +181,6 @@ private fun WhiteLabelContent(
                         onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) }
                     )
                     
-                    // Botão Descartar Rascunho (apenas se houver mudanças)
                     if (state.page != originalPage) {
                         GenesysIconButton(
                             icon = GenesysIcons.Delete,
@@ -213,7 +243,7 @@ private fun WhiteLabelContent(
                                     maxWidth = GenesysDimens.ViewerMaxWidth
                                 ) { index, component ->
                                     val isEditing = state.editingComponentIndex == index
-                                    ComponentWrapperUI(component, index, isEditing, onEvent)
+                                    ComponentWrapperUI(component, index, isEditing, displayCategories, onEvent)
                                 }
                             }
                         }
@@ -226,7 +256,15 @@ private fun WhiteLabelContent(
                                 elevation = GenesysDimens.ElevationMedium
                             ) {
                                 state.editingComponentIndex?.let { index ->
-                                    ComponentEditorUI(state, viewModel, index, onEvent, isEmbedded = true, originalPage = originalPage)
+                                    ComponentEditorUI(
+                                        state = state, 
+                                        viewModel = viewModel, 
+                                        index = index, 
+                                        onEvent = onEvent, 
+                                        isEmbedded = true, 
+                                        originalPage = originalPage,
+                                        onManageCategories = onManageCategories
+                                    )
                                 } ?: run {
                                     GenesysEmptyState(
                                         icon = GenesysIcons.Edit,
@@ -242,7 +280,15 @@ private fun WhiteLabelContent(
             
             if (!isWideScreen) {
                 state.editingComponentIndex?.let { index ->
-                    ComponentEditorUI(state, viewModel, index, onEvent, isEmbedded = false, originalPage = originalPage)
+                    ComponentEditorUI(
+                        state = state, 
+                        viewModel = viewModel, 
+                        index = index, 
+                        onEvent = onEvent, 
+                        isEmbedded = false, 
+                        originalPage = originalPage,
+                        onManageCategories = onManageCategories
+                    )
                 }
             }
         }
@@ -258,9 +304,10 @@ private fun ComponentWrapperUI(
     component: PageComponent,
     index: Int,
     isEditing: Boolean,
+    allCategories: List<String>,
     onEvent: (WhiteLabelEvent) -> Unit
 ) {
-    GenesysColumn(
+     GenesysColumn(
         usePadding = true,
         modifier = Modifier.padding(bottom = GenesysDimens.SpacingSmall)
     ) {
@@ -307,6 +354,7 @@ private fun ComponentWrapperUI(
                 component = component,
                 isEditMode = true,
                 onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
+                allAvailableCategories = allCategories,
                 onProductClick = { product ->
                     onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
                 }
@@ -322,7 +370,8 @@ private fun ComponentEditorUI(
     index: Int,
     onEvent: (WhiteLabelEvent) -> Unit,
     isEmbedded: Boolean = false,
-    originalPage: Page
+    originalPage: Page,
+    onManageCategories: () -> Unit
 ) {
     val component = state.page.components.getOrNull(index) ?: return
     
@@ -415,6 +464,18 @@ private fun ComponentEditorUI(
                             onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
+                }
+                is PageComponent.CategoryFilter -> {
+                    GenesysColumn(usePadding = false) {
+                        GenesysText("Este bloco exibe suas categorias automaticamente.", style = GenesysTextStyle.Body)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysLoadingButton(
+                            text = "Gerenciar Categorias",
+                            icon = GenesysIcons.Category,
+                            onClick = onManageCategories,
+                            fillWidth = true
+                        )
+                    }
                 }
                 else -> { }
             }
@@ -515,7 +576,8 @@ private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent
                 Triple(GenesysStrings.ComponentTypeProductList, GenesysStrings.ComponentTypeProductListDesc, PageComponent.ProductList(emptyList())),
                 Triple(GenesysStrings.ComponentTypeImage, GenesysStrings.ComponentTypeImageDesc, PageComponent.Image("", "")),
                 Triple(GenesysStrings.ComponentTypeButton, GenesysStrings.ComponentTypeButtonDesc, PageComponent.Button("Toque Aqui", "")),
-                Triple(GenesysStrings.ComponentTypeFilter, GenesysStrings.ComponentTypeFilterDesc, PageComponent.Filter())
+                Triple(GenesysStrings.ComponentTypeFilter, GenesysStrings.ComponentTypeFilterDesc, PageComponent.Filter()),
+                Triple(GenesysStrings.ProductCategory, "Filtro de categorias.", PageComponent.CategoryFilter())
             )
             
             catalogItems.forEach { (title, desc, component) ->

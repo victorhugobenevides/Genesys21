@@ -7,13 +7,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
@@ -45,27 +39,27 @@ fun PageViewerScreen(
 ) {
     val router: Router = koinInject()
     val cartCount by router.viewModel.cartCount.collectAsState()
+    val allCategories by router.viewModel.allAvailableCategories.collectAsState()
     
-    // 1. State Holder
-    var state by remember { mutableStateOf(PageViewerScreenState(page = page)) }
+    // Sincroniza o estado com a lista global de categorias do lojista
+    val state = remember(page, cartCount, allCategories) { 
+        PageViewerScreenState(
+            page = page,
+            cartCount = cartCount,
+            allStoreCategories = allCategories
+        ) 
+    }
     
+    var isLoggedIn by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
-        val isLoggedIn = router.viewModel.getCurrentUserToken() != null
-        state = state.copy(
-            isLoggedIn = isLoggedIn,
-            cartCount = cartCount
-        )
+        isLoggedIn = router.viewModel.getCurrentUserToken() != null
         AnalyticsManager.trackPageView("${GenesysStrings.AppName} - ${page.title}")
     }
 
-    LaunchedEffect(cartCount) {
-        state = state.copy(cartCount = cartCount)
-    }
-
-    // 2. Orquestrador de Eventos
     val onEvent: (PageViewerScreenEvent) -> Unit = { event ->
         when (event) {
-            is PageViewerScreenEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
+            is PageViewerScreenEvent.OnFilterQueryChanged -> { }
             is PageViewerScreenEvent.OnProductClicked -> onProductClick(event.product)
             is PageViewerScreenEvent.OnOpenCartClicked -> {
                 AnalyticsManager.logEvent("open_cart")
@@ -75,15 +69,14 @@ fun PageViewerScreen(
                 AnalyticsManager.logEvent("open_order_history")
                 router.navigateTo(Route.CustomerOrderHistory(state.page))
             }
-            is PageViewerScreenEvent.OnAdminSettingsClicked -> router.navigateTo(Route.PageList)
-            is PageViewerScreenEvent.OnBackClicked -> router.goBack()
+            is PageViewerScreenEvent.OnOpenAdminSettingsClicked -> router.navigateTo(Route.PageList)
+            is PageViewerScreenEvent.OnBackClicked -> onBack()
         }
     }
 
-    // 3. Renderização sob o tema da página
     AppTheme(themeConfig = state.page.theme) {
         ThemeScrollbarEffectWrapper()
-        PageViewerContent(state, onEvent)
+        PageViewerContent(state.copy(isLoggedIn = isLoggedIn), onEvent)
     }
 }
 
@@ -92,6 +85,8 @@ private fun PageViewerContent(
     state: PageViewerScreenState,
     onEvent: (PageViewerScreenEvent) -> Unit
 ) {
+    var currentFilterQuery by remember { mutableStateOf("") }
+
     GenesysPage(
         topBar = {
              GenesysTopAppBar(
@@ -108,7 +103,7 @@ private fun PageViewerContent(
                         GenesysIconButton(
                             icon = GenesysIcons.Settings, 
                             contentDescription = GenesysStrings.AdminTitle,
-                            onClick = { onEvent(PageViewerScreenEvent.OnAdminSettingsClicked) }
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenAdminSettingsClicked) }
                         )
                     }
                 }
@@ -141,13 +136,11 @@ private fun PageViewerContent(
             }
         }
     ) {
-        // Container Root centralizado
         GenesysColumn(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = GenesysAlignment.Center,
             usePadding = false
         ) {
-            // Conteúdo da Vitrine com scroll e largura máxima
             GenesysColumn(
                 maxWidth = GenesysDimens.ViewerMaxWidth,
                 usePadding = false,
@@ -158,13 +151,12 @@ private fun PageViewerContent(
                     PageComponentRenderer(
                         component = component,
                         onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
-                        filterQuery = state.filterQuery,
-                        onFilterQueryChange = { onEvent(PageViewerScreenEvent.OnFilterQueryChanged(it)) },
-                        allAvailableCategories = state.categories
+                        filterQuery = currentFilterQuery,
+                        onFilterQueryChange = { currentFilterQuery = it },
+                        allAvailableCategories = state.allStoreCategories // CORREÇÃO: Usa a lista global
                     )
                 }
                 
-                // Espaço extra no final para não ficar colado no FAB
                 GenesysSpacer(GenesysSpacing.Huge)
             }
         }

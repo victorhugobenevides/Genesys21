@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.data.repository
 
+import com.itbenevides.genesys21.domain.model.Category
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.PageRepository
@@ -144,6 +145,60 @@ class KtorPageRepository(
             } else {
                 Result.failure(Exception("Falha ao buscar produtos"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getCategories(token: String): Result<List<Category>> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        return try {
+            val response = client.get("$baseUrl/api/categories") {
+                parameter("t", getTimestamp())
+                header(HttpHeaders.CacheControl, "no-cache")
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Falha ao buscar categorias"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun saveCategory(category: Category, token: String): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        return try {
+            val response = if (category.id != null) {
+                client.put("$baseUrl/api/categories") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(category)
+                }
+            } else {
+                client.post("$baseUrl/api/categories") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(category)
+                }
+            }
+            if (response.status.isSuccess()) Result.success(Unit)
+            else Result.failure(Exception("Erro ao salvar categoria"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteCategory(id: Int, token: String): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        return try {
+            val response = client.delete("$baseUrl/api/categories/$id") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) Result.success(Unit)
+            else Result.failure(Exception("Erro ao excluir categoria"))
         } catch (e: Exception) {
             Result.failure(e)
         }

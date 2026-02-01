@@ -36,7 +36,10 @@ class PageViewModel(
     private val authRepository: AuthRepository,
     private val cartRepository: CartRepository,
     private val customerRepository: CustomerRepository,
-    private val pageDraftRepository: PageDraftRepository
+    private val pageDraftRepository: PageDraftRepository,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val saveCategoryUseCase: SaveCategoryUseCase,
+    private val deleteCategoryUseCase: DeleteCategoryUseCase
 ) : ViewModel() {
 
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
@@ -47,6 +50,9 @@ class PageViewModel(
 
     private val _customerOrders = MutableStateFlow<List<Order>>(emptyList())
     val customerOrders: StateFlow<List<Order>> = _customerOrders.asStateFlow()
+
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
@@ -63,6 +69,7 @@ class PageViewModel(
         viewModelScope.launch {
             cartRepository.loadInitialCart()
             customerRepository.loadName()
+            loadCategories()
         }
     }
 
@@ -194,6 +201,7 @@ class PageViewModel(
                 getPagesUseCase(token)
             }.onSuccess {
                 _pages.value = it
+                loadCategories() // Sincroniza categorias ao carregar páginas
             }.onFailure {
                 handleError("Falha ao carregar páginas", it)
             }
@@ -250,6 +258,60 @@ class PageViewModel(
         }
     }
 
+    // Categories
+    fun loadCategories() {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            getCategoriesUseCase(token).onSuccess {
+                _categories.value = it
+            }
+        }
+    }
+
+    fun saveCategory(category: Category, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            saveCategoryUseCase(category, token).onSuccess {
+                loadCategories()
+                onComplete()
+            }.onFailure {
+                handleError("Falha ao salvar categoria", it)
+            }
+        }
+    }
+
+    fun deleteCategory(id: Int) {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            deleteCategoryUseCase(id, token).onSuccess {
+                loadCategories()
+            }
+        }
+    }
+
+    // Derived States
+    val allAvailableProducts: StateFlow<List<Product>> = _pages.map { pageList ->
+        val result = mutableListOf<Product>()
+        for (page in pageList) {
+            for (component in page.components) {
+                if (component is PageComponent.ProductList) {
+                    result.addAll(component.products)
+                }
+            }
+        }
+        result.distinctBy { it.id }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Simplificação da lógica de categorias para garantir reatividade
+    val allAvailableCategories: StateFlow<List<String>> = combine(categories, allAvailableProducts) { cats, products ->
+        val namesFromTable = cats.map { it.name }
+        val namesFromProducts = products.mapNotNull { it.categoryName }
+        (namesFromTable + namesFromProducts)
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sorted()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList()) // Mudado para Eagerly para garantir atualização constante
+
     // Drafts
     fun saveDraft(page: Page) {
         pageDraftRepository.saveDraft(page)
@@ -270,6 +332,7 @@ class PageViewModel(
         viewModelScope.launch {
             authRepository.signIn(email, pass).onSuccess {
                 AnalyticsManager.logEvent("login")
+                loadPages()
                 onSuccess() 
             }.onFailure { 
                 handleError("Erro de Login", it)
@@ -284,21 +347,4 @@ class PageViewModel(
             authRepository.signOut() 
         }
     }
-
-    // Derived States
-    val allAvailableProducts: StateFlow<List<Product>> = _pages.map { pageList ->
-        val result = mutableListOf<Product>()
-        for (page in pageList) {
-            for (component in page.components) {
-                if (component is PageComponent.ProductList) {
-                    result.addAll(component.products)
-                }
-            }
-        }
-        result.distinctBy { it.id }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val allAvailableCategories: StateFlow<List<String>> = allAvailableProducts.map { products ->
-        products.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

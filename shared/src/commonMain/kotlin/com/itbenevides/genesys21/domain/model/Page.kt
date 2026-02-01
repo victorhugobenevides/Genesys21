@@ -10,7 +10,8 @@ data class Product(
     val price: Double,
     val imageUrls: List<String> = emptyList(),
     val description: String = "",
-    val category: String = "",
+    val categoryId: Int? = null,
+    val categoryName: String? = null,
     val stock: Int = 0
 ) {
     val imageUrl: String get() = imageUrls.firstOrNull() ?: ""
@@ -36,7 +37,7 @@ sealed class PageComponent {
         val content: String, 
         val fontSize: Int = 16,
         val textAlign: String = "LEFT",
-        val fontWeight: String = "NORMAL", // NORMAL, BOLD, EXTRA_BOLD
+        val fontWeight: String = "NORMAL",
         val isUppercase: Boolean = false,
         val usePrimaryColor: Boolean = false,
         override val customLabel: String? = null,
@@ -124,49 +125,60 @@ data class Page(
 ) {
     companion object {
         fun defaultTemplate(id: String, title: String): Page {
-            val categories = listOf("Lançamentos", "Mais Vendidos", "Promoções", "Coleção Verão", "Acessórios")
+            val oldSchoolCategories = listOf("Vintage Denim", "Retro Graphic Tees", "Old School Jackets", "90s Accessories", "Classic Sneakers")
             
-            val horizontalProducts = (1..10).map { i ->
+            // Gerando 30 produtos temáticos para o template
+            val demoProducts = (1..30).map { i ->
+                val category = oldSchoolCategories[i % oldSchoolCategories.size]
                 Product(
-                    id = "H$i",
-                    name = "Produto Horizontal $i",
-                    price = (50..500).random().toDouble(),
-                    category = categories.random(),
-                    imageUrls = listOf("https://picsum.photos/seed/h$i/400/400")
-                )
-            }
-
-            val verticalProducts = (1..10).map { i ->
-                Product(
-                    id = "V$i",
-                    name = "Produto Vertical $i",
-                    price = (50..500).random().toDouble(),
-                    category = categories.random(),
-                    imageUrls = listOf("https://picsum.photos/seed/v$i/400/400")
+                    id = "vint_$i",
+                    name = when(category) {
+                        "Vintage Denim" -> listOf("Calça Jeans 501", "Shorts Acid Wash", "Jaqueta Jeans Oversized").random() + " #$i"
+                        "Retro Graphic Tees" -> listOf("T-Shirt Flamingo", "Camiseta Arcade 80s", "Baby Look Neon").random() + " #$i"
+                        "Old School Jackets" -> listOf("Windbreaker Turquesa", "Bomber Varsity", "Corta Vento Color Block").random() + " #$i"
+                        "90s Accessories" -> listOf("Boné Snapback", "Óculos Tartaruga", "Pochete Retro").random() + " #$i"
+                        else -> "Tênis cano alto Vintage" + " #$i"
+                    },
+                    price = (49..399).random().toDouble() + 0.90,
+                    categoryName = category,
+                    stock = (5..50).random(),
+                    imageUrls = listOf("https://picsum.photos/seed/vint$i/500/500")
                 )
             }
 
             return Page(
                 id = id,
-                title = title,
-                theme = PageThemeConfig.ROYAL,
+                title = if (title.isBlank()) "Old School Turquesa" else title,
+                theme = PageThemeConfig.OCEAN,
                 components = listOf(
-                    PageComponent.Header(title = title, customLabel = "Nome da Loja"),
+                    PageComponent.Header(
+                        title = if (title.isBlank()) "Old School Turquesa" else title, 
+                        customLabel = "Header Vintage",
+                        textAlign = "CENTER",
+                        fontSize = 36
+                    ),
                     PageComponent.Image(
-                        url = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000",
-                        customLabel = "Banner Principal"
+                        url = "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200",
+                        customLabel = "Banner Estiloso",
+                        isFullWidth = true
                     ),
-                    PageComponent.Filter(customLabel = "Barra de Pesquisa"),
-                    PageComponent.CategoryFilter(customLabel = "Categorias"),
+                    PageComponent.Text(
+                        content = "A melhor curadoria de roupas vintage e old school com o toque turquesa que você ama.",
+                        textAlign = "CENTER",
+                        fontSize = 18,
+                        customLabel = "Sobre a Loja"
+                    ),
+                    PageComponent.Filter(customLabel = "Busca"),
+                    PageComponent.CategoryFilter(customLabel = "Nossas Seções"),
                     PageComponent.ProductList(
-                        products = horizontalProducts, 
+                        products = demoProducts.take(8), 
                         isHorizontal = true, 
-                        customLabel = "Destaques (Horizontal)"
+                        customLabel = "Destaques Retro"
                     ),
                     PageComponent.ProductList(
-                        products = verticalProducts, 
+                        products = demoProducts.drop(8), 
                         isHorizontal = false, 
-                        customLabel = "Todos os Produtos (Vertical)"
+                        customLabel = "Coleção Completa"
                     )
                 )
             )

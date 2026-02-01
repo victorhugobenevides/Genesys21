@@ -12,17 +12,9 @@ data class PageViewerScreenState(
     val filterQuery: String = "",
     val isLoggedIn: Boolean = false,
     val cartCount: Int = 0,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val allStoreCategories: List<String> = emptyList() // ADICIONADO: Lista global do lojista
 ) {
-    // Extrai automaticamente as categorias dos produtos presentes na página
-    val categories: List<String> = page.components
-        .filterIsInstance<PageComponent.ProductList>()
-        .flatMap { it.products }
-        .map { it.category }
-        .filter { it.isNotBlank() }
-        .distinct()
-        .sorted()
-
     val hasProductList: Boolean = page.components.any { it is PageComponent.ProductList }
 }
 
@@ -34,6 +26,6 @@ sealed class PageViewerScreenEvent {
     data class OnProductClicked(val product: Product) : PageViewerScreenEvent()
     object OnOpenCartClicked : PageViewerScreenEvent()
     object OnOpenHistoryClicked : PageViewerScreenEvent()
-    object OnAdminSettingsClicked : PageViewerScreenEvent()
+    object OnOpenAdminSettingsClicked : PageViewerScreenEvent()
     object OnBackClicked : PageViewerScreenEvent()
 }

@@ -15,7 +15,8 @@ val viewModelModule = module {
         PageViewModel(
             get(), get(), get(), get(), get(), get(), get(), 
             get(), get(), get(), get(), get(), 
-            get(), get(), get(), get()
+            get(), get(), get(), get(),
+            get(), get(), get() // ADICIONADO: Use cases de categoria
         ) 
     }
 

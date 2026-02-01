@@ -60,8 +60,9 @@ fun ProductListComponentEditor(
 
         if (selectedTab == 0) {
             // ABA 1: Produtos Atuais
-            val filteredListProducts = component.products.filter { 
-                it.name.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true)
+            val filteredListProducts = component.products.filter { product ->
+                product.name.contains(searchQuery, ignoreCase = true) || 
+                (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
             }
 
             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
@@ -118,7 +119,10 @@ fun ProductListComponentEditor(
             // ABA 2: Catálogo Global
             val catalogToDisplay = allAvailableProducts
                 .filter { p -> component.products.none { it.id == p.id } }
-                .filter { it.name.contains(searchQuery, ignoreCase = true) || it.category.contains(searchQuery, ignoreCase = true) }
+                .filter { product -> 
+                    product.name.contains(searchQuery, ignoreCase = true) || 
+                    (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
+                }
             
             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
                 if (catalogToDisplay.isEmpty()) {

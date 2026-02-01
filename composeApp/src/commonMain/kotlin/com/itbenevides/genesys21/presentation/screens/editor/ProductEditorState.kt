@@ -10,7 +10,8 @@ data class ProductEditorState(
     val price: String = "",
     val imageUrls: List<String> = emptyList(),
     val description: String = "",
-    val category: String = "",
+    val categoryId: Int? = null,
+    val categoryName: String = "",
     val stock: String = "0",
     val isLoading: Boolean = false,
     val isUploading: Boolean = false,
@@ -22,7 +23,8 @@ data class ProductEditorState(
             price = product?.price?.toString()?.replace(".", ",") ?: "",
             imageUrls = product?.imageUrls ?: emptyList(),
             description = product?.description ?: "",
-            category = product?.category ?: "",
+            categoryId = product?.categoryId,
+            categoryName = product?.categoryName ?: "",
             stock = product?.stock?.toString() ?: "0",
             isEditing = product != null
         )
@@ -38,7 +40,7 @@ sealed class ProductEditorEvent {
     data class OnNameChanged(val name: String) : ProductEditorEvent()
     data class OnPriceChanged(val price: String) : ProductEditorEvent()
     data class OnDescriptionChanged(val description: String) : ProductEditorEvent()
-    data class OnCategoryChanged(val category: String) : ProductEditorEvent()
+    data class OnCategoryChanged(val categoryId: Int?, val categoryName: String) : ProductEditorEvent()
     data class OnStockChanged(val stock: String) : ProductEditorEvent()
     object OnAddPhotoClicked : ProductEditorEvent()
     data class OnRemovePhotoClicked(val url: String) : ProductEditorEvent()

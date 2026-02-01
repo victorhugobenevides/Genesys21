@@ -60,11 +60,11 @@ fun PageComponentRenderer(
         when (component) {
             is PageComponent.ProductList -> {
                 if (isCategoryFilterActive) {
-                    component.products.any { it.category.equals(filterQuery, ignoreCase = true) }
+                    component.products.any { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
                 } else {
                     component.products.any { 
                         it.name.contains(filterQuery, ignoreCase = true) || 
-                        it.category.contains(filterQuery, ignoreCase = true) 
+                        (it.categoryName?.contains(filterQuery, ignoreCase = true) == true)
                     }
                 }
             }
@@ -127,11 +127,11 @@ fun PageComponentRenderer(
                     component.products
                 } else {
                     if (isCategoryFilterActive) {
-                        component.products.filter { it.category.equals(filterQuery, ignoreCase = true) }
+                        component.products.filter { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
                     } else {
                         component.products.filter { 
                             it.name.contains(filterQuery, ignoreCase = true) || 
-                            it.category.contains(filterQuery, ignoreCase = true)
+                            (it.categoryName?.contains(filterQuery, ignoreCase = true) == true)
                         }
                     }
                 }
@@ -224,7 +224,6 @@ fun PageComponentRenderer(
             }
             is PageComponent.Image -> {
                 val scope = rememberCoroutineScope()
-                // CORREÇÃO: Garante a centralização da imagem usando Column com centralização horizontal
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -9,6 +9,7 @@ import com.itbenevides.genesys21.data.repository.SqliteCartRepository
 import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.data.repository.SqlitePageRepository
 import com.itbenevides.genesys21.routes.cartRoutes
+import com.itbenevides.genesys21.routes.categoryRoutes
 import com.itbenevides.genesys21.routes.orderRoutes
 import com.itbenevides.genesys21.routes.pageRoutes
 import io.ktor.http.*
@@ -68,7 +69,7 @@ fun Application.module() {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.CacheControl) // ADICIONADO: Necessário para Cache-Busting no WasmJs
+        allowHeader(HttpHeaders.CacheControl)
         allowHeader("X-Cart-Session-Id")
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
@@ -109,6 +110,7 @@ fun Application.module() {
             pageRoutes(pageRepository)
             cartRoutes(cartRepository)
             orderRoutes(orderRepository)
+            categoryRoutes(pageRepository) // REGISTRADO: Rotas de categoria
             
             authenticate("firebase") {
                 post("/upload") {
@@ -119,7 +121,6 @@ fun Application.module() {
                         if (part is PartData.FileItem) {
                             val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
                             fileName = "${UUID.randomUUID()}.$ext"
-                            // CORREÇÃO: Leitura estável de bytes para JVM
                             fileBytes = part.streamProvider().readBytes()
                         }
                         part.dispose()

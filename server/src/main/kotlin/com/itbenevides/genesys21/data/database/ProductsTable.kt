@@ -5,11 +5,19 @@ import org.jetbrains.exposed.sql.ReferenceOption
 
 object ProductsTable : Table("products") {
     val id = varchar("id", 50)
-    val ownerId = varchar("owner_id", 100)
+    val ownerId = varchar("owner_id", 100).index()
     val name = varchar("name", 255)
     val price = double("price")
     val description = text("description").nullable()
-    val category = varchar("category", 100).nullable()
+    
+    // CORREÇÃO: Vinculando à tabela de categorias recém-criada
+    val categoryId = reference(
+        "category_id", 
+        CategoriesTable, 
+        onDelete = ReferenceOption.SET_NULL, 
+        onUpdate = ReferenceOption.CASCADE
+    ).nullable()
+    
     val stock = integer("stock").default(0)
 
     override val primaryKey = PrimaryKey(id)
@@ -17,13 +25,12 @@ object ProductsTable : Table("products") {
 
 /**
  * Normalização: Tabela para armazenar as URLs de imagem de forma atômica.
- * Segue a 1ª Forma Normal (Valores Atômicos).
  */
 object ProductImagesTable : Table("product_images") {
     val id = integer("id").autoIncrement()
     val productId = varchar("product_id", 50).references(ProductsTable.id, onDelete = ReferenceOption.CASCADE)
     val imageUrl = text("image_url")
-    val order = integer("image_order") // Para manter a sequência das fotos
+    val order = integer("image_order")
 
     override val primaryKey = PrimaryKey(id)
 }

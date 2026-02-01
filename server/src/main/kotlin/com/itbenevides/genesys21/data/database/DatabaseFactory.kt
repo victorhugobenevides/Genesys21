@@ -15,8 +15,6 @@ object DatabaseFactory {
     fun init() {
         setupDatabaseDirectory()
         
-        // CORREÇÃO: Removido o bloco que deletava o arquivo .db para preservar os dados.
-
         applySqliteOptimizations()
 
         val dataSource = hikari()
@@ -56,8 +54,9 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
-            // Usamos createMissingTablesAndColumns para apenas adicionar o que faltar, preservando os dados existentes.
+            // Adicionado CategoriesTable à lista de migração
             SchemaUtils.createMissingTablesAndColumns(
+                CategoriesTable,
                 PagesTable, 
                 PageComponentsTable,
                 ProductsTable,

@@ -18,4 +18,9 @@ val domainModule = module {
     single { UpdateOrderStatusUseCase(get()) }
     
     single { UploadImageUseCase(get()) }
+
+    // Category Use Cases
+    single { GetCategoriesUseCase(get()) }
+    single { SaveCategoryUseCase(get()) }
+    single { DeleteCategoryUseCase(get()) }
 }
