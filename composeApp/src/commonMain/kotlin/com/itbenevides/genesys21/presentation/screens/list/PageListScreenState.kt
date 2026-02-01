@@ -36,7 +36,6 @@ sealed class PageListEvent {
     object OnCreatePageClicked : PageListEvent()
     data class OnNewPageTitleChanged(val title: String) : PageListEvent()
     
-    // Atualizado para usar o Enum de tipos
     data class OnConfirmCreatePage(val templateType: PageTemplateType) : PageListEvent()
     
     object OnDismissCreateDialog : PageListEvent()
@@ -46,4 +45,9 @@ sealed class PageListEvent {
     data class OnDeletePageClicked(val pageId: String) : PageListEvent()
     data class OnUpdateOrderStatus(val orderId: String, val newStatus: OrderStatus) : PageListEvent()
     object OnLogoutClicked : PageListEvent()
+    
+    // Exportar e Importar
+    data class OnExportPageClicked(val page: Page) : PageListEvent()
+    object OnExportAllClicked : PageListEvent()
+    data class OnImportPageClicked(val json: String) : PageListEvent()
 }

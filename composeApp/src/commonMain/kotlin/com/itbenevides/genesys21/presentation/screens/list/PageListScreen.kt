@@ -41,6 +41,10 @@ import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.util.downloadFile
+import com.itbenevides.genesys21.util.rememberFileHandler
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.math.roundToLong
 
 @Composable
@@ -69,7 +73,8 @@ fun PageListScreen(
         viewModel.loadOrders()
     }
 
-    fun onEvent(event: PageListEvent) {
+    // Movemos a definição da função onEvent para antes do uso no fileHandler
+    val onEvent: (PageListEvent) -> Unit = { event ->
         when (event) {
             is PageListEvent.OnTabSelected -> state = state.copy(selectedTab = event.index)
             is PageListEvent.OnSearchQueryChanged -> state = state.copy(searchQuery = event.query)
@@ -107,10 +112,63 @@ fun PageListScreen(
             is PageListEvent.OnDeletePageClicked -> viewModel.deletePage(event.pageId) { viewModel.loadPages() }
             is PageListEvent.OnUpdateOrderStatus -> viewModel.updateOrderStatus(event.orderId, event.newStatus)
             is PageListEvent.OnLogoutClicked -> onLogout()
+            
+            // Lógica de Exportação Individual
+            is PageListEvent.OnExportPageClicked -> {
+                val json = Json.encodeToString(event.page)
+                downloadFile(json, "${event.page.title.replace(" ", "_")}.benevides")
+            }
+
+            // Lógica de Exportação de Backup (Todas as páginas)
+            is PageListEvent.OnExportAllClicked -> {
+                if (state.pages.isNotEmpty()) {
+                    val json = Json.encodeToString(state.pages)
+                    downloadFile(json, "backup_genesys21_${state.pages.size}_paginas.benevides")
+                }
+            }
+            
+            // Lógica de Importação (Individual ou Backup)
+            is PageListEvent.OnImportPageClicked -> {
+                try {
+                    // Tenta decodificar como lista (backup) primeiro
+                    val importedPages = runCatching { Json.decodeFromString<List<Page>>(event.json) }.getOrNull()
+                    
+                    if (importedPages != null) {
+                        // Importação em Lote
+                        importedPages.forEach { page ->
+                            val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+                            viewModel.savePage(page.copy(id = newId), false) { }
+                        }
+                        viewModel.loadPages()
+                        state = state.copy(showCreateDialog = false)
+                    } else {
+                        // Tenta decodificar como página única
+                        val importedPage = Json.decodeFromString<Page>(event.json)
+                        val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+                        viewModel.savePage(importedPage.copy(id = newId), false) {
+                            viewModel.loadPages()
+                            state = state.copy(showCreateDialog = false)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Erro silencioso
+                }
+            }
         }
     }
 
-    PageListContent(state, ::onEvent, onViewPage, onEditPage)
+    val fileHandler = rememberFileHandler { json ->
+        json?.let { onEvent(PageListEvent.OnImportPageClicked(it)) }
+    }
+
+    PageListContent(
+        state = state, 
+        onEvent = onEvent, 
+        onViewPage = onViewPage, 
+        onEditPage = onEditPage, 
+        onImport = { fileHandler() },
+        onExportAll = { onEvent(PageListEvent.OnExportAllClicked) }
+    )
 }
 
 @Composable
@@ -118,15 +176,29 @@ private fun PageListContent(
     state: PageListState,
     onEvent: (PageListEvent) -> Unit,
     onViewPage: (Page) -> Unit,
-    onEditPage: (Page) -> Unit
+    onEditPage: (Page) -> Unit,
+    onImport: () -> Unit,
+    onExportAll: () -> Unit
 ) {
-    GenesysPage(
+     GenesysPage(
         topBar = {
             GenesysColumn(usePadding = false, modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
                 GenesysTopAppBar(
                     title = GenesysStrings.AdminTitle,
                     onBack = null,
                     actions = {
+                        // BOTÕES DE BACKUP GLOBAL
+                        GenesysIconButton(
+                            icon = GenesysIcons.Numbers, // Usando Numbers como ícone de backup/lote
+                            contentDescription = "Exportar Tudo",
+                            onClick = onExportAll
+                        )
+                        GenesysIconButton(
+                            icon = GenesysIcons.CloudUpload, 
+                            contentDescription = "Importar Backup",
+                            onClick = onImport
+                        )
+                        
                         GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })
                         GenesysIconButton(icon = GenesysIcons.Add, onClick = { onEvent(PageListEvent.OnCreatePageClicked) })
                     }
@@ -144,8 +216,6 @@ private fun PageListContent(
         }
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 1000.dp
-            
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -208,7 +278,7 @@ private fun PageListContent(
         }
     }
 
-    if (state.showCreateDialog) CreatePageDialog(state, onEvent)
+    if (state.showCreateDialog) CreatePageDialog(state, onEvent, onImport)
     if (state.showGlobalSettings && state.pages.isNotEmpty()) GlobalSettingsDialog(state, onEvent)
 }
 
@@ -253,6 +323,7 @@ private fun PagesTabUI(
                         val url = "$baseUrl/p/${page.id}"
                         clipboardManager.setText(AnnotatedString(url))
                     },
+                    onExport = { onEvent(PageListEvent.OnExportPageClicked(page)) },
                     onDelete = { onEvent(PageListEvent.OnDeletePageClicked(page.id)) }
                 )
                 GenesysSpacer(GenesysSpacing.Medium)
@@ -333,6 +404,7 @@ private fun PageItemRow(
     onView: () -> Unit,
     onEdit: () -> Unit,
     onCopyUrl: () -> Unit,
+    onExport: () -> Unit,
     onDelete: () -> Unit
 ) {
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
@@ -375,6 +447,7 @@ private fun PageItemRow(
                 GenesysIconButton(icon = GenesysIcons.Visibility, onClick = onView)
                 GenesysIconButton(icon = GenesysIcons.Edit, onClick = onEdit)
                 GenesysIconButton(icon = GenesysIcons.Copy, onClick = onCopyUrl)
+                GenesysIconButton(icon = GenesysIcons.CloudUpload, onClick = onExport) // ÍCONE DE EXPORTAR
                 GenesysIconButton(icon = GenesysIcons.Delete, onClick = onDelete, tint = MaterialTheme.colorScheme.error)
             }
         }
@@ -500,8 +573,8 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
 }
 
 @Composable
-private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> Unit) {
-    GenesysDialog(
+private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> Unit, onImport: () -> Unit) {
+     GenesysDialog(
         onDismissRequest = { onEvent(PageListEvent.OnDismissCreateDialog) },
         title = GenesysStrings.NewPageTitle,
         confirmButton = { 
@@ -523,6 +596,14 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
                     fillWidth = true,
                     icon = GenesysIcons.Person
                 ) 
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysLoadingButton(
+                    text = "Importar Arquivo .benevides", 
+                    onClick = onImport,
+                    fillWidth = true,
+                    icon = GenesysIcons.CloudUpload,
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysTextButton(
                     text = GenesysStrings.CreateEmptyVitrine, 
