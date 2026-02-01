@@ -2,6 +2,8 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -47,7 +49,6 @@ fun WhiteLabelScreen(
     val pristinePage = remember(page.id) { page }
     var showCategoryManagement by remember { mutableStateOf(false) }
 
-    // Inicializa o estado com o draft se existir
     var state by remember { 
         val draft = viewModel.getDraft(page.id)
         mutableStateOf(
@@ -61,7 +62,6 @@ fun WhiteLabelScreen(
         )
     }
 
-    // CORREÇÃO: Força a atualização do estado quando voltamos de outra tela (ex: Editor de Produtos)
     LaunchedEffect(Unit) {
         viewModel.getDraft(page.id)?.let { updatedDraft ->
             state = state.copy(page = updatedDraft)
@@ -81,7 +81,6 @@ fun WhiteLabelScreen(
         viewModel.saveDraft(state.page)
     }
 
-    // LÓGICA DE CATEGORIAS: Mescla categorias do banco com as do rascunho atual
     val effectiveCategories = remember(savedCategories, state.page) {
         val categoriesInDraft = state.page.components
             .filterIsInstance<PageComponent.ProductList>()
@@ -374,28 +373,40 @@ private fun ComponentEditorUI(
     onManageCategories: () -> Unit
 ) {
     val component = state.page.components.getOrNull(index) ?: return
+    val scrollState = rememberScrollState()
     
     val editorContent = @Composable {
-        GenesysColumn(usePadding = isEmbedded, useScroll = isEmbedded) {
-            GenesysRow(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                GenesysWeightBox(1f) {
-                    GenesysText(text = GenesysStrings.BlockSettings, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+        GenesysColumn(
+            usePadding = false, 
+            modifier = Modifier.then(if (isEmbedded) Modifier.verticalScroll(scrollState) else Modifier)
+        ) {
+            // CORREÇÃO: Cabeçalho renderizado apenas no modo EMBEDDED (WideScreen)
+            // No modo BottomSheet, o GenesysBottomSheet já renderiza o título.
+            if (isEmbedded) {
+                GenesysRow(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    GenesysWeightBox(1f) {
+                        GenesysText(
+                            text = GenesysStrings.BlockSettings, 
+                            style = GenesysTextStyle.Title, 
+                            fontWeight = GenesysFontWeight.Bold
+                        )
+                    }
+                    
+                    if (state.page != originalPage) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.Delete,
+                            contentDescription = GenesysStrings.DiscardDraft,
+                            tint = MaterialTheme.colorScheme.error,
+                            onClick = {
+                                viewModel.clearDraft(state.page.id)
+                                onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
+                                onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                            }
+                        )
+                    }
                 }
-                if (state.page != originalPage) {
-                    GenesysIconButton(
-                        icon = GenesysIcons.Delete,
-                        contentDescription = GenesysStrings.DiscardDraft,
-                        tint = MaterialTheme.colorScheme.error,
-                        onClick = {
-                            viewModel.clearDraft(state.page.id)
-                            onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                        }
-                    )
-                }
+                GenesysSpacer(GenesysSpacing.Medium)
             }
-            
-            GenesysSpacer(GenesysSpacing.Medium)
 
             var customLabel by remember(component) { mutableStateOf(component.customLabel ?: "") }
             
@@ -479,6 +490,8 @@ private fun ComponentEditorUI(
                 }
                 else -> { }
             }
+            
+            GenesysSpacer(GenesysSpacing.Huge)
         }
     }
 
@@ -487,9 +500,27 @@ private fun ComponentEditorUI(
     } else {
         GenesysBottomSheet(
             onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
-            title = GenesysStrings.BlockSettings
+            title = GenesysStrings.BlockSettings,
+            actions = {
+                // No mobile, o botão de descartar fica no cabeçalho do BottomSheet
+                if (state.page != originalPage) {
+                    GenesysIconButton(
+                        icon = GenesysIcons.Delete,
+                        contentDescription = GenesysStrings.DiscardDraft,
+                        tint = MaterialTheme.colorScheme.error,
+                        onClick = {
+                            viewModel.clearDraft(state.page.id)
+                            onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                        }
+                    )
+                }
+            }
         ) {
-            editorContent()
+            // Container com scroll para o conteúdo do editor no mobile
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
+                editorContent()
+            }
         }
     }
 }

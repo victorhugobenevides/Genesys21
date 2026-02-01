@@ -39,14 +39,14 @@ fun PageViewerScreen(
 ) {
     val router: Router = koinInject()
     val cartCount by router.viewModel.cartCount.collectAsState()
-    val allCategories by router.viewModel.allAvailableCategories.collectAsState()
+    val storeCategories by router.viewModel.allAvailableCategories.collectAsState()
     
-    // Sincroniza o estado com a lista global de categorias do lojista
-    val state = remember(page, cartCount, allCategories) { 
+    // Sincroniza o estado com as categorias globais do lojista
+    val state = remember(page, cartCount, storeCategories) { 
         PageViewerScreenState(
             page = page,
             cartCount = cartCount,
-            allStoreCategories = allCategories
+            allStoreCategories = storeCategories
         ) 
     }
     
@@ -153,7 +153,7 @@ private fun PageViewerContent(
                         onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
                         filterQuery = currentFilterQuery,
                         onFilterQueryChange = { currentFilterQuery = it },
-                        allAvailableCategories = state.allStoreCategories // CORREÇÃO: Usa a lista global
+                        allAvailableCategories = state.allStoreCategories // USA AS CATEGORIAS GLOBAIS
                     )
                 }
                 

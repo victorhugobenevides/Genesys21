@@ -52,6 +52,7 @@ fun ProductEditorScreen(
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
+    // 1. State Holder
     var state by remember { mutableStateOf(ProductEditorState.initial(product)) }
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
@@ -61,6 +62,7 @@ fun ProductEditorScreen(
 
     state = state.copy(isLoading = isGlobalLoading)
 
+    // 2. Orquestrador de Eventos
     val imagePicker = rememberImagePicker { bytes ->
         bytes?.let {
             if (state.imageUrls.size < 5) {
@@ -81,7 +83,6 @@ fun ProductEditorScreen(
             is ProductEditorEvent.OnPriceChanged -> state = state.copy(price = InputValidator.validatePrice(event.price))
             is ProductEditorEvent.OnDescriptionChanged -> state = state.copy(description = event.description)
             is ProductEditorEvent.OnCategoryChanged -> {
-                // CORREÇÃO: Sincroniza ID e Nome ao mesmo tempo no estado
                 state = state.copy(categoryId = event.categoryId, categoryName = event.categoryName)
             }
             is ProductEditorEvent.OnStockChanged -> state = state.copy(stock = InputValidator.validateStock(event.stock))
@@ -108,6 +109,7 @@ fun ProductEditorScreen(
         }
     }
 
+    // 3. Renderização sob o tema da vitrine
     AppTheme(themeConfig = page.theme) {
         ProductEditorContent(
             state = state, 
@@ -115,11 +117,7 @@ fun ProductEditorScreen(
             categoryOptions = categories.map { it.name }, 
             onEvent = onEvent, 
             onBack = onBack, 
-            onManageCategories = { showCategoryManagement = true },
-            onCategorySelected = { name ->
-                val selectedCategory = categories.find { it.name == name }
-                onEvent(ProductEditorEvent.OnCategoryChanged(selectedCategory?.id, name))
-            }
+            onManageCategories = { showCategoryManagement = true }
         )
         
         if (showCategoryManagement) {
@@ -138,8 +136,7 @@ private fun ProductEditorContent(
     categoryOptions: List<String>,
     onEvent: (ProductEditorEvent) -> Unit,
     onBack: () -> Unit,
-    onManageCategories: () -> Unit,
-    onCategorySelected: (String) -> Unit
+    onManageCategories: () -> Unit
 ) {
      GenesysPage(
         topBar = {
@@ -235,12 +232,13 @@ private fun ProductEditorContent(
 
                                     GenesysSpacer(GenesysSpacing.Medium)
 
-                                    // CAMPO DE CATEGORIA CORRIGIDO
                                     GenesysRow(verticalAlignment = Alignment.CenterVertically) {
                                         Box(modifier = Modifier.weight(1f)) {
                                             GenesysDropdownField(
                                                 value = state.categoryName,
-                                                onValueChange = onCategorySelected,
+                                                onValueChange = { name ->
+                                                    onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
+                                                },
                                                 label = GenesysStrings.ProductCategory,
                                                 options = categoryOptions,
                                                 icon = GenesysIcons.Category
