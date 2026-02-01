@@ -43,6 +43,12 @@ object GenesysIcons {
     val ArrowDropDown = Icons.Default.ArrowDropDown
     val Magic = Icons.Default.AutoAwesome
     val Straighten = Icons.Default.Straighten
+    val Close = Icons.Default.Close
+    
+    // Ícones de Redes Sociais (Substitutos aproximados do Material)
+    val Instagram = Icons.Default.CameraAlt
+    val WhatsApp = Icons.Default.Call
+    val YouTube = Icons.Default.PlayCircle
     
     // Ícones de Formatação
     val AlignLeft = Icons.AutoMirrored.Filled.FormatAlignLeft

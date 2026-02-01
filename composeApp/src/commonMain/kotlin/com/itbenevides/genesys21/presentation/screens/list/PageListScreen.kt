@@ -79,8 +79,11 @@ fun PageListScreen(
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                val newPage = if (event.useTemplate) Page.defaultTemplate(id, state.newPageTitle.trim())
-                else Page(id, state.newPageTitle.trim())
+                val newPage = when(event.templateType) {
+                    PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
+                }
                 
                 viewModel.savePage(newPage, false) {
                     state = state.copy(showCreateDialog = false, newPageTitle = "")
@@ -398,7 +401,7 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
                         modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text( // Usando Text padrão para evitar ambiguidade de receiver no WasmJs
+                        Text( 
                             text = initials, 
                             style = MaterialTheme.typography.bodyLarge, 
                             fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, 
@@ -504,16 +507,26 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
         confirmButton = { 
             GenesysColumn(usePadding = false) {
                 GenesysLoadingButton(
-                    text = GenesysStrings.CreateProfessionalVitrine, 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(useTemplate = true)) }, 
+                    text = "Criar Vitrine de Vendas", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, 
                     enabled = state.newPageTitle.isNotBlank(),
                     isLoading = state.isLoading,
-                    fillWidth = true
+                    fillWidth = true,
+                    icon = GenesysIcons.ShoppingBag
+                ) 
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysLoadingButton(
+                    text = "Criar Link na Bio (Perfil)", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, 
+                    enabled = state.newPageTitle.isNotBlank(),
+                    isLoading = state.isLoading,
+                    fillWidth = true,
+                    icon = GenesysIcons.Person
                 ) 
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysTextButton(
                     text = GenesysStrings.CreateEmptyVitrine, 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(useTemplate = false)) },
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) },
                     enabled = state.newPageTitle.isNotBlank(),
                     modifier = Modifier.fillMaxWidth()
                 )

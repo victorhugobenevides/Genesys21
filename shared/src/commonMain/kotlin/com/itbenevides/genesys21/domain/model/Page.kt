@@ -106,6 +106,30 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProfileHeader")
+    data class ProfileHeader(
+        val imageUrl: String = "",
+        val name: String = "",
+        val bio: String = "",
+        val imageSize: Int = 120, // NOVO: Suporte a tamanho
+        val isCircular: Boolean = true, // NOVO: Suporte a formato
+        override val customLabel: String? = "Perfil",
+        override val isFilterable: Boolean = false
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.SocialLinks")
+    data class SocialLinks(
+        val instagram: String? = null,
+        val whatsapp: String? = null,
+        val youtube: String? = null,
+        val email: String? = null,
+        val website: String? = null,
+        override val customLabel: String? = "Redes Sociais",
+        override val isFilterable: Boolean = false
+    ) : PageComponent()
+
+    @Serializable
     @SerialName("unknown")
     data class Unknown(
         override val customLabel: String? = "Componente Antigo",
@@ -126,8 +150,6 @@ data class Page(
     companion object {
         fun defaultTemplate(id: String, title: String): Page {
             val oldSchoolCategories = listOf("Vintage Denim", "Retro Graphic Tees", "Old School Jackets", "90s Accessories", "Classic Sneakers")
-            
-            // Gerando 30 produtos temáticos para o template
             val demoProducts = (1..30).map { i ->
                 val category = oldSchoolCategories[i % oldSchoolCategories.size]
                 Product(
@@ -148,37 +170,67 @@ data class Page(
 
             return Page(
                 id = id,
-                title = if (title.isBlank()) "Old School Turquesa" else title,
+                title = if (title.isBlank()) "Sua Vitrine" else title,
                 theme = PageThemeConfig.OCEAN,
                 components = listOf(
                     PageComponent.Header(
-                        title = if (title.isBlank()) "Old School Turquesa" else title, 
-                        customLabel = "Header Vintage",
+                        title = if (title.isBlank()) "Bem-vindo" else title, 
                         textAlign = "CENTER",
                         fontSize = 36
                     ),
                     PageComponent.Image(
                         url = "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200",
-                        customLabel = "Banner Estiloso",
                         isFullWidth = true
                     ),
-                    PageComponent.Text(
-                        content = "A melhor curadoria de roupas vintage e old school com o toque turquesa que você ama.",
-                        textAlign = "CENTER",
-                        fontSize = 18,
-                        customLabel = "Sobre a Loja"
-                    ),
-                    PageComponent.Filter(customLabel = "Busca"),
-                    PageComponent.CategoryFilter(customLabel = "Nossas Seções"),
+                    PageComponent.Filter(),
+                    PageComponent.CategoryFilter(),
                     PageComponent.ProductList(
                         products = demoProducts.take(8), 
                         isHorizontal = true, 
-                        customLabel = "Destaques Retro"
+                        customLabel = "Destaques"
                     ),
                     PageComponent.ProductList(
                         products = demoProducts.drop(8), 
                         isHorizontal = false, 
-                        customLabel = "Coleção Completa"
+                        customLabel = "Todos os Produtos"
+                    )
+                )
+            )
+        }
+
+        fun profileTemplate(id: String, title: String): Page {
+            return Page(
+                id = id,
+                title = if (title.isBlank()) "Meu Perfil" else title,
+                theme = PageThemeConfig.CANDY,
+                components = listOf(
+                    PageComponent.ProfileHeader(
+                        imageUrl = "https://picsum.photos/seed/profile/300/300",
+                        name = if (title.isBlank()) "Seu Nome Aqui" else title,
+                        bio = "Desenvolvedor & Criador de Conteúdo. Bem-vindo aos meus links oficiais!"
+                    ),
+                    PageComponent.SocialLinks(
+                        instagram = "https://instagram.com",
+                        whatsapp = "https://wa.me/5500000000000",
+                        youtube = "https://youtube.com",
+                        email = "seuemail@exemplo.com"
+                    ),
+                    PageComponent.Header(title = "Conteúdo Exclusivo", fontSize = 22, textAlign = "CENTER"),
+                    PageComponent.Button(text = "📚 Meu Curso Online", url = "https://exemplo.com/curso"),
+                    PageComponent.Button(text = "🎙️ Podcast Semanal", url = "https://exemplo.com/podcast"),
+                    PageComponent.Button(text = "🛍️ Minha Loja", url = "https://exemplo.com/loja"),
+                    PageComponent.Header(title = "Últimas do Instagram", fontSize = 18, textAlign = "CENTER"),
+                    PageComponent.ProductList(
+                        products = (1..4).map { i ->
+                            Product(
+                                id = "post_$i",
+                                name = "Post #$i",
+                                price = 0.0,
+                                imageUrls = listOf("https://picsum.photos/seed/insta$i/400/400")
+                            )
+                        },
+                        isHorizontal = true,
+                        customLabel = "Instagram Feed"
                     )
                 )
             )

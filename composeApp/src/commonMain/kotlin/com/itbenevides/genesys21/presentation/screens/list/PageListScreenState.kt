@@ -4,6 +4,12 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
 
+enum class PageTemplateType {
+    PROFESSIONAL_VITRINE,
+    BIO_PROFILE,
+    EMPTY
+}
+
 /**
  * UI State: Tudo o que a lista de administração pode exibir.
  */
@@ -30,8 +36,8 @@ sealed class PageListEvent {
     object OnCreatePageClicked : PageListEvent()
     data class OnNewPageTitleChanged(val title: String) : PageListEvent()
     
-    // CORREÇÃO: Adicionado o parâmetro useTemplate
-    data class OnConfirmCreatePage(val useTemplate: Boolean) : PageListEvent()
+    // Atualizado para usar o Enum de tipos
+    data class OnConfirmCreatePage(val templateType: PageTemplateType) : PageListEvent()
     
     object OnDismissCreateDialog : PageListEvent()
     object OnGlobalSettingsClicked : PageListEvent()

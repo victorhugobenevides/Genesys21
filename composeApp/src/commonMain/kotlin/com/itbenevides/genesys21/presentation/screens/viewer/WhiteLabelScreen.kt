@@ -105,17 +105,19 @@ fun WhiteLabelScreen(
     val imagePicker = rememberImagePicker { bytes: ByteArray? ->
         bytes?.let {
             state = state.copy(isUploading = true)
-            viewModel.uploadImage(it, "banner_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
+            viewModel.uploadImage(it, "profile_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
                 state.editingComponentIndex?.let { index ->
-                    val component = state.page.components[index] as? PageComponent.Image
-                    component?.let { img ->
-                        val updated = img.copy(url = uploadedUrl)
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        state = state.copy(
-                            page = state.page.copy(components = newList),
-                            isUploading = false
-                        )
+                    val component = state.page.components[index]
+                    val updated = when(component) {
+                        is PageComponent.Image -> component.copy(url = uploadedUrl)
+                        is PageComponent.ProfileHeader -> component.copy(imageUrl = uploadedUrl)
+                        else -> component
                     }
+                    val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                    state = state.copy(
+                        page = state.page.copy(components = newList),
+                        isUploading = false
+                    )
                 }
             }
         }
@@ -378,38 +380,37 @@ private fun ComponentWrapperUI(
             }
         )
 
-        if (isEditing) {
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val isMobile = maxWidth < 400.dp
-                
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(if (isMobile) 4.dp else 8.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                    tonalElevation = 6.dp
-                ) {
-                    Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
-                        GenesysIconButton(
-                            icon = GenesysIcons.ArrowUp, 
-                            onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = if (isMobile) Modifier.size(32.dp) else Modifier
-                        )
-                        GenesysIconButton(
-                            icon = GenesysIcons.ArrowDown, 
-                            onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = if (isMobile) Modifier.size(32.dp) else Modifier
-                        )
-                        GenesysIconButton(
-                            icon = GenesysIcons.Delete, 
-                            onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, 
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = if (isMobile) Modifier.size(32.dp) else Modifier
-                        )
-                    }
+        // SEMPRE VISÍVEL: Controles de Gerenciamento (Mover e Excluir)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val isMobile = maxWidth < 400.dp
+            
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(if (isMobile) 4.dp else 8.dp),
+                shape = CircleShape,
+                color = if (isEditing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                tonalElevation = 6.dp
+            ) {
+                Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
+                    GenesysIconButton(
+                        icon = GenesysIcons.ArrowUp, 
+                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
+                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier
+                    )
+                    GenesysIconButton(
+                        icon = GenesysIcons.ArrowDown, 
+                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
+                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier
+                    )
+                    GenesysIconButton(
+                        icon = GenesysIcons.Delete, 
+                        onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, 
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier
+                    )
                 }
             }
         }
@@ -475,6 +476,7 @@ private fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
                         }
                     )
                 }
@@ -484,6 +486,7 @@ private fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
                         }
                     )
                 }
@@ -496,6 +499,7 @@ private fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
                         }
                     )
                 }
@@ -515,6 +519,7 @@ private fun ComponentEditorUI(
                             val updated = component.copy(customLabel = newLabel.ifBlank { null }, isHorizontal = isHorizontal)
                             val newList = state.page.components.toMutableList().apply { set(index, updated) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
                         }
                     )
                 }
@@ -529,6 +534,38 @@ private fun ComponentEditorUI(
                             fillWidth = true
                         )
                     }
+                }
+                is PageComponent.ProfileHeader -> {
+                    ProfileHeaderComponentEditor(
+                        component = component,
+                        onSave = { updated: PageComponent.ProfileHeader ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                        },
+                        onPickImage = onPickImage,
+                        isUploading = state.isUploading
+                    )
+                }
+                is PageComponent.SocialLinks -> {
+                    SocialLinksComponentEditor(
+                        component = component,
+                        onSave = { updated: PageComponent.SocialLinks ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                        }
+                    )
+                }
+                is PageComponent.Button -> {
+                    ButtonComponentEditor(
+                        component = component,
+                        onSave = { updated: PageComponent.Button ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                        }
+                    )
                 }
                 else -> { }
             }
@@ -634,7 +671,9 @@ private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent
                 Triple(GenesysStrings.ComponentTypeImage, GenesysStrings.ComponentTypeImageDesc, PageComponent.Image("", "")),
                 Triple(GenesysStrings.ComponentTypeButton, GenesysStrings.ComponentTypeButtonDesc, PageComponent.Button("Toque Aqui", "")),
                 Triple(GenesysStrings.ComponentTypeFilter, GenesysStrings.ComponentTypeFilterDesc, PageComponent.Filter()),
-                Triple(GenesysStrings.ProductCategory, "Filtro de categorias.", PageComponent.CategoryFilter())
+                Triple(GenesysStrings.ProductCategory, "Filtro de categorias.", PageComponent.CategoryFilter()),
+                Triple("Perfil", "Cabeçalho com foto e bio.", PageComponent.ProfileHeader("", "Nome", "Bio")),
+                Triple("Links Sociais", "Ícones de redes sociais.", PageComponent.SocialLinks())
             )
             
             catalogItems.forEach { (title, desc, component) ->

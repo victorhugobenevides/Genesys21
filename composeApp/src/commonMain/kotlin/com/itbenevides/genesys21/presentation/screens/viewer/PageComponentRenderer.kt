@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -12,9 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +28,7 @@ import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
 import com.itbenevides.genesys21.ui.components.input.GenesysFilterChip
@@ -38,6 +42,7 @@ import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.math.roundToLong
 
 @Composable
 fun PageComponentRenderer(
@@ -80,6 +85,69 @@ fun PageComponentRenderer(
 
     Box(modifier = Modifier.fillMaxWidth()) {
         when (component) {
+            is PageComponent.ProfileHeader -> {
+                val displayUrl = remember(component.imageUrl, backendUrl) {
+                    if (component.imageUrl.startsWith("/") && !component.imageUrl.startsWith("http")) "$backendUrl${component.imageUrl}" else component.imageUrl
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    GenesysImage(
+                        url = displayUrl,
+                        size = component.imageSize.dp,
+                        isCircular = component.isCircular
+                    )
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysText(
+                        text = component.name, 
+                        style = GenesysTextStyle.Headline, 
+                        fontWeight = GenesysFontWeight.ExtraBold,
+                        textAlign = GenesysTextAlign.Center
+                    )
+                    if (component.bio.isNotBlank()) {
+                        GenesysText(
+                            text = component.bio, 
+                            style = GenesysTextStyle.Body, 
+                            textAlign = GenesysTextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        )
+                    }
+                }
+            }
+            is PageComponent.SocialLinks -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    component.instagram?.let { url ->
+                        SocialLinkItem(icon = GenesysIcons.Instagram, label = "Instagram", onClick = { if(!isEditMode) uriHandler.openUri(url) })
+                        Spacer(Modifier.width(16.dp))
+                    }
+                    component.whatsapp?.let { url ->
+                        SocialLinkItem(icon = GenesysIcons.WhatsApp, label = "WhatsApp", onClick = { if(!isEditMode) uriHandler.openUri(url) })
+                        Spacer(Modifier.width(16.dp))
+                    }
+                    component.youtube?.let { url ->
+                        SocialLinkItem(icon = GenesysIcons.YouTube, label = "YouTube", onClick = { if(!isEditMode) uriHandler.openUri(url) })
+                        Spacer(Modifier.width(16.dp))
+                    }
+                    component.email?.let { email ->
+                        SocialLinkItem(icon = GenesysIcons.Email, label = "E-mail", onClick = { if(!isEditMode) uriHandler.openUri("mailto:$email") })
+                    }
+                }
+            }
+            is PageComponent.Button -> {
+                Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
+                    GenesysLoadingButton(
+                        text = component.text,
+                        onClick = { if(!isEditMode) uriHandler.openUri(component.url) },
+                        fillWidth = true
+                    )
+                }
+            }
             is PageComponent.CategoryFilter -> {
                 GenesysColumn(usePadding = true) {
                     GenesysText(
@@ -295,6 +363,39 @@ fun PageComponentRenderer(
 }
 
 @Composable
+private fun SocialLinkItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick() }.padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon, 
+                contentDescription = label,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 fun ProductCard(
     product: Product,
     modifier: Modifier = Modifier,
@@ -348,7 +449,7 @@ fun ProductCard(
                                 }
                             }
                         }
-                    } else if (onAddToCart != null && product.stock > 0) {
+                    } else if (onAddToCart != null && product.stock > 0 && product.price > 0) { // Oculta add ao carrinho se for post/feed (preço 0)
                         Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.BottomEnd) {
                             Surface(
                                 modifier = Modifier.size(if (isMobile) 32.dp else 40.dp).scale(scale),
@@ -385,23 +486,26 @@ fun ProductCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                     
-                    GenesysSpacer(GenesysSpacing.Small)
-                    
-                    GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        GenesysText(
-                            text = "${GenesysStrings.PricePrefix}${product.price}", 
-                            fontWeight = GenesysFontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            style = if (isMobile) GenesysTextStyle.Label else GenesysTextStyle.Body,
-                            weightValue = 1f
-                        )
+                    if (product.price > 0) { // Oculta preço se for 0 (usado para feeds sociais no perfil)
+                        GenesysSpacer(GenesysSpacing.Small)
                         
-                        if (product.stock <= 0) {
-                            GenesysBadge(
-                                label = "ESGOTADO", 
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.scale(if (isMobile) 0.7f else 1f)
+                        GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            val priceFormatted = (product.price * 100.0).roundToLong() / 100.0
+                            GenesysText(
+                                text = "${GenesysStrings.PricePrefix}$priceFormatted", 
+                                fontWeight = GenesysFontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                style = if (isMobile) GenesysTextStyle.Label else GenesysTextStyle.Body,
+                                weightValue = 1f
                             )
+                            
+                            if (product.stock <= 0) {
+                                GenesysBadge(
+                                    label = "ESGOTADO", 
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.scale(if (isMobile) 0.7f else 1f)
+                                )
+                            }
                         }
                     }
                 }
