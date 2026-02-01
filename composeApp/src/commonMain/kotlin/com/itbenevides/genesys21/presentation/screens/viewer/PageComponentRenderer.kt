@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
@@ -138,8 +139,10 @@ fun PageComponentRenderer(
 
                 if (productsToDisplay.isNotEmpty()) {
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+                        val isMobile = maxWidth < 600.dp
                         val maxColumns = if (maxWidth > 900.dp) 4 else if (maxWidth > 600.dp) 3 else 2
-                        val horizontalItemWidth = if (maxWidth > 900.dp) 220.dp else if (maxWidth > 600.dp) 180.dp else 160.dp
+                        val horizontalItemWidth = if (maxWidth > 900.dp) 220.dp else if (maxWidth > 600.dp) 180.dp else 150.dp
+                        val spacing = if (isMobile) 8.dp else 16.dp
 
                         GenesysColumn(usePadding = false) {
                             if (component.isHorizontal) {
@@ -148,7 +151,7 @@ fun PageComponentRenderer(
                                     LazyRow(
                                         state = listState,
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(spacing),
                                         contentPadding = PaddingValues(vertical = 8.dp)
                                     ) {
                                         items(productsToDisplay) { product ->
@@ -164,7 +167,7 @@ fun PageComponentRenderer(
                                 }
                             } else {
                                 productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
-                                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(spacing)) {
                                         rowProducts.forEach { product ->
                                             GenesysWeightBox(1f) {
                                                 ProductCard(
@@ -179,7 +182,7 @@ fun PageComponentRenderer(
                                             repeat(maxColumns - rowProducts.size) { GenesysWeightSpacer(1f) }
                                         }
                                     }
-                                    GenesysSpacer(GenesysSpacing.Medium)
+                                    GenesysSpacer(if (isMobile) GenesysSpacing.Small else GenesysSpacing.Medium)
                                 }
                             }
                         }
@@ -268,21 +271,22 @@ fun PageComponentRenderer(
         }
 
         if (isEditMode) {
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 8.dp, end = 8.dp)
+                    .padding(top = 4.dp, end = 4.dp)
             ) {
+                val isMobile = maxWidth < 400.dp
                 Surface(
                     onClick = { onEditClick?.invoke() },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                     contentColor = Color.White,
                     tonalElevation = 4.dp,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(if (isMobile) 32.dp else 36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(GenesysIcons.Edit, null, modifier = Modifier.size(20.dp))
+                        Icon(GenesysIcons.Edit, null, modifier = Modifier.size(if (isMobile) 16.dp else 20.dp))
                     }
                 }
             }
@@ -307,87 +311,98 @@ fun ProductCard(
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
     )
 
-    GenesysCard(
-        modifier = modifier,
-        onClick = if (onClick != null) { { onClick.invoke(product) } } else null,
-        elevation = 2.dp
-    ) {
-        GenesysColumn(usePadding = false) {
-            GenesysBox(
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                contentAlignment = Alignment.Center
-            ) {
-                val imageUrl = remember(product.imageUrls) {
-                    val first = product.imageUrls.firstOrNull() ?: ""
-                    if (first.startsWith("/")) "$backendUrl$first" else first
-                }
-                
-                GenesysImage(
-                    url = imageUrl,
-                    size = 200.dp,
-                    modifier = Modifier.fillMaxSize()
-                )
-                
-                if (isEditMode) {
-                    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.TopEnd) {
-                        Surface(
-                            modifier = Modifier.size(32.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondary,
-                            contentColor = Color.White,
-                            tonalElevation = 4.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(GenesysIcons.Edit, null, modifier = Modifier.size(16.dp))
-                            }
-                        }
+    BoxWithConstraints(modifier = modifier) {
+        val isMobile = maxWidth < 180.dp
+        
+        GenesysCard(
+            onClick = if (onClick != null) { { onClick.invoke(product) } } else null,
+            elevation = 1.dp
+        ) {
+            GenesysColumn(usePadding = false) {
+                GenesysBox(
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val imageUrl = remember(product.imageUrls) {
+                        val first = product.imageUrls.firstOrNull() ?: ""
+                        if (first.startsWith("/")) "$backendUrl$first" else first
                     }
-                } else if (onAddToCart != null && product.stock > 0) {
-                    Box(Modifier.fillMaxSize().padding(8.dp), contentAlignment = Alignment.BottomEnd) {
-                        Surface(
-                            modifier = Modifier.size(40.dp).scale(scale),
-                            shape = CircleShape,
-                            color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
-                            contentColor = Color.White,
-                            shadowElevation = 4.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                GenesysIconButton(
-                                    icon = if (isAdded) GenesysIcons.Check else GenesysIcons.Add,
-                                    onClick = {
-                                        if (!isAdded) {
-                                            isAdded = true
-                                            onAddToCart()
-                                            scope.launch { delay(800); isAdded = false }
-                                        }
-                                    },
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            
-            GenesysColumn(modifier = Modifier.padding(12.dp), usePadding = false) {
-                GenesysText(
-                    text = product.name, 
-                    fontWeight = GenesysFontWeight.Bold, 
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                GenesysSpacer(GenesysSpacing.Small)
-                
-                GenesysRow(horizontalArrangement = Arrangement.SpaceBetween) {
-                    GenesysText(
-                        text = "${GenesysStrings.PricePrefix}${product.price}", 
-                        fontWeight = GenesysFontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        weightValue = 1f
+                    
+                    GenesysImage(
+                        url = imageUrl,
+                        size = 200.dp,
+                        modifier = Modifier.fillMaxSize()
                     )
                     
-                    if (product.stock <= 0) {
-                        GenesysBadge(label = "ESGOTADO", color = MaterialTheme.colorScheme.error)
+                    if (isEditMode) {
+                        Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.TopEnd) {
+                            Surface(
+                                modifier = Modifier.size(if (isMobile) 24.dp else 32.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.secondary,
+                                contentColor = Color.White,
+                                tonalElevation = 4.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(GenesysIcons.Edit, null, modifier = Modifier.size(if (isMobile) 12.dp else 16.dp))
+                                }
+                            }
+                        }
+                    } else if (onAddToCart != null && product.stock > 0) {
+                        Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.BottomEnd) {
+                            Surface(
+                                modifier = Modifier.size(if (isMobile) 32.dp else 40.dp).scale(scale),
+                                shape = CircleShape,
+                                color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
+                                contentColor = Color.White,
+                                shadowElevation = 4.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    GenesysIconButton(
+                                        icon = if (isAdded) GenesysIcons.Check else GenesysIcons.Add,
+                                        onClick = {
+                                            if (!isAdded) {
+                                                isAdded = true
+                                                onAddToCart()
+                                                scope.launch { delay(800); isAdded = false }
+                                            }
+                                        },
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                GenesysColumn(modifier = Modifier.padding(if (isMobile) 8.dp else 12.dp), usePadding = false) {
+                    GenesysText(
+                        text = product.name, 
+                        fontWeight = GenesysFontWeight.Bold,
+                        style = if (isMobile) GenesysTextStyle.Label else GenesysTextStyle.Body,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    GenesysSpacer(GenesysSpacing.Small)
+                    
+                    GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        GenesysText(
+                            text = "${GenesysStrings.PricePrefix}${product.price}", 
+                            fontWeight = GenesysFontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            style = if (isMobile) GenesysTextStyle.Label else GenesysTextStyle.Body,
+                            weightValue = 1f
+                        )
+                        
+                        if (product.stock <= 0) {
+                            GenesysBadge(
+                                label = "ESGOTADO", 
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.scale(if (isMobile) 0.7f else 1f)
+                            )
+                        }
                     }
                 }
             }

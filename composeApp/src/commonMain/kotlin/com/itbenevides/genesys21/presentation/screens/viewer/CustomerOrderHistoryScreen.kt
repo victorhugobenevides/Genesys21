@@ -37,6 +37,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToLong
 
 @Composable
 fun CustomerOrderHistoryScreen(
@@ -159,8 +160,9 @@ private fun HistoryOrderCard(order: Order, onClick: () -> Unit) {
                         style = GenesysTextStyle.Body
                     )
                 }
+                val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
                 GenesysText(
-                    text = "${GenesysStrings.PricePrefix}${order.total}", 
+                    text = "${GenesysStrings.PricePrefix}$totalFormatted", 
                     style = GenesysTextStyle.Title,
                     fontWeight = GenesysFontWeight.ExtraBold,
                     color = androidx.compose.material3.MaterialTheme.colorScheme.primary

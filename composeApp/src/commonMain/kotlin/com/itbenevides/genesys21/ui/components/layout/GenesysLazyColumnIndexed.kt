@@ -19,13 +19,17 @@ fun <T> GenesysLazyColumnIndexed(
     usePadding: Boolean = true,
     content: @Composable (Int, T) -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         val columnModifier = if (maxWidth != null) modifier.widthIn(max = maxWidth) else modifier.fillMaxWidth()
+        
+        // Responsividade: Reduz padding em telas estreitas (mobile)
+        // Usamos this.maxWidth para referenciar o valor do BoxWithConstraintsScope e não o parâmetro da função
+        val horizontalPadding = if (this.maxWidth < 600.dp) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
         
         LazyColumn(
             modifier = columnModifier.fillMaxHeight(),
             contentPadding = if (usePadding) {
-                PaddingValues(horizontal = GenesysDimens.SpacingLarge, vertical = GenesysDimens.SpacingMedium)
+                PaddingValues(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingMedium)
             } else {
                 PaddingValues(0.dp)
             },

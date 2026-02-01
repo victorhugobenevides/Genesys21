@@ -1,9 +1,12 @@
 package com.itbenevides.genesys21.ui.components.input
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.layout.GenesysRow
@@ -19,13 +22,17 @@ fun GenesysStatusPicker(
     Box {
         Surface(
             onClick = { showStatusMenu = true },
-            shape = MaterialTheme.shapes.small,
-            color = Color.Transparent
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ) {
-            // CORREÇÃO: fillWidth = false para não esmagar os vizinhos na Row
-            GenesysRow(fillWidth = false) {
+            GenesysRow(fillWidth = false, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                 GenesysStatusBadge(currentStatus)
-                Icon(GenesysIcons.ExpandMore, contentDescription = "Mudar status", tint = Color.Gray)
+                Icon(
+                    imageVector = GenesysIcons.ExpandMore, 
+                    contentDescription = "Mudar status", 
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
             }
         }
         

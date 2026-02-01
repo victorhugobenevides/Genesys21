@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 
 /**
@@ -45,28 +46,32 @@ internal fun GenesysRowContent(
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     content: @Composable RowScope.() -> Unit
 ) {
-    var rowModifier: Modifier = modifier
-    
-    if (fillWidth) {
-        rowModifier = rowModifier.fillMaxWidth()
-    } else {
-        rowModifier = rowModifier.wrapContentWidth()
-    }
+    BoxWithConstraints {
+        var rowModifier: Modifier = modifier
+        
+        if (fillWidth) {
+            rowModifier = rowModifier.fillMaxWidth()
+        } else {
+            rowModifier = rowModifier.wrapContentWidth()
+        }
 
-    if (usePadding) {
-        rowModifier = rowModifier.padding(horizontal = GenesysDimens.SpacingLarge)
-    }
+        if (usePadding) {
+            // Responsividade: Reduz padding lateral em telas pequenas
+            val horizontalPadding = if (maxWidth < 600.dp) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
+            rowModifier = rowModifier.padding(horizontal = horizontalPadding)
+        }
 
-    if (useHorizontalScroll) {
-        rowModifier = rowModifier.horizontalScroll(rememberScrollState())
-    }
+        if (useHorizontalScroll) {
+            rowModifier = rowModifier.horizontalScroll(rememberScrollState())
+        }
 
-    Row(
-        modifier = rowModifier,
-        horizontalArrangement = horizontalArrangement,
-        verticalAlignment = verticalAlignment,
-        content = content
-    )
+        Row(
+            modifier = rowModifier,
+            horizontalArrangement = horizontalArrangement,
+            verticalAlignment = verticalAlignment,
+            content = content
+        )
+    }
 }
 
 /**

@@ -37,6 +37,7 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToLong
 
 @Composable
 fun OrderTrackingScreen(
@@ -161,8 +162,10 @@ private fun OrderTrackingContent(
                                         GenesysWeightBox(1f) {
                                             GenesysText(text = "${item.quantity}x ${item.product.name}")
                                         }
+                                        // ARREDONDAMENTO: Subtotal por item
+                                        val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
                                         GenesysText(
-                                            text = "${GenesysStrings.PricePrefix}${item.product.price * item.quantity}", 
+                                            text = "${GenesysStrings.PricePrefix}$subtotal", 
                                             fontWeight = GenesysFontWeight.Bold
                                         )
                                     }
@@ -177,8 +180,10 @@ private fun OrderTrackingContent(
                                     GenesysWeightBox(1f) {
                                         GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title)
                                     }
+                                    // ARREDONDAMENTO: Total geral do pedido
+                                    val totalFormatted = (currentOrder.total * 100.0).roundToLong() / 100.0
                                     GenesysText(
-                                        text = "${GenesysStrings.PricePrefix}${currentOrder.total}", 
+                                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
                                         style = GenesysTextStyle.Title, 
                                         fontWeight = GenesysFontWeight.ExtraBold,
                                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary

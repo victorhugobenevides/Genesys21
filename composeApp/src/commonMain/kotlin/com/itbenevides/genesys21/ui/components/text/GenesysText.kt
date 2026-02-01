@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 
@@ -52,7 +53,9 @@ fun GenesysText(
     color: Color = Color.Unspecified,
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
-    fontSize: TextUnit = TextUnit.Unspecified, // ADICIONADO: Suporte a tamanho customizado
+    fontSize: TextUnit = TextUnit.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
     modifier: Modifier = Modifier
 ) {
     GenesysTextContent(
@@ -62,6 +65,8 @@ fun GenesysText(
         textAlign = textAlign,
         fontWeight = fontWeight,
         fontSize = fontSize,
+        maxLines = maxLines,
+        overflow = overflow,
         modifier = modifier
     )
 }
@@ -77,6 +82,8 @@ internal fun GenesysTextContent(
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
     modifier: Modifier = Modifier
 ) {
     val textStyle = when (style) {
@@ -109,7 +116,9 @@ internal fun GenesysTextContent(
         modifier = modifier,
         textAlign = composeTextAlign,
         fontWeight = composeFontWeight,
-        fontSize = fontSize // APLICA O TAMANHO CUSTOMIZADO
+        fontSize = fontSize,
+        maxLines = maxLines,
+        overflow = overflow
     )
 }
 
@@ -124,6 +133,8 @@ fun RowScope.GenesysText(
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
@@ -135,6 +146,8 @@ fun RowScope.GenesysText(
         textAlign = textAlign,
         fontWeight = fontWeight,
         fontSize = fontSize,
+        maxLines = maxLines,
+        overflow = overflow,
         modifier = finalModifier
     )
 }
@@ -150,6 +163,8 @@ fun ColumnScope.GenesysText(
     textAlign: GenesysTextAlign? = null,
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
@@ -161,6 +176,8 @@ fun ColumnScope.GenesysText(
         textAlign = textAlign,
         fontWeight = fontWeight,
         fontSize = fontSize,
+        maxLines = maxLines,
+        overflow = overflow,
         modifier = finalModifier
     )
 }

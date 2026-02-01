@@ -41,6 +41,7 @@ import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import kotlin.math.roundToLong
 
 @Composable
 fun PageListScreen(
@@ -262,7 +263,8 @@ private fun OrdersHeaderUI(
     state: PageListState,
     onEvent: (PageListEvent) -> Unit
 ) {
-    val totalRevenue = remember(state.orders) { state.orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.total } }
+    val rawRevenue = remember(state.orders) { state.orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.total } }
+    val totalRevenue = (rawRevenue * 100.0).roundToLong() / 100.0
     val totalPending = remember(state.orders) { state.orders.count { it.status == OrderStatus.PENDING } }
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
@@ -382,46 +384,48 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         elevation = 2.dp
     ) {
-        GenesysColumn(usePadding = false) {
-            GenesysRow(
+        GenesysColumn(usePadding = true) { 
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val initials = remember(order.customerName) {
-                    order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    val initials = remember(order.customerName) {
+                        order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
+                    }
+                    Box(
+                        modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text( // Usando Text padrão para evitar ambiguidade de receiver no WasmJs
+                            text = initials, 
+                            style = MaterialTheme.typography.bodyLarge, 
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, 
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                    
+                    Spacer(Modifier.width(12.dp))
+                    
+                    Column {
+                        GenesysText(
+                            text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", 
+                            style = GenesysTextStyle.Label,
+                            fontWeight = GenesysFontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        GenesysText(
+                            text = order.customerName ?: "Consumidor", 
+                            style = GenesysTextStyle.Title, 
+                            fontWeight = GenesysFontWeight.ExtraBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
-                GenesysBox(
-                    modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    com.itbenevides.genesys21.ui.components.text.GenesysText(
-                        text = initials, 
-                        style = GenesysTextStyle.Body, 
-                        fontWeight = GenesysFontWeight.ExtraBold, 
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
                 
-                GenesysSpacer(GenesysSpacing.Medium)
-                
-                GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
-                    GenesysText(
-                        text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", 
-                        style = GenesysTextStyle.Label,
-                        fontWeight = GenesysFontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    GenesysText(
-                        text = order.customerName ?: "Consumidor", 
-                        style = GenesysTextStyle.Title, 
-                        fontWeight = GenesysFontWeight.ExtraBold,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                
-                GenesysSpacer(GenesysSpacing.Small)
-                
-                GenesysBox(modifier = Modifier.wrapContentWidth()) {
+                Box(modifier = Modifier.padding(start = 8.dp)) {
                     GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
                 }
             }
@@ -445,10 +449,13 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
                     GenesysText(
                         text = item.product.name, 
                         style = GenesysTextStyle.Body,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
                     GenesysText(
-                        text = "${GenesysStrings.PricePrefix}${item.product.price * item.quantity}", 
+                        text = "${GenesysStrings.PricePrefix}$subtotal", 
                         style = GenesysTextStyle.Body,
                         fontWeight = GenesysFontWeight.Bold
                     )
@@ -468,8 +475,9 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
             ) {
                 GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
                     GenesysText(GenesysStrings.OrderTotal, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
                     GenesysText(
-                        text = "${GenesysStrings.PricePrefix}${order.total}", 
+                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
                         style = GenesysTextStyle.Headline, 
                         fontWeight = GenesysFontWeight.ExtraBold
                     )

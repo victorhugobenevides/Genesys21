@@ -1,7 +1,7 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background // IMPORT FALTANTE
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -28,6 +28,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.input.GenesysQuantitySelector
+import kotlin.math.roundToLong
 
 @Composable
 fun CartScreen(
@@ -201,8 +202,9 @@ private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenE
                     GenesysWeightBox(1f) {
                         GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title)
                     }
+                    val totalFormatted = (state.total * 100.0).roundToLong() / 100.0
                     GenesysText(
-                        text = "${GenesysStrings.PricePrefix}${state.total}", 
+                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
                         style = GenesysTextStyle.Headline, 
                         fontWeight = GenesysFontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary
@@ -238,8 +240,9 @@ private fun MobileCheckoutFooter(state: CartScreenState, onEvent: (CartScreenEve
             GenesysWeightBox(1f) {
                 GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Body)
             }
+            val totalFormatted = (state.total * 100.0).roundToLong() / 100.0
             GenesysText(
-                text = "${GenesysStrings.PricePrefix}${state.total}", 
+                text = "${GenesysStrings.PricePrefix}$totalFormatted", 
                 style = GenesysTextStyle.Title, 
                 fontWeight = GenesysFontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary
@@ -298,7 +301,8 @@ private fun ModernCartItemRow(
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
                     GenesysText(text = item.product.name, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
-                    GenesysText(text = "${GenesysStrings.PricePrefix}${item.product.price}", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.primary)
+                    val priceFormatted = (item.product.price * 100.0).roundToLong() / 100.0
+                    GenesysText(text = "${GenesysStrings.PricePrefix}$priceFormatted", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.primary)
                     GenesysSpacer(GenesysSpacing.Medium)
                     GenesysQuantitySelector(
                         quantity = item.quantity,

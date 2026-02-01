@@ -72,9 +72,8 @@ fun WhiteLabelScreen(
         )
     }
 
-    // Carrega os dados necessários ao entrar na tela (importante para Refresh/F5)
     LaunchedEffect(Unit) {
-        viewModel.loadPages() // Isso populará o allAvailableProducts (catálogo)
+        viewModel.loadPages()
         viewModel.loadCategories()
         
         viewModel.getDraft(page.id)?.let { updatedDraft ->
@@ -82,7 +81,6 @@ fun WhiteLabelScreen(
         }
     }
 
-    // Sincroniza o estado local quando os dados do servidor chegam
     LaunchedEffect(isLoading, serverProducts, savedCategories, userPages) {
         state = state.copy(
             isLoading = isLoading,
@@ -104,8 +102,7 @@ fun WhiteLabelScreen(
         (savedCategories + categoriesInDraft).filter { it.isNotBlank() }.distinct().sorted()
     }
 
-    // Configuração do Picker de Imagem para o Editor de Blocos
-    val imagePicker = rememberImagePicker { bytes ->
+    val imagePicker = rememberImagePicker { bytes: ByteArray? ->
         bytes?.let {
             state = state.copy(isUploading = true)
             viewModel.uploadImage(it, "banner_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
@@ -292,7 +289,7 @@ private fun WhiteLabelContent(
                                     items = state.page.components,
                                     maxWidth = GenesysDimens.ViewerMaxWidth,
                                     usePadding = true,
-                                    spacing = GenesysSpacing.Large
+                                    spacing = GenesysSpacing.Medium // Reduzido para celulares
                                 ) { index, component ->
                                     val isEditing = state.editingComponentIndex == index
                                     ComponentWrapperUI(component, index, isEditing, displayCategories, onEvent)
@@ -368,7 +365,7 @@ private fun ComponentWrapperUI(
                 if (isEditing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
                 else Modifier
             )
-            .padding(4.dp)
+            .padding(2.dp) // Reduzido para mobile
             .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }
     ) {
         PageComponentRenderer(
@@ -382,47 +379,38 @@ private fun ComponentWrapperUI(
         )
 
         if (isEditing) {
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(8.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
-                tonalElevation = 6.dp
-            ) {
-                Row(modifier = Modifier.padding(horizontal = 4.dp)) {
-                    GenesysIconButton(
-                        icon = GenesysIcons.ArrowUp, 
-                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.ArrowDown, 
-                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.Copy, 
-                        onClick = { onEvent(WhiteLabelEvent.OnDuplicateComponent(index)) },
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.Delete, 
-                        onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, 
-                        tint = MaterialTheme.colorScheme.error
-                    )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val isMobile = maxWidth < 400.dp
+                
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(if (isMobile) 4.dp else 8.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+                    tonalElevation = 6.dp
+                ) {
+                    Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.ArrowUp, 
+                            onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = if (isMobile) Modifier.size(32.dp) else Modifier
+                        )
+                        GenesysIconButton(
+                            icon = GenesysIcons.ArrowDown, 
+                            onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = if (isMobile) Modifier.size(32.dp) else Modifier
+                        )
+                        GenesysIconButton(
+                            icon = GenesysIcons.Delete, 
+                            onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, 
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = if (isMobile) Modifier.size(32.dp) else Modifier
+                        )
+                    }
                 }
-            }
-            
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(8.dp)
-            ) {
-                GenesysBadge(
-                    label = (component.customLabel ?: component::class.simpleName ?: "Bloco").uppercase(),
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }
