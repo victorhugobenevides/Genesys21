@@ -60,10 +60,14 @@ class SqlitePageRepository : PageRepository {
             val formattedDomain = page.customDomain?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
             val formattedWhatsapp = page.whatsapp?.trim()?.takeIf { it.isNotBlank() }
 
-            if (token.isNotBlank()) {
-                PagesTable.update({ PagesTable.ownerId eq token }) {
-                    it[customDomain] = formattedDomain
-                    it[whatsapp] = formattedWhatsapp
+            // CORREÇÃO: Verifica se o domínio já está em uso por OUTRA página para evitar Erro 500
+            if (formattedDomain != null) {
+                val ownerOfDomain = PagesTable.selectAll()
+                    .where { PagesTable.customDomain eq formattedDomain }
+                    .firstOrNull()?.get(PagesTable.id)
+                
+                if (ownerOfDomain != null && ownerOfDomain != page.id) {
+                    throw Exception("unique_domain_error: Este domínio já está vinculado a outra vitrine.")
                 }
             }
 
@@ -82,6 +86,14 @@ class SqlitePageRepository : PageRepository {
                     it[title] = page.title
                     it[ownerId] = token
                     it[theme] = page.theme.name
+                    it[customDomain] = formattedDomain
+                    it[whatsapp] = formattedWhatsapp
+                }
+            }
+
+            // Sincroniza configurações globais apenas se houver permissão e for edição proposital
+            if (isEditing && token.isNotBlank() && (formattedDomain != null || formattedWhatsapp != null)) {
+                PagesTable.update({ PagesTable.ownerId eq token }) {
                     it[customDomain] = formattedDomain
                     it[whatsapp] = formattedWhatsapp
                 }
@@ -189,7 +201,6 @@ class SqlitePageRepository : PageRepository {
 
     private fun saveProductsForComponent(componentId: Int, products: List<Product>, ownerId: String) {
         products.forEachIndexed { index, product ->
-            // LÓGICA DE AUTO-CRIAÇÃO DE CATEGORIA PARA TEMPLATES
             var effectiveCategoryId = product.categoryId
             if (effectiveCategoryId == null && !product.categoryName.isNullOrBlank()) {
                 val existingCat = CategoriesTable.selectAll()
