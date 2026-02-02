@@ -26,6 +26,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -110,7 +111,7 @@ fun Application.module() {
             pageRoutes(pageRepository)
             cartRoutes(cartRepository)
             orderRoutes(orderRepository)
-            categoryRoutes(pageRepository) // REGISTRADO: Rotas de categoria
+            categoryRoutes(pageRepository)
             
             authenticate("firebase") {
                 post("/upload") {
@@ -121,7 +122,10 @@ fun Application.module() {
                         if (part is PartData.FileItem) {
                             val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
                             fileName = "${UUID.randomUUID()}.$ext"
-                            fileBytes = part.streamProvider().readBytes()
+                            
+                            // CORREÇÃO DEFINITIVA: Leitura de bytes no Ktor 3.0
+                            val channel = part.provider()
+                            fileBytes = channel.toByteArray()
                         }
                         part.dispose()
                     }

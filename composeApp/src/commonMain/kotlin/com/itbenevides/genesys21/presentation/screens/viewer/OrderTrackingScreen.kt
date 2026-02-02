@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -49,6 +50,7 @@ fun OrderTrackingScreen(
     val order by viewModel.trackedOrder.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val clipboardManager = LocalClipboardManager.current
+    val uriHandler = LocalUriHandler.current
 
     // 1. State Management
     var state by remember { mutableStateOf(OrderTrackingState()) }
@@ -83,14 +85,18 @@ fun OrderTrackingScreen(
 
     // 3. Render
     AppTheme(themeConfig = themeToUse) {
-        OrderTrackingContent(state, onEvent)
+        OrderTrackingContent(state, onEvent, onContactStore = { phone ->
+            val message = "Olá, estou acompanhando meu pedido #${state.order?.id} e gostaria de falar com a loja."
+            uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
+        })
     }
 }
 
 @Composable
 private fun OrderTrackingContent(
     state: OrderTrackingState,
-    onEvent: (OrderTrackingEvent) -> Unit
+    onEvent: (OrderTrackingEvent) -> Unit,
+    onContactStore: (String) -> Unit
 ) {
     GenesysPage(
         topBar = {
@@ -147,6 +153,19 @@ private fun OrderTrackingContent(
                                         icon = GenesysIcons.Copy, 
                                         onClick = { onEvent(OrderTrackingEvent.OnCopyOrderIdClicked) }
                                     )
+                                }
+
+                                // BOTAO FALAR COM A LOJA (WhatsApp do Lojista)
+                                currentOrder.whatsappContact?.let { whatsapp ->
+                                    if (whatsapp.isNotBlank()) {
+                                         GenesysSpacer(GenesysSpacing.Medium)
+                                         GenesysLoadingButton(
+                                             text = "Falar com a Loja",
+                                             icon = GenesysIcons.Chat,
+                                             onClick = { onContactStore(whatsapp) },
+                                             fillWidth = true
+                                         )
+                                    }
                                 }
                             }
                         }

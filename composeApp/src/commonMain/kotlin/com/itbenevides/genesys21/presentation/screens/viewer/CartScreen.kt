@@ -40,17 +40,27 @@ fun CartScreen(
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
     val customerName by viewModel.customerName.collectAsState()
+    val customerPhone by viewModel.customerPhone.collectAsState() // CARREGA TELEFONE SALVO
     val isLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
 
     var state by remember { mutableStateOf(CartScreenState()) }
     
-    state = state.copy(
-        cartItems = cartItems,
-        total = total,
-        customerName = customerName,
-        isLoading = isLoading
-    )
+    // Sincroniza o estado inicial com os dados persistidos
+    LaunchedEffect(customerName, customerPhone) {
+        state = state.copy(
+            customerName = customerName,
+            customerPhone = customerPhone
+        )
+    }
+
+    LaunchedEffect(cartItems, total, isLoading) {
+        state = state.copy(
+            cartItems = cartItems,
+            total = total,
+            isLoading = isLoading
+        )
+    }
 
     LaunchedEffect(Unit) {
         AnalyticsManager.trackPageView(GenesysStrings.CartTitle)
@@ -64,8 +74,9 @@ fun CartScreen(
                 viewModel.removeFromCart(event.productId)
             }
             is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
+            is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone) // SALVA TELEFONE NA HORA
             is CartScreenEvent.OnCheckoutClicked -> {
-                viewModel.submitOrder(page) { orderId ->
+                viewModel.submitOrder(page, state.customerPhone) { orderId ->
                     onOrderSubmitted(orderId)
                 }
             }
@@ -187,6 +198,16 @@ private fun IdentificationCard(state: CartScreenState, onEvent: (CartScreenEvent
                 placeholder = GenesysStrings.CheckoutNameHint,
                 icon = GenesysIcons.Person
             )
+            
+            GenesysSpacer(GenesysSpacing.Medium)
+            
+            GenesysTextField(
+                value = state.customerPhone,
+                onValueChange = { onEvent(CartScreenEvent.OnCustomerPhoneChanged(it)) },
+                label = "Seu WhatsApp / Telefone",
+                placeholder = "(00) 00000-0000",
+                icon = GenesysIcons.Chat
+            )
         }
     }
 }
@@ -219,13 +240,14 @@ private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenE
                     icon = GenesysIcons.Check,
                     isLoading = state.isLoading
                 )
-                if (state.customerName.isBlank()) {
+                if (!state.isCheckoutEnabled && state.cartItems.isNotEmpty()) {
                     GenesysSpacer(GenesysSpacing.Small)
                     GenesysText(
-                        text = GenesysStrings.FillNameReminder, 
+                        text = "Preencha nome e telefone para continuar", 
                         style = GenesysTextStyle.Label,
                         textAlign = GenesysTextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }

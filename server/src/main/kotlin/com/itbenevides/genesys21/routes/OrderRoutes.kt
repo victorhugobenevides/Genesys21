@@ -18,10 +18,19 @@ fun Route.orderRoutes(orderRepository: OrderRepository) {
         
         // POST: Criar novo pedido
         post {
-            val order = call.receive<Order>()
-            orderRepository.createOrder(order)
-                .onSuccess { call.respond(HttpStatusCode.Created, order.id) }
-                .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar pedido") }
+            try {
+                val order = call.receive<Order>()
+                // LOG DE DEPURAÇÃO: Verifica se o telefone chegou ao servidor
+                println("SERVIDOR: Recebido pedido ${order.id}. Telefone Cliente: ${order.customerPhone}")
+                
+                orderRepository.createOrder(order)
+                    .onSuccess { call.respond(HttpStatusCode.Created, order.id) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar pedido") }
+            } catch (e: Exception) {
+                println("ERRO AO RECEBER PEDIDO: ${e.message}")
+                e.printStackTrace()
+                call.respond(HttpStatusCode.BadRequest, "Formato de pedido inválido")
+            }
         }
 
         // GET: Acompanhamento de um pedido específico

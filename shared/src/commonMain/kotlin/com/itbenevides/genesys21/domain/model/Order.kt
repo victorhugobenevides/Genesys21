@@ -8,12 +8,13 @@ data class Order(
     val userId: String, // O dono da página (Lojista)
     val customerId: String? = null, // ID da sessão do visitante
     val customerName: String? = null,
+    val customerPhone: String? = null, // ADICIONADO: Telefone do cliente
     val items: List<CartItem>,
     val total: Double,
     val status: OrderStatus = OrderStatus.PENDING,
     val createdAt: Long,
-    val whatsappContact: String? = null,
-    val theme: PageThemeConfig = PageThemeConfig.ROYAL // ADICIONADO: Persiste o tema no pedido
+    val whatsappContact: String? = null, // WhatsApp da LOJA
+    val theme: PageThemeConfig = PageThemeConfig.ROYAL
 )
 
 @Serializable

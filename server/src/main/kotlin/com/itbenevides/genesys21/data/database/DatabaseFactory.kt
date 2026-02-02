@@ -54,7 +54,8 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
-            // Adicionado CategoriesTable à lista de migração
+            // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
+            @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
                 CategoriesTable,
                 PagesTable, 
