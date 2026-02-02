@@ -5,6 +5,8 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import androidx.compose.material.icons.automirrored.filled.FormatAlignRight
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -44,6 +46,10 @@ object GenesysIcons {
     val Magic = Icons.Default.AutoAwesome
     val Straighten = Icons.Default.Straighten
     val Close = Icons.Default.Close
+    
+    // Ícones de Navegação
+    val ArrowLeft = Icons.AutoMirrored.Filled.ArrowBack
+    val ArrowRight = Icons.AutoMirrored.Filled.ArrowForward
     
     // Ícones de Redes Sociais (Substitutos aproximados do Material)
     val Instagram = Icons.Default.CameraAlt

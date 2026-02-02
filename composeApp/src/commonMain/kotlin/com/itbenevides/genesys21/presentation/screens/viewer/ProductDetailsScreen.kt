@@ -3,26 +3,18 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -36,25 +28,16 @@ import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.feedback.GenesysConfirmDialog
-import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.layout.GenesysBox
-import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
-import com.itbenevides.genesys21.ui.components.layout.GenesysDivider
-import com.itbenevides.genesys21.ui.components.layout.GenesysPage
-import com.itbenevides.genesys21.ui.components.layout.GenesysRow
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.navigation.GenesysPagerIndicator
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToLong
 
 @Composable
 fun ProductDetailsScreen(
@@ -66,14 +49,12 @@ fun ProductDetailsScreen(
     val scope = rememberCoroutineScope()
     val backendUrl = remember { getBaseUrl() }
     
-    // 1. State Management
     var state by remember { mutableStateOf(ProductDetailsState(product = product)) }
 
     LaunchedEffect(product.id) {
         AnalyticsManager.logEvent("view_item", mapOf("item_id" to product.id, "item_name" to product.name, "price" to product.price))
     }
 
-    // 2. Event Handler
     val onEvent: (ProductDetailsEvent) -> Unit = { event ->
         when (event) {
             is ProductDetailsEvent.OnAddToCartClicked -> {
@@ -101,7 +82,6 @@ fun ProductDetailsScreen(
         }
     }
 
-    // 3. Renderização
     ProductDetailsContent(state, backendUrl, onEvent)
 }
 
@@ -112,6 +92,7 @@ private fun ProductDetailsContent(
     onEvent: (ProductDetailsEvent) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { state.product.imageUrls.size.coerceAtLeast(1) })
+    val scope = rememberCoroutineScope()
     
     val buttonScale by animateFloatAsState(
         targetValue = if (state.isAddingToCart) 0.95f else 1f,
@@ -130,16 +111,16 @@ private fun ProductDetailsContent(
             val isWideScreen = maxWidth > 900.dp
 
             if (isWideScreen) {
-                // --- LAYOUT DESKTOP / WASM (DUAS COLUNAS) ---
+                // --- LAYOUT DESKTOP ---
                 GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
-                    // Coluna 1: Carrossel de Imagens (Fixa ou Proporcional)
                     GenesysWeightBox(0.5f) {
                         GenesysBox(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            ProductImageCarousel(state, pagerState, backendUrl)
+                            ProductImageCarousel(state, pagerState, backendUrl) { index ->
+                                scope.launch { pagerState.animateScrollToPage(index) }
+                            }
                         }
                     }
 
-                    // Coluna 2: Detalhes e Compra (Com scroll independente)
                     GenesysWeightBox(0.5f) {
                         GenesysColumn(
                             usePadding = true, 
@@ -152,21 +133,21 @@ private fun ProductDetailsContent(
                     }
                 }
             } else {
-                // --- LAYOUT MOBILE (COLUNA ÚNICA) ---
+                // --- LAYOUT MOBILE ---
                 GenesysColumn(
                     modifier = Modifier.fillMaxSize(),
                     usePadding = false,
                     useScroll = true,
                     horizontalAlignment = GenesysAlignment.Center
                 ) {
-                    // Imagem ocupa o topo no mobile
                     Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
-                        ProductImageCarousel(state, pagerState, backendUrl)
+                        ProductImageCarousel(state, pagerState, backendUrl) { index ->
+                            scope.launch { pagerState.animateScrollToPage(index) }
+                        }
                     }
 
                     GenesysSpacer(GenesysSpacing.Large)
 
-                    // Informações abaixo
                     GenesysColumn(maxWidth = 600.dp, usePadding = true) {
                         ProductInfoSection(state, buttonScale, onEvent)
                     }
@@ -186,27 +167,64 @@ private fun ProductDetailsContent(
 private fun ProductImageCarousel(
     state: ProductDetailsState, 
     pagerState: androidx.compose.foundation.pager.PagerState,
-    backendUrl: String
+    backendUrl: String,
+    onNavigate: (Int) -> Unit
 ) {
     GenesysCard(
         modifier = Modifier.fillMaxSize(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp), // Sangrado no container
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
         elevation = 0.dp
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (state.product.imageUrls.isNotEmpty()) {
-                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { index ->
+                HorizontalPager(
+                    state = pagerState, 
+                    modifier = Modifier.fillMaxSize()
+                ) { index ->
                     val url = state.product.imageUrls[index]
-                    val fullUrl = if (url.startsWith("/") && !url.startsWith("http")) "$backendUrl$url" else url
+                    val fullUrl = remember(url, backendUrl) {
+                        if (url.startsWith("/") && !url.startsWith("http")) "$backendUrl$url" else url
+                    }
                     AsyncImage(
                         model = fullUrl, 
-                        contentDescription = null, 
+                        contentDescription = "Foto ${index + 1}", 
                         modifier = Modifier.fillMaxSize(), 
                         contentScale = ContentScale.Crop
                     )
                 }
                 
+                // Botões de Navegação Laterais
                 if (state.product.imageUrls.size > 1) {
+                    if (pagerState.currentPage > 0) {
+                        Surface(
+                            modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp),
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        ) {
+                            GenesysIconButton(
+                                icon = GenesysIcons.ArrowLeft, 
+                                onClick = { onNavigate(pagerState.currentPage - 1) },
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    
+                    if (pagerState.currentPage < state.product.imageUrls.size - 1) {
+                        Surface(
+                            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp),
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.3f),
+                            contentColor = Color.White
+                        ) {
+                            GenesysIconButton(
+                                icon = GenesysIcons.ArrowRight, 
+                                onClick = { onNavigate(pagerState.currentPage + 1) },
+                                tint = Color.White
+                            )
+                        }
+                    }
+
                     Box(Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp)) {
                         GenesysPagerIndicator(
                             count = state.product.imageUrls.size,
@@ -215,12 +233,12 @@ private fun ProductImageCarousel(
                     }
                 }
             } else {
-                GenesysBox(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    GenesysIconButton(
-                        icon = GenesysIcons.ShoppingBag,
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = GenesysIcons.ShoppingBag,
+                        contentDescription = null,
                         modifier = Modifier.size(120.dp),
-                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        onClick = {}
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                     )
                 }
             }
@@ -242,11 +260,12 @@ private fun ProductInfoSection(
     
     GenesysSpacer(GenesysSpacing.Small)
     
+    val priceFormatted = (state.product.price * 100.0).roundToLong() / 100.0
     GenesysText(
-        text = "${GenesysStrings.PricePrefix}${state.product.price}", 
+        text = "${GenesysStrings.PricePrefix}$priceFormatted", 
         style = GenesysTextStyle.Title, 
         fontWeight = GenesysFontWeight.ExtraBold, 
-        color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+        color = MaterialTheme.colorScheme.primary
     )
     
     GenesysSpacer(GenesysSpacing.Medium)

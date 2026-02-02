@@ -57,6 +57,7 @@ fun PageComponentRenderer(
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
     val backendUrl = remember { getBaseUrl() }
+    val scope = rememberCoroutineScope()
     
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
 
@@ -215,12 +216,12 @@ fun PageComponentRenderer(
                         GenesysColumn(usePadding = false) {
                             if (component.isHorizontal) {
                                 val listState = rememberLazyListState()
-                                GenesysBox(modifier = Modifier.fillMaxWidth()) {
+                                Box(modifier = Modifier.fillMaxWidth()) {
                                     LazyRow(
                                         state = listState,
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(spacing),
-                                        contentPadding = PaddingValues(vertical = 8.dp)
+                                        contentPadding = PaddingValues(horizontal = if(isMobile) 0.dp else 48.dp, vertical = 8.dp)
                                     ) {
                                         items(productsToDisplay) { product ->
                                             ProductCard(
@@ -229,6 +230,32 @@ fun PageComponentRenderer(
                                                 onClick = onProductClick,
                                                 onAddToCart = { router.viewModel.addToCart(product) },
                                                 isEditMode = isEditMode
+                                            )
+                                        }
+                                    }
+                                    
+                                    // SETAS DE NAVEGAÇÃO HORIZONTAL (Somente Desktop)
+                                    if (!isMobile && productsToDisplay.size > 1) {
+                                        Surface(
+                                            modifier = Modifier.align(Alignment.CenterStart).size(40.dp),
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                            tonalElevation = 4.dp
+                                        ) {
+                                            GenesysIconButton(
+                                                icon = GenesysIcons.ArrowLeft, 
+                                                onClick = { scope.launch { listState.animateScrollToItem((listState.firstVisibleItemIndex - 1).coerceAtLeast(0)) } }
+                                            )
+                                        }
+                                        Surface(
+                                            modifier = Modifier.align(Alignment.CenterEnd).size(40.dp),
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                            tonalElevation = 4.dp
+                                        ) {
+                                            GenesysIconButton(
+                                                icon = GenesysIcons.ArrowRight, 
+                                                onClick = { scope.launch { listState.animateScrollToItem((listState.firstVisibleItemIndex + 1).coerceAtMost(productsToDisplay.size - 1)) } }
                                             )
                                         }
                                     }

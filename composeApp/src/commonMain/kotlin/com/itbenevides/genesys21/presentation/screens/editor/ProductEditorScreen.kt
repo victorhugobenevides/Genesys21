@@ -1,16 +1,10 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -52,7 +46,6 @@ fun ProductEditorScreen(
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
-    // 1. State Holder
     var state by remember { mutableStateOf(ProductEditorState.initial(product)) }
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
@@ -62,7 +55,6 @@ fun ProductEditorScreen(
 
     state = state.copy(isLoading = isGlobalLoading)
 
-    // 2. Orquestrador de Eventos
     val imagePicker = rememberImagePicker { bytes ->
         bytes?.let {
             if (state.imageUrls.size < 5) {
@@ -109,7 +101,6 @@ fun ProductEditorScreen(
         }
     }
 
-    // 3. Renderização sob o tema da vitrine
     AppTheme(themeConfig = page.theme) {
         ProductEditorContent(
             state = state, 
@@ -156,120 +147,142 @@ private fun ProductEditorContent(
         }
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 1000.dp
+            val isWideScreen = maxWidth > 900.dp
+            val scrollState = rememberScrollState()
 
-            GenesysColumn(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = GenesysAlignment.Center,
-                usePadding = false
-            ) {
-                GenesysRow(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.Top,
-                    usePadding = false
+            // Root Container com largura máxima centralizada
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 1200.dp)
+                        .fillMaxSize()
+                        .then(if (!isWideScreen) Modifier.verticalScroll(scrollState) else Modifier)
                 ) {
-                    // SEÇÃO 1: Galeria de Fotos
-                    GenesysWeightBox(if (isWideScreen) 0.45f else 1f) {
-                        GenesysColumn(usePadding = true, useScroll = !isWideScreen) {
-                            GenesysSectionHeader(
-                                title = GenesysStrings.PhotosTitle,
-                                subtitle = "${state.imageUrls.size}/5"
-                            )
-
-                            GenesysSpacer(GenesysSpacing.Small)
-
-                            val displayUrls = remember(state.imageUrls, backendUrl) {
-                                state.imageUrls.map { if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it }
-                            }
-
-                            GenesysPhotoPicker(
-                                urls = displayUrls,
-                                onAddClick = { onEvent(ProductEditorEvent.OnAddPhotoClicked) },
-                                onRemoveClick = { onEvent(ProductEditorEvent.OnRemovePhotoClicked(it)) },
-                                isUploading = state.isUploading
-                            )
-                        }
-                    }
-
-                    if (isWideScreen) GenesysSpacer(GenesysSpacing.Large)
-
-                    // SEÇÃO 2: Formulário de Dados
-                    GenesysWeightBox(if (isWideScreen) 0.55f else 1f) {
-                        GenesysColumn(usePadding = true, useScroll = true) {
-                            GenesysCard {
-                                GenesysColumn(usePadding = false) {
-                                    GenesysText(text = GenesysStrings.ProductGeneralInfo, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                                    GenesysSpacer(GenesysSpacing.Medium)
-
-                                    GenesysTextField(
-                                        value = state.name,
-                                        onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
-                                        label = GenesysStrings.ProductName,
-                                        icon = GenesysIcons.Inventory
-                                    )
-
-                                    GenesysSpacer(GenesysSpacing.Medium)
-
-                                    GenesysRow {
-                                        GenesysWeightBox(1f) {
-                                            GenesysTextField(
-                                                value = state.price,
-                                                onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
-                                                label = GenesysStrings.ProductPrice,
-                                                icon = GenesysIcons.Payments
-                                            )
-                                        }
-                                        GenesysSpacer(GenesysSpacing.Medium)
-                                        GenesysWeightBox(1f) {
-                                            GenesysTextField(
-                                                value = state.stock,
-                                                onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
-                                                label = GenesysStrings.ProductStock,
-                                                icon = GenesysIcons.Numbers
-                                            )
-                                        }
-                                    }
-
-                                    GenesysSpacer(GenesysSpacing.Medium)
-
-                                    GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(modifier = Modifier.weight(1f)) {
-                                            GenesysDropdownField(
-                                                value = state.categoryName,
-                                                onValueChange = { name ->
-                                                    onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
-                                                },
-                                                label = GenesysStrings.ProductCategory,
-                                                options = categoryOptions,
-                                                icon = GenesysIcons.Category
-                                            )
-                                        }
-                                        GenesysSpacer(GenesysSpacing.Small)
-                                        GenesysIconButton(
-                                            icon = GenesysIcons.Settings, 
-                                            onClick = onManageCategories,
-                                            contentDescription = "Gerenciar Categorias"
-                                        )
-                                    }
-
-                                    GenesysSpacer(GenesysSpacing.Medium)
-
-                                    GenesysTextField(
-                                        value = state.description,
-                                        onValueChange = { onEvent(ProductEditorEvent.OnDescriptionChanged(it)) },
-                                        label = GenesysStrings.ProductDescription,
-                                        icon = GenesysIcons.Description,
-                                        singleLine = false,
-                                        minLines = 6
-                                    )
-                                }
+                    if (isWideScreen) {
+                        // DESKTOP: Lado a Lado
+                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            // Seção Fotos
+                            Box(modifier = Modifier.weight(0.45f)) {
+                                PhotosSection(state, backendUrl, onEvent)
                             }
                             
-                            GenesysSpacer(GenesysSpacing.Huge)
+                            Spacer(Modifier.width(24.dp))
+                            
+                            // Seção Dados (com scroll interno no desktop)
+                            Box(modifier = Modifier.weight(0.55f).fillMaxHeight()) {
+                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                    DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                                }
+                            }
+                        }
+                    } else {
+                        // MOBILE: Um abaixo do outro (Scroll unificado no pai)
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            PhotosSection(state, backendUrl, onEvent)
+                            Spacer(Modifier.height(24.dp))
+                            DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                            Spacer(Modifier.height(64.dp))
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PhotosSection(state: ProductEditorState, backendUrl: String, onEvent: (ProductEditorEvent) -> Unit) {
+    GenesysColumn(usePadding = false) {
+        GenesysSectionHeader(
+            title = GenesysStrings.PhotosTitle,
+            subtitle = "${state.imageUrls.size}/5"
+        )
+        GenesysSpacer(GenesysSpacing.Small)
+        val displayUrls = remember(state.imageUrls, backendUrl) {
+            state.imageUrls.map { if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it }
+        }
+        GenesysPhotoPicker(
+            urls = displayUrls,
+            onAddClick = { onEvent(ProductEditorEvent.OnAddPhotoClicked) },
+            onRemoveClick = { onEvent(ProductEditorEvent.OnRemovePhotoClicked(it)) },
+            isUploading = state.isUploading
+        )
+    }
+}
+
+@Composable
+private fun DataFormSection(
+    state: ProductEditorState, 
+    categoryOptions: List<String>, 
+    onEvent: (ProductEditorEvent) -> Unit,
+    onManageCategories: () -> Unit
+) {
+    GenesysCard {
+        GenesysColumn(usePadding = false) {
+            GenesysText(text = GenesysStrings.ProductGeneralInfo, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysTextField(
+                value = state.name,
+                onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
+                label = GenesysStrings.ProductName,
+                icon = GenesysIcons.Inventory
+            )
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysRow {
+                GenesysWeightBox(1f) {
+                    GenesysTextField(
+                        value = state.price,
+                        onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
+                        label = GenesysStrings.ProductPrice,
+                        icon = GenesysIcons.Payments
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysWeightBox(1f) {
+                    GenesysTextField(
+                        value = state.stock,
+                        onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
+                        label = GenesysStrings.ProductStock,
+                        icon = GenesysIcons.Numbers
+                    )
+                }
+            }
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.weight(1f)) {
+                    GenesysDropdownField(
+                        value = state.categoryName,
+                        onValueChange = { name ->
+                            onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
+                        },
+                        label = GenesysStrings.ProductCategory,
+                        options = categoryOptions,
+                        icon = GenesysIcons.Category
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysIconButton(
+                    icon = GenesysIcons.Settings, 
+                    onClick = onManageCategories,
+                    contentDescription = "Gerenciar Categorias"
+                )
+            }
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysTextField(
+                value = state.description,
+                onValueChange = { onEvent(ProductEditorEvent.OnDescriptionChanged(it)) },
+                label = GenesysStrings.ProductDescription,
+                icon = GenesysIcons.Description,
+                singleLine = false,
+                minLines = 6
+            )
         }
     }
 }
