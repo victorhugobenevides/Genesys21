@@ -36,6 +36,7 @@ import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToLong
 
@@ -59,6 +60,9 @@ fun OrderTrackingScreen(
 
     LaunchedEffect(orderId) {
         viewModel.trackOrder(orderId)
+        // TRACKING GA4: Visualização de Status
+        AnalyticsManager.trackPageView("${GenesysStrings.TrackOrderTitle} - $orderId")
+        AnalyticsManager.logEvent("view_order_status", mapOf("order_id" to orderId))
     }
 
     // 2. Event Handler
@@ -66,7 +70,10 @@ fun OrderTrackingScreen(
         when (event) {
             is OrderTrackingEvent.OnTrackOrder -> viewModel.trackOrder(event.orderId)
             is OrderTrackingEvent.OnCopyOrderIdClicked -> {
-                state.order?.id?.let { clipboardManager.setText(AnnotatedString(it)) }
+                state.order?.id?.let { 
+                    clipboardManager.setText(AnnotatedString(it)) 
+                    AnalyticsManager.logEvent("copy_order_id", mapOf("order_id" to it))
+                }
             }
             is OrderTrackingEvent.OnBackClicked -> onBack()
         }
