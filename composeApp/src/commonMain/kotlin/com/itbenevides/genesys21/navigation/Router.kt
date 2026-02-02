@@ -34,7 +34,6 @@ class Router(val viewModel: PageViewModel) {
         val current = currentRoute
         if (current == route) return
         
-        // Proteção contra duplicidade: Se a nova rota for idêntica à atual, não faz nada
         if (current::class == route::class) {
              val isSameId = when {
                  current is Route.WhiteLabel && route is Route.WhiteLabel -> current.page.id == route.page.id
@@ -73,14 +72,14 @@ class Router(val viewModel: PageViewModel) {
         val pageName = when (route) {
             is Route.Splash -> "Splash"
             is Route.Login -> "Login"
-            is Route.PageList -> "Minhas Páginas"
+            is Route.PageList -> "Administração"
             is Route.PageEditor -> "Editor de Página"
-            is Route.WhiteLabel -> "Admin - ${route.page.title}"
-            is Route.PublicViewer -> "Vitrine - ${route.page.title}"
-            is Route.ProductDetails -> "Detalhes - ${route.product.name}"
-            is Route.ProductEditor -> "Editor de Produto"
-            is Route.Cart -> "Carrinho"
-            is Route.OrderTracking -> "Acompanhamento de Pedido"
+            is Route.WhiteLabel -> "Admin: ${route.page.title}"
+            is Route.PublicViewer -> route.page.title
+            is Route.ProductDetails -> "Produto: ${route.product.name}"
+            is Route.ProductEditor -> "Editando Produto"
+            is Route.Cart -> "Meu Carrinho"
+            is Route.OrderTracking -> "Rastreio de Pedido"
             is Route.CustomerOrderHistory -> "Meus Pedidos"
         }
         AnalyticsManager.trackPageView(pageName)
@@ -90,19 +89,22 @@ class Router(val viewModel: PageViewModel) {
         val current = currentRoute
         if (current is Route.Splash) return
 
-        val (pageId, productId) = when (current) {
-            is Route.PageEditor -> current.page?.id to null
-            is Route.WhiteLabel -> current.page.id to null
-            is Route.PublicViewer -> current.page.id to null
+        val (pageId, productId, title) = when (current) {
+            is Route.PageEditor -> Triple(current.page?.id, null, "Editor: ${current.page?.title ?: "Nova Página"}")
+            is Route.WhiteLabel -> Triple(current.page.id, null, "Gerenciar: ${current.page.title}")
+            is Route.PublicViewer -> Triple(current.page.id, null, current.page.title)
             is Route.ProductDetails -> {
                 val pId = (current.fromRoute as? Route.PublicViewer)?.page?.id 
                     ?: (current.fromRoute as? Route.WhiteLabel)?.page?.id
-                pId to current.product.id
+                Triple(pId, current.product.id, current.product.name)
             }
-            is Route.ProductEditor -> current.page.id to current.product?.id
-            is Route.OrderTracking -> current.orderId to null
-            is Route.CustomerOrderHistory -> current.page?.id to null
-            else -> null to null
+            is Route.ProductEditor -> Triple(current.page.id, current.product?.id, "Produto: ${current.product?.name ?: "Novo"}")
+            is Route.OrderTracking -> Triple(null, null, "Pedido: ${current.orderId}")
+            is Route.CustomerOrderHistory -> Triple(current.page?.id, null, "Meus Pedidos")
+            is Route.Cart -> Triple(null, null, "Meu Carrinho")
+            is Route.Login -> Triple(null, null, "Entrar - Genesys21")
+            is Route.PageList -> Triple(null, null, "Administração")
+            else -> Triple(null, null, "Genesys21")
         }
         
         val screen = when (current) {
@@ -119,7 +121,8 @@ class Router(val viewModel: PageViewModel) {
             is Route.CustomerOrderHistory -> Screen.OrderHistory
         }
         
-        syncUrlWithScreen(screen, pageId, productId)
+        // CORREÇÃO: Garante que o título nunca seja nulo ao sincronizar com o navegador
+        syncUrlWithScreen(screen, pageId, productId, title ?: "Genesys21")
     }
 
     fun handleDeepLink() {
@@ -133,12 +136,14 @@ class Router(val viewModel: PageViewModel) {
             val orderId = urlPath.extractId("/track/")
             if (orderId != null) {
                 applyRouteState(Route.OrderTracking(orderId))
+                forceSyncUrl() // Garante atualização do título no deep link
                 return@launch
             }
 
             if ((urlPath == "/" || urlPath == "") && currentDomain != "localhost" && currentDomain != "127.0.0.1") {
                 viewModel.loadPageByDomain(currentDomain)?.let { page ->
                     applyRouteState(Route.PublicViewer(page))
+                    forceSyncUrl()
                     return@launch
                 }
             }
@@ -152,6 +157,7 @@ class Router(val viewModel: PageViewModel) {
                     if (productId != null) {
                         findProductInPage(page, productId)?.let { product ->
                             applyRouteState(Route.ProductDetails(product, Route.PublicViewer(page)))
+                            forceSyncUrl()
                             return@launch
                         }
                     }
@@ -161,6 +167,7 @@ class Router(val viewModel: PageViewModel) {
                         else -> Route.PublicViewer(page)
                     }
                     applyRouteState(target)
+                    forceSyncUrl()
                     return@launch
                 }
             }
@@ -176,6 +183,7 @@ class Router(val viewModel: PageViewModel) {
                 }
             }
             applyRouteState(finalRoute)
+            forceSyncUrl()
         }
     }
 

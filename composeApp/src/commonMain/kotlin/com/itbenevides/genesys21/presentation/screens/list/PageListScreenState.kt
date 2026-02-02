@@ -23,6 +23,8 @@ data class PageListState(
     val selectedStatusFilter: OrderStatus? = null,
     val showCreateDialog: Boolean = false,
     val showGlobalSettings: Boolean = false,
+    val showRenameDialog: Boolean = false, // ADICIONADO
+    val pageToRename: Page? = null, // ADICIONADO
     val newPageTitle: String = ""
 )
 
@@ -42,11 +44,16 @@ sealed class PageListEvent {
     object OnGlobalSettingsClicked : PageListEvent()
     object OnDismissGlobalSettings : PageListEvent()
     data class OnConfirmGlobalSettings(val domain: String, val whatsapp: String) : PageListEvent()
+    
+    // NOVOS: Renomear Página
+    data class OnRenamePageClicked(val page: Page) : PageListEvent()
+    object OnDismissRenameDialog : PageListEvent()
+    data class OnConfirmRenamePage(val newTitle: String) : PageListEvent()
+
     data class OnDeletePageClicked(val pageId: String) : PageListEvent()
     data class OnUpdateOrderStatus(val orderId: String, val newStatus: OrderStatus) : PageListEvent()
     object OnLogoutClicked : PageListEvent()
     
-    // Exportar e Importar
     data class OnExportPageClicked(val page: Page) : PageListEvent()
     object OnExportAllClicked : PageListEvent()
     data class OnImportPageClicked(val json: String) : PageListEvent()

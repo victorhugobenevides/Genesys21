@@ -1,9 +1,9 @@
 package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.navigation.Screen
-import com.itbenevides.BuildConfig // IMPORTANTE: Namespace definido no build.gradle.kts
+import com.itbenevides.BuildConfig
 
-actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?) { }
+actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?, title: String?) { }
 
 actual fun getInitialUrlPath(): String? = null
 

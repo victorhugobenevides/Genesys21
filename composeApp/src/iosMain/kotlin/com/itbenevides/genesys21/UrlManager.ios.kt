@@ -6,7 +6,7 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?
 
 actual fun getInitialUrlPath(): String? = null
 
-actual fun getWebBaseUrl(): String = "http://localhost:8081"
+actual fun getWebBaseUrl(): String = "http://localhost"
 
 actual fun onUrlChange(callback: () -> Unit) { }
 
