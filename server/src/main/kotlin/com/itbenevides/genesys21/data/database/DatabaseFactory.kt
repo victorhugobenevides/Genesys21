@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.data.database
 
-import com.itbenevides.genesys21.data.database.DatabaseMigrator.fixCustomDomainConstraint
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
@@ -9,18 +8,13 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.time.LocalDateTime
 
 object DatabaseFactory {
     private const val DB_PATH = "data/genesys21.db"
     
     fun init() {
         setupDatabaseDirectory()
-        createBackup()
         
-        // Aplica otimizações SQLite antes de iniciar o pool
         applySqliteOptimizations()
 
         val dataSource = hikari()
@@ -36,39 +30,16 @@ object DatabaseFactory {
 
     private fun applySqliteOptimizations() {
         try {
-            Class.forName("org.sqlite.JDBC")
-            java.sql.DriverManager.getConnection("jdbc:sqlite:$DB_PATH").use { conn ->
-                conn.createStatement().use { stmt ->
-                    stmt.execute("PRAGMA journal_mode=WAL;")
-                    stmt.execute("PRAGMA synchronous=NORMAL;")
-                    stmt.execute("PRAGMA temp_store=MEMORY;")
+            if (File(DB_PATH).exists()) {
+                Class.forName("org.sqlite.JDBC")
+                java.sql.DriverManager.getConnection("jdbc:sqlite:$DB_PATH").use { conn ->
+                    conn.createStatement().use { stmt ->
+                        stmt.execute("PRAGMA journal_mode=WAL;")
+                        stmt.execute("PRAGMA synchronous=NORMAL;")
+                    }
                 }
             }
-        } catch (e: Exception) {
-            println("DatabaseFactory: Falha ao aplicar otimizações - ${e.message}")
-        }
-    }
-
-    private fun createBackup() {
-        val dbFile = File(DB_PATH)
-        if (!dbFile.exists()) return
-
-        try {
-            val backupFolder = File("data/backups")
-            if (!backupFolder.exists()) backupFolder.mkdirs()
-
-            val timestamp = LocalDateTime.now().toString().replace(":", "-")
-            val backupFile = File(backupFolder, "genesys21_backup_$timestamp.db")
-
-            Files.copy(dbFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            
-            val files = backupFolder.listFiles()?.sortedByDescending { it.lastModified() }
-            if (files != null && files.size > 5) {
-                files.drop(5).forEach { it.delete() }
-            }
-        } catch (e: Exception) {
-            println("DatabaseFactory: Falha ao criar backup - ${e.message}")
-        }
+        } catch (e: Exception) { }
     }
 
     private fun hikari(): HikariDataSource {
@@ -83,8 +54,19 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
-            SchemaUtils.createMissingTablesAndColumns(PagesTable, CartsTable, OrdersTable) // ADICIONADO OrdersTable
-            fixCustomDomainConstraint()
+            // Adicionado CategoriesTable à lista de migração
+            SchemaUtils.createMissingTablesAndColumns(
+                CategoriesTable,
+                PagesTable, 
+                PageComponentsTable,
+                ProductsTable,
+                ProductImagesTable,
+                ComponentProductsTable,
+                CartsTable, 
+                CartItemsTable,
+                OrdersTable,
+                OrderItemsTable
+            )
         }
     }
 

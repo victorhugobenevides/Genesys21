@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics) // ADICIONADO
+    alias(libs.plugins.firebase.perf)        // ADICIONADO
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -53,7 +55,6 @@ kotlin {
                         add(project.file("src/webMain/resources").canonicalPath)
                     }
                     
-                    // CORREÇÃO: Passando mutableListOf<String> para o contexto do Proxy
                     proxy = mutableListOf(
                         KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/api"), "http://localhost:8080"),
                         KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/pages"), "http://localhost:8080"),
@@ -101,6 +102,10 @@ kotlin {
             implementation(libs.kmpauth.uihelper)
             implementation(libs.koin.android)
             implementation(libs.peekaboo.image.picker)
+            
+            // DEPENDÊNCIAS FIREBASE ANDROID
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.perf)
         }
 
         iosMain.dependencies {
@@ -127,7 +132,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 2
         versionName = "1.1"
-        buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
+        buildConfigField("String", "WEB_BASE_URL", "\"http://192.168.15.6:8081\"")
     }
     buildFeatures { buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }

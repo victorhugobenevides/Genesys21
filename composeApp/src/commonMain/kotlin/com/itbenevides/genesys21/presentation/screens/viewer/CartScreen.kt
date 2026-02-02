@@ -1,170 +1,166 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.input.GenesysTextField
+import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.components.text.*
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.viewmodel.koinViewModel
+import com.itbenevides.genesys21.ui.components.image.GenesysImage
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.input.GenesysQuantitySelector
+import kotlin.math.roundToLong
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
-    page: Page? = null, 
+    page: Page? = null,
     onBack: () -> Unit,
     onOrderSubmitted: (String) -> Unit = {}
 ) {
     val viewModel: PageViewModel = koinViewModel()
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
-    val backendUrl = remember { getBaseUrl() }
     val customerName by viewModel.customerName.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val backendUrl = remember { getBaseUrl() }
+
+    var state by remember { mutableStateOf(CartScreenState()) }
+    
+    state = state.copy(
+        cartItems = cartItems,
+        total = total,
+        customerName = customerName,
+        isLoading = isLoading
+    )
 
     LaunchedEffect(Unit) {
-        AnalyticsManager.trackPageView("Carrinho")
+        AnalyticsManager.trackPageView(GenesysStrings.CartTitle)
     }
 
-    Scaffold(
+    val onEvent: (CartScreenEvent) -> Unit = { event ->
+        when (event) {
+            is CartScreenEvent.OnUpdateQuantity -> viewModel.updateCartQuantity(event.productId, event.newQuantity)
+            is CartScreenEvent.OnRemoveItem -> {
+                AnalyticsManager.logEvent("remove_from_cart", mapOf("item_id" to event.productId))
+                viewModel.removeFromCart(event.productId)
+            }
+            is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
+            is CartScreenEvent.OnCheckoutClicked -> {
+                viewModel.submitOrder(page) { orderId ->
+                    onOrderSubmitted(orderId)
+                }
+            }
+            is CartScreenEvent.OnBackClicked -> onBack()
+        }
+    }
+
+    CartContent(state, backendUrl, onEvent)
+}
+
+@Composable
+private fun CartContent(
+    state: CartScreenState,
+    backendUrl: String,
+    onEvent: (CartScreenEvent) -> Unit
+) {
+    GenesysPage(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Seu Carrinho", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            GenesysTopAppBar(
+                title = GenesysStrings.CartTitle,
+                onBack = { onEvent(CartScreenEvent.OnBackClicked) }
             )
         }
-    ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 1000.dp)
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp)
-            ) {
-                if (cartItems.isEmpty()) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        EmptyCartView(onBack)
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isWideScreen = maxWidth > 900.dp
+
+            if (state.cartItems.isEmpty() && !state.isLoading) {
+                GenesysEmptyState(
+                    icon = GenesysIcons.ShoppingBag,
+                    title = GenesysStrings.EmptyCartTitle,
+                    description = GenesysStrings.EmptyCartDescription,
+                    action = {
+                        GenesysLoadingButton(
+                            text = GenesysStrings.Back, 
+                            onClick = { onEvent(CartScreenEvent.OnBackClicked) }
+                        )
+                    }
+                )
+            } else {
+                if (isWideScreen) {
+                    GenesysRow(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.Top,
+                        usePadding = false
+                    ) {
+                        GenesysWeightBox(0.65f) {
+                            GenesysColumn(usePadding = true, useScroll = true) {
+                                GenesysText(
+                                    text = GenesysStrings.AppName, 
+                                    style = GenesysTextStyle.Title,
+                                    fontWeight = GenesysFontWeight.ExtraBold
+                                )
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                
+                                state.cartItems.forEach { item ->
+                                    ModernCartItemRow(item, backendUrl, onEvent)
+                                    GenesysSpacer(GenesysSpacing.Small)
+                                }
+                            }
+                        }
+
+                        GenesysSpacer(GenesysSpacing.Large)
+
+                        GenesysWeightBox(0.35f) {
+                            GenesysColumn(usePadding = true) {
+                                CheckoutSummarySection(state, onEvent)
+                            }
+                        }
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        contentPadding = PaddingValues(vertical = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    GenesysColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = GenesysAlignment.Center,
+                        usePadding = false
                     ) {
-                        item {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 1.dp
-                            ) {
-                                Column(Modifier.padding(20.dp)) {
-                                    Text("Identificação", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                    Spacer(Modifier.height(12.dp))
-                                    OutlinedTextField(
-                                        value = customerName,
-                                        onValueChange = { viewModel.saveCustomerName(it) },
-                                        label = { Text("Seu Nome") },
-                                        placeholder = { Text("Como gostaria de ser chamado?") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        singleLine = true,
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedContainerColor = Color.Transparent,
-                                            unfocusedContainerColor = Color.Transparent
-                                        )
-                                    )
+                        GenesysWeightBox(1f) {
+                            GenesysColumn(usePadding = true, useScroll = true) {
+                                CartStepperUI(step = 1)
+                                GenesysSpacer(GenesysSpacing.Large)
+                                state.cartItems.forEach { item ->
+                                    ModernCartItemRow(item, backendUrl, onEvent)
+                                    GenesysSpacer(GenesysSpacing.Small)
                                 }
+                                GenesysSpacer(GenesysSpacing.Large)
+                                IdentificationCard(state, onEvent)
+                                GenesysSpacer(GenesysSpacing.ExtraLarge)
                             }
                         }
 
-                        items(cartItems) { item ->
-                            ModernCartItemRow(
-                                item = item,
-                                backendUrl = backendUrl,
-                                onIncrease = { viewModel.updateCartQuantity(item.product.id, item.quantity + 1) },
-                                onDecrease = { viewModel.updateCartQuantity(item.product.id, item.quantity - 1) },
-                                onRemove = { 
-                                    AnalyticsManager.logEvent("remove_from_cart", mapOf("item_id" to item.product.id, "item_name" to item.product.name))
-                                    viewModel.removeFromCart(item.product.id) 
-                                }
-                            )
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 8.dp,
-                        shadowElevation = 16.dp,
-                        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                    ) {
-                        Column(
-                            Modifier
-                                .padding(24.dp)
-                                .navigationBarsPadding()
+                        GenesysCard(
+                            elevation = GenesysDimens.ElevationHigh,
+                            modifier = Modifier.padding(16.dp)
                         ) {
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Total", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
-                                Text("R$ $total", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary))
-                            }
-                            Spacer(Modifier.height(20.dp))
-                            Button(
-                                onClick = { 
-                                    viewModel.submitOrder(page) { orderId ->
-                                        onOrderSubmitted(orderId)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth().height(56.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                enabled = customerName.isNotBlank()
-                            ) {
-                                Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text("Finalizar Pedido", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            }
-                            if (customerName.isBlank()) {
-                                Text(
-                                    "Preencha seu nome para finalizar", 
-                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                    textAlign = TextAlign.Center,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
+                            MobileCheckoutFooter(state, onEvent)
                         }
                     }
                 }
@@ -174,120 +170,152 @@ fun CartScreen(
 }
 
 @Composable
-fun ModernCartItemRow(
+private fun IdentificationCard(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysCard {
+        GenesysColumn(usePadding = false) {
+            GenesysText(
+                text = GenesysStrings.Identification, 
+                style = GenesysTextStyle.Title,
+                fontWeight = GenesysFontWeight.Bold
+            )
+            GenesysSpacer(GenesysSpacing.Medium)
+            
+            GenesysTextField(
+                value = state.customerName,
+                onValueChange = { onEvent(CartScreenEvent.OnCustomerNameChanged(it)) },
+                label = GenesysStrings.CustomerNameLabel,
+                placeholder = GenesysStrings.CheckoutNameHint,
+                icon = GenesysIcons.Person
+            )
+        }
+    }
+}
+
+@Composable
+private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysColumn(usePadding = false) {
+        IdentificationCard(state, onEvent)
+        GenesysSpacer(GenesysSpacing.Large)
+        GenesysCard(backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)) {
+            GenesysColumn(usePadding = false) {
+                GenesysRow {
+                    GenesysWeightBox(1f) {
+                        GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title)
+                    }
+                    val totalFormatted = (state.total * 100.0).roundToLong() / 100.0
+                    GenesysText(
+                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
+                        style = GenesysTextStyle.Headline, 
+                        fontWeight = GenesysFontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Large)
+                GenesysLoadingButton(
+                    text = GenesysStrings.CheckoutButton,
+                    onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
+                    fillWidth = true,
+                    enabled = state.isCheckoutEnabled,
+                    icon = GenesysIcons.Check,
+                    isLoading = state.isLoading
+                )
+                if (state.customerName.isBlank()) {
+                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysText(
+                        text = GenesysStrings.FillNameReminder, 
+                        style = GenesysTextStyle.Label,
+                        textAlign = GenesysTextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MobileCheckoutFooter(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysColumn(usePadding = false) {
+        GenesysRow {
+            GenesysWeightBox(1f) {
+                GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Body)
+            }
+            val totalFormatted = (state.total * 100.0).roundToLong() / 100.0
+            GenesysText(
+                text = "${GenesysStrings.PricePrefix}$totalFormatted", 
+                style = GenesysTextStyle.Title, 
+                fontWeight = GenesysFontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysLoadingButton(
+            text = GenesysStrings.CheckoutButton,
+            onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
+            fillWidth = true,
+            enabled = state.isCheckoutEnabled,
+            icon = GenesysIcons.Check,
+            isLoading = state.isLoading
+        )
+    }
+}
+
+@Composable
+private fun CartStepperUI(step: Int) {
+    GenesysRow(horizontalArrangement = Arrangement.Center) {
+        repeat(3) { index ->
+            val active = index + 1 <= step
+            val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            Box(
+                modifier = Modifier
+                    .size(if (index + 1 == step) 12.dp else 8.dp)
+                    .background(color, androidx.compose.foundation.shape.CircleShape)
+            )
+            if (index < 2) {
+                Box(
+                    modifier = Modifier.width(24.dp).height(2.dp).background(MaterialTheme.colorScheme.outlineVariant).align(Alignment.CenterVertically)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModernCartItemRow(
     item: CartItem,
     backendUrl: String,
-    onIncrease: () -> Unit,
-    onDecrease: () -> Unit,
-    onRemove: () -> Unit
+    onEvent: (CartScreenEvent) -> Unit
 ) {
     val displayImageUrl = remember(item.product.imageUrls) {
         val first = item.product.imageUrls.firstOrNull() ?: ""
         if (first.startsWith("/")) "$backendUrl$first" else first
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(16.dp),
-        tonalElevation = 1.dp
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (displayImageUrl.isNotEmpty()) {
-                    AsyncImage(
-                        model = displayImageUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+    GenesysCard(elevation = GenesysDimens.ElevationLow) {
+        GenesysRow(verticalAlignment = Alignment.Top) {
+            GenesysImage(
+                url = displayImageUrl,
+                size = 90.dp
+            )
+            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysWeightBox(1f) {
+                GenesysColumn(usePadding = false) {
+                    GenesysText(text = item.product.name, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                    val priceFormatted = (item.product.price * 100.0).roundToLong() / 100.0
+                    GenesysText(text = "${GenesysStrings.PricePrefix}$priceFormatted", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.primary)
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysQuantitySelector(
+                        quantity = item.quantity,
+                        onIncrease = { onEvent(CartScreenEvent.OnUpdateQuantity(item.product.id, item.quantity + 1)) },
+                        onDecrease = { onEvent(CartScreenEvent.OnUpdateQuantity(item.product.id, item.quantity - 1)) }
                     )
-                } else {
-                    Icon(Icons.Default.Image, null, tint = Color.LightGray)
                 }
             }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(Modifier.weight(1f)) {
-                Text(
-                    item.product.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    "R$ ${item.product.price}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(Modifier.height(12.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    QuantityButton(Icons.Default.Remove, onDecrease)
-                    Text("${item.quantity}", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                    QuantityButton(Icons.Default.Add, onIncrease, isPrimary = true)
-                }
-            }
-
-            IconButton(onClick = onRemove, modifier = Modifier.align(Alignment.Top)) {
-                Icon(Icons.Default.DeleteOutline, "Remover", tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
-            }
-        }
-    }
-}
-
-@Composable
-fun QuantityButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, isPrimary: Boolean = false) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.size(30.dp),
-        shape = CircleShape,
-        color = if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        contentColor = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, null, modifier = Modifier.size(16.dp))
-        }
-    }
-}
-
-@Composable
-fun EmptyCartView(onBack: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.ShoppingBag, 
-            null, 
-            modifier = Modifier.size(80.dp), 
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-        )
-        Spacer(Modifier.height(24.dp))
-        Text("Carrinho Vazio", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(
-            "Você ainda não adicionou nenhum item.",
-            textAlign = TextAlign.Center,
-            color = Color.Gray,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-        Spacer(Modifier.height(32.dp))
-        TextButton(onClick = onBack) {
-            Text("Explorar Vitrine", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            GenesysIconButton(
+                icon = GenesysIcons.Delete,
+                onClick = { onEvent(CartScreenEvent.OnRemoveItem(item.product.id)) },
+                tint = Color.Red.copy(alpha = 0.6f)
+            )
         }
     }
 }

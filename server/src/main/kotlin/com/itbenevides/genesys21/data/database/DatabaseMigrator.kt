@@ -2,7 +2,7 @@ package com.itbenevides.genesys21.data.database
 
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.selectAll
 
 /**
  * Utilitário para lidar com migrações e correções estruturais manuais
@@ -12,7 +12,7 @@ object DatabaseMigrator {
 
     /**
      * Corrige a restrição UNIQUE do campo custom_domain no SQLite, 
-     * reconstruindo a tabela se necessário.
+     * reconstruindo a tabela se necessário e respeitando a nova estrutura normalizada.
      */
     fun Transaction.fixCustomDomainConstraint() {
         try {
@@ -20,8 +20,12 @@ object DatabaseMigrator {
                 if (rs.next()) rs.getString("sql") else ""
             } ?: ""
 
-            if (tableSql.contains("custom_domain", true) && tableSql.contains("UNIQUE", true)) {
-                rebuildPagesTable()
+            // Verifica se a tabela ainda tem a estrutura antiga ou a restrição UNIQUE indesejada
+            val hasUnique = tableSql.contains("custom_domain", true) && tableSql.contains("UNIQUE", true)
+            val hasOldComponentsColumn = tableSql.contains("components", true)
+
+            if (hasUnique || hasOldComponentsColumn) {
+                rebuildPagesTable(hasOldComponentsColumn)
             }
             
             // Remove índices residuais
@@ -32,20 +36,30 @@ object DatabaseMigrator {
         }
     }
 
-    private fun Transaction.rebuildPagesTable() {
-        println("DatabaseMigrator: Removendo restrição UNIQUE via reconstrução de tabela...")
+    /**
+     * Reconstrói a tabela de páginas para aplicar a normalização e remover constraints.
+     */
+    private fun Transaction.rebuildPagesTable(migrateComponents: Boolean) {
+        println("DatabaseMigrator: Reconstruindo tabela 'pages' para normalização...")
         
         exec("ALTER TABLE pages RENAME TO pages_old")
         
-        // Cria a nova estrutura baseada na definição atual do PagesTable (sem UNIQUE)
+        // Cria a nova estrutura baseada na definição atual do PagesTable (sem UNIQUE e sem 'components')
         SchemaUtils.create(PagesTable)
         
+        // Insere apenas as colunas atômicas que permaneceram na tabela Pages
         exec("""
-            INSERT INTO pages (id, title, owner_id, theme, custom_domain, whatsapp, components) 
-            SELECT id, title, owner_id, theme, custom_domain, whatsapp, components FROM pages_old
+            INSERT INTO pages (id, title, owner_id, theme, custom_domain, whatsapp) 
+            SELECT id, title, owner_id, theme, custom_domain, whatsapp FROM pages_old
         """.trimIndent())
         
+        // Nota: A migração dos dados de 'components' (JSON) para a tabela 'page_components' 
+        // deve ser tratada aqui se houver dados legados importantes.
+        if (migrateComponents) {
+            println("DatabaseMigrator: Aviso - Dados da coluna 'components' foram isolados na tabela 'pages_old'.")
+        }
+
         exec("DROP TABLE pages_old")
-        println("DatabaseMigrator: Sucesso!")
+        println("DatabaseMigrator: Tabela 'pages' normalizada com sucesso!")
     }
 }

@@ -1,34 +1,45 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.presentation.screens.list.StatusBadge
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.feedback.GenesysTrackingTimeline
+import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysDivider
+import com.itbenevides.genesys21.ui.components.layout.GenesysPage
+import com.itbenevides.genesys21.ui.components.layout.GenesysRow
+import com.itbenevides.genesys21.ui.components.layout.GenesysSectionHeader
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.text.GenesysText
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToLong
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderTrackingScreen(
     orderId: String,
@@ -39,199 +50,157 @@ fun OrderTrackingScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val clipboardManager = LocalClipboardManager.current
 
+    // 1. State Management
+    var state by remember { mutableStateOf(OrderTrackingState()) }
+    
+    state = state.copy(
+        order = order,
+        isLoading = isLoading
+    )
+
     LaunchedEffect(orderId) {
         viewModel.trackOrder(orderId)
+        // TRACKING GA4: Visualização de Status
+        AnalyticsManager.trackPageView("${GenesysStrings.TrackOrderTitle} - $orderId")
+        AnalyticsManager.logEvent("view_order_status", mapOf("order_id" to orderId))
     }
 
-    // Identifica o tema do pedido ou usa o padrão enquanto carrega
-    val themeToUse = order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL
-
-    AppTheme(themeConfig = themeToUse) {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Detalhes do Pedido", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
-                    navigationIcon = {
-                        TextButton(onClick = onBack) {
-                            Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent)
-                )
-            }
-        ) { padding ->
-            BoxWithConstraints(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                val maxWidthContent = 1000.dp
-                val horizontalPadding = if (maxWidth > maxWidthContent) (maxWidth - maxWidthContent) / 2 else 12.dp
-
-                if (isLoading) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                } else if (order == null) {
-                    Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Info, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                        Spacer(Modifier.height(16.dp))
-                        Text("Pedido não encontrado", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                } else {
-                    val currentOrder = order!!
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = horizontalPadding, vertical = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Card de Status
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 2.dp,
-                            shadowElevation = 1.dp
-                        ) {
-                            Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("STATUS ATUAL", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.height(12.dp))
-                                StatusBadge(currentOrder.status)
-                                
-                                Spacer(Modifier.height(24.dp))
-                                
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("#${currentOrder.id.uppercase()}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold))
-                                    IconButton(onClick = { clipboardManager.setText(AnnotatedString(currentOrder.id)) }) {
-                                        Icon(Icons.Default.ContentCopy, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-                        TrackingTimeline(currentOrder.status)
-                        Spacer(Modifier.height(32.dp))
-
-                        // Itens e Resumo
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 1.dp
-                        ) {
-                            Column(Modifier.padding(24.dp)) {
-                                Text("Resumo do Pedido", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                Spacer(Modifier.height(16.dp))
-                                
-                                currentOrder.items.forEach { item ->
-                                    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("${item.quantity}x ${item.product.name}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                                        Text("R$ ${item.product.price * item.quantity}", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-                                    }
-                                }
-                                
-                                Spacer(Modifier.height(16.dp))
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                Spacer(Modifier.height(16.dp))
-                                
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Total", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Text("R$ ${currentOrder.total}", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
-                                }
-                            }
-                        }
-                        
-                        Spacer(Modifier.height(40.dp))
-                        Text(
-                            "Dica: Salve o ID do pedido para futuras consultas.", 
-                            textAlign = TextAlign.Center, 
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                        Spacer(Modifier.height(40.dp))
-                    }
+    // 2. Event Handler
+    val onEvent: (OrderTrackingEvent) -> Unit = { event ->
+        when (event) {
+            is OrderTrackingEvent.OnTrackOrder -> viewModel.trackOrder(event.orderId)
+            is OrderTrackingEvent.OnCopyOrderIdClicked -> {
+                state.order?.id?.let { 
+                    clipboardManager.setText(AnnotatedString(it)) 
+                    AnalyticsManager.logEvent("copy_order_id", mapOf("order_id" to it))
                 }
             }
+            is OrderTrackingEvent.OnBackClicked -> onBack()
         }
+    }
+
+    val themeToUse = state.order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL
+
+    // 3. Render
+    AppTheme(themeConfig = themeToUse) {
+        OrderTrackingContent(state, onEvent)
     }
 }
 
 @Composable
-fun TrackingTimeline(currentStatus: OrderStatus) {
-    val steps = listOf(
-        OrderStatus.PENDING to "Pedido Recebido",
-        OrderStatus.PROCESSING to "Em Preparação",
-        OrderStatus.COMPLETED to "Pedido Concluído"
-    )
+private fun OrderTrackingContent(
+    state: OrderTrackingState,
+    onEvent: (OrderTrackingEvent) -> Unit
+) {
+    GenesysPage(
+        topBar = {
+            GenesysTopAppBar(
+                title = GenesysStrings.TrackOrderTitle,
+                onBack = { onEvent(OrderTrackingEvent.OnBackClicked) }
+            )
+        }
+    ) {
+        // Container Root centralizado (WasmJs)
+        GenesysColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = GenesysAlignment.Center,
+            usePadding = false
+        ) {
+            // Container responsivo com largura controlada pelo DS
+            GenesysWeightBox(1f) {
+                GenesysColumn(
+                    maxWidth = GenesysDimens.ContentMaxWidth, 
+                    useScroll = true
+                ) {
+                    if (state.order == null && !state.isLoading) {
+                        GenesysEmptyState(
+                            icon = GenesysIcons.SearchOff,
+                            title = GenesysStrings.OrderNotFound,
+                            description = GenesysStrings.NoOrdersDescription,
+                            action = { 
+                                GenesysLoadingButton(
+                                    text = GenesysStrings.Back, 
+                                    onClick = { onEvent(OrderTrackingEvent.OnBackClicked) }
+                                ) 
+                            }
+                        )
+                    } else if (state.order != null) {
+                        val currentOrder = state.order!!
+                        
+                        // DESTAQUE: Card de Status Principal
+                        GenesysCard(elevation = GenesysDimens.ElevationMedium) {
+                             GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
+                                GenesysText(text = GenesysStrings.OrderStatusLabel, style = GenesysTextStyle.Label)
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                GenesysStatusBadge(currentOrder.status)
+                                
+                                GenesysSpacer(GenesysSpacing.Large)
+                                
+                                GenesysRow(horizontalArrangement = Arrangement.Center) {
+                                    GenesysText(
+                                        text = "${GenesysStrings.OrderPrefix}${currentOrder.id.uppercase()}", 
+                                        style = GenesysTextStyle.Title, 
+                                        fontWeight = GenesysFontWeight.ExtraBold
+                                    )
+                                    GenesysSpacer(GenesysSpacing.Small)
+                                    GenesysIconButton(
+                                        icon = GenesysIcons.Copy, 
+                                        onClick = { onEvent(OrderTrackingEvent.OnCopyOrderIdClicked) }
+                                    )
+                                }
+                            }
+                        }
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
-        steps.forEachIndexed { index, (status, label) ->
-            val isCompleted = when (currentStatus) {
-                OrderStatus.CANCELLED -> false
-                OrderStatus.PENDING -> index == 0
-                OrderStatus.PROCESSING -> index <= 1
-                OrderStatus.COMPLETED -> true
-            }
-            
-            val isActive = when (currentStatus) {
-                OrderStatus.PENDING -> index == 0
-                OrderStatus.PROCESSING -> index == 1
-                OrderStatus.COMPLETED -> index == 2
-                else -> false
-            }
+                        GenesysSpacer(GenesysSpacing.Large)
+                        
+                        // EVOLUÇÃO UX: Linha do tempo de acompanhamento
+                        GenesysTrackingTimeline(currentStatus = currentOrder.status)
+                        
+                        GenesysSpacer(GenesysSpacing.Large)
 
-            val color = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(
-                        Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(if (isCompleted) color else color.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isCompleted && !isActive) {
-                            Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimary)
-                        } else if (isActive) {
-                            Box(Modifier.size(10.dp).background(MaterialTheme.colorScheme.onPrimary, CircleShape))
+                        // Resumo do Pedido com alinhamento Premium
+                        GenesysCard {
+                            GenesysColumn(usePadding = true) {
+                                GenesysSectionHeader(title = GenesysStrings.OrderSummary)
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                
+                                currentOrder.items.forEach { item ->
+                                    GenesysRow {
+                                        GenesysWeightBox(1f) {
+                                            GenesysText(text = "${item.quantity}x ${item.product.name}")
+                                        }
+                                        // ARREDONDAMENTO: Subtotal por item
+                                        val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
+                                        GenesysText(
+                                            text = "${GenesysStrings.PricePrefix}$subtotal", 
+                                            fontWeight = GenesysFontWeight.Bold
+                                        )
+                                    }
+                                    GenesysSpacer(GenesysSpacing.Small)
+                                }
+                                
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                GenesysDivider()
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                
+                                GenesysRow {
+                                    GenesysWeightBox(1f) {
+                                        GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title)
+                                    }
+                                    // ARREDONDAMENTO: Total geral do pedido
+                                    val totalFormatted = (currentOrder.total * 100.0).roundToLong() / 100.0
+                                    GenesysText(
+                                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
+                                        style = GenesysTextStyle.Title, 
+                                        fontWeight = GenesysFontWeight.ExtraBold,
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         }
                     }
-                    if (index < steps.size - 1) {
-                        Box(
-                            Modifier
-                                .width(2.dp)
-                                .height(32.dp)
-                                .background(if (isCompleted && currentStatus != status) color else color.copy(alpha = 0.3f))
-                        )
-                    }
-                }
-                
-                Spacer(Modifier.width(20.dp))
-                
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.Medium,
-                    color = if (isCompleted) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
-            }
-        }
-        
-        if (currentStatus == OrderStatus.CANCELLED) {
-            Spacer(Modifier.height(20.dp))
-            Surface(
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.error)
-                    Spacer(Modifier.width(12.dp))
-                    Text("Este pedido foi cancelado.", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    
+                    GenesysSpacer(GenesysSpacing.Huge)
                 }
             }
         }

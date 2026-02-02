@@ -1,170 +1,188 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
+import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.input.GenesysDropdownField
+import com.itbenevides.genesys21.ui.components.input.GenesysPhotoPicker
+import com.itbenevides.genesys21.ui.components.input.GenesysTextField
+import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysPage
+import com.itbenevides.genesys21.ui.components.layout.GenesysRow
+import com.itbenevides.genesys21.ui.components.layout.GenesysSectionHeader
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.text.GenesysText
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.util.InputValidator
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductEditorScreen(
     viewModel: PageViewModel,
+    page: Page,
     product: Product?,
     existingCategories: List<String>,
     onSave: (Product) -> Unit,
     onBack: () -> Unit
 ) {
-    var name by remember { mutableStateOf(product?.name ?: "") }
-    var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
-    var imageUrls by remember { mutableStateOf(product?.imageUrls ?: emptyList<String>()) }
-    var description by remember { mutableStateOf(product?.description ?: "") }
-    var category by remember { mutableStateOf(product?.category ?: "") }
-    var stock by remember { mutableStateOf(product?.stock?.toString() ?: "0") }
-
-    val isLoading by viewModel.isLoading.collectAsState()
-    var isUploading by remember { mutableStateOf(false) }
+    var state by remember { mutableStateOf(ProductEditorState.initial(product)) }
+    val isGlobalLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
+    val categories by viewModel.categories.collectAsState()
+    
+    var showCategoryManagement by remember { mutableStateOf(false) }
 
-    val launchImagePicker = rememberImagePicker { bytes ->
+    state = state.copy(isLoading = isGlobalLoading)
+
+    val imagePicker = rememberImagePicker { bytes ->
         bytes?.let {
-            if (imageUrls.size < 5) {
-                isUploading = true
-                viewModel.uploadImage(it, "prod_${Random.nextInt()}.jpg") { uploadedUrl ->
-                    imageUrls = imageUrls + uploadedUrl
-                    isUploading = false
+            if (state.imageUrls.size < 5) {
+                state = state.copy(isUploading = true)
+                viewModel.uploadImage(it, "prod_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
+                    state = state.copy(
+                        imageUrls = state.imageUrls + uploadedUrl,
+                        isUploading = false
+                    )
                 }
             }
         }
     }
 
-    var expanded by remember { mutableStateOf(false) }
+    val onEvent: (ProductEditorEvent) -> Unit = { event ->
+        when (event) {
+            is ProductEditorEvent.OnNameChanged -> state = state.copy(name = event.name)
+            is ProductEditorEvent.OnPriceChanged -> state = state.copy(price = InputValidator.validatePrice(event.price))
+            is ProductEditorEvent.OnDescriptionChanged -> state = state.copy(description = event.description)
+            is ProductEditorEvent.OnCategoryChanged -> {
+                state = state.copy(categoryId = event.categoryId, categoryName = event.categoryName)
+            }
+            is ProductEditorEvent.OnStockChanged -> state = state.copy(stock = InputValidator.validateStock(event.stock))
+            is ProductEditorEvent.OnAddPhotoClicked -> if (!state.isUploading && state.imageUrls.size < 5) imagePicker()
+            is ProductEditorEvent.OnRemovePhotoClicked -> {
+                val toRemove = state.imageUrls.find { 
+                    (if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it) == event.url 
+                } ?: event.url
+                state = state.copy(imageUrls = state.imageUrls.filter { it != toRemove })
+            }
+            is ProductEditorEvent.OnSaveClicked -> {
+                val finalProduct = Product(
+                    id = product?.id ?: "P-${Random.nextInt(1000, 9999)}",
+                    name = state.name.trim(),
+                    price = InputValidator.parsePrice(state.price.replace(",", ".")),
+                    imageUrls = state.imageUrls,
+                    description = state.description.trim(),
+                    categoryId = state.categoryId,
+                    categoryName = state.categoryName,
+                    stock = InputValidator.parseStock(state.stock)
+                )
+                onSave(finalProduct)
+            }
+        }
+    }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+    AppTheme(themeConfig = page.theme) {
+        ProductEditorContent(
+            state = state, 
+            backendUrl = backendUrl, 
+            categoryOptions = categories.map { it.name }, 
+            onEvent = onEvent, 
+            onBack = onBack, 
+            onManageCategories = { showCategoryManagement = true }
+        )
+        
+        if (showCategoryManagement) {
+            CategoryManagementDialog(
+                viewModel = viewModel,
+                onDismiss = { showCategoryManagement = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductEditorContent(
+    state: ProductEditorState,
+    backendUrl: String,
+    categoryOptions: List<String>,
+    onEvent: (ProductEditorEvent) -> Unit,
+    onBack: () -> Unit,
+    onManageCategories: () -> Unit
+) {
+     GenesysPage(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(if (product == null) "Novo Produto" else "Editar Detalhes", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBackIosNew, "Voltar", modifier = Modifier.size(20.dp)) }
-                },
+            GenesysTopAppBar(
+                title = if (state.isEditing) GenesysStrings.EditProduct else GenesysStrings.NewProduct,
+                onBack = onBack,
                 actions = {
-                    TextButton(
-                        onClick = {
-                            val finalProduct = Product(
-                                id = product?.id ?: "P-${Random.nextInt(1000, 9999)}",
-                                name = name.trim(),
-                                price = price.replace(",", ".").toDoubleOrNull() ?: 0.0,
-                                imageUrls = imageUrls,
-                                description = description.trim(),
-                                category = category.trim(),
-                                stock = stock.toIntOrNull() ?: 0
-                            )
-                            onSave(finalProduct)
-                        },
-                        enabled = name.isNotBlank() && !isUploading && !isLoading
-                    ) {
-                        if (isLoading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                        else Text("Salvar", fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                    }
+                    GenesysLoadingButton(
+                        text = GenesysStrings.Save,
+                        onClick = { onEvent(ProductEditorEvent.OnSaveClicked) },
+                        isLoading = state.isLoading,
+                        enabled = state.canSave,
+                        icon = GenesysIcons.Check
+                    )
                 }
             )
         }
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-            Column(
-                modifier = Modifier.widthIn(max = 800.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                // SEÇÃO DE FOTOS COM PREFIXO DE URL
-                Column(Modifier.fillMaxWidth()) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Fotos do Produto", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.Gray)
-                        Text("${imageUrls.size}/5", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    }
-                    
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        items(imageUrls) { url ->
-                            val fullUrl = if (url.startsWith("/")) "$backendUrl$url" else url
-                            Box(modifier = Modifier.size(140.dp).clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
-                                AsyncImage(model = fullUrl, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                IconButton(
-                                    onClick = { imageUrls = imageUrls.filter { it != url } },
-                                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(28.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                                ) { Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(16.dp)) }
-                            }
-                        }
-                        if (imageUrls.size < 5) {
-                            item {
-                                Surface(
-                                    modifier = Modifier.size(140.dp).clickable { launchImagePicker() },
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = MaterialTheme.colorScheme.surface,
-                                    border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        if (isUploading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                        else Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Icon(Icons.Default.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
-                                            Text("Adicionar", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isWideScreen = maxWidth > 900.dp
+            val scrollState = rememberScrollState()
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 1.dp
+            // Root Container com largura máxima centralizada
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 1200.dp)
+                        .fillMaxSize()
+                        .then(if (!isWideScreen) Modifier.verticalScroll(scrollState) else Modifier)
                 ) {
-                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        Text("Informações Gerais", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        EditorTextField(value = name, onValueChange = { name = it }, label = "Nome do Produto", icon = Icons.Default.Inventory)
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            EditorTextField(value = price, onValueChange = { price = it }, label = "Preço", modifier = Modifier.weight(1f), icon = Icons.Default.Payments, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                            EditorTextField(value = stock, onValueChange = { stock = it }, label = "Estoque", modifier = Modifier.weight(1f), icon = Icons.Default.Numbers, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                        }
-                        Box {
-                            EditorTextField(value = category, onValueChange = { category = it; expanded = true }, label = "Categoria", icon = Icons.Default.Category, trailingIcon = {
-                                IconButton(onClick = { expanded = !expanded }) { Icon(if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown, null) }
-                            })
-                            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(300.dp)) {
-                                existingCategories.forEach { cat ->
-                                    DropdownMenuItem(text = { Text(cat) }, onClick = { category = cat; expanded = false })
+                    if (isWideScreen) {
+                        // DESKTOP: Lado a Lado
+                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            // Seção Fotos
+                            Box(modifier = Modifier.weight(0.45f)) {
+                                PhotosSection(state, backendUrl, onEvent)
+                            }
+                            
+                            Spacer(Modifier.width(24.dp))
+                            
+                            // Seção Dados (com scroll interno no desktop)
+                            Box(modifier = Modifier.weight(0.55f).fillMaxHeight()) {
+                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                    DataFormSection(state, categoryOptions, onEvent, onManageCategories)
                                 }
                             }
                         }
-                        EditorTextField(value = description, onValueChange = { description = it }, label = "Descrição", icon = Icons.Default.Description, singleLine = false, minLines = 4)
+                    } else {
+                        // MOBILE: Um abaixo do outro (Scroll unificado no pai)
+                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                            PhotosSection(state, backendUrl, onEvent)
+                            Spacer(Modifier.height(24.dp))
+                            DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                            Spacer(Modifier.height(64.dp))
+                        }
                     }
                 }
             }
@@ -173,12 +191,98 @@ fun ProductEditorScreen(
 }
 
 @Composable
-fun EditorTextField(value: String, onValueChange: (String) -> Unit, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, singleLine: Boolean = true, minLines: Int = 1, trailingIcon: @Composable (() -> Unit)? = null) {
-    OutlinedTextField(
-        value = value, onValueChange = onValueChange, label = { Text(label) },
-        leadingIcon = { Icon(icon, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary) },
-        trailingIcon = trailingIcon, modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp), singleLine = singleLine, minLines = minLines, keyboardOptions = keyboardOptions,
-        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f))
-    )
+private fun PhotosSection(state: ProductEditorState, backendUrl: String, onEvent: (ProductEditorEvent) -> Unit) {
+    GenesysColumn(usePadding = false) {
+        GenesysSectionHeader(
+            title = GenesysStrings.PhotosTitle,
+            subtitle = "${state.imageUrls.size}/5"
+        )
+        GenesysSpacer(GenesysSpacing.Small)
+        val displayUrls = remember(state.imageUrls, backendUrl) {
+            state.imageUrls.map { if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it }
+        }
+        GenesysPhotoPicker(
+            urls = displayUrls,
+            onAddClick = { onEvent(ProductEditorEvent.OnAddPhotoClicked) },
+            onRemoveClick = { onEvent(ProductEditorEvent.OnRemovePhotoClicked(it)) },
+            isUploading = state.isUploading
+        )
+    }
+}
+
+@Composable
+private fun DataFormSection(
+    state: ProductEditorState, 
+    categoryOptions: List<String>, 
+    onEvent: (ProductEditorEvent) -> Unit,
+    onManageCategories: () -> Unit
+) {
+    GenesysCard {
+        GenesysColumn(usePadding = false) {
+            GenesysText(text = GenesysStrings.ProductGeneralInfo, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysTextField(
+                value = state.name,
+                onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
+                label = GenesysStrings.ProductName,
+                icon = GenesysIcons.Inventory
+            )
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysRow {
+                GenesysWeightBox(1f) {
+                    GenesysTextField(
+                        value = state.price,
+                        onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
+                        label = GenesysStrings.ProductPrice,
+                        icon = GenesysIcons.Payments
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysWeightBox(1f) {
+                    GenesysTextField(
+                        value = state.stock,
+                        onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
+                        label = GenesysStrings.ProductStock,
+                        icon = GenesysIcons.Numbers
+                    )
+                }
+            }
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.weight(1f)) {
+                    GenesysDropdownField(
+                        value = state.categoryName,
+                        onValueChange = { name ->
+                            onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
+                        },
+                        label = GenesysStrings.ProductCategory,
+                        options = categoryOptions,
+                        icon = GenesysIcons.Category
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysIconButton(
+                    icon = GenesysIcons.Settings, 
+                    onClick = onManageCategories,
+                    contentDescription = "Gerenciar Categorias"
+                )
+            }
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysTextField(
+                value = state.description,
+                onValueChange = { onEvent(ProductEditorEvent.OnDescriptionChanged(it)) },
+                label = GenesysStrings.ProductDescription,
+                icon = GenesysIcons.Description,
+                singleLine = false,
+                minLines = 6
+            )
+        }
+    }
 }

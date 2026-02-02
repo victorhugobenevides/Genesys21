@@ -6,6 +6,7 @@ import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
+import com.itbenevides.genesys21.domain.repository.PageDraftRepository
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.flow.*
@@ -34,7 +35,11 @@ class PageViewModel(
     private val updateOrderStatusUseCase: UpdateOrderStatusUseCase,
     private val authRepository: AuthRepository,
     private val cartRepository: CartRepository,
-    private val customerRepository: CustomerRepository
+    private val customerRepository: CustomerRepository,
+    private val pageDraftRepository: PageDraftRepository,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val saveCategoryUseCase: SaveCategoryUseCase,
+    private val deleteCategoryUseCase: DeleteCategoryUseCase
 ) : ViewModel() {
 
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
@@ -45,6 +50,9 @@ class PageViewModel(
 
     private val _customerOrders = MutableStateFlow<List<Order>>(emptyList())
     val customerOrders: StateFlow<List<Order>> = _customerOrders.asStateFlow()
+
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
@@ -61,6 +69,7 @@ class PageViewModel(
         viewModelScope.launch {
             cartRepository.loadInitialCart()
             customerRepository.loadName()
+            loadCategories()
         }
     }
 
@@ -102,8 +111,14 @@ class PageViewModel(
     // Orders
     fun loadOrders() {
         viewModelScope.launch {
-            val token = authRepository.getCurrentUserToken() ?: return@launch
-            getOrdersUseCase(token).collect { _orders.value = it }
+            val token = authRepository.getCurrentUserToken() ?: ""
+            if (token.isNotBlank()) {
+                _isLoading.value = true
+                getOrdersUseCase(token).collect { 
+                    _orders.value = it 
+                    _isLoading.value = false
+                }
+            }
         }
     }
 
@@ -134,9 +149,13 @@ class PageViewModel(
 
     fun submitOrder(page: Page?, onComplete: (String) -> Unit = {}) {
         val ownerId = page?.ownerId
-        if (ownerId == null || cart.value.isEmpty()) return
+        if (ownerId == null || cart.value.isEmpty()) {
+            _currentError.value = AppError("Erro no Pedido", "Não foi possível identificar o dono desta vitrine.")
+            return
+        }
         
         viewModelScope.launch {
+            _isLoading.value = true
             val orderId = "ORD-" + Random.nextInt(100000, 999999).toString()
             val newOrder = Order(
                 id = orderId,
@@ -158,6 +177,7 @@ class PageViewModel(
             }.onFailure {
                 handleError("Falha ao submeter pedido", it)
             }
+            _isLoading.value = false
         }
     }
 
@@ -181,6 +201,7 @@ class PageViewModel(
                 getPagesUseCase(token)
             }.onSuccess {
                 _pages.value = it
+                loadCategories() // Sincroniza categorias ao carregar páginas
             }.onFailure {
                 handleError("Falha ao carregar páginas", it)
             }
@@ -203,6 +224,7 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             savePageUseCase(page, authRepository.getCurrentUserToken() ?: "", isEditing).onSuccess {
+                pageDraftRepository.clearDraft(page.id)
                 loadPages()
                 onComplete()
             }.onFailure {
@@ -216,6 +238,7 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             deletePageUseCase(id, authRepository.getCurrentUserToken() ?: "").onSuccess {
+                pageDraftRepository.clearDraft(id)
                 loadPages()
                 onComplete()
             }.onFailure {
@@ -235,25 +258,34 @@ class PageViewModel(
         }
     }
 
-    // Auth
-    suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()
-    
-    fun signIn(email: String, pass: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+    // Categories
+    fun loadCategories() {
         viewModelScope.launch {
-            authRepository.signIn(email, pass).onSuccess {
-                AnalyticsManager.logEvent("login")
-                onSuccess() 
-            }.onFailure { 
-                handleError("Erro de Login", it)
-                onFailure(it.message ?: "Erro") 
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            getCategoriesUseCase(token).onSuccess {
+                _categories.value = it
             }
         }
     }
 
-    fun signOut() {
-        viewModelScope.launch { 
-            AnalyticsManager.trackPageView("logout")
-            authRepository.signOut() 
+    fun saveCategory(category: Category, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            saveCategoryUseCase(category, token).onSuccess {
+                loadCategories()
+                onComplete()
+            }.onFailure {
+                handleError("Falha ao salvar categoria", it)
+            }
+        }
+    }
+
+    fun deleteCategory(id: Int) {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            deleteCategoryUseCase(id, token).onSuccess {
+                loadCategories()
+            }
         }
     }
 
@@ -270,7 +302,49 @@ class PageViewModel(
         result.distinctBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val allAvailableCategories: StateFlow<List<String>> = allAvailableProducts.map { products ->
-        products.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // Simplificação da lógica de categorias para garantir reatividade
+    val allAvailableCategories: StateFlow<List<String>> = combine(categories, allAvailableProducts) { cats, products ->
+        val namesFromTable = cats.map { it.name }
+        val namesFromProducts = products.mapNotNull { it.categoryName }
+        (namesFromTable + namesFromProducts)
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sorted()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList()) // Mudado para Eagerly para garantir atualização constante
+
+    // Drafts
+    fun saveDraft(page: Page) {
+        pageDraftRepository.saveDraft(page)
+    }
+
+    fun getDraft(pageId: String): Page? {
+        return pageDraftRepository.getDraft(pageId)
+    }
+
+    fun clearDraft(pageId: String) {
+        pageDraftRepository.clearDraft(pageId)
+    }
+
+    // Auth
+    suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()
+    
+    fun signIn(email: String, pass: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        viewModelScope.launch {
+            authRepository.signIn(email, pass).onSuccess {
+                AnalyticsManager.logEvent("login")
+                loadPages()
+                onSuccess() 
+            }.onFailure { 
+                handleError("Erro de Login", it)
+                onFailure(it.message ?: "Erro") 
+            }
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch { 
+            AnalyticsManager.trackPageView("logout")
+            authRepository.signOut() 
+        }
+    }
 }

@@ -20,11 +20,8 @@ dependencies {
     implementation(libs.ktor.serverContentNegotiation)
     implementation(libs.ktor.serverCors)
     
-    // CORREÇÃO: Usando dependências do catálogo core ou strings diretas se necessário
-    // Se libs.ktor.serverCompression não existir, o Ktor Core já traz o básico,
-    // mas plugins específicos precisam ser adicionados.
-    // Vamos assumir que o catálogo tem 'ktor-server-compression' e 'ktor-server-caching-headers'
-    // Se não tiver, use: implementation("io.ktor:ktor-server-compression:3.0.0")
+    // CORREÇÃO: Usando string direta para garantir que o build não falhe por falta no catálogo
+    implementation("io.ktor:ktor-server-status-pages:3.0.3")
     
     implementation(libs.ktor.server.compression)
     implementation(libs.ktor.server.caching.headers)
@@ -37,7 +34,7 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
     implementation(libs.sqlite.jdbc)
-    implementation(libs.hikaricp) // POOL DE CONEXÕES
+    implementation(libs.hikaricp)
     
     // Manipulação de Imagem
     implementation(libs.thumbnailator)

@@ -1,21 +1,31 @@
 package com.itbenevides.genesys21
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.PageThemeConfig
-import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.screens.SplashScreen
-import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
+import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.CartScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.CustomerOrderHistoryScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.OrderTrackingScreen
@@ -31,7 +41,7 @@ fun App() {
     val currentRoute = router.currentRoute
     val trackedOrder by router.viewModel.trackedOrder.collectAsState()
     
-    var historySelectedOrderTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
+    var currentActivePageTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
 
     LaunchedEffect(Unit) {
         router.handleDeepLink()
@@ -39,47 +49,38 @@ fun App() {
     }
 
     LaunchedEffect(currentRoute) {
-        if (currentRoute !is Route.OrderTracking) {
-            historySelectedOrderTheme = null
+        when (currentRoute) {
+            is Route.PublicViewer -> currentActivePageTheme = currentRoute.page.theme
+            is Route.WhiteLabel -> currentActivePageTheme = currentRoute.page.theme
+            is Route.Splash, is Route.Login, is Route.PageList -> currentActivePageTheme = null
+            else -> { }
         }
     }
 
-    val currentTheme: PageThemeConfig = remember(currentRoute, trackedOrder, historySelectedOrderTheme) {
-        val theme = when (currentRoute) {
-            is Route.PublicViewer -> currentRoute.page.theme
-            is Route.WhiteLabel -> currentRoute.page.theme
-            is Route.ProductDetails -> {
-                (currentRoute.fromRoute as? Route.PublicViewer)?.page?.theme 
-                    ?: (currentRoute.fromRoute as? Route.WhiteLabel)?.page?.theme 
-            }
-            is Route.Cart -> currentRoute.page?.theme
-            is Route.OrderTracking -> {
-                val isCorrectOrder = trackedOrder?.id == currentRoute.orderId
-                if (isCorrectOrder) trackedOrder?.theme else historySelectedOrderTheme
-            }
-            is Route.CustomerOrderHistory -> {
-                val lastViewer = router.getHistory().filterIsInstance<Route.PublicViewer>().lastOrNull()
-                lastViewer?.page?.theme
-            }
-            else -> PageThemeConfig.ROYAL
+    val themeToApply = remember(currentRoute, trackedOrder, currentActivePageTheme) {
+        when (currentRoute) {
+            is Route.OrderTracking -> trackedOrder?.theme ?: PageThemeConfig.ROYAL
+            else -> currentActivePageTheme ?: PageThemeConfig.ROYAL
         }
-        theme ?: PageThemeConfig.ROYAL
     }
 
-    AppTheme(themeConfig = currentTheme) {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxSize()) {
-                AnimatedContent(
-                    targetState = currentRoute,
-                    transitionSpec = {
-                        if (targetState is Route.Splash || initialState is Route.Splash) {
-                            EnterTransition.None togetherWith ExitTransition.None
-                        } else {
-                            fadeIn() togetherWith fadeOut()
-                        }
-                    },
-                    label = "AppNavigation"
-                ) { route ->
+    AppTheme(themeConfig = themeToApply) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = androidx.compose.material3.MaterialTheme.colorScheme.background
+        ) {
+            AnimatedContent(
+                targetState = currentRoute,
+                transitionSpec = {
+                    if (targetState is Route.Splash || initialState is Route.Splash) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                    }
+                },
+                label = "GlobalNavigation"
+            ) { route ->
+                Box(Modifier.fillMaxSize()) {
                     when (route) {
                         is Route.Splash -> SplashScreen()
                         is Route.Login -> LoginScreen(
@@ -103,18 +104,15 @@ fun App() {
                         )
                         is Route.WhiteLabel -> {
                             var editingPage by remember(route.page) { mutableStateOf(route.page) }
-                            
-                            AppTheme(themeConfig = editingPage.theme) {
-                                WhiteLabelScreen(
-                                    viewModel = router.viewModel,
-                                    page = editingPage,
-                                    onPageChange = { editingPage = it }, 
-                                    onBack = { router.goBack() },
-                                    onEditProduct = { product, componentIndex -> 
-                                        router.navigateTo(Route.ProductEditor(editingPage, product, componentIndex))
-                                    }
-                                )
-                            }
+                            WhiteLabelScreen(
+                                viewModel = router.viewModel,
+                                page = editingPage,
+                                onPageChange = { editingPage = it }, 
+                                onBack = { router.goBack() },
+                                onEditProduct = { product, componentIndex -> 
+                                    router.navigateTo(Route.ProductEditor(editingPage, product, componentIndex))
+                                }
+                            )
                         }
                         is Route.PublicViewer -> PageViewerScreen(
                             page = route.page,
@@ -144,16 +142,18 @@ fun App() {
                         is Route.CustomerOrderHistory -> CustomerOrderHistoryScreen(
                             onBack = { router.goBack() },
                             onOrderClick = { order ->
-                                historySelectedOrderTheme = order.theme
                                 router.navigateTo(Route.OrderTracking(order.id))
                             }
                         )
                         is Route.ProductEditor -> {
-                            val categories by router.viewModel.allAvailableCategories.collectAsState()
+                            // CORREÇÃO: Usa a lista global de nomes para o dropdown
+                            val categoriesNames by router.viewModel.allAvailableCategories.collectAsState()
+                            
                             com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen(
                                 viewModel = router.viewModel,
+                                page = route.page,
                                 product = route.product,
-                                existingCategories = categories,
+                                existingCategories = categoriesNames,
                                 onSave = { updatedProduct ->
                                     val updatedComponents = route.page.components.toMutableList()
                                     val index = route.componentIndex ?: 0
@@ -161,19 +161,18 @@ fun App() {
                                     if (comp != null) {
                                         val updatedProducts = comp.products.toMutableList()
                                         val pIndex = updatedProducts.indexOfFirst { it.id == updatedProduct.id }
-                                        if (pIndex != -1) {
-                                            updatedProducts[pIndex] = updatedProduct
-                                        } else {
-                                            updatedProducts.add(0, updatedProduct) 
-                                        }
+                                        if (pIndex != -1) updatedProducts[pIndex] = updatedProduct
+                                        else updatedProducts.add(0, updatedProduct) 
                                         
                                         updatedComponents[index] = comp.copy(products = updatedProducts)
                                         val updatedPage = route.page.copy(components = updatedComponents)
                                         
-                                        // CORREÇÃO: Primeiro voltamos para a WhiteLabel original e depois a substituímos
-                                        // Isso remove o editor do histórico e evita duplicidade da WhiteLabel.
+                                        // IMPORTANTE: Atualiza o rascunho local antes de voltar
+                                        router.viewModel.saveDraft(updatedPage)
+                                        
                                         router.goBack() 
-                                        router.navigateTo(Route.WhiteLabel(updatedPage), replace = true)
+                                        // Não usamos navigateTo WhiteLabel aqui para evitar loops de estado, 
+                                        // o goBack + saveDraft cuidam de tudo.
                                     }
                                 },
                                 onBack = { router.goBack() }

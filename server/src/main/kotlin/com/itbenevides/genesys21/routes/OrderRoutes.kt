@@ -1,77 +1,73 @@
 package com.itbenevides.genesys21.routes
 
-import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.domain.repository.OrderRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.slf4j.LoggerFactory
+import kotlinx.coroutines.flow.first
 
-private val logger = LoggerFactory.getLogger("OrderRoutes")
+fun Route.orderRoutes(orderRepository: OrderRepository) {
 
-fun Route.orderRoutes(orderRepository: SqliteOrderRepository) {
+    // 1. Rotas Públicas (Acesso sem Login)
+    route("/public/orders") {
+        
+        // POST: Criar novo pedido
+        post {
+            val order = call.receive<Order>()
+            orderRepository.createOrder(order)
+                .onSuccess { call.respond(HttpStatusCode.Created, order.id) }
+                .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar pedido") }
+        }
+
+        // GET: Acompanhamento de um pedido específico
+        get("/{orderId}") {
+            val orderId = call.parameters["orderId"] ?: ""
+            orderRepository.getOrderById(orderId)
+                .onSuccess { call.respond(it) }
+                .onFailure { call.respond(HttpStatusCode.NotFound, it.message ?: "Pedido não encontrado") }
+        }
+
+        // GET: Histórico de pedidos do cliente (Sessão do Visitante)
+        get("/customer/{sessionId}") {
+            val sessionId = call.parameters["sessionId"] ?: ""
+            orderRepository.getCustomerOrders(sessionId)
+                .onSuccess { call.respond(it) }
+                .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao buscar histórico") }
+        }
+    }
+
+    // 2. Rotas Administrativas (Apenas Lojista Logado)
     authenticate("firebase") {
-        route("/api/orders") { // Prefixo /api/ para evitar conflito com páginas
+        route("/orders") {
+            
+            // GET: Lista todos os pedidos do lojista autenticado
             get {
-                val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
-                logger.info("ADMIN: Buscando pedidos para o dono: ${principal.name}")
-                val orders = orderRepository.getOrders(principal.name)
+                val principal = call.principal<UserIdPrincipal>()
+                if (principal == null) {
+                    call.respond(HttpStatusCode.Unauthorized, "Usuário não autenticado")
+                    return@get
+                }
+                
+                // Buscamos os pedidos usando o UID decodificado do Firebase
+                val orders = orderRepository.getOrders(principal.name).first()
                 call.respond(orders)
             }
 
-            patch("/{id}/status") {
+            // PATCH: Atualizar status do pedido
+            patch("/{orderId}/status") {
                 val principal = call.principal<UserIdPrincipal>() ?: return@patch call.respond(HttpStatusCode.Unauthorized)
-                val id = call.parameters["id"] ?: return@patch call.respond(HttpStatusCode.BadRequest)
+                val orderId = call.parameters["orderId"] ?: ""
                 val status = call.receive<OrderStatus>()
                 
-                logger.info("ADMIN: Atualizando pedido $id para status $status")
-                orderRepository.updateOrderStatus(id, status)
-                call.respond(HttpStatusCode.OK)
+                orderRepository.updateOrderStatus(principal.name, orderId, status)
+                    .onSuccess { call.respond(HttpStatusCode.OK) }
+                    .onFailure { call.respond(HttpStatusCode.Forbidden, it.message ?: "Acesso negado") }
             }
         }
-    }
-    
-    // Rota pública para criar pedido
-    post("/api/public/orders") {
-        try {
-            val order = call.receive<Order>()
-            logger.info("PUBLIC: Recebendo novo pedido: ID=${order.id}, ParaDono=${order.userId}, Total=${order.total}")
-            
-            if (order.userId.isBlank()) {
-                logger.error("PUBLIC: Tentativa de salvar pedido sem userId (Dono)")
-                return@post call.respond(HttpStatusCode.BadRequest, "Proprietário da loja não identificado")
-            }
-
-            // Garante que o timestamp seja do servidor para evitar fraude de data no cliente
-            val orderWithServerTime = order.copy(createdAt = System.currentTimeMillis())
-            
-            orderRepository.saveOrder(orderWithServerTime)
-            call.respond(HttpStatusCode.Created)
-        } catch (e: Exception) {
-            logger.error("PUBLIC: Erro ao salvar pedido: ${e.message}")
-            call.respond(HttpStatusCode.InternalServerError, "Erro no processamento do pedido")
-        }
-    }
-
-    // Rota pública para consultar UM pedido específico (Acompanhamento do cliente)
-    get("/api/public/orders/{id}") {
-        val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-        val order = orderRepository.getOrderById(id)
-        if (order != null) {
-            call.respond(order)
-        } else {
-            call.respond(HttpStatusCode.NotFound)
-        }
-    }
-
-    // Rota pública para consultar TODOS os pedidos de um cliente (Histórico do visitante)
-    get("/api/public/orders/customer/{sessionId}") {
-        val sessionId = call.parameters["sessionId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-        val orders = orderRepository.getCustomerOrders(sessionId)
-        call.respond(orders)
     }
 }

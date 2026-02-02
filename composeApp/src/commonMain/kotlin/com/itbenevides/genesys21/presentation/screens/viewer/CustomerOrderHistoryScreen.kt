@@ -1,34 +1,44 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.presentation.screens.list.StatusBadge
-import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
+import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysDivider
+import com.itbenevides.genesys21.ui.components.layout.GenesysLazyColumn
+import com.itbenevides.genesys21.ui.components.layout.GenesysPage
+import com.itbenevides.genesys21.ui.components.layout.GenesysRow
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.text.GenesysText
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToLong
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerOrderHistoryScreen(
     onBack: () -> Unit,
@@ -38,53 +48,71 @@ fun CustomerOrderHistoryScreen(
     val orders by viewModel.customerOrders.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    var state by remember { mutableStateOf(OrderHistoryState()) }
+    
+    state = state.copy(
+        orders = orders,
+        isLoading = isLoading
+    )
+
     LaunchedEffect(Unit) {
         viewModel.loadCustomerOrders()
-        AnalyticsManager.trackPageView("Meus Pedidos - Histórico")
+        AnalyticsManager.trackPageView(GenesysStrings.OrderHistoryTitle)
     }
 
-    Scaffold(
+    val onEvent: (OrderHistoryEvent) -> Unit = { event ->
+        when (event) {
+            is OrderHistoryEvent.OnBackClicked -> onBack()
+            is OrderHistoryEvent.OnOrderClicked -> {
+                AnalyticsManager.logEvent("view_order_from_history", mapOf("order_id" to event.order.id))
+                onOrderClick(event.order)
+            }
+        }
+    }
+
+    OrderHistoryContent(state, onEvent)
+}
+
+@Composable
+private fun OrderHistoryContent(
+    state: OrderHistoryState,
+    onEvent: (OrderHistoryEvent) -> Unit
+) {
+    GenesysPage(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Meus Pedidos", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Voltar", color = MaterialTheme.colorScheme.primary, fontSize = 17.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            GenesysTopAppBar(
+                title = GenesysStrings.OrderHistoryTitle,
+                onBack = { onEvent(OrderHistoryEvent.OnBackClicked) }
             )
         }
-    ) { padding ->
-        BoxWithConstraints(
-            modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.TopCenter
+    ) {
+        GenesysColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = GenesysAlignment.Center,
+            usePadding = false
         ) {
-            val maxWidthContent = 1300.dp
-            val horizontalPadding = if (maxWidth > maxWidthContent) (maxWidth - maxWidthContent) / 2 else 12.dp
-
-            if (isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            } else if (orders.isEmpty()) {
-                Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.ReceiptLong, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    Spacer(Modifier.height(16.dp))
-                    Text("Você ainda não fez nenhum pedido", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(orders) { order ->
-                        HistoryOrderCard(order = order, onClick = { 
-                            AnalyticsManager.logEvent("view_order_from_history", mapOf("order_id" to order.id))
-                            onOrderClick(order) 
-                        })
+            if (state.orders.isEmpty() && !state.isLoading) {
+                 GenesysEmptyState(
+                    icon = GenesysIcons.ShoppingBag,
+                    title = GenesysStrings.NoHistoryTitle,
+                    description = GenesysStrings.NoHistoryDescription,
+                    action = {
+                        GenesysLoadingButton(
+                            text = GenesysStrings.Back, 
+                            onClick = { onEvent(OrderHistoryEvent.OnBackClicked) }
+                        )
                     }
+                )
+            } else {
+                GenesysLazyColumn(
+                    items = state.orders,
+                    maxWidth = GenesysDimens.ContentMaxWidth
+                ) { order ->
+                    HistoryOrderCard(
+                        order = order, 
+                        onClick = { onEvent(OrderHistoryEvent.OnOrderClicked(order)) }
+                    )
+                    GenesysSpacer(GenesysSpacing.Medium)
                 }
             }
         }
@@ -92,37 +120,53 @@ fun CustomerOrderHistoryScreen(
 }
 
 @Composable
-fun HistoryOrderCard(order: Order, onClick: () -> Unit) {
-    val date = remember(order.createdAt) {
+private fun HistoryOrderCard(order: Order, onClick: () -> Unit) {
+    val dateText = remember(order.createdAt) {
         val instant = Instant.fromEpochMilliseconds(order.createdAt)
         val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-        "${dt.dayOfMonth.toString().padStart(2, '0')}/${dt.monthNumber.toString().padStart(2, '0')}/${dt.year} às ${dt.hour}:${dt.minute.toString().padStart(2, '0')}"
+        "${dt.dayOfMonth.toString().padStart(2, '0')}/${dt.monthNumber.toString().padStart(2, '0')}/${dt.year}"
     }
 
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        shadowElevation = 0.5.dp
+    GenesysCard(
+        elevation = GenesysDimens.ElevationMedium,
+        onClick = onClick
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("Pedido #${order.id.takeLast(6).uppercase()}", fontWeight = FontWeight.Bold)
-                    Text(date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        GenesysColumn(usePadding = true) {
+            GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                 GenesysWeightBox(1f) {
+                    GenesysColumn(usePadding = false) {
+                        GenesysText(
+                            text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", 
+                            fontWeight = GenesysFontWeight.ExtraBold,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        )
+                        GenesysText(
+                            text = dateText, 
+                            style = GenesysTextStyle.Label
+                        )
+                    }
                 }
-                StatusBadge(order.status)
+                GenesysStatusBadge(order.status)
             }
             
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-            Spacer(Modifier.height(12.dp))
+            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysDivider()
+            GenesysSpacer(GenesysSpacing.Medium)
             
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${order.items.sumOf { it.quantity }} itens", style = MaterialTheme.typography.bodyMedium)
-                Text("Total: R$ ${order.total}", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+             GenesysRow(verticalAlignment = Alignment.Bottom) {
+                GenesysWeightBox(1f) {
+                    GenesysText(
+                        text = "${order.items.sumOf { it.quantity }} itens", 
+                        style = GenesysTextStyle.Body
+                    )
+                }
+                val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
+                GenesysText(
+                    text = "${GenesysStrings.PricePrefix}$totalFormatted", 
+                    style = GenesysTextStyle.Title,
+                    fontWeight = GenesysFontWeight.ExtraBold,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
