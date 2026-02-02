@@ -142,6 +142,17 @@ private val LemonColorScheme = lightColorScheme(
     onSurface = Color(0xFFF57F17)
 )
 
+// 21. RADARANI (Baseado no Azul Vibrante da Imagem)
+private val RadaraniColorScheme = lightColorScheme(
+    primary = Color(0xFF2CB1FF), // Azul vibrante da imagem
+    onPrimary = Color.White,
+    background = Color(0xFFF0F9FF), // Fundo azul bem clarinho
+    surface = Color.White,
+    onSurface = Color(0xFF003366),
+    surfaceVariant = Color(0xFFCCEEFF),
+    outline = Color(0xFF2CB1FF)
+)
+
 // DARK THEMES
 
 // 16. DARK MODE (Classic)
@@ -216,6 +227,7 @@ fun AppTheme(
         PageThemeConfig.NEON -> NeonColorScheme
         PageThemeConfig.DEEP_SPACE -> DeepSpaceColorScheme
         PageThemeConfig.LUXURY_GOLD -> LuxuryGoldColorScheme
+        PageThemeConfig.RADARANI -> RadaraniColorScheme
         PageThemeConfig.DEFAULT -> RoyalColorScheme
     }
 

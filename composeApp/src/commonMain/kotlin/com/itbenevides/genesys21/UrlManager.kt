@@ -2,7 +2,7 @@ package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.navigation.Screen
 
-expect fun syncUrlWithScreen(screen: Screen, pageId: String? = null, productId: String? = null)
+expect fun syncUrlWithScreen(screen: Screen, pageId: String? = null, productId: String? = null, title: String? = null)
 
 expect fun getInitialUrlPath(): String?
 

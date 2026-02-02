@@ -23,6 +23,7 @@ enum class PageThemeConfig {
     BERRY, MINIMAL, VINTAGE, NORDIC, COFFEE,
     SOFT_LAVENDER, SKY_BLUE, MINT_GREEN, PEACH, LEMON,
     DARK_MODE, MIDNIGHT, NEON, DEEP_SPACE, LUXURY_GOLD,
+    RADARANI, // ADICIONADO: Novo tema baseado na imagem
     DEFAULT 
 }
 
@@ -111,8 +112,8 @@ sealed class PageComponent {
         val imageUrl: String = "",
         val name: String = "",
         val bio: String = "",
-        val imageSize: Int = 120, // NOVO: Suporte a tamanho
-        val isCircular: Boolean = true, // NOVO: Suporte a formato
+        val imageSize: Int = 120,
+        val isCircular: Boolean = true,
         override val customLabel: String? = "Perfil",
         override val isFilterable: Boolean = false
     ) : PageComponent()
@@ -202,7 +203,7 @@ data class Page(
             return Page(
                 id = id,
                 title = if (title.isBlank()) "Meu Perfil" else title,
-                theme = PageThemeConfig.CANDY,
+                theme = PageThemeConfig.RADARANI, // ATUALIZADO: Inicia com o tema Radarani
                 components = listOf(
                     PageComponent.ProfileHeader(
                         imageUrl = "https://picsum.photos/seed/profile/300/300",

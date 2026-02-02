@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.navigation.Screen
+import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.events.Event
 
@@ -8,7 +9,7 @@ import org.w3c.dom.events.Event
  * Sincroniza o estado do Compose COM o Navegador.
  * Na nova lógica, o Navegador manda. Esta função apenas empurra a URL se necessário.
  */
-actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?) {
+actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?, title: String?) {
     // Splash não gera histórico para evitar que o botão voltar caia numa tela branca
     if (screen == Screen.Splash) return
 
@@ -27,10 +28,14 @@ actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?
         Screen.ProductEditor -> "/product/edit"
         Screen.Cart -> "/cart"
         Screen.OrderTracking -> if (pageId != null) "/track/$pageId" else "/track"
-        Screen.OrderHistory -> "/history" // ADICIONADO
+        Screen.OrderHistory -> "/history"
         else -> "/"
     }
     
+    // ATUALIZA O TÍTULO DA ABA DINAMICAMENTE
+    val displayTitle = if (!title.isNullOrBlank()) title else "Genesys21"
+    document.title = displayTitle
+
     val currentPath = window.location.pathname.removeSuffix("/")
     val targetPath = path.removeSuffix("/")
     

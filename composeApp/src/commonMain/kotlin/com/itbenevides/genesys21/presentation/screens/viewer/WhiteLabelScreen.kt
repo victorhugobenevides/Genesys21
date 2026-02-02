@@ -621,7 +621,24 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
         Triple(PageThemeConfig.ROYAL, "Royal Night", Color(0xFF14213D)),
         Triple(PageThemeConfig.OCEAN, "Ocean Blue", Color(0xFF00ADB5)),
         Triple(PageThemeConfig.FOREST, "Deep Forest", Color(0xFF283618)),
-        Triple(PageThemeConfig.CANDY, "Sweet Candy", Color(0xFFFF758F))
+        Triple(PageThemeConfig.CANDY, "Sweet Candy", Color(0xFFFF758F)),
+        Triple(PageThemeConfig.SUNSET, "Sunset Glow", Color(0xFFE76F51)),
+        Triple(PageThemeConfig.BERRY, "Berry Wine", Color(0xFF6A0572)),
+        Triple(PageThemeConfig.MINIMAL, "Minimal Black", Color(0xFF000000)),
+        Triple(PageThemeConfig.VINTAGE, "Vintage Sepia", Color(0xFF8B5E3C)),
+        Triple(PageThemeConfig.NORDIC, "Nordic Ice", Color(0xFF4A90E2)),
+        Triple(PageThemeConfig.COFFEE, "Mocha Coffee", Color(0xFF6F4E37)),
+        Triple(PageThemeConfig.SOFT_LAVENDER, "Soft Lavender", Color(0xFF967BB6)),
+        Triple(PageThemeConfig.SKY_BLUE, "Sky Blue", Color(0xFF039BE5)),
+        Triple(PageThemeConfig.MINT_GREEN, "Mint Green", Color(0xFF00C853)),
+        Triple(PageThemeConfig.PEACH, "Peach Coral", Color(0xFFFF8A65)),
+        Triple(PageThemeConfig.LEMON, "Lemon Zest", Color(0xFFFBC02D)),
+        Triple(PageThemeConfig.RADARANI, "Radarani Blue", Color(0xFF2CB1FF)),
+        Triple(PageThemeConfig.DARK_MODE, "Dark Night", Color(0xFFBB86FC)),
+        Triple(PageThemeConfig.MIDNIGHT, "Midnight Red", Color(0xFFE94560)),
+        Triple(PageThemeConfig.NEON, "Neon Cyber", Color(0xFF39FF14)),
+        Triple(PageThemeConfig.DEEP_SPACE, "Deep Space", Color(0xFF00D1FF)),
+        Triple(PageThemeConfig.LUXURY_GOLD, "Luxury Gold", Color(0xFFD4AF37))
     )
     GenesysBottomSheet(
         onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false)) },

@@ -110,29 +110,36 @@ fun PageListScreen(
                     }
                 }
             }
+            // RENOMEAR PÁGINA
+            is PageListEvent.OnRenamePageClicked -> state = state.copy(showRenameDialog = true, pageToRename = event.page)
+            is PageListEvent.OnDismissRenameDialog -> state = state.copy(showRenameDialog = false, pageToRename = null)
+            is PageListEvent.OnConfirmRenamePage -> {
+                state.pageToRename?.let { page ->
+                    val updated = page.copy(title = event.newTitle)
+                    viewModel.savePage(updated, true) {
+                        state = state.copy(showRenameDialog = false, pageToRename = null)
+                        viewModel.loadPages()
+                    }
+                }
+            }
+
             is PageListEvent.OnDeletePageClicked -> viewModel.deletePage(event.pageId) { viewModel.loadPages() }
             is PageListEvent.OnUpdateOrderStatus -> viewModel.updateOrderStatus(event.orderId, event.newStatus)
             is PageListEvent.OnLogoutClicked -> onLogout()
             
-            // Lógica de Exportação Individual
             is PageListEvent.OnExportPageClicked -> {
                 val json = Json.encodeToString(event.page)
                 downloadFile(json, "${event.page.title.replace(" ", "_")}.benevides")
             }
-
-            // Lógica de Exportação de Backup (Todas as páginas)
             is PageListEvent.OnExportAllClicked -> {
                 if (state.pages.isNotEmpty()) {
                     val json = Json.encodeToString(state.pages)
                     downloadFile(json, "backup_genesys21_${state.pages.size}_paginas.benevides")
                 }
             }
-            
-            // Lógica de Importação (Individual ou Backup)
             is PageListEvent.OnImportPageClicked -> {
                 try {
                     val importedPages = runCatching { Json.decodeFromString<List<Page>>(event.json) }.getOrNull()
-                    
                     if (importedPages != null) {
                         importedPages.forEach { page ->
                             val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
@@ -188,18 +195,8 @@ private fun PageListContent(
                     title = GenesysStrings.AdminTitle,
                     onBack = null,
                     actions = {
-                        // BOTÕES DE BACKUP GLOBAL
-                        GenesysIconButton(
-                            icon = GenesysIcons.Numbers,
-                            contentDescription = "Exportar Tudo",
-                            onClick = onExportAll
-                        )
-                        GenesysIconButton(
-                            icon = GenesysIcons.CloudUpload, 
-                            contentDescription = "Importar Backup",
-                            onClick = onImport
-                        )
-                        
+                        GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)
+                        GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)
                         GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })
                         GenesysIconButton(icon = GenesysIcons.Add, onClick = { onEvent(PageListEvent.OnCreatePageClicked) })
                     }
@@ -223,10 +220,7 @@ private fun PageListContent(
                 contentPadding = PaddingValues(bottom = 64.dp)
             ) {
                 item {
-                    GenesysColumn(
-                        modifier = Modifier.widthIn(max = 1200.dp),
-                        usePadding = false
-                    ) {
+                    GenesysColumn(modifier = Modifier.widthIn(max = 1200.dp), usePadding = false) {
                         if (state.selectedTab == 0) {
                             PagesTabUI(state, onEvent, onViewPage, onEditPage)
                         } else {
@@ -282,6 +276,7 @@ private fun PageListContent(
 
     if (state.showCreateDialog) CreatePageDialog(state, onEvent, onImport)
     if (state.showGlobalSettings && state.pages.isNotEmpty()) GlobalSettingsDialog(state, onEvent)
+    if (state.showRenameDialog) RenamePageDialog(state, onEvent)
 }
 
 @Composable
@@ -295,31 +290,19 @@ private fun PagesTabUI(
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysText(
-            text = GenesysStrings.ManageVitrines, 
-            style = GenesysTextStyle.Headline, 
-            fontWeight = GenesysFontWeight.ExtraBold
-        )
-        GenesysText(
-            text = GenesysStrings.ManageVitrinesSubtitle, 
-            style = GenesysTextStyle.Body,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
+        GenesysText(text = GenesysStrings.ManageVitrines, style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+        GenesysText(text = GenesysStrings.ManageVitrinesSubtitle, style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.onSurfaceVariant)
         GenesysSpacer(GenesysSpacing.Large)
 
         if (state.pages.isEmpty() && !state.isLoading) {
-            GenesysEmptyState(
-                icon = GenesysIcons.WebAssetOff,
-                title = GenesysStrings.NoPagesFound,
-                description = GenesysStrings.NoPagesDescription
-            )
+            GenesysEmptyState(icon = GenesysIcons.WebAssetOff, title = GenesysStrings.NoPagesFound, description = GenesysStrings.NoPagesDescription)
         } else {
             state.pages.forEach { page ->
                 PageItemRow(
                     page = page,
                     onView = { onViewPage(page) },
                     onEdit = { onEditPage(page) },
+                    onRename = { onEvent(PageListEvent.OnRenamePageClicked(page)) },
                     onCopyUrl = { 
                         val baseUrl = getWebBaseUrl()
                         val url = "$baseUrl/p/${page.id}"
@@ -335,51 +318,24 @@ private fun PagesTabUI(
 }
 
 @Composable
-private fun OrdersHeaderUI(
-    state: PageListState,
-    onEvent: (PageListEvent) -> Unit
-) {
+private fun OrdersHeaderUI(state: PageListState, onEvent: (PageListEvent) -> Unit) {
     val rawRevenue = remember(state.orders) { state.orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.total } }
     val totalRevenue = (rawRevenue * 100.0).roundToLong() / 100.0
     val totalPending = remember(state.orders) { state.orders.count { it.status == OrderStatus.PENDING } }
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
         GenesysSpacer(GenesysSpacing.Large)
-        
         GenesysRow(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            GenesysWeightBox(1f) {
-                GenesysStatsCard(label = GenesysStrings.Revenue, value = "${GenesysStrings.PricePrefix}$totalRevenue", color = Color(0xFF34C759))
-            }
+            GenesysWeightBox(1f) { GenesysStatsCard(label = GenesysStrings.Revenue, value = "${GenesysStrings.PricePrefix}$totalRevenue", color = Color(0xFF34C759)) }
             GenesysSpacer(GenesysSpacing.Medium)
-            GenesysWeightBox(1f) {
-                GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500))
-            }
+            GenesysWeightBox(1f) { GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500)) }
         }
-
         GenesysSpacer(GenesysSpacing.Large)
-
         GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            GenesysTextField(
-                value = state.searchQuery,
-                onValueChange = { onEvent(PageListEvent.OnSearchQueryChanged(it)) },
-                label = GenesysStrings.SearchOrdersLabel,
-                icon = GenesysIcons.Search
-            )
-
+            GenesysTextField(value = state.searchQuery, onValueChange = { onEvent(PageListEvent.OnSearchQueryChanged(it)) }, label = GenesysStrings.SearchOrdersLabel, icon = GenesysIcons.Search)
             GenesysSpacer(GenesysSpacing.Medium)
-
-            GenesysRow(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), 
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GenesysFilterChip(
-                    selected = state.selectedStatusFilter == null,
-                    onClick = { onEvent(PageListEvent.OnStatusFilterSelected(null)) },
-                    label = GenesysStrings.All,
-                    badgeCount = state.orders.size
-                )
-
+            GenesysRow(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                GenesysFilterChip(selected = state.selectedStatusFilter == null, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(null)) }, label = GenesysStrings.All, badgeCount = state.orders.size)
                 OrderStatus.entries.forEach { status ->
                     val label = when(status) {
                         OrderStatus.PENDING -> GenesysStrings.StatusPending
@@ -387,12 +343,7 @@ private fun OrdersHeaderUI(
                         OrderStatus.COMPLETED -> GenesysStrings.StatusCompleted
                         OrderStatus.CANCELLED -> GenesysStrings.StatusCancelled
                     }
-                    GenesysFilterChip(
-                        selected = state.selectedStatusFilter == status,
-                        onClick = { onEvent(PageListEvent.OnStatusFilterSelected(status)) },
-                        label = label,
-                        badgeCount = state.orders.count { it.status == status }
-                    )
+                    GenesysFilterChip(selected = state.selectedStatusFilter == status, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(status)) }, label = label, badgeCount = state.orders.count { it.status == status })
                 }
             }
         }
@@ -405,51 +356,30 @@ private fun PageItemRow(
     page: Page,
     onView: () -> Unit,
     onEdit: () -> Unit,
+    onRename: () -> Unit,
     onCopyUrl: () -> Unit,
     onExport: () -> Unit,
     onDelete: () -> Unit
 ) {
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         GenesysColumn(usePadding = false) {
-            GenesysRow(
-                modifier = Modifier.fillMaxWidth(), 
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                GenesysBox(
-                    modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
+            GenesysRow(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                GenesysBox(modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
                     Icon(GenesysIcons.Web, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
-                
                 GenesysSpacer(GenesysSpacing.Medium)
-                
                 GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
-                    GenesysText(
-                        text = page.title, 
-                        style = GenesysTextStyle.Title, 
-                        fontWeight = GenesysFontWeight.ExtraBold,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    GenesysText(
-                        text = "ID: ${page.id}", 
-                        style = GenesysTextStyle.Label, 
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    GenesysText(text = page.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold, modifier = Modifier.fillMaxWidth())
+                    GenesysText(text = "ID: ${page.id}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            
             GenesysSpacer(GenesysSpacing.Medium)
-            
-            GenesysRow(
-                fillWidth = true,
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            GenesysRow(fillWidth = true, horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 GenesysIconButton(icon = GenesysIcons.Visibility, onClick = onView)
-                GenesysIconButton(icon = GenesysIcons.Edit, onClick = onEdit)
+                GenesysIconButton(icon = GenesysIcons.Edit, onClick = onRename) // Botão de Renomear
+                GenesysIconButton(icon = GenesysIcons.Magic, onClick = onEdit) // Botão de Editar Blocos
                 GenesysIconButton(icon = GenesysIcons.Copy, onClick = onCopyUrl)
-                GenesysIconButton(icon = GenesysIcons.CloudUpload, onClick = onExport) // ÍCONE DE EXPORTAR
+                GenesysIconButton(icon = GenesysIcons.CloudUpload, onClick = onExport)
                 GenesysIconButton(icon = GenesysIcons.Delete, onClick = onDelete, tint = MaterialTheme.colorScheme.error)
             }
         }
@@ -458,120 +388,58 @@ private fun PageItemRow(
 
 @Composable
 private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit, onContact: () -> Unit) {
-    GenesysCard(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = 1.dp
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) { // Usando Column padrão para controle total do padding
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+    GenesysCard(modifier = Modifier.fillMaxWidth(), elevation = 1.dp) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    val initials = remember(order.customerName) {
-                        order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
+                    val initials = remember(order.customerName) { order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C" }
+                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
+                        Text(text = initials, style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
-                    Box(
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text( 
-                            text = initials, 
-                            style = MaterialTheme.typography.bodyMedium, 
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, 
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                    
                     Spacer(Modifier.width(8.dp))
-                    
                     Column {
-                        Text(
-                            text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", 
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = order.customerName ?: "Consumidor", 
-                            style = MaterialTheme.typography.titleMedium, 
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(text = order.customerName ?: "Consumidor", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
-                
                 GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
             }
-            
             Spacer(Modifier.height(8.dp))
-            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(Modifier.height(8.dp))
-
             order.items.forEach { item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${item.quantity}x", 
-                        style = MaterialTheme.typography.bodyMedium, 
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(28.dp)
-                    )
-                    Text(
-                        text = item.product.name, 
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "${item.quantity}x", style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(28.dp))
+                    Text(text = item.product.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
-                    Text(
-                        text = "${GenesysStrings.PricePrefix}$subtotal", 
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    )
+                    Text(text = "${GenesysStrings.PricePrefix}$subtotal", style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                 }
             }
-            
-            Spacer(Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
                     Text(text = GenesysStrings.OrderTotal, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
-                    Text(
-                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
-                        style = MaterialTheme.typography.titleLarge, 
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
-                    )
+                    Text(text = "${GenesysStrings.PricePrefix}$totalFormatted", style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
                 }
-                
-                // BOTÃO DE CONTATO CORRIGIDO: Agora sempre tenta aparecer se houver qualquer indício de telefone
-                val phone = order.customerPhone ?: ""
-                if (phone.isNotBlank()) {
-                    GenesysLoadingButton(
-                        text = "Falar com o cliente",
-                        onClick = onContact,
-                        icon = GenesysIcons.Chat,
-                        fillWidth = false,
-                        shape = RoundedCornerShape(8.dp)
-                    )
+                if (!order.customerPhone.isNullOrBlank()) {
+                    GenesysLoadingButton(text = "Falar com o cliente", onClick = onContact, icon = GenesysIcons.Chat, fillWidth = false, shape = RoundedCornerShape(8.dp))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RenamePageDialog(state: PageListState, onEvent: (PageListEvent) -> Unit) {
+    var title by remember(state.pageToRename) { mutableStateOf(state.pageToRename?.title ?: "") }
+    GenesysDialog(
+        onDismissRequest = { onEvent(PageListEvent.OnDismissRenameDialog) },
+        title = "Renomear Vitrine",
+        confirmButton = { 
+            GenesysLoadingButton(text = GenesysStrings.Save, onClick = { onEvent(PageListEvent.OnConfirmRenamePage(title)) }, enabled = title.isNotBlank(), isLoading = state.isLoading, fillWidth = true) 
+        },
+        dismissButton = { GenesysTextButton(text = GenesysStrings.Cancel, onClick = { onEvent(PageListEvent.OnDismissRenameDialog) }) }
+    ) {
+        GenesysTextField(value = title, onValueChange = { title = it }, label = "Novo Título", placeholder = "Ex: Minha Nova Loja")
     }
 }
 
@@ -582,48 +450,18 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
         title = GenesysStrings.NewPageTitle,
         confirmButton = { 
             GenesysColumn(usePadding = false) {
-                GenesysLoadingButton(
-                    text = "Criar Vitrine de Vendas", 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, 
-                    enabled = state.newPageTitle.isNotBlank(),
-                    isLoading = state.isLoading,
-                    fillWidth = true,
-                    icon = GenesysIcons.ShoppingBag
-                ) 
+                GenesysLoadingButton(text = "Criar Vitrine de Vendas", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.ShoppingBag) 
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(
-                    text = "Criar Link na Bio (Perfil)", 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, 
-                    enabled = state.newPageTitle.isNotBlank(),
-                    isLoading = state.isLoading,
-                    fillWidth = true,
-                    icon = GenesysIcons.Person
-                ) 
+                GenesysLoadingButton(text = "Criar Link na Bio (Perfil)", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Person) 
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(
-                    text = "Importar Arquivo .benevides", 
-                    onClick = onImport,
-                    fillWidth = true,
-                    icon = GenesysIcons.CloudUpload,
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
+                GenesysLoadingButton(text = "Importar Arquivo .benevides", onClick = onImport, fillWidth = true, icon = GenesysIcons.CloudUpload, containerColor = MaterialTheme.colorScheme.secondary)
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysTextButton(
-                    text = GenesysStrings.CreateEmptyVitrine, 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) },
-                    enabled = state.newPageTitle.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                GenesysTextButton(text = GenesysStrings.CreateEmptyVitrine, onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) }, enabled = state.newPageTitle.isNotBlank(), modifier = Modifier.fillMaxWidth())
             }
         },
         dismissButton = { GenesysTextButton(text = GenesysStrings.Cancel, onClick = { onEvent(PageListEvent.OnDismissCreateDialog) }) }
     ) {
-        GenesysTextField(
-            value = state.newPageTitle, 
-            onValueChange = { onEvent(PageListEvent.OnNewPageTitleChanged(it)) }, 
-            label = GenesysStrings.PageTitleLabel,
-            placeholder = GenesysStrings.PageTitlePlaceholder
-        )
+        GenesysTextField(value = state.newPageTitle, onValueChange = { onEvent(PageListEvent.OnNewPageTitleChanged(it)) }, label = GenesysStrings.PageTitleLabel, placeholder = GenesysStrings.PageTitlePlaceholder)
     }
 }
 
@@ -632,17 +470,10 @@ private fun GlobalSettingsDialog(state: PageListState, onEvent: (PageListEvent) 
     val firstPage = state.pages.firstOrNull()
     var domain by remember { mutableStateOf(firstPage?.customDomain ?: "") }
     var whatsapp by remember { mutableStateOf(firstPage?.whatsapp ?: "") }
-
     GenesysDialog(
         onDismissRequest = { onEvent(PageListEvent.OnDismissGlobalSettings) },
         title = GenesysStrings.GlobalSettings,
-        confirmButton = { 
-            GenesysLoadingButton(
-                text = GenesysStrings.Save, 
-                onClick = { onEvent(PageListEvent.OnConfirmGlobalSettings(domain, whatsapp)) },
-                isLoading = state.isLoading
-            ) 
-        },
+        confirmButton = { GenesysLoadingButton(text = GenesysStrings.Save, onClick = { onEvent(PageListEvent.OnConfirmGlobalSettings(domain, whatsapp)) }, isLoading = state.isLoading) },
         dismissButton = { GenesysTextButton(text = GenesysStrings.Cancel, onClick = { onEvent(PageListEvent.OnDismissGlobalSettings) }) }
     ) {
         GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {

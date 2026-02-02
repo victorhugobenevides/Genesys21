@@ -41,7 +41,6 @@ fun PageViewerScreen(
     val cartCount by router.viewModel.cartCount.collectAsState()
     val storeCategories by router.viewModel.allAvailableCategories.collectAsState()
     
-    // Sincroniza o estado com as categorias globais do lojista
     val state = remember(page, cartCount, storeCategories) { 
         PageViewerScreenState(
             page = page,
@@ -93,11 +92,14 @@ private fun PageViewerContent(
                 title = state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
-                    GenesysIconButton(
-                        icon = GenesysIcons.List, 
-                        contentDescription = GenesysStrings.OrderHistoryTitle,
-                        onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }
-                    )
+                    // BOTÃO MEUS PEDIDOS: Apenas se houver lista de produtos na página
+                    if (state.hasProductList) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.List, 
+                            contentDescription = GenesysStrings.OrderHistoryTitle,
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }
+                        )
+                    }
 
                     if (state.isLoggedIn) {
                         GenesysIconButton(
@@ -110,6 +112,7 @@ private fun PageViewerContent(
             )
         },
         floatingActionButton = {
+            // BOTÃO CARRINHO: Apenas se houver lista de produtos ou itens já no carrinho
             if (state.hasProductList || state.cartCount > 0) {
                 BadgedBox(
                     badge = {
@@ -153,7 +156,7 @@ private fun PageViewerContent(
                         onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
                         filterQuery = currentFilterQuery,
                         onFilterQueryChange = { currentFilterQuery = it },
-                        allAvailableCategories = state.allStoreCategories // USA AS CATEGORIAS GLOBAIS
+                        allAvailableCategories = state.allStoreCategories
                     )
                 }
                 

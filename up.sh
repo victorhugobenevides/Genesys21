@@ -127,5 +127,5 @@ docker-compose up --build -d
 
 echo "--------------------------------------------------------"
 echo "✨ Sistema online (WASM)!"
-echo "🌐 Web: http://localhost:8081"
+echo "🌐 Web: http://localhost"
 echo "--------------------------------------------------------"
