@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,7 @@ fun PageListScreen(
     val pages by viewModel.pages.collectAsState()
     val orders by viewModel.orders.collectAsState()
     val isGlobalLoading by viewModel.isLoading.collectAsState()
+    val uriHandler = LocalUriHandler.current
     
     var state by remember { mutableStateOf(PageListState()) }
 
@@ -73,7 +75,6 @@ fun PageListScreen(
         viewModel.loadOrders()
     }
 
-    // Movemos a definição da função onEvent para antes do uso no fileHandler
     val onEvent: (PageListEvent) -> Unit = { event ->
         when (event) {
             is PageListEvent.OnTabSelected -> state = state.copy(selectedTab = event.index)
@@ -130,11 +131,9 @@ fun PageListScreen(
             // Lógica de Importação (Individual ou Backup)
             is PageListEvent.OnImportPageClicked -> {
                 try {
-                    // Tenta decodificar como lista (backup) primeiro
                     val importedPages = runCatching { Json.decodeFromString<List<Page>>(event.json) }.getOrNull()
                     
                     if (importedPages != null) {
-                        // Importação em Lote
                         importedPages.forEach { page ->
                             val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
                             viewModel.savePage(page.copy(id = newId), false) { }
@@ -142,7 +141,6 @@ fun PageListScreen(
                         viewModel.loadPages()
                         state = state.copy(showCreateDialog = false)
                     } else {
-                        // Tenta decodificar como página única
                         val importedPage = Json.decodeFromString<Page>(event.json)
                         val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
                         viewModel.savePage(importedPage.copy(id = newId), false) {
@@ -150,9 +148,7 @@ fun PageListScreen(
                             state = state.copy(showCreateDialog = false)
                         }
                     }
-                } catch (e: Exception) {
-                    // Erro silencioso
-                }
+                } catch (e: Exception) { }
             }
         }
     }
@@ -167,7 +163,11 @@ fun PageListScreen(
         onViewPage = onViewPage, 
         onEditPage = onEditPage, 
         onImport = { fileHandler() },
-        onExportAll = { onEvent(PageListEvent.OnExportAllClicked) }
+        onExportAll = { onEvent(PageListEvent.OnExportAllClicked) },
+        onContactCustomer = { phone, orderId, name ->
+            val message = "Olá $name, estou entrando em contato sobre o seu pedido #$orderId na Genesys21."
+            uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
+        }
     )
 }
 
@@ -178,7 +178,8 @@ private fun PageListContent(
     onViewPage: (Page) -> Unit,
     onEditPage: (Page) -> Unit,
     onImport: () -> Unit,
-    onExportAll: () -> Unit
+    onExportAll: () -> Unit,
+    onContactCustomer: (String, String, String) -> Unit
 ) {
      GenesysPage(
         topBar = {
@@ -189,7 +190,7 @@ private fun PageListContent(
                     actions = {
                         // BOTÕES DE BACKUP GLOBAL
                         GenesysIconButton(
-                            icon = GenesysIcons.Numbers, // Usando Numbers como ícone de backup/lote
+                            icon = GenesysIcons.Numbers,
                             contentDescription = "Exportar Tudo",
                             onClick = onExportAll
                         )
@@ -256,7 +257,8 @@ private fun PageListContent(
                             GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
                                 OrderCardUI(
                                     order = order, 
-                                    onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) }
+                                    onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
+                                    onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") }
                                 )
                             }
                             GenesysSpacer(GenesysSpacing.Medium)
@@ -455,15 +457,15 @@ private fun PageItemRow(
 }
 
 @Composable
-private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
+private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit, onContact: () -> Unit) {
     GenesysCard(
         modifier = Modifier.fillMaxWidth(),
-        elevation = 2.dp
+        elevation = 1.dp
     ) {
-        GenesysColumn(usePadding = true) { 
+        Column(modifier = Modifier.padding(12.dp)) { // Usando Column padrão para controle total do padding
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
@@ -471,100 +473,101 @@ private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit) {
                         order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
                     }
                     Box(
-                        modifier = Modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text( 
                             text = initials, 
-                            style = MaterialTheme.typography.bodyLarge, 
+                            style = MaterialTheme.typography.bodyMedium, 
                             fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, 
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                     
-                    Spacer(Modifier.width(12.dp))
+                    Spacer(Modifier.width(8.dp))
                     
                     Column {
-                        GenesysText(
+                        Text(
                             text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", 
-                            style = GenesysTextStyle.Label,
-                            fontWeight = GenesysFontWeight.Bold,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        GenesysText(
+                        Text(
                             text = order.customerName ?: "Consumidor", 
-                            style = GenesysTextStyle.Title, 
-                            fontWeight = GenesysFontWeight.ExtraBold,
+                            style = MaterialTheme.typography.titleMedium, 
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
                 
-                Box(modifier = Modifier.padding(start = 8.dp)) {
-                    GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
-                }
+                GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
             }
             
-            GenesysSpacer(GenesysSpacing.Medium)
-            GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Medium)
+            Spacer(Modifier.height(8.dp))
+            Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(Modifier.height(8.dp))
 
             order.items.forEach { item ->
-                GenesysRow(
-                    modifier = Modifier.fillMaxWidth(),
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    GenesysText(
+                    Text(
                         text = "${item.quantity}x", 
-                        style = GenesysTextStyle.Body, 
-                        fontWeight = GenesysFontWeight.Bold,
+                        style = MaterialTheme.typography.bodyMedium, 
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(32.dp)
+                        modifier = Modifier.width(28.dp)
                     )
-                    GenesysText(
+                    Text(
                         text = item.product.name, 
-                        style = GenesysTextStyle.Body,
+                        style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
-                    GenesysText(
+                    Text(
                         text = "${GenesysStrings.PricePrefix}$subtotal", 
-                        style = GenesysTextStyle.Body,
-                        fontWeight = GenesysFontWeight.Bold
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                     )
                 }
-                GenesysSpacer(GenesysSpacing.Small)
             }
             
-            GenesysSpacer(GenesysSpacing.Medium)
+            Spacer(Modifier.height(12.dp))
             
-            GenesysRow(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
-                    GenesysText(GenesysStrings.OrderTotal, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column {
+                    Text(text = GenesysStrings.OrderTotal, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
-                    GenesysText(
+                    Text(
                         text = "${GenesysStrings.PricePrefix}$totalFormatted", 
-                        style = GenesysTextStyle.Headline, 
-                        fontWeight = GenesysFontWeight.ExtraBold
+                        style = MaterialTheme.typography.titleLarge, 
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
                     )
                 }
                 
-                if (!order.whatsappContact.isNullOrBlank()) {
+                // BOTÃO DE CONTATO CORRIGIDO: Agora sempre tenta aparecer se houver qualquer indício de telefone
+                val phone = order.customerPhone ?: ""
+                if (phone.isNotBlank()) {
                     GenesysLoadingButton(
-                        text = "Zap",
-                        onClick = { /* Lógica WhatsApp */ },
+                        text = "Falar com o cliente",
+                        onClick = onContact,
                         icon = GenesysIcons.Chat,
-                        fillWidth = false
+                        fillWidth = false,
+                        shape = RoundedCornerShape(8.dp)
                     )
                 }
             }

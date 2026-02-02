@@ -8,6 +8,7 @@ object OrdersTable : Table("orders") {
     val userId = varchar("user_id", 100)
     val customerId = varchar("customer_id", 100).nullable()
     val customerName = varchar("customer_name", 255).nullable()
+    val customerPhone = varchar("customer_phone", 50).nullable() // ADICIONADO
     val total = double("total")
     val status = varchar("status", 50)
     val createdAt = long("created_at")

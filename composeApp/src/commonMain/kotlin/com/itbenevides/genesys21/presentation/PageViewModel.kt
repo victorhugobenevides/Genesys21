@@ -63,12 +63,14 @@ class PageViewModel(
     private val _currentError = MutableStateFlow<AppError?>(null)
     val currentError = _currentError.asStateFlow()
 
+    // Sincronização de dados do cliente (Nome e Telefone)
     val customerName = customerRepository.customerName
+    val customerPhone = customerRepository.customerPhone
 
     init {
         viewModelScope.launch {
             cartRepository.loadInitialCart()
-            customerRepository.loadName()
+            customerRepository.loadData() // Carrega nome e telefone salvos
             loadCategories()
         }
     }
@@ -76,6 +78,12 @@ class PageViewModel(
     fun saveCustomerName(name: String) {
         viewModelScope.launch {
             customerRepository.saveName(name)
+        }
+    }
+
+    fun saveCustomerPhone(phone: String) {
+        viewModelScope.launch {
+            customerRepository.savePhone(phone)
         }
     }
 
@@ -147,7 +155,7 @@ class PageViewModel(
         }
     }
 
-    fun submitOrder(page: Page?, onComplete: (String) -> Unit = {}) {
+    fun submitOrder(page: Page?, phone: String = "", onComplete: (String) -> Unit = {}) {
         val ownerId = page?.ownerId
         if (ownerId == null || cart.value.isEmpty()) {
             _currentError.value = AppError("Erro no Pedido", "Não foi possível identificar o dono desta vitrine.")
@@ -162,6 +170,7 @@ class PageViewModel(
                 userId = ownerId,
                 customerId = cartRepository.getSessionId(),
                 customerName = customerName.value,
+                customerPhone = if (phone.isNotBlank()) phone else customerPhone.value, // PRIORIZA O TELEFONE PASSADO
                 items = cart.value,
                 total = cartTotal.value,
                 status = OrderStatus.PENDING,
@@ -172,6 +181,9 @@ class PageViewModel(
             
             submitOrderUseCase(newOrder).onSuccess {
                 cartRepository.clearCart()
+                // Se um telefone novo foi digitado, salvamos ele no repositório local
+                if (phone.isNotBlank()) saveCustomerPhone(phone)
+                
                 AnalyticsManager.logEvent("purchase", mapOf("transaction_id" to orderId, "value" to cartTotal.value))
                 onComplete(orderId)
             }.onFailure {

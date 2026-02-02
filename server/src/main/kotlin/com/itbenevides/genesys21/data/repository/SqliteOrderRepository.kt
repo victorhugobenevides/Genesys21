@@ -7,7 +7,7 @@ import com.itbenevides.genesys21.domain.repository.OrderRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class SqliteOrderRepository : OrderRepository {
@@ -56,15 +56,13 @@ class SqliteOrderRepository : OrderRepository {
 
     override suspend fun createOrder(order: Order): Result<Unit> = try {
         dbQuery {
-            // Log técnico para auditoria de userId (Lojista)
-            println("SqliteOrderRepository: Criando pedido ${order.id} para lojista ${order.userId}")
-
-            // 1. Inserir cabeçalho
+            // 1. Inserir cabeçalho do pedido
             OrdersTable.insert {
                 it[id] = order.id
                 it[userId] = order.userId
                 it[customerId] = order.customerId
                 it[customerName] = order.customerName
+                it[customerPhone] = order.customerPhone
                 it[total] = order.total
                 it[status] = order.status.name
                 it[createdAt] = order.createdAt
@@ -72,8 +70,9 @@ class SqliteOrderRepository : OrderRepository {
                 it[theme] = order.theme.name
             }
 
-            // 2. Inserir itens vinculados
+            // 2. Inserir itens e atualizar estoque
             order.items.forEach { item ->
+                // Salva o item no histórico do pedido
                 OrderItemsTable.insert {
                     it[orderId] = order.id
                     it[productId] = item.product.id
@@ -81,13 +80,16 @@ class SqliteOrderRepository : OrderRepository {
                     it[productPrice] = item.product.price
                     it[quantity] = item.quantity
                 }
+
+                // CONTROLE DE ESTOQUE: Diminui a quantidade disponível
+                ProductsTable.update({ ProductsTable.id eq item.product.id }) {
+                    it.update(stock, stock minus item.quantity)
+                }
             }
             
-            println("SqliteOrderRepository: Pedido ${order.id} salvo com sucesso.")
             Result.success(Unit)
         }
     } catch (e: Exception) {
-        println("ERRO CRÍTICO AO SALVAR PEDIDO: ${e.message}")
         e.printStackTrace()
         Result.failure(e)
     }
@@ -122,6 +124,7 @@ class SqliteOrderRepository : OrderRepository {
         userId = this[OrdersTable.userId],
         customerId = this[OrdersTable.customerId],
         customerName = this[OrdersTable.customerName],
+        customerPhone = this[OrdersTable.customerPhone],
         items = items,
         total = this[OrdersTable.total],
         status = try { OrderStatus.valueOf(this[OrdersTable.status]) } catch (e: Exception) { OrderStatus.PENDING },
