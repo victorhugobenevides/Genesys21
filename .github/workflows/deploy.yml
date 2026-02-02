@@ -67,7 +67,7 @@ jobs:
           window.firebaseSignOut = async () => await signOut(auth);
           EOF
 
-          # Gerar index.html COM TRAVA DE ZOOM, RESIZE E GOOGLE ANALYTICS
+          # Gerar index.html
           cat <<EOF > deploy/web/index.html
           <!DOCTYPE html>
           <html>
@@ -75,8 +75,6 @@ jobs:
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
               <title>Genesys21</title>
-              
-              <!-- Google tag (gtag.js) -->
               <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
               <script>
                   window.dataLayer = window.dataLayer || [];
@@ -84,26 +82,13 @@ jobs:
                   gtag('js', new Date());
                   gtag('config', 'G-LW7Y13Y2M8');
               </script>
-
               <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
               <script type="module" src="/firebase-bridge.js"></script>
               <style>
-                  html, body {
-                      width: 100%;
-                      height: 100%;
-                      margin: 0;
-                      padding: 0;
-                      overflow: hidden;
-                      background-color: #F2F2F7;
-                      position: fixed;
-                      left: 0;
-                      top: 0;
-                      touch-action: manipulation;
-                      -webkit-text-size-adjust: 100%;
-                  }
+                  html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: manipulation; }
                   #ComposeTarget { width: 100%; height: 100%; }
                   canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
-                  input, textarea, select { font-size: 16px !important; }
+                  input, textarea { font-size: 16px !important; }
               </style>
           </head>
           <body>
@@ -133,10 +118,7 @@ jobs:
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
             
-            docker compose down --remove-orphans || true
-            sudo rm -rf nginx.prod.conf nginx.conf
-            
-            # Nginx de Produção Otimizado para Métodos HTTP (POST/PUT)
+            # Gerar Nginx de Produção com suporte a ambos os domínios
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -147,99 +129,52 @@ jobs:
                 default_type application/octet-stream;
                 client_max_body_size 20M;
 
+                # REDIRECT HTTP -> HTTPS
                 server {
                     listen 80;
-                    server_name victorbenevides.dev;
+                    server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
                     location /.well-known/acme-challenge/ { root /var/www/certbot; }
                     location / { return 301 https://\$host\$request_uri; }
                 }
 
+                # SERVIDOR HTTPS (UNIFICADO)
                 server {
                     listen 443 ssl;
-                    server_name victorbenevides.dev;
+                    server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
+                    
+                    # Usamos o caminho do certificado principal (Expandido)
                     ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
                     ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
 
                     root /usr/share/nginx/html;
                     index index.html;
 
-                    # 1. PRIORIDADE PARA API, PAGES E CART (Evita 405)
-                    location ^~ /pages {
-                        proxy_pass http://server:8080;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                        proxy_http_version 1.1;
-                    }
-
-                    location ^~ /cart {
-                        proxy_pass http://server:8080;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                        proxy_http_version 1.1;
-                    }
-
-                    location ^~ /orders {
-                        proxy_pass http://server:8080;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                        proxy_http_version 1.1;
-                    }
-
                     location ^~ /api/ {
                         proxy_pass http://server:8080;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
-                        proxy_http_version 1.1;
-                    }
-
-                    location ^~ /upload {
-                        proxy_pass http://server:8080;
-                        proxy_set_header Host \$host;
-                        proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                         proxy_set_header X-Forwarded-Proto \$scheme;
                     }
 
-                    # 2. ROTA DE IMAGENS ESTÁTICAS
                     location /uploads/ {
                         alias /usr/share/nginx/html/uploads/;
                         try_files \$uri @backend_fallback;
-                        expires 30d;
-                        add_header Cache-Control "public";
                     }
 
-                    location @backend_fallback {
-                        proxy_pass http://server:8080;
-                        proxy_set_header Host \$host;
-                    }
+                    location @backend_fallback { proxy_pass http://server:8080; }
 
-                    # 3. FRONTEND SPA
                     location / {
                         try_files \$uri \$uri/ /index.html;
-                    }
-
-                    location ~* \.(js|mjs|wasm|css|png|jpg|jpeg|gif|ico|svg)\$ {
-                        expires 1h;
-                        add_header Cache-Control "public, no-transform";
                     }
                 }
             }
             EOF
 
+            # Gerar Docker Compose com serviço Certbot incluso
             cat <<EOF > docker-compose.yml
             services:
               server:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
-                expose:
-                  - "8080"
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
@@ -259,12 +194,19 @@ jobs:
                 restart: unless-stopped
                 networks:
                   - genesys-network
+              certbot:
+                image: certbot/certbot
+                volumes:
+                  - ./certbot/conf:/etc/letsencrypt
+                  - ./certbot/www:/var/www/certbot
+                networks:
+                  - genesys-network
+                entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'"
             networks:
               genesys-network:
                 driver: bridge
             EOF
             
-            sudo chmod -R 777 ~/app/uploads
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
