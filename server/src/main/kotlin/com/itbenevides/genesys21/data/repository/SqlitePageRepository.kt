@@ -60,7 +60,7 @@ class SqlitePageRepository : PageRepository {
             val formattedDomain = page.customDomain?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
             val formattedWhatsapp = page.whatsapp?.trim()?.takeIf { it.isNotBlank() }
 
-            // CORREÇÃO: Verifica se o domínio já está em uso por OUTRA página para evitar Erro 500
+            // Verifica se o domínio já está em uso por OUTRA página
             if (formattedDomain != null) {
                 val ownerOfDomain = PagesTable.selectAll()
                     .where { PagesTable.customDomain eq formattedDomain }
@@ -91,10 +91,10 @@ class SqlitePageRepository : PageRepository {
                 }
             }
 
-            // Sincroniza configurações globais apenas se houver permissão e for edição proposital
-            if (isEditing && token.isNotBlank() && (formattedDomain != null || formattedWhatsapp != null)) {
+            // CORREÇÃO: Sincroniza apenas o WhatsApp globalmente, mas mantém o domínio exclusivo por página.
+            // O domínio NÃO pode ser replicado para todas as páginas do usuário devido ao UniqueIndex.
+            if (isEditing && token.isNotBlank() && formattedWhatsapp != null) {
                 PagesTable.update({ PagesTable.ownerId eq token }) {
-                    it[customDomain] = formattedDomain
                     it[whatsapp] = formattedWhatsapp
                 }
             }

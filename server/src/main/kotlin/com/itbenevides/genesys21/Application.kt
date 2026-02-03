@@ -57,6 +57,7 @@ fun Application.module() {
         }
     }
 
+    // Otimização: Compressão Gzip agressiva para reduzir transferência de dados (JS/JSON)
     install(Compression) {
         gzip { priority = 1.0 }
         deflate { priority = 10.0; minimumSize(1024) }
@@ -98,7 +99,19 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // Rota para Metadados Dinâmicos (SEO/Compartilhamento)
+        // Otimização: Cache agressivo para imagens de upload (30 dias)
+        get("/uploads/{filename...}") {
+            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
+            val file = File(uploadDir, filename)
+            if (file.exists() && file.isFile) {
+                call.response.header(HttpHeaders.CacheControl, "public, max-age=2592000")
+                call.respondFile(file)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+        }
+
+        // Rota para Metadados Dinâmicos (SEO/Compartilhamento) com Redirecionamento
         get("/p/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = pageRepository.getPublicPage(id).getOrNull()
@@ -121,7 +134,7 @@ fun Application.module() {
                     <meta name="twitter:title" content="$title">
                     <meta name="twitter:description" content="$description">
                     <script>
-                        window.location.href = "/?pageId=$id";
+                        window.location.replace("/?pageId=$id");
                     </script>
                 </head>
                 <body>
@@ -131,13 +144,6 @@ fun Application.module() {
             """.trimIndent()
             
             call.respondText(html, ContentType.Text.Html)
-        }
-
-        get("/uploads/{filename...}") {
-            val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
-            val file = File(uploadDir, filename)
-            if (file.exists() && file.isFile) call.respondFile(file)
-            else call.respond(HttpStatusCode.NotFound)
         }
 
         get("/") { call.respondText("API Online") }
