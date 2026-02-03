@@ -67,7 +67,7 @@ fun PageComponentRenderer(
             onEditClick?.invoke()
         } else {
             val destPageId = component.destinationPageId
-            val destUrl = component.destinationUrl
+            val destUrl = if (component is PageComponent.Button) component.url else component.destinationUrl
 
             if (!destPageId.isNullOrBlank()) {
                 scope.launch {
@@ -304,7 +304,7 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Header -> {
-                GenesysText(
+                 GenesysText(
                     text = if (component.isUppercase) component.title.uppercase().ifBlank { GenesysStrings.UpdateTitle } else component.title.ifBlank { GenesysStrings.UpdateTitle }, 
                     style = GenesysTextStyle.Headline,
                     fontWeight = when(component.fontWeight) {
