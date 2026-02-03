@@ -88,6 +88,7 @@ fun PageListScreen(
                 val newPage = when(event.templateType) {
                     PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
                     PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
                     PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
                 }
                 
@@ -110,7 +111,6 @@ fun PageListScreen(
                     }
                 }
             }
-            // RENOMEAR PÁGINA
             is PageListEvent.OnRenamePageClicked -> state = state.copy(showRenameDialog = true, pageToRename = event.page)
             is PageListEvent.OnDismissRenameDialog -> state = state.copy(showRenameDialog = false, pageToRename = null)
             is PageListEvent.OnConfirmRenamePage -> {
@@ -376,8 +376,8 @@ private fun PageItemRow(
             GenesysSpacer(GenesysSpacing.Medium)
             GenesysRow(fillWidth = true, horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 GenesysIconButton(icon = GenesysIcons.Visibility, onClick = onView)
-                GenesysIconButton(icon = GenesysIcons.Edit, onClick = onRename) // Botão de Renomear
-                GenesysIconButton(icon = GenesysIcons.Magic, onClick = onEdit) // Botão de Editar Blocos
+                GenesysIconButton(icon = GenesysIcons.Edit, onClick = onRename)
+                GenesysIconButton(icon = GenesysIcons.Magic, onClick = onEdit)
                 GenesysIconButton(icon = GenesysIcons.Copy, onClick = onCopyUrl)
                 GenesysIconButton(icon = GenesysIcons.CloudUpload, onClick = onExport)
                 GenesysIconButton(icon = GenesysIcons.Delete, onClick = onDelete, tint = MaterialTheme.colorScheme.error)
@@ -453,6 +453,8 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
                 GenesysLoadingButton(text = "Criar Vitrine de Vendas", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.ShoppingBag) 
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysLoadingButton(text = "Criar Link na Bio (Perfil)", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Person) 
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysLoadingButton(text = "Criar Post de Blog", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.List) 
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysLoadingButton(text = "Importar Arquivo .benevides", onClick = onImport, fillWidth = true, icon = GenesysIcons.CloudUpload, containerColor = MaterialTheme.colorScheme.secondary)
                 GenesysSpacer(GenesysSpacing.Small)

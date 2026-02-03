@@ -7,6 +7,7 @@ import com.itbenevides.genesys21.domain.model.OrderStatus
 enum class PageTemplateType {
     PROFESSIONAL_VITRINE,
     BIO_PROFILE,
+    BLOG_POST,
     EMPTY
 }
 
@@ -23,8 +24,8 @@ data class PageListState(
     val selectedStatusFilter: OrderStatus? = null,
     val showCreateDialog: Boolean = false,
     val showGlobalSettings: Boolean = false,
-    val showRenameDialog: Boolean = false, // ADICIONADO
-    val pageToRename: Page? = null, // ADICIONADO
+    val showRenameDialog: Boolean = false,
+    val pageToRename: Page? = null,
     val newPageTitle: String = ""
 )
 
@@ -45,7 +46,6 @@ sealed class PageListEvent {
     object OnDismissGlobalSettings : PageListEvent()
     data class OnConfirmGlobalSettings(val domain: String, val whatsapp: String) : PageListEvent()
     
-    // NOVOS: Renomear Página
     data class OnRenamePageClicked(val page: Page) : PageListEvent()
     object OnDismissRenameDialog : PageListEvent()
     data class OnConfirmRenamePage(val newTitle: String) : PageListEvent()
