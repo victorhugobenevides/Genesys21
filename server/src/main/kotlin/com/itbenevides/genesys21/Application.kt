@@ -98,6 +98,41 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
+        // Rota para Metadados Dinâmicos (SEO/Compartilhamento)
+        get("/p/{id}") {
+            val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val page = pageRepository.getPublicPage(id).getOrNull()
+            
+            val title = page?.title ?: "Página não encontrada"
+            val description = "Confira esta página incrível."
+            val siteName = "Social Bio"
+            
+            val html = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>$title</title>
+                    <meta property="og:title" content="$title">
+                    <meta property="og:description" content="$description">
+                    <meta property="og:site_name" content="$siteName">
+                    <meta property="og:type" content="website">
+                    <meta name="twitter:card" content="summary_large_image">
+                    <meta name="twitter:title" content="$title">
+                    <meta name="twitter:description" content="$description">
+                    <script>
+                        window.location.href = "/?pageId=$id";
+                    </script>
+                </head>
+                <body>
+                    Redirecionando para $title...
+                </body>
+                </html>
+            """.trimIndent()
+            
+            call.respondText(html, ContentType.Text.Html)
+        }
+
         get("/uploads/{filename...}") {
             val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
             val file = File(uploadDir, filename)
@@ -105,7 +140,7 @@ fun Application.module() {
             else call.respond(HttpStatusCode.NotFound)
         }
 
-        get("/") { call.respondText("Genesys21 API Online") }
+        get("/") { call.respondText("API Online") }
 
         route("/api") {
             pageRoutes(pageRepository)
@@ -122,8 +157,6 @@ fun Application.module() {
                         if (part is PartData.FileItem) {
                             val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
                             fileName = "${UUID.randomUUID()}.$ext"
-                            
-                            // CORREÇÃO DEFINITIVA: Leitura de bytes no Ktor 3.0
                             val channel = part.provider()
                             fileBytes = channel.toByteArray()
                         }

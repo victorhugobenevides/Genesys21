@@ -9,17 +9,9 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics) // ADICIONADO
-    alias(libs.plugins.firebase.perf)        // ADICIONADO
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
     alias(libs.plugins.kotlin.serialization)
-}
-
-fun getLocalIp(): String {
-    return try {
-        InetAddress.getLocalHost().hostAddress
-    } catch (e: Exception) {
-        "localhost"
-    }
 }
 
 kotlin {
@@ -55,13 +47,12 @@ kotlin {
                         add(project.file("src/webMain/resources").canonicalPath)
                     }
                     
+                    // Configuração de Proxy para desenvolvimento
                     proxy = mutableListOf(
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/api"), "http://localhost:8080"),
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/pages"), "http://localhost:8080"),
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/upload"), "http://localhost:8080"),
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/uploads"), "http://localhost:8080"),
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/cart"), "http://localhost:8080"),
-                        KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/orders"), "http://localhost:8080")
+                        KotlinWebpackConfig.DevServer.Proxy(
+                            mutableListOf("/api", "/uploads", "/upload"), 
+                            "http://localhost:8080"
+                        )
                     )
                 }
             }
@@ -87,7 +78,6 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
-            
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
@@ -102,8 +92,6 @@ kotlin {
             implementation(libs.kmpauth.uihelper)
             implementation(libs.koin.android)
             implementation(libs.peekaboo.image.picker)
-            
-            // DEPENDÊNCIAS FIREBASE ANDROID
             implementation(libs.firebase.crashlytics)
             implementation(libs.firebase.perf)
         }
@@ -118,7 +106,8 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+            // Alterado de 1.10.1 para 1.9.0 para garantir a resolução do artefato
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
         }
     }
 }
@@ -132,7 +121,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 2
         versionName = "1.1"
-        buildConfigField("String", "WEB_BASE_URL", "\"http://192.168.15.6:8081\"")
+        buildConfigField("String", "WEB_BASE_URL", "\"http://localhost:8081\"")
     }
     buildFeatures { buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
