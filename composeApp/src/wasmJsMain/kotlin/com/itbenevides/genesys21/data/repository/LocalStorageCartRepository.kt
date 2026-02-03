@@ -27,7 +27,6 @@ class LocalStorageCartRepository(
     private val CART_STORAGE_KEY = "genesys21_cart"
     private val SESSION_STORAGE_KEY = "genesys21_session_id"
 
-    // CORREÇÃO: Adicionado override e tornado public conforme a interface
     override fun getSessionId(): String {
         var id = localStorage.getItem(SESSION_STORAGE_KEY)
         if (id == null) {
@@ -72,9 +71,16 @@ class LocalStorageCartRepository(
     override suspend fun addToCart(item: CartItem): Result<Unit> {
         val current = _cartItems.value.toMutableList()
         val existing = current.find { it.product.id == item.product.id }
+        
+        // VALIDAÇÃO DE ESTOQUE
+        val newQuantity = if (existing != null) existing.quantity + item.quantity else item.quantity
+        if (newQuantity > item.product.stock) {
+            return Result.failure(Exception("Quantidade indisponível em estoque"))
+        }
+
         if (existing != null) {
             val idx = current.indexOf(existing)
-            current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
+            current[idx] = existing.copy(quantity = newQuantity)
         } else {
             current.add(item)
         }
@@ -91,6 +97,13 @@ class LocalStorageCartRepository(
 
     override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
         if (quantity <= 0) return removeFromCart(productId)
+        
+        // VALIDAÇÃO DE ESTOQUE NA ATUALIZAÇÃO
+        val item = _cartItems.value.find { it.product.id == productId }
+        if (item != null && quantity > item.product.stock) {
+            return Result.failure(Exception("Quantidade indisponível em estoque"))
+        }
+
         _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         saveToLocal()
         return syncWithServer()

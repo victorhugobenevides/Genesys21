@@ -61,6 +61,26 @@ fun PageComponentRenderer(
     
     val isCategoryFilterActive = allAvailableCategories.any { it.equals(filterQuery, ignoreCase = true) }
 
+    // Helper para lidar com cliques nos componentes de forma genérica
+    val onComponentClick: () -> Unit = {
+        if (isEditMode) {
+            onEditClick?.invoke()
+        } else {
+            val destPageId = component.destinationPageId
+            val destUrl = component.destinationUrl
+
+            if (!destPageId.isNullOrBlank()) {
+                scope.launch {
+                    router.viewModel.loadPublicPage(destPageId)?.let { targetPage ->
+                        router.navigateTo(Route.PublicViewer(targetPage))
+                    }
+                }
+            } else if (!destUrl.isNullOrBlank()) {
+                uriHandler.openUri(destUrl)
+            }
+        }
+    }
+
     val shouldShow = if (filterQuery.isBlank() || !component.isFilterable) {
         true
     } else {
@@ -92,7 +112,7 @@ fun PageComponentRenderer(
                 }
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp).clickable { onComponentClick() },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     GenesysImage(
@@ -144,7 +164,7 @@ fun PageComponentRenderer(
                 Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
                     GenesysLoadingButton(
                         text = component.text,
-                        onClick = { if(!isEditMode) uriHandler.openUri(component.url) },
+                        onClick = onComponentClick,
                         fillWidth = true
                     )
                 }
@@ -234,7 +254,6 @@ fun PageComponentRenderer(
                                         }
                                     }
                                     
-                                    // SETAS DE NAVEGAÇÃO HORIZONTAL (Somente Desktop)
                                     if (!isMobile && productsToDisplay.size > 1) {
                                         Surface(
                                             modifier = Modifier.align(Alignment.CenterStart).size(40.dp),
@@ -300,7 +319,7 @@ fun PageComponentRenderer(
                     },
                     color = if (component.usePrimaryColor) MaterialTheme.colorScheme.primary else Color.Unspecified,
                     fontSize = component.fontSize.sp,
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp).clickable { onComponentClick() }
                 )
             }
             is PageComponent.Text -> {
@@ -317,11 +336,10 @@ fun PageComponentRenderer(
                         else -> GenesysTextAlign.Start
                     },
                     fontSize = component.fontSize.sp,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp).clickable { onComponentClick() }
                 )
             }
             is PageComponent.Image -> {
-                val scope = rememberCoroutineScope()
                 val displayUrl = remember(component.url, backendUrl) {
                     if (component.url.startsWith("/") && !component.url.startsWith("http")) "$backendUrl${component.url}" else component.url
                 }
@@ -333,22 +351,7 @@ fun PageComponentRenderer(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     GenesysCard(
-                        onClick = {
-                            if (isEditMode) {
-                                onEditClick?.invoke()
-                                return@GenesysCard
-                            }
-                            val destId = component.destinationPageId
-                            if (!destId.isNullOrBlank()) {
-                                scope.launch {
-                                    router.viewModel.loadPublicPage(destId)?.let { targetPage ->
-                                        router.navigateTo(Route.PublicViewer(targetPage))
-                                    }
-                                }
-                            } else if (displayUrl.startsWith("http")) {
-                                uriHandler.openUri(displayUrl)
-                            }
-                        },
+                        onClick = onComponentClick,
                         elevation = 0.dp,
                         backgroundColor = Color.Transparent,
                         modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.wrapContentWidth()
@@ -476,7 +479,7 @@ fun ProductCard(
                                 }
                             }
                         }
-                    } else if (onAddToCart != null && product.stock > 0 && product.price > 0) { // Oculta add ao carrinho se for post/feed (preço 0)
+                    } else if (onAddToCart != null && product.stock > 0 && product.price > 0) {
                         Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.BottomEnd) {
                             Surface(
                                 modifier = Modifier.size(if (isMobile) 32.dp else 40.dp).scale(scale),
@@ -513,7 +516,7 @@ fun ProductCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                     
-                    if (product.price > 0) { // Oculta preço se for 0 (usado para feeds sociais no perfil)
+                    if (product.price > 0) {
                         GenesysSpacer(GenesysSpacing.Small)
                         
                         GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
