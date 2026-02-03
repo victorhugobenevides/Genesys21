@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.data.database
 
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.selectAll
 
 /**
  * Utilitário para lidar com migrações e correções estruturais manuais
@@ -11,10 +10,39 @@ import org.jetbrains.exposed.sql.selectAll
 object DatabaseMigrator {
 
     /**
+     * Corrige conflitos de índices e restrições residuais.
+     */
+    fun Transaction.runFixes() {
+        fixCustomDomainConstraint()
+        fixResidualIndices()
+    }
+
+    private fun Transaction.fixResidualIndices() {
+        try {
+            // SQLite exige nomes de índices únicos em todo o banco de dados.
+            // Se um índice de uma tabela antiga (_old) ainda existir, ele impedirá a criação do novo.
+            val residualIndices = listOf("page_components_page_id", "pages_custom_domain_unique")
+            
+            residualIndices.forEach { indexName ->
+                val tblName = exec("SELECT tbl_name FROM sqlite_master WHERE type='index' AND name='$indexName'") { rs ->
+                    if (rs.next()) rs.getString("tbl_name") else null
+                }
+                
+                if (tblName != null && tblName.endsWith("_old")) {
+                    println("DatabaseMigrator: Removendo índice residual '$indexName' da tabela '$tblName'")
+                    exec("DROP INDEX IF EXISTS $indexName")
+                }
+            }
+        } catch (e: Exception) {
+            println("DatabaseMigrator: Erro ao limpar índices - ${e.message}")
+        }
+    }
+
+    /**
      * Corrige a restrição UNIQUE do campo custom_domain no SQLite, 
      * reconstruindo a tabela se necessário e respeitando a nova estrutura normalizada.
      */
-    fun Transaction.fixCustomDomainConstraint() {
+    private fun Transaction.fixCustomDomainConstraint() {
         try {
             val tableSql = exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='pages'") { rs ->
                 if (rs.next()) rs.getString("sql") else ""
@@ -32,7 +60,7 @@ object DatabaseMigrator {
             exec("DROP INDEX IF EXISTS pages_custom_domain_unique")
             
         } catch (e: Exception) {
-            println("DatabaseMigrator: Erro na migração - ${e.message}")
+            println("DatabaseMigrator: Erro na migração de 'pages' - ${e.message}")
         }
     }
 
@@ -53,8 +81,6 @@ object DatabaseMigrator {
             SELECT id, title, owner_id, theme, custom_domain, whatsapp FROM pages_old
         """.trimIndent())
         
-        // Nota: A migração dos dados de 'components' (JSON) para a tabela 'page_components' 
-        // deve ser tratada aqui se houver dados legados importantes.
         if (migrateComponents) {
             println("DatabaseMigrator: Aviso - Dados da coluna 'components' foram isolados na tabela 'pages_old'.")
         }

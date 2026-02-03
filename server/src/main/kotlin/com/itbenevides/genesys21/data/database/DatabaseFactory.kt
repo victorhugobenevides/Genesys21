@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
+import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
 
 object DatabaseFactory {
     private const val DB_PATH = "data/genesys21.db"
@@ -54,6 +55,9 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
+            // Executa correções estruturais antes de deixar o Exposed criar as tabelas
+            runFixes()
+
             // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
             @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
