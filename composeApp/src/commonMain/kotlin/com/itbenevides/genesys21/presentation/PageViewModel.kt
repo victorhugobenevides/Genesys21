@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlin.random.Random
+import kotlin.time.Clock.System.now
 
 data class AppError(
     val title: String,
@@ -70,8 +71,8 @@ class PageViewModel(
     init {
         viewModelScope.launch {
             cartRepository.loadInitialCart()
-            customerRepository.loadData() // Carrega nome e telefone salvos
-            loadCategories()
+            customerRepository.loadData() 
+            // Nota: loadCategories() movido para ser chamado sob demanda para evitar falhas em acessos públicos anônimos
         }
     }
 
@@ -170,18 +171,17 @@ class PageViewModel(
                 userId = ownerId,
                 customerId = cartRepository.getSessionId(),
                 customerName = customerName.value,
-                customerPhone = if (phone.isNotBlank()) phone else customerPhone.value, // PRIORIZA O TELEFONE PASSADO
+                customerPhone = if (phone.isNotBlank()) phone else customerPhone.value, 
                 items = cart.value,
                 total = cartTotal.value,
                 status = OrderStatus.PENDING,
-                createdAt = Clock.System.now().toEpochMilliseconds(),
+                createdAt = now().toEpochMilliseconds(),
                 whatsappContact = page.whatsapp,
                 theme = page.theme
             )
             
             submitOrderUseCase(newOrder).onSuccess {
                 cartRepository.clearCart()
-                // Se um telefone novo foi digitado, salvamos ele no repositório local
                 if (phone.isNotBlank()) saveCustomerPhone(phone)
                 
                 AnalyticsManager.logEvent("purchase", mapOf("transaction_id" to orderId, "value" to cartTotal.value))
@@ -213,7 +213,7 @@ class PageViewModel(
                 getPagesUseCase(token)
             }.onSuccess {
                 _pages.value = it
-                loadCategories() // Sincroniza categorias ao carregar páginas
+                loadCategories() 
             }.onFailure {
                 handleError("Falha ao carregar páginas", it)
             }
@@ -222,15 +222,26 @@ class PageViewModel(
     }
 
     suspend fun loadPublicPage(id: String): Page? {
-        return getPublicPageUseCase(id).getOrElse {
+        val page = getPublicPageUseCase(id).getOrElse {
             handleError("Erro na página pública", it)
             null
         }
+        // Ao carregar uma página pública, atualizamos os produtos disponíveis para o Derived State das categorias
+        page?.let { _pages.value = listOf(it) }
+        return page
     }
 
-    suspend fun loadPageByDomain(domain: String): Page? = getPageByDomainUseCase(domain).getOrNull()
+    suspend fun loadPageByDomain(domain: String): Page? {
+        val page = getPageByDomainUseCase(domain).getOrNull()
+        page?.let { _pages.value = listOf(it) }
+        return page
+    }
 
-    suspend fun loadFirstPublicPage(): Page? = getFirstPublicPageUseCase()
+    suspend fun loadFirstPublicPage(): Page? {
+        val page = getFirstPublicPageUseCase()
+        page?.let { _pages.value = listOf(it) }
+        return page
+    }
 
     fun savePage(page: Page, isEditing: Boolean, onComplete: () -> Unit) {
         viewModelScope.launch {
@@ -301,7 +312,7 @@ class PageViewModel(
         }
     }
 
-    // Derived States
+    // Otimizado: O Derived State agora observa a página atual carregada
     val allAvailableProducts: StateFlow<List<Product>> = _pages.map { pageList ->
         val result = mutableListOf<Product>()
         for (page in pageList) {
@@ -314,7 +325,6 @@ class PageViewModel(
         result.distinctBy { it.id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Simplificação da lógica de categorias para garantir reatividade
     val allAvailableCategories: StateFlow<List<String>> = combine(categories, allAvailableProducts) { cats, products ->
         val namesFromTable = cats.map { it.name }
         val namesFromProducts = products.mapNotNull { it.categoryName }
@@ -322,7 +332,7 @@ class PageViewModel(
             .filter { it.isNotBlank() }
             .distinct()
             .sorted()
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList()) // Mudado para Eagerly para garantir atualização constante
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // Drafts
     fun saveDraft(page: Page) {

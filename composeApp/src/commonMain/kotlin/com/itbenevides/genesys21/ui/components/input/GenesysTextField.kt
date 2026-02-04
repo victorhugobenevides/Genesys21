@@ -9,16 +9,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
 /**
- * GenesysTextField ultra-estabilizado para WasmJs.
- * Resolve o bug de perda de caracteres (espaços) e reset de texto no Android Chrome.
- * Utiliza ancoragem de estado para proteger o buffer do teclado (IME).
+ * GenesysTextField - Versão de Resistência Industrial (Samsung Bug Fix).
+ * Resolve o problema do WasmJs onde o texto some ao apertar espaço usando
+ * um buffer de integridade e bloqueio de reset súbito.
  */
 @Composable
 fun GenesysTextField(
@@ -34,7 +38,7 @@ fun GenesysTextField(
     placeholder: String? = null,
     isError: Boolean = false,
     supportingText: String? = null,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     shape: Shape = RoundedCornerShape(16.dp),
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -76,7 +80,7 @@ internal fun GenesysTextFieldBase(
     placeholder: String? = null,
     isError: Boolean = false,
     supportingText: String? = null,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     shape: Shape = RoundedCornerShape(16.dp),
     colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -84,55 +88,75 @@ internal fun GenesysTextFieldBase(
     ),
     weightValue: Float = 0f
 ) {
-    // 1. Estado local que blinda a digitação contra recomposições atrasadas
-    var textFieldValueState by remember { 
-        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) 
-    }
+    // 1. ESTADO LOCAL (One-Way Data Binding)
+    // O componente é o dono do estado enquanto focado para evitar o "ping-pong" com o ViewModel
+    var localValue by remember { mutableStateOf(TextFieldValue(text = value)) }
+    var isFocused by remember { mutableStateOf(false) }
+    
+    // Buffer para restauração em caso de bug da Samsung
+    var lastSafeText by remember { mutableStateOf(value) }
 
-    // 2. Rastreia o último valor que o componente enviou para o pai
-    var lastValueSent by remember { mutableStateOf(value) }
-
-    // 3. Sincronização Externo -> Interno protegida:
-    // Só aceita o valor da prop 'value' se ele for diferente do que o componente emitiu.
-    if (value != lastValueSent && value != textFieldValueState.text) {
-        textFieldValueState = textFieldValueState.copy(
-            text = value,
-            selection = TextRange(value.length)
-        )
-        lastValueSent = value
+    // Sincroniza apenas se a mudança for externa e não houver foco
+    LaunchedEffect(value) {
+        if (!isFocused && value != localValue.text) {
+            localValue = localValue.copy(text = value)
+            lastSafeText = value
+        }
     }
 
     OutlinedTextField(
-        value = textFieldValueState,
-        onValueChange = { newValue ->
-            // 4. Prioridade síncrona: protege o buffer do teclado no WasmJs/Android
-            textFieldValueState = newValue
+        value = localValue,
+        onValueChange = { next ->
+            // --- SAMSUNG BUG GUARD ---
+            // Se o texto anterior não era vazio, o campo está focado, e o novo texto vem vazio,
+            // é o bug do espaço limpando o buffer. Nós REJEITAMOS essa mudança.
+            if (isFocused && next.text.isEmpty() && lastSafeText.isNotEmpty()) {
+                // Mantém o estado atual e ignora o comando de limpar
+                return@OutlinedTextField
+            }
+
+            localValue = next
+            lastSafeText = next.text
             
-            // 5. Notifica o pai apenas se o texto mudou em relação à nossa âncora
-            if (newValue.text != lastValueSent) {
-                lastValueSent = newValue.text
-                onValueChange(newValue.text)
+            // Notifica o ViewModel
+            if (next.text != value) {
+                onValueChange(next.text)
             }
         },
         label = label?.let { { Text(it) } },
         placeholder = placeholder?.let { { Text(it) } },
         leadingIcon = icon?.let { { Icon(it, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary) } },
         trailingIcon = trailingIcon,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { 
+                isFocused = it.isFocused 
+                if (!it.isFocused) {
+                    localValue = localValue.copy(text = value) // Sincroniza ao sair
+                }
+            },
         shape = shape,
         singleLine = singleLine,
         minLines = minLines,
-        keyboardOptions = keyboardOptions,
+        // 2. CONFIGURAÇÃO ANTI-PREDIÇÃO: 
+        // Password força o teclado a desligar o dicionário (causa do bug), mas visualTransformation exibe o texto.
+        keyboardOptions = keyboardOptions.copy(
+            autoCorrectEnabled = false,
+            keyboardType = if (keyboardOptions.keyboardType == KeyboardType.Text) KeyboardType.Password else keyboardOptions.keyboardType,
+            capitalization = KeyboardCapitalization.None,
+            imeAction = if (singleLine) ImeAction.Done else ImeAction.Default
+        ),
+        visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Text && visualTransformation == VisualTransformation.None) {
+            VisualTransformation.None 
+        } else {
+            visualTransformation
+        },
         isError = isError,
         supportingText = supportingText?.let { { Text(it) } },
-        visualTransformation = visualTransformation,
         colors = colors
     )
 }
 
-/**
- * Extensões de escopo padronizadas.
- */
 @Composable
 fun RowScope.GenesysTextField(
     value: String,
@@ -146,7 +170,7 @@ fun RowScope.GenesysTextField(
     placeholder: String? = null,
     isError: Boolean = false,
     supportingText: String? = null,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
@@ -181,7 +205,7 @@ fun ColumnScope.GenesysTextField(
     placeholder: String? = null,
     isError: Boolean = false,
     supportingText: String? = null,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
