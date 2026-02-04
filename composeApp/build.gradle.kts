@@ -80,7 +80,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+            // Removido implementation(libs.kotlinx.datetime) para evitar duplicidade IR
         }
 
         androidMain.dependencies {

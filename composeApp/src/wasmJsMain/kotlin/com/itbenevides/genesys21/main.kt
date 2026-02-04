@@ -3,35 +3,16 @@ package com.itbenevides.genesys21
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.window.CanvasBasedWindow
-import com.itbenevides.genesys21.di.initKoin
-import com.itbenevides.genesys21.di.viewModelModule
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
-import kotlinx.browser.document
-import org.w3c.dom.HTMLStyleElement
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    initKoin(additionalModules = listOf(viewModelModule))
-    initializeFirebase()
-    
-    CanvasBasedWindow(
-        title = "Genesys21",
-        canvasElementId = "ComposeTarget"
-    ) {
-        // A configuração do Coil DEVE estar dentro do contexto Composable
-        setSingletonImageLoaderFactory { context ->
-            ImageLoader.Builder(context)
-                .components {
-                    add(KtorNetworkFetcherFactory())
-                }
-                .build()
-        }
-        
-        App()
-    }
+    // A configuração do Coil DEVE estar definida antes ou dentro do App()
+    // Mas como o startComposeApp gerencia o Viewport, podemos injetar isso lá ou aqui.
+    // Vamos chamar o inicializador comum que agora está no webMain
+    startComposeApp()
 }
 
 /**

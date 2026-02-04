@@ -37,7 +37,10 @@ kotlin {
             implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.ktor.clientSerialization)
             implementation(libs.koin.core)
-            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+            // Usamos api para que os módulos que dependem de :shared (como :composeApp) 
+            // também tenham acesso ao kotlinx-datetime sem precisar declará-lo novamente,
+            // evitando assim conflitos de vinculação IR no Wasm.
+            api(libs.kotlinx.datetime)
         }
 
         androidMain.dependencies {

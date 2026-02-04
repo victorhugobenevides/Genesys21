@@ -10,7 +10,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
-import kotlinx.datetime.Clock
+import kotlin.time.Clock.System.now
 
 /**
  * Implementação do repositório de páginas usando Ktor Client.
@@ -21,7 +21,8 @@ class KtorPageRepository(
     private val baseUrl: String = "http://localhost:8080"
 ) : PageRepository {
 
-    private fun getTimestamp() = Clock.System.now().toEpochMilliseconds()
+    // Usando o nome totalmente qualificado para ajudar o compilador Wasm/K2
+    private fun getTimestamp() = now().toEpochMilliseconds()
 
     override suspend fun getPages(token: String): List<Page> {
         val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/api/pages"
