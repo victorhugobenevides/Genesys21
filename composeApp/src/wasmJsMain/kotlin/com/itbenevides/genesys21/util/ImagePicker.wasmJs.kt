@@ -9,6 +9,7 @@ import org.khronos.webgl.get
 import org.w3c.dom.HTMLInputElement
 import org.w3c.files.FileReader
 
+@OptIn(ExperimentalWasmJsInterop::class)
 @Composable
 actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
     return remember {

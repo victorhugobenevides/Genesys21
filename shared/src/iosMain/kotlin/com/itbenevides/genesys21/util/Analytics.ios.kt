@@ -22,4 +22,16 @@ actual val AnalyticsManager: Analytics = object : Analytics {
             "screen_class" to "ComposeUIViewController"
         ))
     }
+
+    override fun logException(throwable: Throwable, message: String?, additionalParams: Map<String, Any>) {
+        // No iOS, assim como no Android, o ideal seria usar Firebase Crashlytics.
+        // Simulamos via evento para observabilidade unificada.
+        val params = mutableMapOf<String, Any>()
+        params["exception_message"] = message ?: throwable.message ?: "Unknown"
+        params["exception_type"] = throwable::class.simpleName ?: "Throwable"
+        params["stack_trace"] = throwable.stackTraceToString().take(1000)
+        params.putAll(additionalParams)
+        
+        logEvent("app_exception", params)
+    }
 }

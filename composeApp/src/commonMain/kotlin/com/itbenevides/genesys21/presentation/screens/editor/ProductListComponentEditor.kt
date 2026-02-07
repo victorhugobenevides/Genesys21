@@ -1,11 +1,14 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Switch
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
@@ -34,142 +37,164 @@ fun ProductListComponentEditor(
     var searchQuery by remember { mutableStateOf("") }
 
     GenesysColumn(usePadding = false) {
-        GenesysText(GenesysStrings.ManageProducts, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+        // --- SEÇÃO 1: IDENTIFICAÇÃO DO BLOCO ---
+        GenesysText(text = "Configurações do Bloco", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysSpacer(GenesysSpacing.Medium)
-
-        GenesysTabRow(
-            selectedTabIndex = selectedTab,
-            tabs = listOf(
-                GenesysTabData(GenesysStrings.TabProductsInList, GenesysIcons.List, component.products.size),
-                GenesysTabData(GenesysStrings.TabProductsInCatalog, GenesysIcons.Inventory)
-            ),
-            onTabSelected = { selectedTab = it }
-        )
-
-        GenesysSpacer(GenesysSpacing.Medium)
-
-        // Campo de busca para filtrar produtos nas abas
+        
         GenesysTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            label = GenesysStrings.SearchPlaceholder,
-            icon = GenesysIcons.Search
+            value = customLabel,
+            onValueChange = { customLabel = it },
+            label = "Nome do Bloco (Opcional)",
+            placeholder = "Ex: Promoções, Lançamentos...",
+            icon = GenesysIcons.Edit
         )
-
+        
         GenesysSpacer(GenesysSpacing.Medium)
-
-        if (selectedTab == 0) {
-            // ABA 1: Produtos Atuais
-            val filteredListProducts = component.products.filter { product ->
-                product.name.contains(searchQuery, ignoreCase = true) || 
-                (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
-            }
-
-            GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
-                filteredListProducts.forEach { product ->
-                    val index = component.products.indexOf(product)
-                    GenesysCard(modifier = Modifier.padding(bottom = 4.dp)) {
-                        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-                            GenesysWeightBox(1f) { GenesysText(product.name) }
-                            
-                            GenesysRow(fillWidth = false) {
-                                GenesysIconButton(
-                                    icon = GenesysIcons.ArrowUp, 
-                                    onClick = { 
-                                        if (index > 0) {
-                                            val newList = component.products.toMutableList()
-                                            val temp = newList[index]
-                                            newList[index] = newList[index - 1]
-                                            newList[index - 1] = temp
-                                            onProductsUpdated(newList)
-                                        }
-                                    }
-                                )
-                                GenesysIconButton(
-                                    icon = GenesysIcons.ArrowDown, 
-                                    onClick = { 
-                                        if (index < component.products.size - 1) {
-                                            val newList = component.products.toMutableList()
-                                            val temp = newList[index]
-                                            newList[index] = newList[index + 1]
-                                            newList[index + 1] = temp
-                                            onProductsUpdated(newList)
-                                        }
-                                    }
-                                )
-                                GenesysIconButton(icon = GenesysIcons.Edit, onClick = { onEditProduct(product) })
-                                GenesysIconButton(
-                                    icon = GenesysIcons.Remove, 
-                                    tint = Color.Red.copy(alpha = 0.6f),
-                                    onClick = { onProductsUpdated(component.products.filter { it.id != product.id }) }
-                                )
-                            }
-                        }
-                    }
-                }
-                GenesysSpacer(GenesysSpacing.Medium)
-                GenesysLoadingButton(
-                    text = GenesysStrings.AddNewProduct,
-                    icon = GenesysIcons.Add,
-                    onClick = { onEditProduct(null) },
-                    fillWidth = true
-                )
-            }
-        } else {
-            // ABA 2: Catálogo Global
-            val catalogToDisplay = allAvailableProducts
-                .filter { p -> component.products.none { it.id == p.id } }
-                .filter { product -> 
-                    product.name.contains(searchQuery, ignoreCase = true) || 
-                    (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
-                }
-            
-            GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
-                if (catalogToDisplay.isEmpty()) {
-                    GenesysText(GenesysStrings.NoProductsInCatalog, style = GenesysTextStyle.Label)
-                } else {
-                    catalogToDisplay.forEach { product ->
-                        GenesysCard(modifier = Modifier.padding(bottom = 4.dp)) {
-                            GenesysRow {
-                                GenesysWeightBox(1f) { GenesysText(product.name) }
-                                GenesysLoadingButton(
-                                    text = GenesysStrings.AddToThisList,
-                                    icon = GenesysIcons.Add,
-                                    onClick = { onProductsUpdated(component.products + product) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+            GenesysText("Exibir em Lista Horizontal?", style = GenesysTextStyle.Body, weightValue = 1f)
+            Switch(checked = isHorizontal, onCheckedChange = { isHorizontal = it })
         }
 
         GenesysSpacer(GenesysSpacing.Large)
         GenesysDivider()
         GenesysSpacer(GenesysSpacing.Large)
 
-        GenesysTextField(
-            value = customLabel,
-            onValueChange = { customLabel = it },
-            label = GenesysStrings.BlockNameLabel,
-            placeholder = GenesysStrings.BlockNamePlaceholder,
-            icon = GenesysIcons.Edit
+        // --- SEÇÃO 2: GESTÃO DE ITENS ---
+        GenesysText(text = "Gerenciar Produtos", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold)
+        GenesysSpacer(GenesysSpacing.Medium)
+
+        GenesysTabRow(
+            selectedTabIndex = selectedTab,
+            tabs = listOf(
+                GenesysTabData("Itens na Lista", GenesysIcons.List, component.products.size),
+                GenesysTabData("Catálogo", GenesysIcons.Inventory)
+            ),
+            onTabSelected = { selectedTab = it }
         )
-        
+
         GenesysSpacer(GenesysSpacing.Medium)
-        
-        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-            GenesysText(GenesysStrings.HorizontalListLabel, weightValue = 1f)
-            Switch(
-                checked = isHorizontal,
-                onCheckedChange = { isHorizontal = it }
-            )
+
+        GenesysTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = "Buscar produto...",
+            icon = GenesysIcons.Search
+        )
+
+        GenesysSpacer(GenesysSpacing.Medium)
+
+        Box(modifier = Modifier.heightIn(max = 400.dp)) {
+            if (selectedTab == 0) {
+                // ABA: PRODUTOS ATUAIS
+                val filteredListProducts = component.products.filter { product ->
+                    product.name.contains(searchQuery, ignoreCase = true)
+                }
+
+                GenesysColumn(usePadding = false, useScroll = true) {
+                    if (filteredListProducts.isEmpty()) {
+                        GenesysText("Nenhum produto nesta lista.", style = GenesysTextStyle.Label, textAlign = GenesysTextAlign.Center, modifier = Modifier.fillMaxWidth().padding(32.dp))
+                    } else {
+                        filteredListProducts.forEachIndexed { index, product ->
+                            ProductEditorRow(
+                                product = product,
+                                isFirst = index == 0,
+                                isLast = index == filteredListProducts.size - 1,
+                                onMoveUp = {
+                                    val newList = component.products.toMutableList()
+                                    val actualIdx = component.products.indexOf(product)
+                                    if (actualIdx > 0) {
+                                        val temp = newList[actualIdx]
+                                        newList[actualIdx] = newList[actualIdx - 1]
+                                        newList[actualIdx - 1] = temp
+                                        onProductsUpdated(newList)
+                                    }
+                                },
+                                onMoveDown = {
+                                    val newList = component.products.toMutableList()
+                                    val actualIdx = component.products.indexOf(product)
+                                    if (actualIdx < newList.size - 1) {
+                                        val temp = newList[actualIdx]
+                                        newList[actualIdx] = newList[actualIdx + 1]
+                                        newList[actualIdx + 1] = temp
+                                        onProductsUpdated(newList)
+                                    }
+                                },
+                                onRemove = { onProductsUpdated(component.products.filter { it.id != product.id }) },
+                                onEdit = { onEditProduct(product) }
+                            )
+                        }
+                    }
+                    
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysLoadingButton(
+                        text = "Criar Novo Produto",
+                        icon = GenesysIcons.Add,
+                        onClick = { onEditProduct(null) },
+                        fillWidth = true,
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            } else {
+                // ABA: CATÁLOGO
+                val catalogToDisplay = allAvailableProducts
+                    .filter { p -> component.products.none { it.id == p.id } }
+                    .filter { it.name.contains(searchQuery, ignoreCase = true) }
+                
+                GenesysColumn(usePadding = false, useScroll = true) {
+                    if (catalogToDisplay.isEmpty()) {
+                        GenesysText("Tudo o que você tem já está nesta lista.", style = GenesysTextStyle.Label, textAlign = GenesysTextAlign.Center, modifier = Modifier.fillMaxWidth().padding(32.dp))
+                    } else {
+                        catalogToDisplay.forEach { product ->
+                            GenesysCard(modifier = Modifier.padding(bottom = 8.dp), backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)) {
+                                GenesysRow {
+                                    GenesysWeightBox(1f) { GenesysText(product.name, fontWeight = GenesysFontWeight.Bold) }
+                                    GenesysIconButton(icon = GenesysIcons.Add, onClick = { onProductsUpdated(component.products + product) })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        
-        GenesysSpacer(GenesysSpacing.Medium)
-        
-        GenesysLoadingButton(text = GenesysStrings.SaveLabel, fillWidth = true, onClick = {
+
+        GenesysSpacer(GenesysSpacing.Huge)
+        GenesysLoadingButton(text = "Salvar Todas as Alterações", fillWidth = true, onClick = {
             onSaveLabel(customLabel, isHorizontal)
         })
+    }
+}
+
+@Composable
+private fun ProductEditorRow(
+    product: Product,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onRemove: () -> Unit,
+    onEdit: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                GenesysText(product.name, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                GenesysText("R$ ${product.price}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.primary)
+            }
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                GenesysIconButton(icon = GenesysIcons.ArrowUp, enabled = !isFirst, onClick = onMoveUp)
+                GenesysIconButton(icon = GenesysIcons.ArrowDown, enabled = !isLast, onClick = onMoveDown)
+                GenesysIconButton(icon = GenesysIcons.Edit, onClick = onEdit)
+                GenesysIconButton(icon = GenesysIcons.Delete, tint = MaterialTheme.colorScheme.error, onClick = onRemove)
+            }
+        }
     }
 }

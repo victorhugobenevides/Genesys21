@@ -170,7 +170,7 @@ fun Application.module() {
                     }
                     if (fileBytes != null) {
                         val file = File(uploadDir, fileName)
-                        file.writeBytes(fileBytes!!)
+                        file.writeBytes(fileBytes)
                         call.respondText("/uploads/$fileName")
                     } else {
                         call.respond(HttpStatusCode.BadRequest)

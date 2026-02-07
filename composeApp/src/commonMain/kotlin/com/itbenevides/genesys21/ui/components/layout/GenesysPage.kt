@@ -11,11 +11,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
 
+/**
+ * GenesysPage - O container fundamental de tela do Design System.
+ * Implementa a lógica de centralização adaptativa para Desktop e Mobile.
+ */
 @Composable
 fun GenesysPage(
     topBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    useMaxWidth: Boolean = true, // Permite desativar em telas que realmente precisam de full-width (como banners)
     content: @Composable () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
@@ -25,25 +31,47 @@ fun GenesysPage(
         floatingActionButton = floatingActionButton,
         containerColor = MaterialTheme.colorScheme.background,
         content = { padding ->
-            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                Box(modifier = Modifier.weight(1f)) {
-                    content()
-                }
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                val isWideScreen = maxWidth > 1024.dp
                 
-                // Link Simples de Rodapé (Assinatura)
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .clickable { uriHandler.openUri("https://victorbenevides.dev") },
-                    contentAlignment = Alignment.Center
+                        .fillMaxHeight()
+                        .then(
+                            if (useMaxWidth) {
+                                // Aplica largura máxima no Desktop, full no Mobile
+                                Modifier.widthIn(max = if (isWideScreen) 1200.dp else maxWidth)
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "desenvolvido por victorbenevides.dev",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Start
-                    )
+                    // CONTEÚDO PRINCIPAL (Flexível)
+                    Box(modifier = Modifier.weight(1f)) {
+                        content()
+                    }
+                    
+                    // ASSINATURA DE RODAPÉ (Respeita o sistema de cores M3)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp)
+                            .clickable { uriHandler.openUri("https://victorbenevides.dev") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "desenvolvido por victorbenevides.dev",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

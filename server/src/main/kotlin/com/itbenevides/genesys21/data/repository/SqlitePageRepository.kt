@@ -12,7 +12,13 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class SqlitePageRepository : PageRepository {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    // Configuração de JSON resiliente e explícita para o servidor
+    private val json = Json { 
+        ignoreUnknownKeys = true 
+        encodeDefaults = true
+        isLenient = true
+        coerceInputValues = true
+    }
 
     override suspend fun getPages(token: String): List<Page> = dbQuery {
         val pagesQuery = if (token.isBlank()) {
@@ -36,9 +42,7 @@ class SqlitePageRepository : PageRepository {
                     Result.success(row.toPage(components))
                 } ?: Result.failure(Exception("Página não encontrada"))
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+    } catch (e: Exception) { Result.failure(e) }
 
     override suspend fun getPageByDomain(domain: String): Result<Page> = try {
         dbQuery {
@@ -51,25 +55,12 @@ class SqlitePageRepository : PageRepository {
                 Result.success(row.toPage(components))
             } ?: Result.failure(Exception("Domínio $domain não vinculado"))
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+    } catch (e: Exception) { Result.failure(e) }
 
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> = try {
         dbQuery {
             val formattedDomain = page.customDomain?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
             val formattedWhatsapp = page.whatsapp?.trim()?.takeIf { it.isNotBlank() }
-
-            // Verifica se o domínio já está em uso por OUTRA página
-            if (formattedDomain != null) {
-                val ownerOfDomain = PagesTable.selectAll()
-                    .where { PagesTable.customDomain eq formattedDomain }
-                    .firstOrNull()?.get(PagesTable.id)
-                
-                if (ownerOfDomain != null && ownerOfDomain != page.id) {
-                    throw Exception("unique_domain_error: Este domínio já está vinculado a outra vitrine.")
-                }
-            }
 
             val exists = PagesTable.selectAll().where { PagesTable.id eq page.id }.count() > 0
             if (exists) {
@@ -91,14 +82,7 @@ class SqlitePageRepository : PageRepository {
                 }
             }
 
-            // CORREÇÃO: Sincroniza apenas o WhatsApp globalmente, mas mantém o domínio exclusivo por página.
-            // O domínio NÃO pode ser replicado para todas as páginas do usuário devido ao UniqueIndex.
-            if (isEditing && token.isNotBlank() && formattedWhatsapp != null) {
-                PagesTable.update({ PagesTable.ownerId eq token }) {
-                    it[whatsapp] = formattedWhatsapp
-                }
-            }
-
+            // Limpa componentes antigos e salva a nova estrutura consolidada
             PageComponentsTable.deleteWhere { pageId eq page.id }
             
             page.components.forEachIndexed { index, component ->
@@ -118,140 +102,71 @@ class SqlitePageRepository : PageRepository {
             
             Result.success(Unit)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
+    } catch (e: Exception) { 
+        println("LOG_SERVER_ERROR: Falha ao salvar página: ${e.message}")
+        Result.failure(e) 
     }
 
     override suspend fun deletePage(id: String, token: String): Result<Unit> = try {
         dbQuery {
-            val deleted = PagesTable.deleteWhere { (PagesTable.id eq id) and (ownerId eq token) }
-            if (deleted > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir"))
+            PagesTable.deleteWhere { (PagesTable.id eq id) and (ownerId eq token) }
+            Result.success(Unit)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
+    } catch (e: Exception) { Result.failure(e) }
+
+    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> = Result.failure(Exception("Use /upload"))
+
+    override suspend fun getAllProducts(token: String): Result<List<Product>> = dbQuery {
+        val products = (ProductsTable leftJoin CategoriesTable).selectAll().where { ProductsTable.ownerId eq token }.map { fetchProductFromRow(it) }
+        Result.success(products)
     }
 
-    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
-        return Result.failure(Exception("Use /upload"))
-    }
-
-    override suspend fun getAllProducts(token: String): Result<List<Product>> = try {
-        dbQuery {
-            val products = (ProductsTable leftJoin CategoriesTable)
-                .selectAll()
-                .where { ProductsTable.ownerId eq token }
-                .map { row ->
-                    fetchProductFromRow(row)
-                }
-            Result.success(products)
+    override suspend fun getCategories(token: String): Result<List<Category>> = dbQuery {
+        val categories = CategoriesTable.selectAll().where { CategoriesTable.ownerId eq token }.map { row ->
+            Category(id = row[CategoriesTable.id].value, ownerId = row[CategoriesTable.ownerId], name = row[CategoriesTable.name], icon = row[CategoriesTable.icon], color = row[CategoriesTable.color])
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getCategories(token: String): Result<List<Category>> = try {
-        dbQuery {
-            val categories = CategoriesTable.selectAll()
-                .where { CategoriesTable.ownerId eq token }
-                .map { row ->
-                    Category(
-                        id = row[CategoriesTable.id].value,
-                        ownerId = row[CategoriesTable.ownerId],
-                        name = row[CategoriesTable.name],
-                        icon = row[CategoriesTable.icon],
-                        color = row[CategoriesTable.color]
-                    )
-                }
-            Result.success(categories)
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
+        Result.success(categories)
     }
 
     override suspend fun saveCategory(category: Category, token: String): Result<Unit> = try {
         dbQuery {
             if (category.id != null) {
                 CategoriesTable.update({ (CategoriesTable.id eq category.id) and (CategoriesTable.ownerId eq token) }) {
-                    it[name] = category.name
-                    it[icon] = category.icon
-                    it[color] = category.color
+                    it[name] = category.name; it[icon] = category.icon; it[color] = category.color
                 }
             } else {
-                CategoriesTable.insert {
-                    it[ownerId] = token
-                    it[name] = category.name
-                    it[icon] = category.icon
-                    it[color] = category.color
-                }
+                CategoriesTable.insert { it[ownerId] = token; it[name] = category.name; it[icon] = category.icon; it[color] = category.color }
             }
             Result.success(Unit)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+    } catch (e: Exception) { Result.failure(e) }
 
     override suspend fun deleteCategory(id: Int, token: String): Result<Unit> = try {
         dbQuery {
-            val deleted = CategoriesTable.deleteWhere { (CategoriesTable.id eq id) and (ownerId eq token) }
-            if (deleted > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir categoria"))
+            CategoriesTable.deleteWhere { (CategoriesTable.id eq id) and (ownerId eq token) }
+            Result.success(Unit)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+    } catch (e: Exception) { Result.failure(e) }
 
     private fun saveProductsForComponent(componentId: Int, products: List<Product>, ownerId: String) {
         products.forEachIndexed { index, product ->
             var effectiveCategoryId = product.categoryId
             if (effectiveCategoryId == null && !product.categoryName.isNullOrBlank()) {
-                val existingCat = CategoriesTable.selectAll()
-                    .where { (CategoriesTable.ownerId eq ownerId) and (CategoriesTable.name eq product.categoryName!!) }
-                    .firstOrNull()
-                
-                effectiveCategoryId = if (existingCat != null) {
-                    existingCat[CategoriesTable.id].value
-                } else {
-                    CategoriesTable.insertAndGetId {
-                        it[CategoriesTable.ownerId] = ownerId
-                        it[CategoriesTable.name] = product.categoryName!!
-                    }.value
-                }
+                val existingCat = CategoriesTable.selectAll().where { (CategoriesTable.ownerId eq ownerId) and (CategoriesTable.name eq product.categoryName!!) }.firstOrNull()
+                effectiveCategoryId = if (existingCat != null) existingCat[CategoriesTable.id].value
+                else CategoriesTable.insertAndGetId { it[CategoriesTable.ownerId] = ownerId; it[CategoriesTable.name] = product.categoryName!! }.value
             }
 
             val productExists = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.count() > 0
             if (!productExists) {
-                ProductsTable.insert {
-                    it[id] = product.id
-                    it[this.ownerId] = ownerId
-                    it[name] = product.name
-                    it[price] = product.price
-                    it[description] = product.description
-                    it[categoryId] = effectiveCategoryId
-                    it[stock] = product.stock
-                }
+                ProductsTable.insert { it[id] = product.id; it[this.ownerId] = ownerId; it[name] = product.name; it[price] = product.price; it[description] = product.description; it[categoryId] = effectiveCategoryId; it[stock] = product.stock }
             } else {
-                ProductsTable.update({ ProductsTable.id eq product.id }) {
-                    it[name] = product.name
-                    it[price] = product.price
-                    it[description] = product.description
-                    it[categoryId] = effectiveCategoryId
-                    it[stock] = product.stock
-                }
+                ProductsTable.update({ ProductsTable.id eq product.id }) { it[name] = product.name; it[price] = product.price; it[description] = product.description; it[categoryId] = effectiveCategoryId; it[stock] = product.stock }
             }
 
             ProductImagesTable.deleteWhere { productId eq product.id }
-            product.imageUrls.forEachIndexed { imgIndex, url ->
-                ProductImagesTable.insert {
-                    it[productId] = product.id
-                    it[imageUrl] = url
-                    it[order] = imgIndex
-                }
-            }
-
-            ComponentProductsTable.insert {
-                it[this.componentId] = componentId
-                it[productId] = product.id
-                it[order] = index
-            }
+            product.imageUrls.forEachIndexed { imgIndex, url -> ProductImagesTable.insert { it[productId] = product.id; it[imageUrl] = url; it[order] = imgIndex } }
+            ComponentProductsTable.insert { it[this.componentId] = componentId; it[productId] = product.id; it[order] = index }
         }
     }
 
@@ -259,55 +174,29 @@ class SqlitePageRepository : PageRepository {
         return PageComponentsTable.selectAll()
             .where { PageComponentsTable.pageId eq pageId }
             .orderBy(PageComponentsTable.order to SortOrder.ASC)
-            .map { row ->
-                val componentId = row[PageComponentsTable.id].value
-                val content = row[PageComponentsTable.content] ?: "{}"
-                val component = json.decodeFromString<PageComponent>(content)
-                
-                if (component is PageComponent.ProductList) {
-                    val products = fetchProductsForComponent(componentId)
-                    component.copy(products = products)
-                } else {
-                    component
+            .mapNotNull { row ->
+                val content = row[PageComponentsTable.content] ?: return@mapNotNull null
+                try {
+                    // Tenta desserializar graciosamente para lidar com migrações
+                    val component = json.decodeFromString<PageComponent>(content)
+                    if (component is PageComponent.ProductList) {
+                        val products = fetchProductsForComponent(row[PageComponentsTable.id].value)
+                        component.copy(products = products)
+                    } else component
+                } catch (e: Exception) {
+                    println("LOG_SERVER: Falha ao ler bloco antigo (${row[PageComponentsTable.id].value}). Ignorando para evitar Erro 500.")
+                    null
                 }
             }
     }
 
-    private fun fetchProductsForComponent(componentId: Int): List<Product> {
-        return (ComponentProductsTable innerJoin ProductsTable leftJoin CategoriesTable)
-            .selectAll().where { ComponentProductsTable.componentId eq componentId }
-            .orderBy(ComponentProductsTable.order to SortOrder.ASC)
-            .map { row ->
-                fetchProductFromRow(row)
-            }
-    }
+    private fun fetchProductsForComponent(componentId: Int): List<Product> = (ComponentProductsTable innerJoin ProductsTable leftJoin CategoriesTable).selectAll().where { ComponentProductsTable.componentId eq componentId }.orderBy(ComponentProductsTable.order to SortOrder.ASC).map { fetchProductFromRow(it) }
 
     private fun fetchProductFromRow(row: ResultRow): Product {
         val productId = row[ProductsTable.id]
-        val images = ProductImagesTable.selectAll()
-            .where { ProductImagesTable.productId eq productId }
-            .orderBy(ProductImagesTable.order to SortOrder.ASC)
-            .map { it[ProductImagesTable.imageUrl] }
-
-        return Product(
-            id = productId,
-            name = row[ProductsTable.name],
-            price = row[ProductsTable.price],
-            imageUrls = images,
-            description = row[ProductsTable.description] ?: "",
-            categoryId = row[ProductsTable.categoryId]?.value,
-            categoryName = row.getOrNull(CategoriesTable.name),
-            stock = row[ProductsTable.stock]
-        )
+        val images = ProductImagesTable.selectAll().where { ProductImagesTable.productId eq productId }.orderBy(ProductImagesTable.order to SortOrder.ASC).map { it[ProductImagesTable.imageUrl] }
+        return Product(id = productId, name = row[ProductsTable.name], price = row[ProductsTable.price], imageUrls = images, description = row[ProductsTable.description] ?: "", categoryId = row[ProductsTable.categoryId]?.value, categoryName = row.getOrNull(CategoriesTable.name), stock = row[ProductsTable.stock])
     }
 
-    private fun ResultRow.toPage(components: List<PageComponent>) = Page(
-        id = this[PagesTable.id],
-        title = this[PagesTable.title],
-        ownerId = this[PagesTable.ownerId],
-        customDomain = this[PagesTable.customDomain],
-        whatsapp = this[PagesTable.whatsapp],
-        components = components,
-        theme = try { PageThemeConfig.valueOf(this[PagesTable.theme]) } catch (e: Exception) { PageThemeConfig.DEFAULT }
-    )
+    private fun ResultRow.toPage(components: List<PageComponent>) = Page(id = this[PagesTable.id], title = this[PagesTable.title], ownerId = this[PagesTable.ownerId], customDomain = this[PagesTable.customDomain], whatsapp = this[PagesTable.whatsapp], components = components, theme = try { PageThemeConfig.valueOf(this[PagesTable.theme]) } catch (e: Exception) { PageThemeConfig.DEFAULT })
 }

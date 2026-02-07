@@ -11,9 +11,7 @@ import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlin.random.Random
-import kotlin.time.Clock.System.now
 
 data class AppError(
     val title: String,
@@ -64,7 +62,6 @@ class PageViewModel(
     private val _currentError = MutableStateFlow<AppError?>(null)
     val currentError = _currentError.asStateFlow()
 
-    // Sincronização de dados do cliente (Nome e Telefone)
     val customerName = customerRepository.customerName
     val customerPhone = customerRepository.customerPhone
 
@@ -72,7 +69,6 @@ class PageViewModel(
         viewModelScope.launch {
             cartRepository.loadInitialCart()
             customerRepository.loadData() 
-            // Nota: loadCategories() movido para ser chamado sob demanda para evitar falhas em acessos públicos anônimos
         }
     }
 
@@ -91,8 +87,15 @@ class PageViewModel(
     fun clearError() { _currentError.value = null }
 
     private fun handleError(title: String, e: Throwable) {
+        println("LOG_ERROR [$title]: ${e.message}")
+        
         _currentError.value = AppError(title, e.message ?: "Erro desconhecido", e.stackTraceToString())
-        AnalyticsManager.logEvent("app_error", mapOf("title" to title, "exception" to (e::class.simpleName ?: "unknown")))
+        
+        AnalyticsManager.logException(
+            throwable = e, 
+            message = title,
+            additionalParams = mapOf("error_context" to title)
+        )
     }
 
     // Cart
@@ -120,13 +123,18 @@ class PageViewModel(
     // Orders
     fun loadOrders() {
         viewModelScope.launch {
-            val token = authRepository.getCurrentUserToken() ?: ""
-            if (token.isNotBlank()) {
-                _isLoading.value = true
-                getOrdersUseCase(token).collect { 
-                    _orders.value = it 
-                    _isLoading.value = false
+            try {
+                val token = authRepository.getCurrentUserToken() ?: ""
+                if (token.isNotBlank()) {
+                    _isLoading.value = true
+                    getOrdersUseCase(token).collect { 
+                        _orders.value = it 
+                        _isLoading.value = false
+                    }
                 }
+            } catch (e: Exception) {
+                _isLoading.value = false
+                handleError("Falha ao carregar pedidos", e)
             }
         }
     }
@@ -159,13 +167,14 @@ class PageViewModel(
     fun submitOrder(page: Page?, phone: String = "", onComplete: (String) -> Unit = {}) {
         val ownerId = page?.ownerId
         if (ownerId == null || cart.value.isEmpty()) {
-            _currentError.value = AppError("Erro no Pedido", "Não foi possível identificar o dono desta vitrine.")
+            handleError("Erro no Pedido", Exception("Não foi possível identificar o dono desta vitrine ou carrinho vazio."))
             return
         }
         
         viewModelScope.launch {
             _isLoading.value = true
             val orderId = "ORD-" + Random.nextInt(100000, 999999).toString()
+            
             val newOrder = Order(
                 id = orderId,
                 userId = ownerId,
@@ -175,7 +184,7 @@ class PageViewModel(
                 items = cart.value,
                 total = cartTotal.value,
                 status = OrderStatus.PENDING,
-                createdAt = now().toEpochMilliseconds(),
+                createdAt = 0L, // Placeholder para evitar Clock.System instável
                 whatsappContact = page.whatsapp,
                 theme = page.theme
             )
@@ -222,19 +231,20 @@ class PageViewModel(
     }
 
     suspend fun loadPublicPage(id: String): Page? {
-        val page = getPublicPageUseCase(id).getOrElse {
+        val result = getPublicPageUseCase(id)
+        return result.getOrElse {
             handleError("Erro na página pública", it)
             null
+        }.also { page ->
+            page?.let { _pages.value = listOf(it) }
         }
-        // Ao carregar uma página pública, atualizamos os produtos disponíveis para o Derived State das categorias
-        page?.let { _pages.value = listOf(it) }
-        return page
     }
 
     suspend fun loadPageByDomain(domain: String): Page? {
-        val page = getPageByDomainUseCase(domain).getOrNull()
-        page?.let { _pages.value = listOf(it) }
-        return page
+        val result = getPageByDomainUseCase(domain)
+        return result.getOrNull().also { page ->
+            page?.let { _pages.value = listOf(it) }
+        }
     }
 
     suspend fun loadFirstPublicPage(): Page? {
@@ -284,9 +294,15 @@ class PageViewModel(
     // Categories
     fun loadCategories() {
         viewModelScope.launch {
-            val token = authRepository.getCurrentUserToken() ?: return@launch
-            getCategoriesUseCase(token).onSuccess {
-                _categories.value = it
+            try {
+                val token = authRepository.getCurrentUserToken() ?: return@launch
+                getCategoriesUseCase(token).onSuccess {
+                    _categories.value = it
+                }.onFailure {
+                    handleError("Falha ao carregar categorias", it)
+                }
+            } catch (e: Exception) {
+                handleError("Erro inesperado ao carregar categorias", e)
             }
         }
     }
@@ -308,11 +324,12 @@ class PageViewModel(
             val token = authRepository.getCurrentUserToken() ?: return@launch
             deleteCategoryUseCase(id, token).onSuccess {
                 loadCategories()
+            }.onFailure {
+                handleError("Falha ao excluir categoria", it)
             }
         }
     }
 
-    // Otimizado: O Derived State agora observa a página atual carregada
     val allAvailableProducts: StateFlow<List<Product>> = _pages.map { pageList ->
         val result = mutableListOf<Product>()
         for (page in pageList) {

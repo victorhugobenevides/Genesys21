@@ -4,8 +4,10 @@ import com.itbenevides.genesys21.domain.model.Category
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.PageRepository
+import com.itbenevides.genesys21.util.AnalyticsManager
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
@@ -14,21 +16,28 @@ import kotlin.time.Clock.System.now
 
 /**
  * Implementação do repositório de páginas usando Ktor Client.
- * Otimizado para evitar cache indesejado do navegador.
+ * Otimizado para evitar cache indesejado do navegador e com logs de rede.
  */
 class KtorPageRepository(
     private val client: HttpClient,
     private val baseUrl: String = "http://localhost:8080"
 ) : PageRepository {
 
-    // Usando o nome totalmente qualificado para ajudar o compilador Wasm/K2
     private fun getTimestamp() = now().toEpochMilliseconds()
+
+    private fun logNetworkError(method: String, url: String, e: Exception) {
+        println("NETWORK_ERROR [$method] $url: ${e.message}")
+        AnalyticsManager.logException(e, "Network Error: $method $url", mapOf(
+            "url" to url,
+            "method" to method
+        ))
+    }
 
     override suspend fun getPages(token: String): List<Page> {
         val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/api/pages"
         return try {
             val response = client.get(url) {
-                parameter("t", getTimestamp()) // Cache-busting
+                parameter("t", getTimestamp())
                 header(HttpHeaders.CacheControl, "no-cache")
                 if (token.isNotBlank()) {
                     header(HttpHeaders.Authorization, "Bearer $token")
@@ -38,86 +47,114 @@ class KtorPageRepository(
                 if (token.isBlank()) listOf(response.body<Page>())
                 else response.body()
             } else {
+                println("NETWORK_WARNING: getPages returned ${response.status}")
                 emptyList()
             }
         } catch (e: Exception) {
+            logNetworkError("GET", url, e)
             emptyList()
         }
     }
 
     override suspend fun getPublicPage(id: String): Result<Page> {
+        val url = "$baseUrl/api/public/pages/$id"
         return try {
-            val response = client.get("$baseUrl/api/public/pages/$id") {
-                parameter("t", getTimestamp()) // Cache-busting
-                header(HttpHeaders.CacheControl, "no-cache")
-            }
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                Result.failure(Exception("Página não encontrada"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getPageByDomain(domain: String): Result<Page> {
-        return try {
-            val response = client.get("$baseUrl/api/public/domain/$domain") {
+            val response = client.get(url) {
                 parameter("t", getTimestamp())
                 header(HttpHeaders.CacheControl, "no-cache")
             }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                Result.failure(Exception("Domínio não vinculado"))
+                val errorMsg = "Página não encontrada: ${response.status}"
+                println("NETWORK_WARNING: $errorMsg")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
+            logNetworkError("GET", url, e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPageByDomain(domain: String): Result<Page> {
+        val url = "$baseUrl/api/public/domain/$domain"
+        return try {
+            val response = client.get(url) {
+                parameter("t", getTimestamp())
+                header(HttpHeaders.CacheControl, "no-cache")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Domínio não vinculado: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            logNetworkError("GET", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/pages"
         return try {
             val response = if (isEditing) {
-                client.put("$baseUrl/api/pages") {
+                client.put(url) {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(page)
                 }
             } else {
-                client.post("$baseUrl/api/pages") {
+                client.post(url) {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(page)
                 }
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao salvar: ${response.status}"))
+            
+            if (response.status.isSuccess()) {
+                println("NETWORK_SUCCESS: Page ${page.id} saved.")
+                Result.success(Unit)
+            } else {
+                val errorBody = try { response.body<String>() } catch(e: Exception) { "No body" }
+                val errorMsg = "Erro ao salvar página: ${response.status} - $errorBody"
+                println("NETWORK_ERROR: $errorMsg")
+                AnalyticsManager.logEvent("network_save_page_error", mapOf(
+                    "status" to response.status.value,
+                    "page_id" to page.id
+                ))
+                Result.failure(Exception(errorMsg))
+            }
         } catch (e: Exception) {
+            logNetworkError(if (isEditing) "PUT" else "POST", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun deletePage(id: String, token: String): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/pages/$id"
         return try {
-            val response = client.delete("$baseUrl/api/pages/$id") {
+            val response = client.delete(url) {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao excluir"))
+            else {
+                println("NETWORK_ERROR: deletePage returned ${response.status}")
+                Result.failure(Exception("Erro ao excluir: ${response.status}"))
+            }
         } catch (e: Exception) {
+            logNetworkError("DELETE", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/upload"
         return try {
             val response: String = client.submitFormWithBinaryData(
-                url = "$baseUrl/api/upload",
+                url = url,
                 formData = formData {
                     append("image", bytes, Headers.build {
                         append(HttpHeaders.ContentType, "image/jpeg")
@@ -126,17 +163,24 @@ class KtorPageRepository(
                 }
             ) {
                 header(HttpHeaders.Authorization, "Bearer $token")
+                onUpload { bytesSentTotal, contentLength ->
+                    if (contentLength != null && contentLength > 0) {
+                        // println("UPLOAD_PROGRESS: ${(bytesSentTotal * 100f / contentLength)}%")
+                    }
+                }
             }.body()
             Result.success(response)
         } catch (e: Exception) {
+            logNetworkError("POST_UPLOAD", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun getAllProducts(token: String): Result<List<Product>> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/products"
         return try {
-            val response = client.get("$baseUrl/api/products") {
+            val response = client.get(url) {
                 parameter("t", getTimestamp())
                 header(HttpHeaders.CacheControl, "no-cache")
                 header(HttpHeaders.Authorization, "Bearer $token")
@@ -144,17 +188,19 @@ class KtorPageRepository(
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                Result.failure(Exception("Falha ao buscar produtos"))
+                Result.failure(Exception("Falha ao buscar produtos: ${response.status}"))
             }
         } catch (e: Exception) {
+            logNetworkError("GET", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun getCategories(token: String): Result<List<Category>> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/categories"
         return try {
-            val response = client.get("$baseUrl/api/categories") {
+            val response = client.get(url) {
                 parameter("t", getTimestamp())
                 header(HttpHeaders.CacheControl, "no-cache")
                 header(HttpHeaders.Authorization, "Bearer $token")
@@ -162,45 +208,50 @@ class KtorPageRepository(
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                Result.failure(Exception("Falha ao buscar categorias"))
+                Result.failure(Exception("Falha ao buscar categorias: ${response.status}"))
             }
         } catch (e: Exception) {
+            logNetworkError("GET", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun saveCategory(category: Category, token: String): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/categories"
         return try {
             val response = if (category.id != null) {
-                client.put("$baseUrl/api/categories") {
+                client.put(url) {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(category)
                 }
             } else {
-                client.post("$baseUrl/api/categories") {
+                client.post(url) {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(category)
                 }
             }
             if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao salvar categoria"))
+            else Result.failure(Exception("Erro ao salvar categoria: ${response.status}"))
         } catch (e: Exception) {
+            logNetworkError("SAVE_CAT", url, e)
             Result.failure(e)
         }
     }
 
     override suspend fun deleteCategory(id: Int, token: String): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/categories/$id"
         return try {
-            val response = client.delete("$baseUrl/api/categories/$id") {
+            val response = client.delete(url) {
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao excluir categoria"))
+            else Result.failure(Exception("Erro ao excluir categoria: ${response.status}"))
         } catch (e: Exception) {
+            logNetworkError("DELETE_CAT", url, e)
             Result.failure(e)
         }
     }

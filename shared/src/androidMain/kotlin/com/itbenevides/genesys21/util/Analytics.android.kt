@@ -31,4 +31,16 @@ actual val AnalyticsManager: Analytics = object : Analytics {
         bundle.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "ComposeActivity")
         firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
     }
+
+    override fun logException(throwable: Throwable, message: String?, additionalParams: Map<String, Any>) {
+        // No Firebase Android, você geralmente usa o Firebase Crashlytics para exceções.
+        // Aqui simulamos via logEvent para manter a consistência do Analytics, 
+        // mas idealmente integraria com Crashlytics.recordException(throwable)
+        val bundle = Bundle()
+        bundle.putString("exception_message", message ?: throwable.message ?: "Unknown")
+        bundle.putString("exception_type", throwable::class.simpleName)
+        bundle.putString("stack_trace", throwable.stackTraceToString().take(1000))
+        additionalParams.forEach { (k, v) -> bundle.putString(k, v.toString()) }
+        firebaseAnalytics.logEvent("app_exception", bundle)
+    }
 }

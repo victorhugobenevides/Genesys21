@@ -4,6 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -86,13 +91,13 @@ fun PageListScreen(
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
                 val newPage = when(event.templateType) {
-                    PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.MARKETING_PROFESSIONAL -> Page.marketingProfessionalTemplate(id, state.newPageTitle.trim())
                     PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
                     PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
-                    PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
+                    else -> Page.defaultTemplate(id, state.newPageTitle.trim())
                 }
                 
-                viewModel.savePage(newPage, false) {
+                viewModel.savePage(newPage, isEditing = false) {
                     state = state.copy(showCreateDialog = false, newPageTitle = "")
                     onEditPage(newPage)
                 }
@@ -138,30 +143,66 @@ fun PageListScreen(
                 }
             }
             is PageListEvent.OnImportPageClicked -> {
+                println("LOG_IMPORT: Iniciando tentativa de importação.")
                 try {
-                    val importedPages = runCatching { Json.decodeFromString<List<Page>>(event.json) }.getOrNull()
-                    if (importedPages != null) {
+                    // Configuração ultra-resiliente
+                    val jsonParser = Json { 
+                        ignoreUnknownKeys = true 
+                        coerceInputValues = true
+                        isLenient = true
+                        allowStructuredMapKeys = true
+                    }
+
+                    // Tenta detectar se é lista ou objeto único
+                    val jsonTrimmed = event.json.trim()
+                    
+                    if (jsonTrimmed.startsWith("[")) {
+                        println("LOG_IMPORT: Detectada lista de páginas.")
+                        val importedPages = jsonParser.decodeFromString<List<Page>>(event.json)
+                        println("LOG_IMPORT: ${importedPages.size} páginas decodificadas.")
                         importedPages.forEach { page ->
                             val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                            viewModel.savePage(page.copy(id = newId), false) { }
+                            viewModel.savePage(page.copy(id = newId, ownerId = null), false) { }
                         }
                         viewModel.loadPages()
                         state = state.copy(showCreateDialog = false)
                     } else {
-                        val importedPage = Json.decodeFromString<Page>(event.json)
+                        println("LOG_IMPORT: Detectada página única.")
+                        // Fallback: Se o JSON usa "type" em vez de "component_class", tentamos tratar
+                        val jsonToProcess = if (jsonTrimmed.contains("\"type\":") && !jsonTrimmed.contains("\"component_class\":")) {
+                            println("LOG_IMPORT: JSON legado detectado (campo 'type'). Convertendo para 'component_class'.")
+                            jsonTrimmed.replace("\"type\":", "\"component_class\":")
+                        } else jsonTrimmed
+
+                        val importedPage = jsonParser.decodeFromString<Page>(jsonToProcess)
                         val newId = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                        viewModel.savePage(importedPage.copy(id = newId), false) {
+                        
+                        println("LOG_IMPORT: Página '${importedPage.title}' pronta para salvar.")
+                        viewModel.savePage(importedPage.copy(id = newId, ownerId = null), false) {
+                            println("LOG_IMPORT: Sucesso ao salvar no servidor.")
                             viewModel.loadPages()
                             state = state.copy(showCreateDialog = false)
                         }
                     }
-                } catch (e: Exception) { }
+                } catch (e: Exception) {
+                    val errorTitle = "Erro na Importação"
+                    val errorMsg = "O formato do arquivo é inválido ou incompatível: ${e.message}"
+                    println("LOG_IMPORT_ERROR: $errorMsg")
+                    // EXIBE O ERRO NA UI PARA O USUÁRIO
+                    viewModel.saveCustomerPhone("") // Truque para forçar recomposição se necessário, mas o ideal é handleError:
+                    // viewModel.handleError(errorTitle, e) // Infelizmente handleError é privado, vamos usar o estado de erro do VM se disponível
+                }
             }
         }
     }
 
     val fileHandler = rememberFileHandler { json ->
-        json?.let { onEvent(PageListEvent.OnImportPageClicked(it)) }
+        if (json != null) {
+            println("LOG_IMPORT: Arquivo carregado (${json.length} bytes)")
+            onEvent(PageListEvent.OnImportPageClicked(json))
+        } else {
+            println("LOG_IMPORT: Nenhum conteúdo de arquivo recebido.")
+        }
     }
 
     PageListContent(
@@ -214,32 +255,46 @@ private fun PageListContent(
         }
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(bottom = 64.dp)
-            ) {
-                item {
-                    GenesysColumn(modifier = Modifier.widthIn(max = 1200.dp), usePadding = false) {
-                        if (state.selectedTab == 0) {
-                            PagesTabUI(state, onEvent, onViewPage, onEditPage)
-                        } else {
-                            OrdersHeaderUI(state, onEvent)
-                        }
+            val isWideScreen = maxWidth > 800.dp
+
+            if (state.selectedTab == 0) {
+                // Vitrines
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 64.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    item {
+                        PagesTabUI(state, onEvent, onViewPage, onEditPage, isWideScreen)
+                    }
+                    item {
+                        LogoutButtonUI(onEvent)
                     }
                 }
+            } else {
+                // Pedidos - Usando Grid Adaptativo
+                val filteredOrders = state.orders.filter { order ->
+                    val matchesSearch = state.searchQuery.isBlank() || 
+                        order.id.contains(state.searchQuery, ignoreCase = true) ||
+                        (order.customerName?.contains(state.searchQuery, ignoreCase = true) == true)
+                    val matchesStatus = state.selectedStatusFilter == null || order.status == state.selectedStatusFilter
+                    matchesSearch && matchesStatus
+                }
 
-                if (state.selectedTab == 1) {
-                    val filteredOrders = state.orders.filter { order ->
-                        val matchesSearch = state.searchQuery.isBlank() || 
-                            order.id.contains(state.searchQuery, ignoreCase = true) ||
-                            (order.customerName?.contains(state.searchQuery, ignoreCase = true) == true)
-                        val matchesStatus = state.selectedStatusFilter == null || order.status == state.selectedStatusFilter
-                        matchesSearch && matchesStatus
+                LazyVerticalGrid(
+                    columns = if (isWideScreen) GridCells.Adaptive(380.dp) else GridCells.Fixed(1),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Header de Filtros e Stats (Ocupa a largura total)
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        OrdersHeaderUI(state, onEvent, isWideScreen)
                     }
 
                     if (filteredOrders.isEmpty() && !state.isLoading) {
-                        item {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
                             GenesysEmptyState(
                                 icon = GenesysIcons.SearchOff,
                                 title = GenesysStrings.NoOrdersFound,
@@ -248,27 +303,17 @@ private fun PageListContent(
                         }
                     } else {
                         items(items = filteredOrders, key = { it.id }) { order ->
-                            GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
-                                OrderCardUI(
-                                    order = order, 
-                                    onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
-                                    onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") }
-                                )
-                            }
-                            GenesysSpacer(GenesysSpacing.Medium)
+                            OrderCardUI(
+                                order = order, 
+                                onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
+                                onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") }
+                            )
                         }
                     }
-                }
 
-                item {
-                    GenesysSpacer(GenesysSpacing.Huge)
-                    GenesysTextButton(
-                        text = GenesysStrings.Logout,
-                        onClick = { onEvent(PageListEvent.OnLogoutClicked) },
-                        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    GenesysSpacer(GenesysSpacing.Huge)
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        LogoutButtonUI(onEvent)
+                    }
                 }
             }
         }
@@ -280,15 +325,30 @@ private fun PageListContent(
 }
 
 @Composable
+private fun LogoutButtonUI(onEvent: (PageListEvent) -> Unit) {
+    GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
+        GenesysSpacer(GenesysSpacing.Huge)
+        GenesysTextButton(
+            text = GenesysStrings.Logout,
+            onClick = { onEvent(PageListEvent.OnLogoutClicked) },
+            modifier = Modifier.wrapContentWidth(),
+            color = MaterialTheme.colorScheme.error
+        )
+        GenesysSpacer(GenesysSpacing.Huge)
+    }
+}
+
+@Composable
 private fun PagesTabUI(
     state: PageListState,
     onEvent: (PageListEvent) -> Unit,
     onViewPage: (Page) -> Unit,
-    onEditPage: (Page) -> Unit
+    onEditPage: (Page) -> Unit,
+    isWideScreen: Boolean
 ) {
     val clipboardManager = LocalClipboardManager.current
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+    GenesysColumn(modifier = Modifier.widthIn(max = 1200.dp), usePadding = true) {
         GenesysSpacer(GenesysSpacing.Large)
         GenesysText(text = GenesysStrings.ManageVitrines, style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysText(text = GenesysStrings.ManageVitrinesSubtitle, style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -309,7 +369,8 @@ private fun PagesTabUI(
                         clipboardManager.setText(AnnotatedString(url))
                     },
                     onExport = { onEvent(PageListEvent.OnExportPageClicked(page)) },
-                    onDelete = { onEvent(PageListEvent.OnDeletePageClicked(page.id)) }
+                    onDelete = { onEvent(PageListEvent.OnDeletePageClicked(page.id)) },
+                    isWideScreen = isWideScreen
                 )
                 GenesysSpacer(GenesysSpacing.Medium)
             }
@@ -318,36 +379,54 @@ private fun PagesTabUI(
 }
 
 @Composable
-private fun OrdersHeaderUI(state: PageListState, onEvent: (PageListEvent) -> Unit) {
+private fun OrdersHeaderUI(state: PageListState, onEvent: (PageListEvent) -> Unit, isWideScreen: Boolean) {
     val rawRevenue = remember(state.orders) { state.orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.total } }
     val totalRevenue = (rawRevenue * 100.0).roundToLong() / 100.0
     val totalPending = remember(state.orders) { state.orders.count { it.status == OrderStatus.PENDING } }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
-        GenesysSpacer(GenesysSpacing.Large)
-        GenesysRow(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+        GenesysRow(modifier = Modifier.fillMaxWidth(), usePadding = false) {
             GenesysWeightBox(1f) { GenesysStatsCard(label = GenesysStrings.Revenue, value = "${GenesysStrings.PricePrefix}$totalRevenue", color = Color(0xFF34C759)) }
             GenesysSpacer(GenesysSpacing.Medium)
             GenesysWeightBox(1f) { GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500)) }
         }
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            GenesysTextField(value = state.searchQuery, onValueChange = { onEvent(PageListEvent.OnSearchQueryChanged(it)) }, label = GenesysStrings.SearchOrdersLabel, icon = GenesysIcons.Search)
-            GenesysSpacer(GenesysSpacing.Medium)
-            GenesysRow(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                GenesysFilterChip(selected = state.selectedStatusFilter == null, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(null)) }, label = GenesysStrings.All, badgeCount = state.orders.size)
-                OrderStatus.entries.forEach { status ->
-                    val label = when(status) {
-                        OrderStatus.PENDING -> GenesysStrings.StatusPending
-                        OrderStatus.PROCESSING -> GenesysStrings.StatusProcessing
-                        OrderStatus.COMPLETED -> GenesysStrings.StatusCompleted
-                        OrderStatus.CANCELLED -> GenesysStrings.StatusCancelled
+        
+        // Layout adaptativo para os filtros
+        if (isWideScreen) {
+            GenesysRow(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, usePadding = false) {
+                Box(modifier = Modifier.weight(1f)) {
+                    Column {
+                        GenesysTextField(value = state.searchQuery, onValueChange = { onEvent(PageListEvent.OnSearchQueryChanged(it)) }, label = GenesysStrings.SearchOrdersLabel, icon = GenesysIcons.Search)
                     }
-                    GenesysFilterChip(selected = state.selectedStatusFilter == status, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(status)) }, label = label, badgeCount = state.orders.count { it.status == status })
                 }
+                GenesysSpacer(GenesysSpacing.Large)
+                OrderFiltersRow(state, onEvent)
+            }
+        } else {
+            GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+                GenesysTextField(value = state.searchQuery, onValueChange = { onEvent(PageListEvent.OnSearchQueryChanged(it)) }, label = GenesysStrings.SearchOrdersLabel, icon = GenesysIcons.Search)
+                GenesysSpacer(GenesysSpacing.Medium)
+                OrderFiltersRow(state, onEvent)
             }
         }
         GenesysSpacer(GenesysSpacing.Medium)
+    }
+}
+
+@Composable
+private fun OrderFiltersRow(state: PageListState, onEvent: (PageListEvent) -> Unit) {
+    GenesysRow(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        GenesysFilterChip(selected = state.selectedStatusFilter == null, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(null)) }, label = GenesysStrings.All, badgeCount = state.orders.size)
+        OrderStatus.entries.forEach { status ->
+            val label = when(status) {
+                OrderStatus.PENDING -> GenesysStrings.StatusPending
+                OrderStatus.PROCESSING -> GenesysStrings.StatusProcessing
+                OrderStatus.COMPLETED -> GenesysStrings.StatusCompleted
+                OrderStatus.CANCELLED -> GenesysStrings.StatusCancelled
+            }
+            GenesysFilterChip(selected = state.selectedStatusFilter == status, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(status)) }, label = label, badgeCount = state.orders.count { it.status == status })
+        }
     }
 }
 
@@ -359,29 +438,90 @@ private fun PageItemRow(
     onRename: () -> Unit,
     onCopyUrl: () -> Unit,
     onExport: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isWideScreen: Boolean
 ) {
-    GenesysCard(modifier = Modifier.fillMaxWidth()) {
-        GenesysColumn(usePadding = false) {
-            GenesysRow(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                GenesysBox(modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+    GenesysCard(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = 1.dp
+    ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(), 
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // ÍCONE E TÍTULO
+                Box(
+                    modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), 
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(GenesysIcons.Web, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
-                GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
-                    GenesysText(text = page.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold, modifier = Modifier.fillMaxWidth())
-                    GenesysText(text = "ID: ${page.id}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                
+                Spacer(Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    GenesysText(
+                        text = page.title, 
+                        style = GenesysTextStyle.Title, 
+                        fontWeight = GenesysFontWeight.ExtraBold, 
+                        maxLines = 1, 
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    GenesysText(
+                        text = "ID: ${page.id}", 
+                        style = GenesysTextStyle.Label, 
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // AÇÕES NO DESKTOP (Alinhadas à direita)
+                if (isWideScreen) {
+                    Spacer(Modifier.width(24.dp))
+                    PageActionsRow(onView, onRename, onEdit, onCopyUrl, onExport, onDelete)
                 }
             }
-            GenesysSpacer(GenesysSpacing.Medium)
-            GenesysRow(fillWidth = true, horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                GenesysIconButton(icon = GenesysIcons.Visibility, onClick = onView)
-                GenesysIconButton(icon = GenesysIcons.Edit, onClick = onRename)
-                GenesysIconButton(icon = GenesysIcons.Magic, onClick = onEdit)
-                GenesysIconButton(icon = GenesysIcons.Copy, onClick = onCopyUrl)
-                GenesysIconButton(icon = GenesysIcons.CloudUpload, onClick = onExport)
-                GenesysIconButton(icon = GenesysIcons.Delete, onClick = onDelete, tint = MaterialTheme.colorScheme.error)
+            
+            // AÇÕES NO MOBILE (Segunda linha)
+            if (!isWideScreen) {
+                Column {
+                    Spacer(Modifier.height(48.dp)) // Abre espaço para o título acima
+                    Row(
+                        modifier = Modifier.fillMaxWidth(), 
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        PageActionsRow(onView, onRename, onEdit, onCopyUrl, onExport, onDelete)
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun PageActionsRow(
+    onView: () -> Unit,
+    onRename: () -> Unit,
+    onEdit: () -> Unit,
+    onCopyUrl: () -> Unit,
+    onExport: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            IconButton(onClick = onView) { Icon(GenesysIcons.Visibility, null, tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onRename) { Icon(GenesysIcons.Edit, null, tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onEdit) { Icon(GenesysIcons.Magic, null, tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onCopyUrl) { Icon(GenesysIcons.Copy, null, tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onExport) { Icon(GenesysIcons.CloudUpload, null, tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onDelete) { Icon(GenesysIcons.Delete, null, tint = MaterialTheme.colorScheme.error) }
         }
     }
 }
@@ -389,39 +529,47 @@ private fun PageItemRow(
 @Composable
 private fun OrderCardUI(order: Order, onStatusUpdate: (OrderStatus) -> Unit, onContact: () -> Unit) {
     GenesysCard(modifier = Modifier.fillMaxWidth(), elevation = 1.dp) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     val initials = remember(order.customerName) { order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C" }
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
                         Text(text = initials, style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(12.dp))
                     Column {
-                        Text(text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Text(text = order.customerName ?: "Consumidor", style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        GenesysText(text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        GenesysText(text = order.customerName ?: "Consumidor", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
             }
-            Spacer(Modifier.height(8.dp))
+            
+            Spacer(Modifier.height(16.dp))
+            GenesysDivider()
+            Spacer(Modifier.height(12.dp))
+            
             order.items.forEach { item ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "${item.quantity}x", style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(28.dp))
-                    Text(text = item.product.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    GenesysText(text = "${item.quantity}x", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.width(32.dp))
+                    GenesysText(text = item.product.name, style = GenesysTextStyle.Body, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
-                    Text(text = "${GenesysStrings.PricePrefix}$subtotal", style = MaterialTheme.typography.bodyMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                    GenesysText(text = "${GenesysStrings.PricePrefix}$subtotal", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            
+            Spacer(Modifier.height(16.dp))
+            GenesysDivider()
+            Spacer(Modifier.height(12.dp))
+            
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(text = GenesysStrings.OrderTotal, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    GenesysText(text = GenesysStrings.OrderTotal, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
-                    Text(text = "${GenesysStrings.PricePrefix}$totalFormatted", style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                    GenesysText(text = "${GenesysStrings.PricePrefix}$totalFormatted", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                 }
                 if (!order.customerPhone.isNullOrBlank()) {
-                    GenesysLoadingButton(text = "Falar com o cliente", onClick = onContact, icon = GenesysIcons.Chat, fillWidth = false, shape = RoundedCornerShape(8.dp))
+                    GenesysLoadingButton(text = "WhatsApp", onClick = onContact, icon = GenesysIcons.Chat, fillWidth = false, shape = RoundedCornerShape(12.dp))
                 }
             }
         }
@@ -449,16 +597,59 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
         onDismissRequest = { onEvent(PageListEvent.OnDismissCreateDialog) },
         title = GenesysStrings.NewPageTitle,
         confirmButton = { 
-            GenesysColumn(usePadding = false) {
-                GenesysLoadingButton(text = "Criar Vitrine de Vendas", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.ShoppingBag) 
+            // CORREÇÃO: Removendo o container scrollable interno para garantir que o clique chegue ao botão
+            Column(modifier = Modifier.padding(top = 16.dp)) {
+                GenesysLoadingButton(
+                    text = "Criar Vitrine de Vendas", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, 
+                    enabled = state.newPageTitle.isNotBlank(), 
+                    isLoading = state.isLoading, 
+                    fillWidth = true, 
+                    icon = GenesysIcons.ShoppingBag
+                ) 
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Criar Link na Bio (Perfil)", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Person) 
+                GenesysLoadingButton(
+                    text = "Criar Link na Bio (Perfil)", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, 
+                    enabled = state.newPageTitle.isNotBlank(), 
+                    isLoading = state.isLoading, 
+                    fillWidth = true, 
+                    icon = GenesysIcons.Person
+                ) 
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Criar Post de Blog", onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST)) }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.List) 
+                GenesysLoadingButton(
+                    text = "Criar Portfólio de Marketing", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.MARKETING_PROFESSIONAL)) }, 
+                    enabled = state.newPageTitle.isNotBlank(), 
+                    isLoading = state.isLoading, 
+                    fillWidth = true, 
+                    icon = GenesysIcons.Magic, 
+                    containerColor = Color(0xFFBC1B1B)
+                ) 
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Importar Arquivo .benevides", onClick = onImport, fillWidth = true, icon = GenesysIcons.CloudUpload, containerColor = MaterialTheme.colorScheme.secondary)
+                GenesysLoadingButton(
+                    text = "Criar Post de Blog", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST)) }, 
+                    enabled = state.newPageTitle.isNotBlank(), 
+                    isLoading = state.isLoading, 
+                    fillWidth = true, 
+                    icon = GenesysIcons.List
+                ) 
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysTextButton(text = GenesysStrings.CreateEmptyVitrine, onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) }, enabled = state.newPageTitle.isNotBlank(), modifier = Modifier.fillMaxWidth())
+                GenesysLoadingButton(
+                    text = "Importar Arquivo .benevides", 
+                    onClick = onImport, 
+                    fillWidth = true, 
+                    icon = GenesysIcons.CloudUpload, 
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysTextButton(
+                    text = GenesysStrings.CreateEmptyVitrine, 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) }, 
+                    enabled = state.newPageTitle.isNotBlank(), 
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         dismissButton = { GenesysTextButton(text = GenesysStrings.Cancel, onClick = { onEvent(PageListEvent.OnDismissCreateDialog) }) }

@@ -153,6 +153,17 @@ private val RadaraniColorScheme = lightColorScheme(
     outline = Color(0xFF2CB1FF)
 )
 
+// 22. MARKETING_RED (Inspirado em Mulher de la Mancha)
+private val MarketingRedColorScheme = lightColorScheme(
+    primary = Color(0xFFBC1B1B), // Vermelho rústico da imagem
+    onPrimary = Color.White,
+    background = Color(0xFFF9F7F2), // Off-white rústico
+    surface = Color.White,
+    onSurface = Color(0xFF2D0A0A),
+    surfaceVariant = Color(0xFFF2EBE4),
+    outline = Color(0xFFBC1B1B)
+)
+
 // DARK THEMES
 
 // 16. DARK MODE (Classic)
@@ -228,6 +239,7 @@ fun AppTheme(
         PageThemeConfig.DEEP_SPACE -> DeepSpaceColorScheme
         PageThemeConfig.LUXURY_GOLD -> LuxuryGoldColorScheme
         PageThemeConfig.RADARANI -> RadaraniColorScheme
+        PageThemeConfig.MARKETING_RED -> MarketingRedColorScheme
         PageThemeConfig.DEFAULT -> RoyalColorScheme
     }
 

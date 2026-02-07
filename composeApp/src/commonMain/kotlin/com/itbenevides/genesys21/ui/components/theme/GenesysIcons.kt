@@ -46,6 +46,7 @@ object GenesysIcons {
     val Magic = Icons.Default.AutoAwesome
     val Straighten = Icons.Default.Straighten
     val Close = Icons.Default.Close
+    val FormatQuote = Icons.Default.FormatQuote
     
     // Ícones de Navegação
     val ArrowLeft = Icons.AutoMirrored.Filled.ArrowBack

@@ -6,55 +6,78 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// iOS-like Typography (Approximating San Francisco)
+/**
+ * Tipografia Genesys21 baseada no Material Design 3.
+ * Focada em legibilidade multi-dispositivo.
+ */
 val AppTypography = Typography(
+    // Estilos para grandes títulos de seções (Marketing/Hero)
+    displayMedium = TextStyle(
+        fontWeight = FontWeight.Black,
+        fontSize = 45.sp,
+        lineHeight = 52.sp,
+        letterSpacing = 0.sp
+    ),
+    
+    // Títulos de Páginas
     headlineLarge = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 34.sp,
-        lineHeight = 41.sp,
-        letterSpacing = (0.37).sp,
-        fontFamily = FontFamily.SansSerif
+        fontWeight = FontWeight.ExtraBold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
-        lineHeight = 34.sp,
-        letterSpacing = (0.36).sp,
-        fontFamily = FontFamily.SansSerif
+        lineHeight = 36.sp,
+        letterSpacing = 0.sp
     ),
+    
+    // Cabeçalhos de Componentes e Cards
     titleLarge = TextStyle(
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
-        letterSpacing = (0.35).sp,
-        fontFamily = FontFamily.SansSerif
+        letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
         fontWeight = FontWeight.SemiBold,
-        fontSize = 17.sp,
-        lineHeight = 22.sp,
-        letterSpacing = ((-0.41).sp),
-        fontFamily = FontFamily.SansSerif
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.15.sp
     ),
+    
+    // Corpo de Texto (Leitura principal)
     bodyLarge = TextStyle(
         fontWeight = FontWeight.Normal,
-        fontSize = 17.sp,
-        lineHeight = 22.sp,
-        letterSpacing = ((-0.41).sp),
-        fontFamily = FontFamily.SansSerif
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
     ),
     bodyMedium = TextStyle(
         fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
+        fontSize = 14.sp,
         lineHeight = 20.sp,
-        letterSpacing = ((-0.24).sp),
-        fontFamily = FontFamily.SansSerif
+        letterSpacing = 0.25.sp
+    ),
+    
+    // Pequenas informações e rótulos
+    labelLarge = TextStyle(
+        fontWeight = FontWeight.Bold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp
+    ),
+    labelMedium = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
-        lineHeight = 13.sp,
-        letterSpacing = (0.06).sp,
-        fontFamily = FontFamily.SansSerif
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp
     )
 )

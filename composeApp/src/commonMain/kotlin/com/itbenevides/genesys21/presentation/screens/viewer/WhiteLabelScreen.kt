@@ -5,22 +5,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.Product
-import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.domain.model.PageThemeConfig
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
@@ -75,49 +74,30 @@ fun WhiteLabelScreen(
     LaunchedEffect(Unit) {
         viewModel.loadPages()
         viewModel.loadCategories()
-        
-        viewModel.getDraft(page.id)?.let { updatedDraft ->
-            state = state.copy(page = updatedDraft)
-        }
+        viewModel.getDraft(page.id)?.let { state = state.copy(page = it) }
     }
 
     LaunchedEffect(isLoading, serverProducts, savedCategories, userPages) {
-        state = state.copy(
-            isLoading = isLoading,
-            availableProducts = serverProducts,
-            allAvailableCategories = savedCategories,
-            userPages = userPages
-        )
+        state = state.copy(isLoading = isLoading, availableProducts = serverProducts, allAvailableCategories = savedCategories, userPages = userPages)
     }
 
     LaunchedEffect(state.page) {
         viewModel.saveDraft(state.page)
     }
 
-    val effectiveCategories = remember(savedCategories, state.page) {
-        val categoriesInDraft = state.page.components
-            .filterIsInstance<PageComponent.ProductList>()
-            .flatMap { it.products }
-            .mapNotNull { it.categoryName }
-        (savedCategories + categoriesInDraft).filter { it.isNotBlank() }.distinct().sorted()
-    }
-
-    val imagePicker = rememberImagePicker { bytes: ByteArray? ->
+    val imagePicker = rememberImagePicker { bytes ->
         bytes?.let {
             state = state.copy(isUploading = true)
-            viewModel.uploadImage(it, "profile_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
+            viewModel.uploadImage(it, "media_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
                 state.editingComponentIndex?.let { index ->
                     val component = state.page.components[index]
                     val updated = when(component) {
-                        is PageComponent.Image -> component.copy(url = uploadedUrl)
+                        is PageComponent.Media -> component.copy(url = uploadedUrl)
                         is PageComponent.ProfileHeader -> component.copy(imageUrl = uploadedUrl)
                         else -> component
                     }
                     val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                    state = state.copy(
-                        page = state.page.copy(components = newList),
-                        isUploading = false
-                    )
+                    state = state.copy(page = state.page.copy(components = newList), isUploading = false)
                 }
             }
         }
@@ -144,13 +124,10 @@ fun WhiteLabelScreen(
             is WhiteLabelEvent.OnPendingNewComponentChanged -> state = state.copy(pendingNewComponent = event.component)
             is WhiteLabelEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
             is WhiteLabelEvent.OnImageUploadStarted -> state = state.copy(isUploading = event.isUploading)
-            
             is WhiteLabelEvent.OnDeleteComponent -> {
                 val newList = state.page.components.toMutableList().apply { removeAt(event.index) }
                 onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                if (state.editingComponentIndex == event.index) {
-                    state = state.copy(editingComponentIndex = null)
-                }
+                if (state.editingComponentIndex == event.index) state = state.copy(editingComponentIndex = null)
             }
             is WhiteLabelEvent.OnDuplicateComponent -> {
                 val component = state.page.components[event.index]
@@ -164,11 +141,8 @@ fun WhiteLabelScreen(
                     newList[event.index] = newList[event.index - 1]
                     newList[event.index - 1] = temp
                     onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    if (state.editingComponentIndex == event.index) {
-                        state = state.copy(editingComponentIndex = event.index - 1)
-                    } else if (state.editingComponentIndex == event.index - 1) {
-                        state = state.copy(editingComponentIndex = event.index)
-                    }
+                    if (state.editingComponentIndex == event.index) state = state.copy(editingComponentIndex = event.index - 1)
+                    else if (state.editingComponentIndex == event.index - 1) state = state.copy(editingComponentIndex = event.index)
                 }
             }
             is WhiteLabelEvent.OnMoveComponentDown -> {
@@ -178,33 +152,16 @@ fun WhiteLabelScreen(
                     newList[event.index] = newList[event.index + 1]
                     newList[event.index + 1] = temp
                     onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    if (state.editingComponentIndex == event.index) {
-                        state = state.copy(editingComponentIndex = event.index + 1)
-                    } else if (state.editingComponentIndex == event.index + 1) {
-                        state = state.copy(editingComponentIndex = event.index)
-                    }
+                    if (state.editingComponentIndex == event.index) state = state.copy(editingComponentIndex = event.index + 1)
+                    else if (state.editingComponentIndex == event.index + 1) state = state.copy(editingComponentIndex = event.index)
                 }
             }
         }
     }
 
     AppTheme(themeConfig = state.page.theme) {
-        WhiteLabelContent(
-            state = state, 
-            viewModel = viewModel, 
-            onEvent = ::onEvent, 
-            originalPage = pristinePage,
-            displayCategories = effectiveCategories,
-            onManageCategories = { showCategoryManagement = true },
-            onPickImage = { imagePicker() }
-        )
-
-        if (showCategoryManagement) {
-            CategoryManagementDialog(
-                viewModel = viewModel,
-                onDismiss = { showCategoryManagement = false }
-            )
-        }
+        WhiteLabelContent(state = state, viewModel = viewModel, onEvent = ::onEvent, originalPage = pristinePage, onManageCategories = { showCategoryManagement = true }, onPickImage = { imagePicker() })
+        if (showCategoryManagement) { CategoryManagementDialog(viewModel = viewModel, onDismiss = { showCategoryManagement = false }) }
     }
 }
 
@@ -214,7 +171,6 @@ private fun WhiteLabelContent(
     viewModel: PageViewModel,
     onEvent: (WhiteLabelEvent) -> Unit,
     originalPage: Page,
-    displayCategories: List<String>,
     onManageCategories: () -> Unit,
     onPickImage: () -> Unit
 ) {
@@ -224,125 +180,67 @@ private fun WhiteLabelContent(
                 title = state.page.title,
                 onBack = { onEvent(WhiteLabelEvent.OnBackClicked) },
                 actions = {
-                     GenesysIconButton(
-                        icon = GenesysIcons.Palette, 
-                        contentDescription = GenesysStrings.EditorThemes,
-                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) }
-                    )
-                    
+                     GenesysIconButton(icon = GenesysIcons.Palette, onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) })
                     if (state.page != originalPage) {
-                        GenesysIconButton(
-                            icon = GenesysIcons.Delete,
-                            contentDescription = GenesysStrings.DiscardDraft,
-                            tint = MaterialTheme.colorScheme.error,
-                            onClick = {
-                                viewModel.clearDraft(state.page.id)
-                                onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
-                            }
-                        )
+                        GenesysIconButton(icon = GenesysIcons.Delete, tint = MaterialTheme.colorScheme.error, onClick = {
+                            viewModel.clearDraft(state.page.id)
+                            onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
+                        })
                     }
-
-                    GenesysLoadingButton(
-                        text = GenesysStrings.Publish,
-                        onClick = { onEvent(WhiteLabelEvent.OnPublishClicked) },
-                        isLoading = state.isLoading
-                    )
+                    GenesysLoadingButton(text = GenesysStrings.Publish, onClick = { onEvent(WhiteLabelEvent.OnPublishClicked) }, isLoading = state.isLoading)
                 }
             )
         },
         floatingActionButton = {
             if (!state.isLoading) {
-                GenesysFab(
-                    icon = GenesysIcons.Add,
-                    contentDescription = GenesysStrings.AddBlockAction,
-                    onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) }
-                )
+                GenesysFab(icon = GenesysIcons.Add, onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) })
             }
         }
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 1000.dp
+            val isWideScreen = maxWidth > 1024.dp
 
             if (state.isLoading) {
                 GenesysLoadingOverlay()
             } else {
-                GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
-                    GenesysWeightBox(if (isWideScreen) 0.65f else 1f) {
-                        GenesysColumn(
-                            maxWidth = GenesysDimens.ViewerMaxWidth,
-                            horizontalAlignment = GenesysAlignment.Center,
-                            usePadding = false,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.weight(if (isWideScreen) 0.65f else 1f)) {
+                        LazyColumn(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, contentPadding = PaddingValues(16.dp)) {
                             if (state.page.components.isEmpty()) {
-                                GenesysEmptyState(
-                                    icon = GenesysIcons.Magic,
-                                    title = GenesysStrings.EmptyEditorTitle,
-                                    description = GenesysStrings.EmptyEditorDescription,
-                                    action = {
-                                        GenesysLoadingButton(
-                                            text = GenesysStrings.AddBlockAction, 
-                                            onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) }
-                                        )
-                                    }
-                                )
+                                item {
+                                    GenesysEmptyState(icon = GenesysIcons.Magic, title = GenesysStrings.EmptyEditorTitle, description = GenesysStrings.EmptyEditorDescription, action = {
+                                        GenesysLoadingButton(text = GenesysStrings.AddBlockAction, onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) })
+                                    })
+                                }
                             } else {
-                                GenesysLazyColumnIndexed(
-                                    items = state.page.components,
-                                    maxWidth = GenesysDimens.ViewerMaxWidth,
-                                    usePadding = true,
-                                    spacing = GenesysSpacing.Medium // Reduzido para celulares
-                                ) { index, component ->
+                                items(state.page.components.size) { index ->
+                                    val component = state.page.components[index]
                                     val isEditing = state.editingComponentIndex == index
-                                    ComponentWrapperUI(component, index, isEditing, displayCategories, onEvent)
+                                    ComponentWrapperUI(component, index, isEditing, onEvent)
+                                    Spacer(Modifier.height(16.dp))
                                 }
                             }
+                            item { Spacer(Modifier.height(100.dp)) }
                         }
                     }
 
                     if (isWideScreen) {
-                        GenesysWeightBox(0.35f) {
-                            GenesysCard(
-                                modifier = Modifier.fillMaxHeight().padding(16.dp),
-                                elevation = GenesysDimens.ElevationMedium
-                            ) {
-                                state.editingComponentIndex?.let { index ->
-                                    ComponentEditorUI(
-                                        state = state, 
-                                        viewModel = viewModel, 
-                                        index = index, 
-                                        onEvent = onEvent, 
-                                        isEmbedded = true, 
-                                        originalPage = originalPage,
-                                        onManageCategories = onManageCategories,
-                                        onPickImage = onPickImage
-                                    )
-                                } ?: run {
-                                    GenesysEmptyState(
-                                        icon = GenesysIcons.Edit,
-                                        title = GenesysStrings.SelectBlockToEdit,
-                                        description = GenesysStrings.SelectBlockToEditDesc
-                                    )
+                        Box(modifier = Modifier.width(400.dp).fillMaxHeight().background(MaterialTheme.colorScheme.surface).border(1.dp, MaterialTheme.colorScheme.outlineVariant).padding(16.dp)) {
+                            state.editingComponentIndex?.let { index ->
+                                ComponentEditorUI(state = state, index = index, onEvent = onEvent, isEmbedded = true, onManageCategories = onManageCategories, onPickImage = onPickImage)
+                            } ?: run {
+                                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(GenesysIcons.Edit, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
+                                    Spacer(Modifier.height(16.dp))
+                                    Text(text = GenesysStrings.SelectBlockToEdit, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
                                 }
                             }
                         }
                     }
                 }
             }
-            
-            if (!isWideScreen) {
-                state.editingComponentIndex?.let { index ->
-                    ComponentEditorUI(
-                        state = state, 
-                        viewModel = viewModel, 
-                        index = index, 
-                        onEvent = onEvent, 
-                        isEmbedded = false, 
-                        originalPage = originalPage,
-                        onManageCategories = onManageCategories,
-                        onPickImage = onPickImage
-                    )
-                }
+            if (!isWideScreen && state.editingComponentIndex != null) {
+                ComponentEditorUI(state = state, index = state.editingComponentIndex!!, onEvent = onEvent, isEmbedded = false, onManageCategories = onManageCategories, onPickImage = onPickImage)
             }
         }
     }
@@ -353,264 +251,107 @@ private fun WhiteLabelContent(
 }
 
 @Composable
-private fun ComponentWrapperUI(
-    component: PageComponent,
-    index: Int,
-    isEditing: Boolean,
-    allCategories: List<String>,
-    onEvent: (WhiteLabelEvent) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isEditing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
-                else Modifier
-            )
-            .padding(2.dp) // Reduzido para mobile
-            .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }
-    ) {
-        PageComponentRenderer(
-            component = component,
-            isEditMode = true,
-            onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
-            allAvailableCategories = allCategories,
-            onProductClick = { product ->
-                onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
-            }
-        )
-
-        // SEMPRE VISÍVEL: Controles de Gerenciamento (Mover e Excluir)
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val isMobile = maxWidth < 400.dp
-            
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(if (isMobile) 4.dp else 8.dp),
-                shape = CircleShape,
-                color = if (isEditing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                tonalElevation = 6.dp
-            ) {
-                Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
-                    GenesysIconButton(
-                        icon = GenesysIcons.ArrowUp, 
-                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.ArrowDown, 
-                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.Delete, 
-                        onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, 
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier
-                    )
-                }
+private fun ComponentWrapperUI(component: PageComponent, index: Int, isEditing: Boolean, onEvent: (WhiteLabelEvent) -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 800.dp).clip(MaterialTheme.shapes.medium).then(if (isEditing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)).clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }.padding(4.dp)) {
+        PageComponentRenderer(component = component, isEditMode = true, onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) })
+        Surface(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), tonalElevation = 4.dp, shadowElevation = 2.dp) {
+            Row(modifier = Modifier.padding(2.dp)) {
+                IconButton(onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) }, modifier = Modifier.size(32.dp)) { Icon(GenesysIcons.ArrowUp, null) }
+                IconButton(onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) }, modifier = Modifier.size(32.dp)) { Icon(GenesysIcons.ArrowDown, null) }
+                IconButton(onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) }, modifier = Modifier.size(32.dp)) { Icon(GenesysIcons.Delete, null, tint = MaterialTheme.colorScheme.error) }
             }
         }
     }
 }
 
 @Composable
-private fun ComponentEditorUI(
-    state: WhiteLabelState,
-    viewModel: PageViewModel,
-    index: Int,
-    onEvent: (WhiteLabelEvent) -> Unit,
-    isEmbedded: Boolean = false,
-    originalPage: Page,
-    onManageCategories: () -> Unit,
-    onPickImage: () -> Unit
-) {
+private fun ComponentEditorUI(state: WhiteLabelState, index: Int, onEvent: (WhiteLabelEvent) -> Unit, isEmbedded: Boolean = false, onManageCategories: () -> Unit, onPickImage: () -> Unit) {
     val component = state.page.components.getOrNull(index) ?: return
-    val scrollState = rememberScrollState()
     
     @Composable
     fun EditorContent() {
-        GenesysColumn(
-            usePadding = false, 
-            modifier = Modifier.then(if (isEmbedded) Modifier.verticalScroll(scrollState) else Modifier)
-        ) {
+        Column {
             if (isEmbedded) {
-                GenesysRow(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    GenesysWeightBox(1f) {
-                        GenesysText(
-                            text = GenesysStrings.BlockSettings, 
-                            style = GenesysTextStyle.Title, 
-                            fontWeight = GenesysFontWeight.Bold
-                        )
-                    }
-                    
-                    GenesysIconButton(
-                        icon = Icons.Default.Close,
-                        onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) }
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = GenesysStrings.BlockSettings, style = MaterialTheme.typography.titleLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) }) { Icon(Icons.Default.Close, null) }
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                Spacer(Modifier.height(16.dp))
             }
 
             var customLabel by remember(component) { mutableStateOf(component.customLabel ?: "") }
-            
-            GenesysTextField(
-                value = customLabel,
-                onValueChange = { customLabel = it },
-                label = GenesysStrings.BlockNameLabel,
-                placeholder = GenesysStrings.BlockNamePlaceholder,
-                icon = GenesysIcons.Edit
-            )
-            
-            GenesysSpacer(GenesysSpacing.Large)
-            GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysTextField(value = customLabel, onValueChange = { customLabel = it }, label = GenesysStrings.BlockNameLabel, icon = GenesysIcons.Edit)
+            Spacer(Modifier.height(24.dp)); GenesysDivider(); Spacer(Modifier.height(24.dp))
 
             when (component) {
-                is PageComponent.Header -> {
-                    HeaderComponentEditor(
-                        component = component,
-                        onSave = { updated ->
-                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        }
-                    )
-                }
-                is PageComponent.Text -> {
-                    TextComponentEditor(
-                        component = component,
-                        onSave = { updated ->
-                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        }
-                    )
-                }
-                is PageComponent.Image -> {
-                    ImageComponentEditor(
-                        component = component,
-                        userPages = state.userPages,
-                        isUploading = state.isUploading,
-                        onPickImage = onPickImage,
-                        onSave = { updated ->
-                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        }
-                    )
-                }
-                is PageComponent.ProductList -> {
-                    ProductListComponentEditor(
-                        component = component,
-                        allAvailableProducts = state.availableProducts,
-                        onEditProduct = { product ->
-                            onEvent(WhiteLabelEvent.OnEditProductClicked(product, index)) 
-                        },
-                        onProductsUpdated = { newProducts ->
-                             val updatedComponent = component.copy(products = newProducts)
-                             val newList = state.page.components.toMutableList().apply { set(index, updatedComponent) }
-                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        },
-                        onSaveLabel = { newLabel, isHorizontal ->
-                            val updated = component.copy(customLabel = newLabel.ifBlank { null }, isHorizontal = isHorizontal)
-                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        }
-                    )
-                }
-                is PageComponent.CategoryFilter -> {
-                    GenesysColumn(usePadding = false) {
-                        GenesysText("Este bloco exibe suas categorias automaticamente.", style = GenesysTextStyle.Body)
-                        GenesysSpacer(GenesysSpacing.Medium)
-                        GenesysLoadingButton(
-                            text = "Gerenciar Categorias",
-                            icon = GenesysIcons.Category,
-                            onClick = onManageCategories,
-                            fillWidth = true
-                        )
-                    }
-                }
-                is PageComponent.ProfileHeader -> {
-                    ProfileHeaderComponentEditor(
-                        component = component,
-                        onSave = { updated: PageComponent.ProfileHeader ->
-                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        },
-                        onPickImage = onPickImage,
-                        isUploading = state.isUploading
-                    )
-                }
-                is PageComponent.SocialLinks -> {
-                    SocialLinksComponentEditor(
-                        component = component,
-                        onSave = { updated: PageComponent.SocialLinks ->
-                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        }
-                    )
-                }
-                is PageComponent.Button -> {
-                    ButtonComponentEditor(
-                        component = component,
-                        onSave = { updated: PageComponent.Button ->
-                            val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
-                        }
-                    )
-                }
+                is PageComponent.Typography -> TypographyComponentEditor(component, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.Media -> MediaComponentEditor(component, isUploading = state.isUploading, onPickImage = onPickImage, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.Highlight -> HighlightComponentEditor(component, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.Testimonial -> TestimonialComponentEditor(component, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.StepProcess -> StepProcessComponentEditor(component, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.ProductList -> ProductListComponentEditor(component, allAvailableProducts = state.availableProducts, onEditProduct = { onEvent(WhiteLabelEvent.OnEditProductClicked(it, index)) }, onProductsUpdated = { newProducts ->
+                    val newList = state.page.components.toMutableList().apply { set(index, component.copy(products = newProducts)) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                }, onSaveLabel = { newLabel, isHorizontal ->
+                    val newList = state.page.components.toMutableList().apply { set(index, component.copy(customLabel = newLabel.ifBlank { null }, isHorizontal = isHorizontal)) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.SocialLinks -> SocialLinksComponentEditor(component, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
+                is PageComponent.ProfileHeader -> ProfileHeaderComponentEditor(component, isUploading = state.isUploading, onPickImage = onPickImage, onSave = { updated ->
+                    val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    if (!isEmbedded) onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                })
                 else -> { }
             }
-            
-            GenesysSpacer(GenesysSpacing.Huge)
+            Spacer(Modifier.height(100.dp))
         }
     }
 
     if (isEmbedded) {
-        EditorContent()
+        val scrollState = rememberScrollState()
+        Column(modifier = Modifier.verticalScroll(scrollState)) { EditorContent() }
     } else {
-        GenesysBottomSheet(
-            onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
-            title = GenesysStrings.BlockSettings
-        ) {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(bottom = 32.dp)) {
-                EditorContent()
-            }
-        }
+        GenesysBottomSheet(onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) }, title = GenesysStrings.BlockSettings) { EditorContent() }
     }
 }
 
 @Composable
 private fun PageSettingsUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -> Unit) {
     var title by remember(state.page.title) { mutableStateOf(state.page.title) }
-    GenesysBottomSheet(
-        onDismiss = { onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false)) },
-        title = GenesysStrings.PageTitleLabel
-    ) {
+    GenesysBottomSheet(onDismiss = { onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false)) }, title = GenesysStrings.PageTitleLabel) {
         GenesysColumn(usePadding = false) {
-            GenesysTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = GenesysStrings.PageTitleLabel,
-                icon = GenesysIcons.Edit
-            )
+            GenesysTextField(value = title, onValueChange = { title = it }, label = GenesysStrings.PageTitleLabel, icon = GenesysIcons.Edit)
             GenesysSpacer(GenesysSpacing.Large)
-            GenesysLoadingButton(
-                text = GenesysStrings.Save, 
-                fillWidth = true,
-                onClick = { 
-                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(title = title)))
-                    onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false))
-                }
-            )
+            GenesysLoadingButton(text = GenesysStrings.Save, fillWidth = true, onClick = { 
+                onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(title = title)))
+                onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false))
+            })
         }
     }
 }
@@ -638,31 +379,23 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
         Triple(PageThemeConfig.MIDNIGHT, "Midnight Red", Color(0xFFE94560)),
         Triple(PageThemeConfig.NEON, "Neon Cyber", Color(0xFF39FF14)),
         Triple(PageThemeConfig.DEEP_SPACE, "Deep Space", Color(0xFF00D1FF)),
-        Triple(PageThemeConfig.LUXURY_GOLD, "Luxury Gold", Color(0xFFD4AF37))
+        Triple(PageThemeConfig.LUXURY_GOLD, "Luxury Gold", Color(0xFFD4AF37)),
+        Triple(PageThemeConfig.MARKETING_RED, "Marketing Red", Color(0xFFBC1B1B))
     )
-    GenesysBottomSheet(
-        onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false)) },
-        title = GenesysStrings.CustomizeStyle
-    ) {
+    GenesysBottomSheet(onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false)) }, title = GenesysStrings.CustomizeStyle) {
         GenesysColumn(usePadding = false, useScroll = true) {
             GenesysText(GenesysStrings.ThemeDescription, style = GenesysTextStyle.Label)
             GenesysSpacer(GenesysSpacing.Medium)
             themes.forEach { (config, label, color) ->
                 val isSelected = state.page.theme == config
-                GenesysCard(
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    backgroundColor = if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface,
-                    onClick = { 
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(theme = config)))
-                        onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false))
-                    }
-                ) {
+                GenesysCard(modifier = Modifier.padding(bottom = 8.dp), backgroundColor = if (isSelected) color.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface, onClick = { 
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(theme = config)))
+                    onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false))
+                }) {
                     GenesysRow {
                         GenesysColorCircle(color = color)
                         GenesysSpacer(GenesysSpacing.Medium)
-                        GenesysWeightBox(1f) {
-                            GenesysText(text = label, style = GenesysTextStyle.Body, fontWeight = if (isSelected) GenesysFontWeight.Bold else GenesysFontWeight.Normal)
-                        }
+                        GenesysWeightBox(1f) { GenesysText(text = label, style = GenesysTextStyle.Body, fontWeight = if (isSelected) GenesysFontWeight.Bold else GenesysFontWeight.Normal) }
                         if (isSelected) GenesysIconButton(icon = GenesysIcons.Check, onClick = {})
                     }
                 }
@@ -673,35 +406,29 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
 
 @Composable
 private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -> Unit) {
-     GenesysBottomSheet(
-        onDismiss = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(false)) },
-        title = GenesysStrings.AddBlockTitle
-    ) {
+     GenesysBottomSheet(onDismiss = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(false)) }, title = GenesysStrings.AddBlockTitle) {
         GenesysColumn(usePadding = false, useScroll = true) {
             GenesysText(GenesysStrings.AddBlockDescription, style = GenesysTextStyle.Label)
             GenesysSpacer(GenesysSpacing.Medium)
             
             val catalogItems = listOf(
-                Triple(GenesysStrings.ComponentTypeHeader, GenesysStrings.ComponentTypeHeaderText, PageComponent.Header("Novo Título")),
-                Triple(GenesysStrings.ComponentTypeText, GenesysStrings.ComponentTypeTextDesc, PageComponent.Text("Seu texto aqui...")),
-                Triple(GenesysStrings.ComponentTypeProductList, GenesysStrings.ComponentTypeProductListDesc, PageComponent.ProductList(emptyList())),
-                Triple(GenesysStrings.ComponentTypeImage, GenesysStrings.ComponentTypeImageDesc, PageComponent.Image("", "")),
-                Triple(GenesysStrings.ComponentTypeButton, GenesysStrings.ComponentTypeButtonDesc, PageComponent.Button("Toque Aqui", "")),
-                Triple(GenesysStrings.ComponentTypeFilter, GenesysStrings.ComponentTypeFilterDesc, PageComponent.Filter()),
-                Triple(GenesysStrings.ProductCategory, "Filtro de categorias.", PageComponent.CategoryFilter()),
-                Triple("Perfil", "Cabeçalho com foto e bio.", PageComponent.ProfileHeader("", "Nome", "Bio")),
-                Triple("Links Sociais", "Ícones de redes sociais.", PageComponent.SocialLinks())
+                Triple("Texto", "Parágrafo, título ou destaque 3D.", PageComponent.Typography("Seu texto aqui...")),
+                Triple("Mídia", "Imagem cheia, lado a lado ou avatar.", PageComponent.Media("https://picsum.photos/800/400")),
+                Triple("Destaque", "Botão, faixa rotativa ou pílula.", PageComponent.Highlight("CLIQUE AQUI")),
+                Triple("Processo", "Etapas numeradas do seu serviço.", PageComponent.StepProcess(listOf(StepItem("PASSO 1", "Descrição do passo...")))),
+                Triple("Depoimento", "Frase de impacto de um cliente.", PageComponent.Testimonial("Adorei o serviço!", "Cliente Satisfeito")),
+                Triple(GenesysStrings.ComponentTypeProductList, "Itens do seu catálogo.", PageComponent.ProductList(emptyList())),
+                Triple("Filtro", "Filtro de categorias automático.", PageComponent.CategoryFilter()),
+                Triple("Perfil", "Sua foto e mini-bio.", PageComponent.ProfileHeader("", "Seu Nome", "Sua Bio")),
+                Triple("Links Sociais", "Instagram, WhatsApp e E-mail.", PageComponent.SocialLinks())
             )
             
             catalogItems.forEach { (title, desc, component) ->
-                GenesysCard(
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    onClick = {
-                        val newList = state.page.components.toMutableList().apply { add(component) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
-                    }
-                ) {
+                GenesysCard(modifier = Modifier.padding(bottom = 8.dp), onClick = {
+                    val newList = state.page.components.toMutableList().apply { add(component) }
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
+                }) {
                     GenesysRow {
                         GenesysWeightBox(1f) {
                             GenesysColumn(usePadding = false) {

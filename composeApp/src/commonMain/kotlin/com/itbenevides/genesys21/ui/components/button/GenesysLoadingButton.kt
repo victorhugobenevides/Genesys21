@@ -10,9 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.components.text.*
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
 
+/**
+ * GenesysLoadingButton - Botão de ação primária seguindo Material 3.
+ * Implementa estados de carregamento, ícones e hierarquia tipográfica padronizada.
+ */
 @Composable
 fun GenesysLoadingButton(
     text: String,
@@ -22,30 +27,52 @@ fun GenesysLoadingButton(
     enabled: Boolean = true,
     icon: ImageVector? = null,
     containerColor: Color = MaterialTheme.colorScheme.primary,
-    shape: Shape = RoundedCornerShape(12.dp),
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    shape: Shape = RoundedCornerShape(GenesysDimens.CornerRadiusLarge),
     fillWidth: Boolean = false
 ) {
     Button(
         onClick = onClick,
-        modifier = if (fillWidth) modifier.fillMaxWidth() else modifier,
+        modifier = Modifier
+            .height(GenesysDimens.ButtonHeight) // Altura ergonômica padronizada
+            .then(if (fillWidth) modifier.fillMaxWidth() else modifier),
         enabled = enabled && !isLoading,
         shape = shape,
-        colors = ButtonDefaults.buttonColors(containerColor = containerColor)
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        ),
+        contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
         AnimatedContent(targetState = isLoading, label = "LoadingButtonAnimation") { loading ->
             if (loading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 3.dp,
+                    color = contentColor
                 )
             } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     icon?.let {
-                        Icon(it, null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            imageVector = it, 
+                            contentDescription = null, 
+                            modifier = Modifier.size(GenesysDimens.IconMedium)
+                        )
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text(text, fontWeight = FontWeight.Bold)
+                    
+                    GenesysText(
+                        text = text,
+                        style = GenesysTextStyle.Label,
+                        fontWeight = GenesysFontWeight.Bold,
+                        color = contentColor
+                    )
                 }
             }
         }
