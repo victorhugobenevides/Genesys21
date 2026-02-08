@@ -1,6 +1,8 @@
 package com.itbenevides.genesys21.ui.components.feedback
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -10,6 +12,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 
 /**
  * Modal padronizado (Bottom Sheet) abstraído do Material 3.
+ * Possui rolagem vertical interna para suportar conteúdos longos.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,13 +25,16 @@ fun GenesysBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(horizontal = GenesysDimens.SpacingLarge)
+                .padding(bottom = 32.dp)
                 .navigationBarsPadding()
+                .verticalScroll(rememberScrollState()) // Rolagem centralizada aqui
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

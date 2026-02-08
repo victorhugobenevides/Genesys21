@@ -31,12 +31,14 @@ fun MediaComponentEditor(
     var size by remember { mutableStateOf(component.size.toFloat()) }
     var isRounded by remember { mutableStateOf(component.isRounded) }
     var hasBottomArc by remember { mutableStateOf(component.hasBottomArc) }
+    var backgroundColor by remember { mutableStateOf(component.backgroundColor) }
 
-    val previewComponent = remember(url, title, description, layout, imageOnRight, size, isRounded, hasBottomArc) {
+    val previewComponent = remember(url, title, description, layout, imageOnRight, size, isRounded, hasBottomArc, backgroundColor) {
         component.copy(
             url = url, title = title.ifBlank { null }, description = description.ifBlank { null },
             layout = layout, imageOnRight = imageOnRight, size = size.toInt(),
-            isRounded = isRounded, hasBottomArc = hasBottomArc
+            isRounded = isRounded, hasBottomArc = hasBottomArc,
+            backgroundColor = backgroundColor
         )
     }
 
@@ -48,7 +50,19 @@ fun MediaComponentEditor(
         }
 
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysLoadingButton(text = if (isUploading) "Enviando..." else "Trocar Imagem", icon = GenesysIcons.CloudUpload, onClick = onPickImage, isLoading = isUploading, fillWidth = true)
+        
+        ImageEditControls(
+            imageUrl = url,
+            isUploading = isUploading,
+            onPickImage = onPickImage
+        )
+
+        GenesysSpacer(GenesysSpacing.Medium)
+        
+        BackgroundColorEditControls(
+            backgroundColor = backgroundColor,
+            onColorChange = { backgroundColor = it }
+        )
 
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysText(text = "Layout do Bloco", style = GenesysTextStyle.Label)

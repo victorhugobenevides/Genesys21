@@ -41,6 +41,7 @@ sealed class PageComponent {
     abstract val isFilterable: Boolean
     abstract val destinationUrl: String?
     abstract val destinationPageId: String?
+    abstract val backgroundColor: String?
 
     @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Typography")
@@ -55,7 +56,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Texto",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -68,7 +70,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Cabeçalho",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -85,7 +88,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Mídia",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -98,22 +102,24 @@ sealed class PageComponent {
         override val customLabel: String? = "Imagem",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Highlight")
     data class Highlight(
         val text: String = "",
+        @SerialName("highlight_type")
         val type: String = "BUTTON", 
         val url: String? = null,
-        val backgroundColor: String? = null,
         val textColor: String? = null,
         val usePrimaryColor: Boolean = false,
         override val customLabel: String? = "Destaque",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -124,7 +130,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Produtos",
         override val isFilterable: Boolean = true,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -133,7 +140,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Categorias",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -143,7 +151,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Processo",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -154,7 +163,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Depoimento",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -166,7 +176,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Social",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -180,7 +191,20 @@ sealed class PageComponent {
         override val customLabel: String? = "Perfil",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
+    ) : PageComponent()
+
+    // Mapeamento para o componente de Busca (Search)
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Search")
+    data class Search(
+        val placeholder: String = "O que você procura?",
+        override val customLabel: String? = "Busca",
+        override val isFilterable: Boolean = false,
+        override val destinationUrl: String? = null,
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -189,7 +213,8 @@ sealed class PageComponent {
         override val customLabel: String? = "Desconhecido",
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
-        override val destinationPageId: String? = null
+        override val destinationPageId: String? = null,
+        override val backgroundColor: String? = null
     ) : PageComponent()
 }
 
@@ -202,36 +227,4 @@ data class Page(
     val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
     val theme: PageThemeConfig = PageThemeConfig.ROYAL
-) {
-    companion object {
-        private fun generateUniqueId() = (1..12).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-
-        fun defaultTemplate(id: String, title: String): Page = Page(
-            id = id,
-            title = title.ifBlank { "Minha Vitrine" },
-            components = listOf(
-                PageComponent.Header(title = "BEM-VINDO"),
-                PageComponent.Typography(text = "Confira nossos produtos premium.")
-            )
-        )
-
-        fun emptyTemplate(id: String, title: String): Page = Page(
-            id = id,
-            title = title.ifBlank { "Nova Vitrine" },
-            components = emptyList()
-        )
-
-        fun profileTemplate(id: String, title: String): Page = Page(
-            id = id,
-            title = title.ifBlank { "Meus Links" },
-            theme = PageThemeConfig.RADARANI,
-            components = listOf(
-                PageComponent.ProfileHeader(name = title.ifBlank { "Seu Nome" }),
-                PageComponent.SocialLinks()
-            )
-        )
-        
-        fun blogPostTemplate(id: String, title: String): Page = Page(id = id, title = title, components = emptyList())
-        fun marketingProfessionalTemplate(id: String, title: String): Page = Page(id = id, title = title, components = emptyList())
-    }
-}
+)

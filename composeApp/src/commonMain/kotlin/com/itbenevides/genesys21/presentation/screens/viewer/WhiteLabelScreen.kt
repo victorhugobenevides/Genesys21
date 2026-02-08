@@ -19,7 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
+import com.itbenevides.genesys21.domain.model.StepItem
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
@@ -383,7 +387,7 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
         Triple(PageThemeConfig.MARKETING_RED, "Marketing Red", Color(0xFFBC1B1B))
     )
     GenesysBottomSheet(onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(false)) }, title = GenesysStrings.CustomizeStyle) {
-        GenesysColumn(usePadding = false, useScroll = true) {
+        GenesysColumn(usePadding = false) {
             GenesysText(GenesysStrings.ThemeDescription, style = GenesysTextStyle.Label)
             GenesysSpacer(GenesysSpacing.Medium)
             themes.forEach { (config, label, color) ->
@@ -407,7 +411,7 @@ private fun ThemeSelectorUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -
 @Composable
 private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent) -> Unit) {
      GenesysBottomSheet(onDismiss = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(false)) }, title = GenesysStrings.AddBlockTitle) {
-        GenesysColumn(usePadding = false, useScroll = true) {
+        GenesysColumn(usePadding = false) {
             GenesysText(GenesysStrings.AddBlockDescription, style = GenesysTextStyle.Label)
             GenesysSpacer(GenesysSpacing.Medium)
             
@@ -419,6 +423,7 @@ private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent
                 Triple("Depoimento", "Frase de impacto de um cliente.", PageComponent.Testimonial("Adorei o serviço!", "Cliente Satisfeito")),
                 Triple(GenesysStrings.ComponentTypeProductList, "Itens do seu catálogo.", PageComponent.ProductList(emptyList())),
                 Triple("Filtro", "Filtro de categorias automático.", PageComponent.CategoryFilter()),
+                Triple("Busca", "Barra de busca para filtrar produtos.", PageComponent.Search()),
                 Triple("Perfil", "Sua foto e mini-bio.", PageComponent.ProfileHeader("", "Seu Nome", "Sua Bio")),
                 Triple("Links Sociais", "Instagram, WhatsApp e E-mail.", PageComponent.SocialLinks())
             )

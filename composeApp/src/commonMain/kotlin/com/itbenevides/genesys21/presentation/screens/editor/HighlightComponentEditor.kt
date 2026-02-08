@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.editor
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
@@ -24,18 +25,22 @@ fun HighlightComponentEditor(
     var url by remember { mutableStateOf(component.url ?: "") }
     var bgColor by remember { mutableStateOf(component.backgroundColor ?: "#BC1B1B") }
     var textColor by remember { mutableStateOf(component.textColor ?: "#FFFFFF") }
+    var usePrimaryColor by remember { mutableStateOf(component.usePrimaryColor) }
 
-    val previewComponent = remember(text, type, url, bgColor, textColor) {
+    val previewComponent = remember(text, type, url, bgColor, textColor, usePrimaryColor) {
         component.copy(
             text = text, type = type, url = url.ifBlank { null },
-            backgroundColor = bgColor, textColor = textColor
+            backgroundColor = bgColor, textColor = textColor,
+            usePrimaryColor = usePrimaryColor
         )
     }
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
-        PageComponentRenderer(component = previewComponent, isEditMode = false)
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            PageComponentRenderer(component = previewComponent, isEditMode = false)
+        }
 
         GenesysSpacer(GenesysSpacing.Large)
         GenesysText(text = "Tipo de Destaque", style = GenesysTextStyle.Label)
@@ -53,12 +58,23 @@ fun HighlightComponentEditor(
             GenesysTextField(value = url, onValueChange = { url = it }, label = "Link de Destino", icon = GenesysIcons.Language)
         }
 
-        if (type == "MARQUEE") {
+        if (type == "MARQUEE" || type == "BADGE") {
             GenesysSpacer(GenesysSpacing.Small)
-            GenesysRow {
-                GenesysWeightBox(1f) { GenesysTextField(value = bgColor, onValueChange = { bgColor = it }, label = "Fundo (Hex)") }
+            GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                GenesysText("Usar cor da marca?", style = GenesysTextStyle.Body, weightValue = 1f)
+                Switch(checked = usePrimaryColor, onCheckedChange = { usePrimaryColor = it })
+            }
+            
+            if (!usePrimaryColor) {
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysWeightBox(1f) { GenesysTextField(value = textColor, onValueChange = { textColor = it }, label = "Texto (Hex)") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        GenesysTextField(value = bgColor, onValueChange = { bgColor = it }, label = "Fundo (Hex)")
+                    }
+                    Column(Modifier.weight(1f)) {
+                        GenesysTextField(value = textColor, onValueChange = { textColor = it }, label = "Texto (Hex)")
+                    }
+                }
             }
         }
 

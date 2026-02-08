@@ -90,12 +90,7 @@ fun PageListScreen(
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                val newPage = when(event.templateType) {
-                    PageTemplateType.MARKETING_PROFESSIONAL -> Page.marketingProfessionalTemplate(id, state.newPageTitle.trim())
-                    PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
-                    PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
-                    else -> Page.defaultTemplate(id, state.newPageTitle.trim())
-                }
+                val newPage = Page(id = id, title = state.newPageTitle.trim())
                 
                 viewModel.savePage(newPage, isEditing = false) {
                     state = state.copy(showCreateDialog = false, newPageTitle = "")
@@ -600,40 +595,12 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
             // CORREÇÃO: Removendo o container scrollable interno para garantir que o clique chegue ao botão
             Column(modifier = Modifier.padding(top = 16.dp)) {
                 GenesysLoadingButton(
-                    text = "Criar Vitrine de Vendas", 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE)) }, 
+                    text = "Criar Vitrine em Branco", 
+                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) }, 
                     enabled = state.newPageTitle.isNotBlank(), 
                     isLoading = state.isLoading, 
                     fillWidth = true, 
-                    icon = GenesysIcons.ShoppingBag
-                ) 
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(
-                    text = "Criar Link na Bio (Perfil)", 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE)) }, 
-                    enabled = state.newPageTitle.isNotBlank(), 
-                    isLoading = state.isLoading, 
-                    fillWidth = true, 
-                    icon = GenesysIcons.Person
-                ) 
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(
-                    text = "Criar Portfólio de Marketing", 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.MARKETING_PROFESSIONAL)) }, 
-                    enabled = state.newPageTitle.isNotBlank(), 
-                    isLoading = state.isLoading, 
-                    fillWidth = true, 
-                    icon = GenesysIcons.Magic, 
-                    containerColor = Color(0xFFBC1B1B)
-                ) 
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(
-                    text = "Criar Post de Blog", 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST)) }, 
-                    enabled = state.newPageTitle.isNotBlank(), 
-                    isLoading = state.isLoading, 
-                    fillWidth = true, 
-                    icon = GenesysIcons.List
+                    icon = GenesysIcons.Add
                 ) 
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysLoadingButton(
@@ -642,13 +609,6 @@ private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
                     fillWidth = true, 
                     icon = GenesysIcons.CloudUpload, 
                     containerColor = MaterialTheme.colorScheme.secondary
-                )
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysTextButton(
-                    text = GenesysStrings.CreateEmptyVitrine, 
-                    onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) }, 
-                    enabled = state.newPageTitle.isNotBlank(), 
-                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },

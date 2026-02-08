@@ -53,8 +53,8 @@ fun String.toComposeColor(): Color {
         val hex = if (this.startsWith("#")) this.substring(1) else this
         if (hex.length == 6) Color(red = hex.substring(0, 2).toInt(16), green = hex.substring(2, 4).toInt(16), blue = hex.substring(4, 6).toInt(16), alpha = 255)
         else if (hex.length == 8) Color(red = hex.substring(2, 4).toInt(16), green = hex.substring(4, 6).toInt(16), blue = hex.substring(6, 8).toInt(16), alpha = hex.substring(0, 2).toInt(16))
-        else Color.Gray
-    } catch (e: Exception) { Color.Gray }
+        else Color.Unspecified
+    } catch (e: Exception) { Color.Unspecified }
 }
 
 @Composable
@@ -65,7 +65,8 @@ fun PageComponentRenderer(
     onFilterQueryChange: (String) -> Unit = {},
     allAvailableCategories: List<String> = emptyList(),
     isEditMode: Boolean = false,
-    onEditClick: (() -> Unit)? = null
+    onEditClick: (() -> Unit)? = null,
+    onManageCategories: (() -> Unit)? = null
 ) {
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
@@ -90,7 +91,15 @@ fun PageComponentRenderer(
         }
     }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    val componentBg = remember(component.backgroundColor) { 
+        component.backgroundColor?.toComposeColor() ?: Color.Transparent 
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(componentBg)
+    ) {
         when (component) {
             is PageComponent.Typography -> {
                 val textAlign = when(component.textAlign) {
@@ -107,7 +116,7 @@ fun PageComponentRenderer(
                 val text = if (component.isUppercase) component.text.uppercase() else component.text
                 val color = if (component.usePrimaryColor) MaterialTheme.colorScheme.primary else Color.Unspecified
 
-                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).clickable { onComponentClick() }, contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 16.dp).clickable { onComponentClick() }, contentAlignment = Alignment.Center) {
                     if (component.style == "SHADOW") {
                         Text(text = text, fontSize = component.fontSize.sp, fontWeight = fontWeight, color = Color.Black.copy(alpha = 0.1f), textAlign = textAlign, modifier = Modifier.offset(4.dp, 4.dp).fillMaxWidth())
                     }
@@ -248,7 +257,7 @@ fun PageComponentRenderer(
                                 }
                             } else {
                                 productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
-                                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(spacing), modifier = Modifier.padding(horizontal = 16.dp)) {
                                         rowProducts.forEach { product ->
                                             GenesysWeightBox(1f) {
                                                 ProductCardUI(
@@ -272,34 +281,88 @@ fun PageComponentRenderer(
             }
 
             is PageComponent.CategoryFilter -> {
-                GenesysColumn(usePadding = true) {
-                    GenesysText(
-                        text = GenesysStrings.Categories,
-                        style = GenesysTextStyle.Label,
-                        fontWeight = GenesysFontWeight.Bold
-                    )
-                    GenesysSpacer(GenesysSpacing.Medium)
-                    GenesysRow(modifier = Modifier.fillMaxWidth(), useHorizontalScroll = true) {
-                        GenesysFilterChip(
-                            selected = filterQuery.isEmpty(),
-                            onClick = { onFilterQueryChange("") },
-                            label = GenesysStrings.All
-                        )
-                        
-                        allAvailableCategories.forEach { category ->
-                            GenesysSpacer(GenesysSpacing.Small)
-                            GenesysFilterChip(
-                                selected = filterQuery.equals(category, ignoreCase = true),
-                                onClick = { 
-                                    if (filterQuery.equals(category, ignoreCase = true)) {
-                                        onFilterQueryChange("")
-                                    } else {
-                                        onFilterQueryChange(category)
-                                        AnalyticsManager.logEvent("select_category", mapOf("item_id" to category))
-                                    }
-                                },
-                                label = category
+                val listState = rememberLazyListState()
+                val isMobile = true // Simplificação para lógica de setas, pode ser maxWidth < 600.dp
+                
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+                    val actualIsMobile = this.maxWidth < 600.dp
+                    
+                    GenesysColumn(usePadding = true) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            GenesysText(
+                                text = GenesysStrings.Categories,
+                                style = GenesysTextStyle.Label,
+                                fontWeight = GenesysFontWeight.Bold
                             )
+                            if (isEditMode) {
+                                GenesysIconButton(
+                                    icon = GenesysIcons.Settings, 
+                                    onClick = { onManageCategories?.invoke() },
+                                    contentDescription = "Gerenciar Categorias"
+                                )
+                            }
+                        }
+                        
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            LazyRow(
+                                state = listState,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(horizontal = if(actualIsMobile) 0.dp else 40.dp)
+                            ) {
+                                item {
+                                    GenesysFilterChip(
+                                        selected = filterQuery.isEmpty(),
+                                        onClick = { onFilterQueryChange("") },
+                                        label = GenesysStrings.All
+                                    )
+                                }
+                                
+                                items(allAvailableCategories) { category ->
+                                    GenesysFilterChip(
+                                        selected = filterQuery.equals(category, ignoreCase = true),
+                                        onClick = { 
+                                            if (filterQuery.equals(category, ignoreCase = true)) {
+                                                onFilterQueryChange("")
+                                            } else {
+                                                onFilterQueryChange(category)
+                                                AnalyticsManager.logEvent("select_category", mapOf("item_id" to category))
+                                            }
+                                        },
+                                        label = category
+                                    )
+                                }
+                            }
+
+                            if (!actualIsMobile && allAvailableCategories.size > 3) {
+                                Surface(
+                                    modifier = Modifier.align(Alignment.CenterStart).size(32.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                    tonalElevation = 2.dp
+                                ) {
+                                    GenesysIconButton(
+                                        icon = GenesysIcons.ArrowLeft, 
+                                        onClick = { scope.launch { listState.animateScrollToItem((listState.firstVisibleItemIndex - 1).coerceAtLeast(0)) } }
+                                    )
+                                }
+                                Surface(
+                                    modifier = Modifier.align(Alignment.CenterEnd).size(32.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                    tonalElevation = 2.dp
+                                ) {
+                                    GenesysIconButton(
+                                        icon = GenesysIcons.ArrowRight, 
+                                        onClick = { scope.launch { listState.animateScrollToItem((listState.firstVisibleItemIndex + 1).coerceAtMost(allAvailableCategories.size)) } }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -349,6 +412,15 @@ fun PageComponentRenderer(
                     GenesysSpacer(GenesysSpacing.Medium)
                     GenesysText(text = component.name, style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold, textAlign = GenesysTextAlign.Center)
                     if (component.bio.isNotBlank()) { GenesysText(text = component.bio, style = GenesysTextStyle.Body, textAlign = GenesysTextAlign.Center, modifier = Modifier.padding(horizontal = 32.dp)) }
+                }
+            }
+            is PageComponent.Search -> {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    GenesysSearchBar(
+                        value = filterQuery,
+                        onValueChange = onFilterQueryChange,
+                        placeholder = component.placeholder
+                    )
                 }
             }
             else -> { }

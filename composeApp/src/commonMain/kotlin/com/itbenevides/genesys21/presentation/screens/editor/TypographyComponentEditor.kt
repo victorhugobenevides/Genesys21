@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.editor
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
@@ -26,19 +27,23 @@ fun TypographyComponentEditor(
     var fontWeight by remember { mutableStateOf(component.fontWeight) }
     var isUppercase by remember { mutableStateOf(component.isUppercase) }
     var usePrimaryColor by remember { mutableStateOf(component.usePrimaryColor) }
+    var backgroundColor by remember { mutableStateOf(component.backgroundColor) }
 
-    val previewComponent = remember(text, style, fontSize, textAlign, fontWeight, isUppercase, usePrimaryColor) {
+    val previewComponent = remember(text, style, fontSize, textAlign, fontWeight, isUppercase, usePrimaryColor, backgroundColor) {
         component.copy(
             text = text, style = style, fontSize = fontSize.toInt(),
             textAlign = textAlign, fontWeight = fontWeight,
-            isUppercase = isUppercase, usePrimaryColor = usePrimaryColor
+            isUppercase = isUppercase, usePrimaryColor = usePrimaryColor,
+            backgroundColor = backgroundColor
         )
     }
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
-        PageComponentRenderer(component = previewComponent, isEditMode = false)
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            PageComponentRenderer(component = previewComponent, isEditMode = false)
+        }
 
         GenesysSpacer(GenesysSpacing.Large)
         
@@ -59,6 +64,13 @@ fun TypographyComponentEditor(
         }
 
         GenesysSpacer(GenesysSpacing.Medium)
+        
+        BackgroundColorEditControls(
+            backgroundColor = backgroundColor,
+            onColorChange = { backgroundColor = it }
+        )
+
+        GenesysSpacer(GenesysSpacing.Medium)
         GenesysTextField(value = text, onValueChange = { text = it }, label = "Texto", singleLine = false, minLines = 3, icon = GenesysIcons.Edit)
         
         GenesysSpacer(GenesysSpacing.Medium)
@@ -69,7 +81,7 @@ fun TypographyComponentEditor(
             isUppercase = isUppercase, onUppercaseChange = { isUppercase = it }
         )
 
-        GenesysRow {
+        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
             GenesysText("Usar cor da marca?", style = GenesysTextStyle.Body, weightValue = 1f)
             Switch(checked = usePrimaryColor, onCheckedChange = { usePrimaryColor = it })
         }

@@ -1,18 +1,20 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Switch
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.input.GenesysSlider
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable
 fun ProfileHeaderComponentEditor(
@@ -26,6 +28,7 @@ fun ProfileHeaderComponentEditor(
     var bio by remember(component) { mutableStateOf(component.bio) }
     var imageSize by remember(component) { mutableStateOf(component.imageSize.toFloat()) }
     var isCircular by remember(component) { mutableStateOf(component.isCircular) }
+    var backgroundColor by remember(component) { mutableStateOf("#00000000") } // Default transparente ou cor do tema
 
     LaunchedEffect(component.imageUrl) {
         imageUrl = component.imageUrl
@@ -42,22 +45,18 @@ fun ProfileHeaderComponentEditor(
     }
 
      GenesysColumn(usePadding = false) {
-        GenesysText(text = "Pré-visualização", style = GenesysTextStyle.Label)
+        GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
-        
-        PageComponentRenderer(
-            component = previewComponent,
-            isEditMode = false
-        )
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            PageComponentRenderer(component = previewComponent, isEditMode = false)
+        }
         
         GenesysSpacer(GenesysSpacing.Large)
 
-        GenesysLoadingButton(
-            text = if (isUploading) "Enviando..." else "Trocar Foto de Perfil",
-            onClick = onPickImage,
-            icon = GenesysIcons.CloudUpload,
-            isLoading = isUploading,
-            fillWidth = true
+        ImageEditControls(
+            imageUrl = imageUrl,
+            isUploading = isUploading,
+            onPickImage = onPickImage
         )
         
         GenesysSpacer(GenesysSpacing.Medium)
@@ -65,56 +64,47 @@ fun ProfileHeaderComponentEditor(
         GenesysSlider(
             value = imageSize, 
             onValueChange = { imageSize = it }, 
-            label = "Tamanho da Foto", 
+            label = "Tamanho da Foto: ${imageSize.toInt()}px", 
             valueRange = 40f..300f
         )
 
         GenesysSpacer(GenesysSpacing.Medium)
         
-        GenesysRow(fillWidth = true) {
-            GenesysWeightBox(1f) {
-                GenesysColumn(usePadding = false) {
-                    GenesysText("Foto Circular?", style = GenesysTextStyle.Body)
-                    Switch(checked = isCircular, onCheckedChange = { isCircular = it })
-                }
-            }
+        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+            GenesysText("Foto Circular?", style = GenesysTextStyle.Body, weightValue = 1f)
+            Switch(checked = isCircular, onCheckedChange = { isCircular = it })
         }
 
         GenesysSpacer(GenesysSpacing.Medium)
-        
-         GenesysTextField(
-            value = imageUrl,
-            onValueChange = { imageUrl = it },
-            label = "URL da Foto",
-            icon = GenesysIcons.CloudUpload
+        GenesysTextField(
+            value = backgroundColor,
+            onValueChange = { backgroundColor = it },
+            label = "Cor de Fundo (Hex)",
+            placeholder = "#RRGGBB",
+            icon = GenesysIcons.Palette
         )
-        
+
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysTextField(
             value = name,
             onValueChange = { name = it },
-            label = "Nome",
+            label = "Seu Nome",
             icon = GenesysIcons.Person
         )
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysTextField(
             value = bio,
             onValueChange = { bio = it },
-            label = "Biografia",
-            icon = GenesysIcons.Edit
+            label = "Sua Bio",
+            icon = GenesysIcons.Edit,
+            singleLine = false,
+            minLines = 3
         )
+        
         GenesysSpacer(GenesysSpacing.Large)
         GenesysLoadingButton(
             text = "Salvar Alterações",
-            onClick = { 
-                onSave(component.copy(
-                    imageUrl = imageUrl, 
-                    name = name, 
-                    bio = bio,
-                    imageSize = imageSize.toInt(),
-                    isCircular = isCircular
-                )) 
-            },
+            onClick = { onSave(previewComponent) },
             fillWidth = true
         )
     }
