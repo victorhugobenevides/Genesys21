@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.itbenevides.genesys21.ui.components.layout.GenesysRow
 import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
@@ -24,14 +25,16 @@ fun GenesysQuantitySelector(
     GenesysRow(modifier = modifier.wrapContentWidth()) {
         QuantityCircleButton(
             icon = GenesysIcons.Remove,
-            onClick = onDecrease
+            onClick = onDecrease,
+            modifier = Modifier.testTag("btn_quantity_decrease")
         )
         
         GenesysSpacer(GenesysSpacing.Small)
         
         GenesysText(
             text = quantity.toString(),
-            fontWeight = GenesysFontWeight.ExtraBold
+            fontWeight = GenesysFontWeight.ExtraBold,
+            modifier = Modifier.testTag("txt_quantity_value")
         )
         
         GenesysSpacer(GenesysSpacing.Small)
@@ -39,7 +42,8 @@ fun GenesysQuantitySelector(
         QuantityCircleButton(
             icon = GenesysIcons.Add,
             onClick = onIncrease,
-            isPrimary = true
+            isPrimary = true,
+            modifier = Modifier.testTag("btn_quantity_increase")
         )
     }
 }
@@ -48,11 +52,12 @@ fun GenesysQuantitySelector(
 private fun QuantityCircleButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
-    isPrimary: Boolean = false
+    isPrimary: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(GenesysDimens.IconHuge), // Usando token centralizado
+        modifier = modifier.size(GenesysDimens.IconHuge),
         shape = CircleShape,
         color = if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         contentColor = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface

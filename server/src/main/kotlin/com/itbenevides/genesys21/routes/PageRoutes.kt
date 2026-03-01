@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.routes
 
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.PageRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -78,6 +79,32 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
                 val principal = call.principal<UserIdPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
                 val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 pageRepository.deletePage(id, principal.name)
+                    .onSuccess { call.respond(HttpStatusCode.OK) }
+                    .onFailure { call.respond(HttpStatusCode.NotFound) }
+            }
+        }
+
+        // Rotas de Produtos
+        route("/products") {
+            get {
+                val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                pageRepository.getAllProducts(principal.name)
+                    .onSuccess { call.respond(it) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao buscar produtos") }
+            }
+
+            post {
+                val principal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                val product = call.receive<Product>()
+                pageRepository.saveProduct(product, principal.name)
+                    .onSuccess { call.respond(HttpStatusCode.Created) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar produto") }
+            }
+
+            delete("/{id}") {
+                val principal = call.principal<UserIdPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
+                val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                pageRepository.deleteProduct(id, principal.name)
                     .onSuccess { call.respond(HttpStatusCode.OK) }
                     .onFailure { call.respond(HttpStatusCode.NotFound) }
             }

@@ -42,7 +42,7 @@ class KtorPageRepositoryTest {
         }
         
         val repository = KtorPageRepository(client, "http://localhost")
-        val result = repository.getPages()
+        val result = repository.getPages("token")
         
         assertEquals(2, result.size)
         assertEquals("Página 1", result[0].title)
@@ -56,17 +56,16 @@ class KtorPageRepositoryTest {
             assertTrue(request.headers[HttpHeaders.Authorization]?.contains("Bearer token") == true)
             
             respond(
-                content = Json.encodeToString(pageToSave),
+                content = "{}",
                 status = HttpStatusCode.Created,
                 headers = headersOf(HttpHeaders.ContentType, "application/json")
             )
         }
         
         val repository = KtorPageRepository(client, "http://localhost")
-        val result = repository.savePage(pageToSave, "token")
+        val result = repository.savePage(pageToSave, "token", isEditing = false)
         
         assertTrue(result.isSuccess)
-        assertEquals("Nova", result.getOrNull()?.title)
     }
 
     @Test
@@ -76,7 +75,7 @@ class KtorPageRepositoryTest {
         }
         
         val repository = KtorPageRepository(client, "http://localhost")
-        val result = repository.getPages()
+        val result = repository.getPages("token")
         
         assertTrue(result.isEmpty())
     }

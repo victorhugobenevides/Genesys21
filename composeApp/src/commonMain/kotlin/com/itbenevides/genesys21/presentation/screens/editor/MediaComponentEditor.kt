@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
@@ -68,14 +69,25 @@ fun MediaComponentEditor(
         GenesysText(text = "Layout do Bloco", style = GenesysTextStyle.Label)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("FULL_WIDTH" to "Cheia", "SIDE_TEXT" to "Lado a Lado", "CIRCULAR" to "Avatar").forEach { (id, label) ->
-                FilterChip(selected = layout == id, onClick = { layout = id }, label = { Text(label) })
+                FilterChip(
+                    selected = layout == id, 
+                    onClick = { layout = id }, 
+                    label = { Text(label) },
+                    modifier = Modifier.testTag("chip_layout_$id")
+                )
             }
         }
 
         if (layout == "SIDE_TEXT") {
             GenesysSpacer(GenesysSpacing.Medium)
-            GenesysTextField(value = title, onValueChange = { title = it }, label = "Título", icon = GenesysIcons.Edit)
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysTextField(
+                value = title, 
+                onValueChange = { title = it }, 
+                label = "Título", 
+                icon = GenesysIcons.Edit,
+                modifier = Modifier.testTag("input_media_title")
+            )
+             GenesysSpacer(GenesysSpacing.Small)
             GenesysTextField(value = description, onValueChange = { description = it }, label = "Descrição", singleLine = false, minLines = 3)
             
             GenesysRow(verticalAlignment = Alignment.CenterVertically) {
@@ -99,6 +111,11 @@ fun MediaComponentEditor(
         }
 
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysLoadingButton(text = "Confirmar Mídia", fillWidth = true, onClick = { onSave(previewComponent) })
+        GenesysLoadingButton(
+            text = "Confirmar Mídia", 
+            fillWidth = true, 
+            onClick = { onSave(previewComponent) },
+            modifier = Modifier.testTag("btn_confirm_media")
+        )
     }
 }

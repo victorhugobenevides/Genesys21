@@ -1,46 +1,32 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
-import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
-import com.itbenevides.genesys21.ui.components.feedback.GenesysLoadingOverlay
-import com.itbenevides.genesys21.ui.components.feedback.GenesysTrackingTimeline
-import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
-import com.itbenevides.genesys21.ui.components.layout.GenesysDivider
-import com.itbenevides.genesys21.ui.components.layout.GenesysPage
-import com.itbenevides.genesys21.ui.components.layout.GenesysRow
-import com.itbenevides.genesys21.ui.components.layout.GenesysSectionHeader
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.layout.GenesysWeightBox
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.layout.*
+import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
-import com.itbenevides.genesys21.ui.theme.AppTheme
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.Analytics
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.math.roundToLong
 
 @Composable
 fun OrderTrackingScreen(
@@ -51,52 +37,40 @@ fun OrderTrackingScreen(
     val order by viewModel.trackedOrder.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val clipboardManager = LocalClipboardManager.current
-    val uriHandler = LocalUriHandler.current
-
-    // 1. State Management
-    var state by remember { mutableStateOf(OrderTrackingState()) }
-    
-    state = state.copy(
-        order = order,
-        isLoading = isLoading
-    )
 
     LaunchedEffect(orderId) {
         viewModel.trackOrder(orderId)
-        AnalyticsManager.trackPageView("${GenesysStrings.TrackOrderTitle} - $orderId")
-        AnalyticsManager.logEvent("view_order_status", mapOf("order_id" to orderId))
+        Analytics.trackPageView("${GenesysStrings.TrackOrderTitle} - $orderId")
+        Analytics.logEvent("view_order_status", mapOf("order_id" to orderId))
     }
 
-    // 2. Event Handler
+    DisposableEffect(Unit) {
+        onDispose { viewModel.onDispose() }
+    }
+
     val onEvent: (OrderTrackingEvent) -> Unit = { event ->
         when (event) {
-            is OrderTrackingEvent.OnTrackOrder -> viewModel.trackOrder(event.orderId)
+            is OrderTrackingEvent.OnTrackOrder -> {
+                viewModel.trackOrder(event.orderId)
+            }
             is OrderTrackingEvent.OnCopyOrderIdClicked -> {
-                state.order?.id?.let { 
-                    clipboardManager.setText(AnnotatedString(it)) 
-                    AnalyticsManager.logEvent("copy_order_id", mapOf("order_id" to it))
+                order?.id?.let { id ->
+                    Analytics.logEvent("copy_order_id", mapOf("order_id" to id))
+                    clipboardManager.setText(AnnotatedString(id))
                 }
             }
             is OrderTrackingEvent.OnBackClicked -> onBack()
         }
     }
 
-    val themeToUse = state.order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL
-
-    // 3. Render
-    AppTheme(themeConfig = themeToUse) {
-        OrderTrackingContent(state, onEvent, onContactStore = { phone ->
-            val message = "Olá, estou acompanhando meu pedido #${state.order?.id} e gostaria de falar com a loja."
-            uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
-        })
-    }
+    OrderTrackingContent(order, isLoading, onEvent)
 }
 
 @Composable
 private fun OrderTrackingContent(
-    state: OrderTrackingState,
-    onEvent: (OrderTrackingEvent) -> Unit,
-    onContactStore: (String) -> Unit
+    order: Order?,
+    isLoading: Boolean,
+    onEvent: (OrderTrackingEvent) -> Unit
 ) {
     GenesysPage(
         topBar = {
@@ -106,125 +80,129 @@ private fun OrderTrackingContent(
             )
         }
     ) {
-        // Container Root centralizado (WasmJs)
-        GenesysColumn(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = GenesysAlignment.Center,
-            usePadding = false
-        ) {
-            // Container responsivo com largura controlada pelo DS
-            GenesysWeightBox(1f) {
-                if (state.isLoading) {
-                    GenesysLoadingOverlay()
-                } else {
-                    GenesysColumn(
-                        maxWidth = GenesysDimens.ContentMaxWidth, 
-                        useScroll = true
-                    ) {
-                        if (state.order == null) {
-                            GenesysEmptyState(
-                                icon = GenesysIcons.SearchOff,
-                                title = GenesysStrings.OrderNotFound,
-                                description = GenesysStrings.NoOrdersDescription,
-                                action = { 
-                                    GenesysLoadingButton(
-                                        text = GenesysStrings.Back, 
-                                        onClick = { onEvent(OrderTrackingEvent.OnBackClicked) }
-                                    ) 
-                                }
-                            )
-                        } else {
-                            val currentOrder = state.order!!
-                            
-                            // DESTAQUE: Card de Status Principal
-                            GenesysCard(elevation = GenesysDimens.ElevationMedium) {
-                                 GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
-                                    GenesysText(text = GenesysStrings.OrderStatusLabel, style = GenesysTextStyle.Label)
-                                    GenesysSpacer(GenesysSpacing.Medium)
-                                    GenesysStatusBadge(currentOrder.status)
-                                    
-                                    GenesysSpacer(GenesysSpacing.Large)
-                                    
-                                    GenesysRow(horizontalArrangement = Arrangement.Center) {
-                                        GenesysText(
-                                            text = "${GenesysStrings.OrderPrefix}${currentOrder.id.uppercase()}", 
-                                            style = GenesysTextStyle.Title, 
-                                            fontWeight = GenesysFontWeight.ExtraBold
-                                        )
-                                        GenesysSpacer(GenesysSpacing.Small)
-                                        GenesysIconButton(
-                                            icon = GenesysIcons.Copy, 
-                                            onClick = { onEvent(OrderTrackingEvent.OnCopyOrderIdClicked) }
-                                        )
-                                    }
+        if (order == null) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (isLoading) CircularProgressIndicator()
+                else GenesysText(text = GenesysStrings.OrderNotFound)
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                OrderHeaderInfo(order, onEvent)
+                GenesysSpacer(GenesysSpacing.Large)
+                OrderStatusStepper(order.status)
+                GenesysSpacer(GenesysSpacing.ExtraLarge)
+                OrderDetailsCard(order)
+            }
+        }
+    }
+}
 
-                                    // BOTAO FALAR COM A LOJA (WhatsApp do Lojista)
-                                    currentOrder.whatsappContact?.let { whatsapp ->
-                                        if (whatsapp.isNotBlank()) {
-                                             GenesysSpacer(GenesysSpacing.Medium)
-                                             GenesysLoadingButton(
-                                                 text = "Falar com a Loja",
-                                                 icon = GenesysIcons.Chat,
-                                                 onClick = { onContactStore(whatsapp) },
-                                                 fillWidth = true
-                                             )
-                                        }
-                                    }
-                                }
-                            }
+@Composable
+private fun OrderHeaderInfo(order: Order, onEvent: (OrderTrackingEvent) -> Unit) {
+    GenesysColumn(horizontalAlignment = GenesysAlignment.Center, usePadding = false) {
+        GenesysText(
+            text = "${GenesysStrings.OrderPrefix}${order.id.uppercase()}",
+            style = GenesysTextStyle.Title,
+            fontWeight = GenesysFontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        GenesysTextButton(
+            text = "Copiar Código",
+            onClick = { onEvent(OrderTrackingEvent.OnCopyOrderIdClicked) }
+        )
+    }
+}
 
-                            GenesysSpacer(GenesysSpacing.Large)
-                            
-                            // EVOLUÇÃO UX: Linha do tempo de acompanhamento
-                            GenesysTrackingTimeline(currentStatus = currentOrder.status)
-                            
-                            GenesysSpacer(GenesysSpacing.Large)
+@Composable
+private fun OrderStatusStepper(currentStatus: OrderStatus) {
+    val steps = listOf(
+        OrderStatus.PENDING to "Recebido",
+        OrderStatus.PROCESSING to "Preparando",
+        OrderStatus.COMPLETED to "Finalizado"
+    )
 
-                            // Resumo do Pedido com alinhamento Premium
-                            GenesysCard {
-                                GenesysColumn(usePadding = true) {
-                                    GenesysSectionHeader(title = GenesysStrings.OrderSummary)
-                                    GenesysSpacer(GenesysSpacing.Medium)
-                                    
-                                    currentOrder.items.forEach { item ->
-                                        GenesysRow {
-                                            GenesysWeightBox(1f) {
-                                                GenesysText(text = "${item.quantity}x ${item.product.name}")
-                                            }
-                                            // ARREDONDAMENTO: Subtotal por item
-                                            val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
-                                            GenesysText(
-                                                text = "${GenesysStrings.PricePrefix}$subtotal", 
-                                                fontWeight = GenesysFontWeight.Bold
-                                            )
-                                        }
-                                        GenesysSpacer(GenesysSpacing.Small)
-                                    }
-                                    
-                                    GenesysSpacer(GenesysSpacing.Medium)
-                                    GenesysDivider()
-                                    GenesysSpacer(GenesysSpacing.Medium)
-                                    
-                                    GenesysRow {
-                                        GenesysWeightBox(1f) {
-                                            GenesysText(text = GenesysStrings.Total, style = GenesysTextStyle.Title)
-                                        }
-                                        // ARREDONDAMENTO: Total geral do pedido
-                                        val totalFormatted = (currentOrder.total * 100.0).roundToLong() / 100.0
-                                        GenesysText(
-                                            text = "${GenesysStrings.PricePrefix}$totalFormatted", 
-                                            style = GenesysTextStyle.Title, 
-                                            fontWeight = GenesysFontWeight.ExtraBold,
-                                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        
-                        GenesysSpacer(GenesysSpacing.Huge)
+    val currentIndex = steps.indexOfFirst { it.first == currentStatus }.let { if (it == -1) 0 else it }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        steps.forEachIndexed { index, (status, label) ->
+            val isCompleted = index <= currentIndex
+            val isCurrent = index == currentIndex
+            
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isCompleted) MaterialTheme.colorScheme.primary 
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isCompleted) {
+                        Icon(GenesysIcons.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                GenesysText(
+                    text = label,
+                    style = GenesysTextStyle.Label,
+                    fontWeight = if (isCurrent) GenesysFontWeight.Bold else GenesysFontWeight.Normal,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (index < steps.size - 1) {
+                Box(
+                    modifier = Modifier
+                        .height(2.dp)
+                        .weight(0.5f)
+                        .background(
+                            if (index < currentIndex) MaterialTheme.colorScheme.primary 
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderDetailsCard(order: Order) {
+    GenesysCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            GenesysText(text = GenesysStrings.OrderSummary, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+            Spacer(Modifier.height(16.dp))
+            
+            order.items.forEach { item ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    GenesysText(text = "${item.quantity}x", modifier = Modifier.width(32.dp))
+                    GenesysText(text = item.product.name, modifier = Modifier.weight(1f))
+                    GenesysText(text = "R$ ${item.product.price * item.quantity}")
+                }
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            GenesysDivider()
+            Spacer(Modifier.height(16.dp))
+            
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                GenesysText(text = "Total", fontWeight = GenesysFontWeight.Bold)
+                GenesysText(
+                    text = "R$ ${order.total}",
+                    style = GenesysTextStyle.Title,
+                    fontWeight = GenesysFontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

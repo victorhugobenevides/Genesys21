@@ -3,10 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.list
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
-
-enum class PageTemplateType {
-    EMPTY
-}
+import com.itbenevides.genesys21.domain.model.PageTemplateType
 
 /**
  * UI State: Tudo o que a lista de administração pode exibir.
@@ -36,6 +33,7 @@ sealed class PageListEvent {
     object OnCreatePageClicked : PageListEvent()
     data class OnNewPageTitleChanged(val title: String) : PageListEvent()
     
+    // Usa o PageTemplateType centralizado do domínio
     data class OnConfirmCreatePage(val templateType: PageTemplateType) : PageListEvent()
     
     object OnDismissCreateDialog : PageListEvent()

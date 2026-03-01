@@ -33,6 +33,10 @@ enum class PageThemeConfig {
     DEFAULT
 }
 
+enum class PageTemplateType {
+    EMPTY, STORE, BIO, LANDING
+}
+
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("component_class")

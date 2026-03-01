@@ -11,9 +11,11 @@ interface PageRepository {
     suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit>
     suspend fun deletePage(id: String, token: String): Result<Unit>
     suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String>
-    suspend fun getAllProducts(token: String): Result<List<Product>>
     
-    // Novas operações de categoria
+    suspend fun getAllProducts(token: String): Result<List<Product>>
+    suspend fun saveProduct(product: Product, token: String): Result<Unit>
+    suspend fun deleteProduct(id: String, token: String): Result<Unit>
+    
     suspend fun getCategories(token: String): Result<List<Category>>
     suspend fun saveCategory(category: Category, token: String): Result<Unit>
     suspend fun deleteCategory(id: Int, token: String): Result<Unit>

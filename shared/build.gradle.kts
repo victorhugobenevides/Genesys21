@@ -5,11 +5,10 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlin.serialization)
+    id("jacoco")
 }
 
 kotlin {
-    applyDefaultHierarchyTemplate()
-
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -17,19 +16,10 @@ kotlin {
     }
     
     jvm()
-    
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
-    
-    js {
-        browser()
-    }
-    
+    iosX64(); iosArm64(); iosSimulatorArm64()
+    js { browser() }
     @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-    }
+    wasmJs { browser() }
     
     sourceSets {
         commonMain.dependencies {
@@ -37,30 +27,12 @@ kotlin {
             implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.ktor.clientSerialization)
             implementation(libs.koin.core)
-            // Usamos api para que os módulos que dependem de :shared (como :composeApp) 
-            // também tenham acesso ao kotlinx-datetime sem precisar declará-lo novamente,
-            // evitando assim conflitos de vinculação IR no Wasm.
             api(libs.kotlinx.datetime)
         }
 
         androidMain.dependencies {
             implementation(libs.firebase.auth.kmp)
             implementation("dev.gitlive:firebase-analytics:2.1.0")
-        }
-        
-        val iosMain by getting {
-            dependencies {
-                implementation(libs.firebase.auth.kmp)
-                implementation("dev.gitlive:firebase-analytics:2.1.0")
-            }
-        }
-        
-        jsMain.dependencies {
-            implementation(libs.firebase.auth.kmp)
-            implementation("dev.gitlive:firebase-analytics:2.1.0") 
-        }
-
-        wasmJsMain.dependencies {
         }
         
         commonTest.dependencies {
@@ -74,11 +46,37 @@ kotlin {
 android {
     namespace = "com.itbenevides.genesys21.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    buildTypes {
+        getByName("debug") {
+            enableUnitTestCoverage = true
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
+}
+
+jacoco { toolVersion = "0.8.12" }
+
+tasks.register<JacocoReport>("jacocoSharedTestReport") {
+    dependsOn("testDebugUnitTest")
+    group = "Reporting"
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        html.outputLocation.set(layout.projectDirectory.dir("jacoco-reports/html"))
     }
+
+    val fileFilter = listOf(
+        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*",
+        "**/*Test*.*", "**/di/**", "**/*Serializer*.*"
+    )
+    
+    val classTree = fileTree(layout.buildDirectory.dir("classes/kotlin/android/debug")) { exclude(fileFilter) }
+    sourceDirectories.setFrom(files("src/commonMain/kotlin", "src/androidMain/kotlin"))
+    classDirectories.setFrom(files(classTree))
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+    })
 }

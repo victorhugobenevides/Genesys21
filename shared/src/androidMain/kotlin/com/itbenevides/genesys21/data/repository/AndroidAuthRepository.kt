@@ -8,11 +8,9 @@ class AndroidAuthRepository : AuthRepository {
     private val auth = Firebase.auth
 
     override suspend fun signIn(email: String, password: String): Result<String?> {
-        return try {
+        return runCatching {
             auth.signInWithEmailAndPassword(email, password)
-            Result.success(getCurrentUserToken())
-        } catch (e: Exception) {
-            Result.failure(e)
+            getCurrentUserToken()
         }
     }
 
@@ -20,7 +18,9 @@ class AndroidAuthRepository : AuthRepository {
         return auth.currentUser?.getIdToken(false)
     }
 
-    override suspend fun signOut() {
-        auth.signOut()
+    override suspend fun signOut(): Result<Unit> {
+        return runCatching {
+            auth.signOut()
+        }
     }
 }

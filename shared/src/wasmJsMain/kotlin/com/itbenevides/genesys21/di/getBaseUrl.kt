@@ -1,10 +1,23 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 package com.itbenevides.genesys21.di
 
-@JsFun("() => window.location.origin")
-private external fun getJsOrigin(): JsString
+@JsFun("() => window.location.hostname")
+external fun getWindowLocationHostname(): String
+
+@JsFun("() => window.location.protocol")
+external fun getWindowLocationProtocol(): String
 
 actual fun getBaseUrl(): String {
-    // Retorna a origem atual (ex: http://localhost:8081 ou http://radarani.site).
-    // Isso garante que as chamadas /api sejam interceptadas pelo Proxy (Webpack ou Nginx).
-    return getJsOrigin().toString()
+    val protocol = getWindowLocationProtocol()
+    val hostname = getWindowLocationHostname()
+    // Lógica para alternar entre localhost (desenvolvimento) e produção
+    return if (hostname == "localhost" || hostname == "127.0.0.1") {
+        "$protocol//localhost:8080"
+    } else {
+        "$protocol//$hostname"
+    }
+}
+
+actual fun getHostname(): String {
+    return getWindowLocationHostname()
 }

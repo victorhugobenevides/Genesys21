@@ -33,14 +33,14 @@ fun GenesysTrackingTimeline(currentStatus: OrderStatus) {
     GenesysColumn(usePadding = false) {
         steps.forEachIndexed { index, (status, label) ->
             val isCompleted = when (currentStatus) {
-                OrderStatus.CANCELLED -> false
-                OrderStatus.PENDING -> index == 0
+                OrderStatus.CANCELLED, OrderStatus.FAILED -> false
+                OrderStatus.PENDING, OrderStatus.PAYMENT_PENDING -> index == 0
                 OrderStatus.PROCESSING -> index <= 1
                 OrderStatus.COMPLETED -> true
             }
             
             val isActive = when (currentStatus) {
-                OrderStatus.PENDING -> index == 0
+                OrderStatus.PENDING, OrderStatus.PAYMENT_PENDING -> index == 0
                 OrderStatus.PROCESSING -> index == 1
                 OrderStatus.COMPLETED -> index == 2
                 else -> false

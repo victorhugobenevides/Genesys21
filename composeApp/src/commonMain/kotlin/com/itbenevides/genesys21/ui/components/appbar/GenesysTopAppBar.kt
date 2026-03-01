@@ -2,8 +2,6 @@ package com.itbenevides.genesys21.ui.components.appbar
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,7 +21,8 @@ fun GenesysTopAppBar(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     containerColor: Color = MaterialTheme.colorScheme.surface,
-    titleColor: Color = MaterialTheme.colorScheme.onSurface
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    modifier: Modifier = Modifier // ADICIONADO
 ) {
     CenterAlignedTopAppBar(
         title = { 
@@ -40,7 +39,7 @@ fun GenesysTopAppBar(
                     Icon(
                         imageVector = GenesysIcons.ArrowLeft, 
                         contentDescription = "Voltar", 
-                        modifier = Modifier.size(24.dp), // Tamanho padrão M3
+                        modifier = Modifier.size(24.dp), 
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -52,6 +51,7 @@ fun GenesysTopAppBar(
             titleContentColor = titleColor,
             navigationIconContentColor = MaterialTheme.colorScheme.primary,
             actionIconContentColor = MaterialTheme.colorScheme.primary
-        )
+        ),
+        modifier = modifier // REPASSADO
     )
 }

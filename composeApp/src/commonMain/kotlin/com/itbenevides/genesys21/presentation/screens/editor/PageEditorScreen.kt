@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -51,11 +52,14 @@ private fun PageEditorContent(
     state: PageEditorState,
     onEvent: (PageEditorEvent) -> Unit
 ) {
+    val screenTitle = if (state.isEditing) GenesysStrings.EditPageTitle else GenesysStrings.NewPageTitle
+
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
-                title = if (state.isEditing) GenesysStrings.EditPageTitle else GenesysStrings.NewPageTitle,
-                onBack = { onEvent(PageEditorEvent.OnBackClicked) }
+                title = screenTitle,
+                onBack = { onEvent(PageEditorEvent.OnBackClicked) },
+                modifier = Modifier.testTag("page_editor_app_bar")
             )
         }
     ) {
@@ -68,8 +72,9 @@ private fun PageEditorContent(
                 GenesysCard {
                     GenesysColumn(usePadding = false) {
                         GenesysText(
-                            text = GenesysStrings.EditPageTitle, 
-                            style = GenesysTextStyle.Title
+                            text = screenTitle, 
+                            style = GenesysTextStyle.Title,
+                            modifier = Modifier.testTag("page_editor_title") // Tag para o teste
                         )
                         GenesysSpacer(GenesysSpacing.Medium)
                         
@@ -77,7 +82,8 @@ private fun PageEditorContent(
                             value = state.title, 
                             onValueChange = { newValue -> onEvent(PageEditorEvent.OnTitleChanged(newValue)) }, 
                             label = GenesysStrings.PageTitleLabel,
-                            placeholder = GenesysStrings.PageTitlePlaceholder
+                            placeholder = GenesysStrings.PageTitlePlaceholder,
+                            modifier = Modifier.testTag("page_title_field")
                         )
                     }
                 }
@@ -89,7 +95,8 @@ private fun PageEditorContent(
                     text = GenesysStrings.SavePageButton,
                     isLoading = state.isLoading,
                     enabled = state.canSave,
-                    fillWidth = true
+                    fillWidth = true,
+                    modifier = Modifier.testTag("btn_save_page")
                 )
                 
                 GenesysSpacer(GenesysSpacing.Huge)

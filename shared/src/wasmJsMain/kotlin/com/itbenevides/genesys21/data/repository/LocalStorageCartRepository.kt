@@ -1,128 +1,94 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import kotlin.random.Random
 
-@JsFun("(key) => window.localStorage.getItem(key)")
-private external fun jsGetItem(key: String): String?
+@JsFun("() => localStorage.getItem('cart_session_id')")
+private external fun getSessionIdFromLocalStorage(): String?
 
-@JsFun("(key, value) => window.localStorage.setItem(key, value)")
-private external fun jsSetItem(key: String, value: String)
+@JsFun("(sessionId) => localStorage.setItem('cart_session_id', sessionId)")
+private external fun setSessionIdInLocalStorage(sessionId: String)
 
-@JsFun("(key) => window.localStorage.removeItem(key)")
-private external fun jsRemoveItem(key: String)
+// Renomeado para WasmCartRepository para forçar a regeneração de símbolos no Linker
+class WasmCartRepository : CartRepository, KoinComponent {
 
-class LocalStorageCartRepository(
-    private val httpClient: HttpClient,
-    private val baseUrl: String,
-    private val json: Json,
-    private val authRepository: AuthRepository
-) : CartRepository {
+    private val authRepository: AuthRepository by inject()
 
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
-
-    private val CART_STORAGE_KEY = "genesys21_cart"
-    private val SESSION_STORAGE_KEY = "genesys21_session_id"
+    private var currentSessionId: String? = null
 
     override fun getSessionId(): String {
-        var id = jsGetItem(SESSION_STORAGE_KEY)
-        if (id == null) {
-            id = "sess_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-            jsSetItem(SESSION_STORAGE_KEY, id)
-        }
-        return id
-    }
-
-    override suspend fun loadInitialCart() {
-        val cached = jsGetItem(CART_STORAGE_KEY)
-        if (cached != null) {
-            try {
-                _cartItems.value = json.decodeFromString(cached)
-            } catch (e: Exception) {
-                _cartItems.value = emptyList()
+        return currentSessionId ?: run {
+            val fromStorage = getSessionIdFromLocalStorage()
+            if (fromStorage != null) {
+                currentSessionId = fromStorage
+                fromStorage
+            } else {
+                val newId = "SESSION_${uuid4()}"
+                setSessionIdInLocalStorage(newId)
+                currentSessionId = newId
+                newId
             }
-        }
-
-        try {
-            val token = authRepository.getCurrentUserToken()
-            val response = httpClient.get("$baseUrl/api/cart") {
-                if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
-                else header("X-Cart-Session-Id", getSessionId())
-            }
-            if (response.status.isSuccess()) {
-                val serverItems: List<CartItem> = response.body()
-                if (serverItems.isNotEmpty()) {
-                    _cartItems.value = serverItems
-                    saveToLocal()
-                }
-            }
-        } catch (e: Exception) {
-            println("Cart: Falha ao sincronizar inicial - ${e.message}")
         }
     }
 
-    private fun saveToLocal() {
-        jsSetItem(CART_STORAGE_KEY, json.encodeToString(_cartItems.value))
-    }
+    override suspend fun loadInitialCart() { }
 
-    override suspend fun addToCart(item: CartItem): Result<Unit> {
-        val current = _cartItems.value.toMutableList()
-        val existing = current.find { it.product.id == item.product.id }
-        if (existing != null) {
-            val idx = current.indexOf(existing)
-            current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
+    override suspend fun addToCart(item: CartItem): kotlin.Result<Unit> = runCatching {
+        val currentCart = _cartItems.value.toMutableList()
+        val existingItem = currentCart.find { it.product.id == item.product.id }
+        if (existingItem != null) {
+            val updatedItem = existingItem.copy(quantity = existingItem.quantity + item.quantity)
+            currentCart[currentCart.indexOf(existingItem)] = updatedItem
         } else {
-            current.add(item)
+            currentCart.add(item)
         }
-        _cartItems.value = current
-        saveToLocal()
-        return syncWithServer()
+        _cartItems.value = currentCart
     }
 
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filter { it.product.id != productId }
-        saveToLocal()
-        return syncWithServer()
+    override suspend fun removeFromCart(productId: String): kotlin.Result<Unit> = runCatching {
+        _cartItems.value = _cartItems.value.filterNot { it.product.id == productId }
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
-        if (quantity <= 0) return removeFromCart(productId)
-        _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
-        saveToLocal()
-        return syncWithServer()
-    }
-
-    override suspend fun clearCart(): Result<Unit> {
-        _cartItems.value = emptyList()
-        jsRemoveItem(CART_STORAGE_KEY)
-        return syncWithServer()
-    }
-
-    override suspend fun syncWithServer(): Result<Unit> {
-        return try {
-            val token = authRepository.getCurrentUserToken()
-            val response = httpClient.post("$baseUrl/api/cart") {
-                if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
-                else header("X-Cart-Session-Id", getSessionId())
-                
-                contentType(ContentType.Application.Json)
-                setBody(_cartItems.value)
+    override suspend fun updateQuantity(productId: String, quantity: Int): kotlin.Result<Unit> = runCatching {
+        _cartItems.value = if (quantity <= 0) {
+            _cartItems.value.filterNot { it.product.id == productId }
+        } else {
+            _cartItems.value.map {
+                if (it.product.id == productId) it.copy(quantity = quantity) else it
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Server error"))
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
+
+    override suspend fun clearCart(): kotlin.Result<Unit> = runCatching {
+        _cartItems.value = emptyList()
+    }
+    
+    override suspend fun syncWithServer(): kotlin.Result<Unit> = runCatching { }
+}
+
+private fun uuid4(): String {
+    val chars = "0123456789abcdef".toCharArray()
+    val uuid = CharArray(36)
+    val rnd = Random.Default
+    for (i in 0..35) {
+        when (i) {
+            8, 13, 18, 23 -> uuid[i] = '-'
+            14 -> uuid[i] = '4'
+            else -> {
+                val r = rnd.nextInt(0, 16)
+                uuid[i] = chars[r]
+            }
+        }
+    }
+    return uuid.concatToString()
 }

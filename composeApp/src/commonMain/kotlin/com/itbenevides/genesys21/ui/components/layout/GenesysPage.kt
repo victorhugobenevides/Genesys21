@@ -21,6 +21,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 fun GenesysPage(
     topBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
     useMaxWidth: Boolean = true, // Permite desativar em telas que realmente precisam de full-width (como banners)
     content: @Composable () -> Unit
 ) {
@@ -29,6 +30,7 @@ fun GenesysPage(
     Scaffold(
         topBar = topBar,
         floatingActionButton = floatingActionButton,
+        snackbarHost = snackbarHost,
         containerColor = MaterialTheme.colorScheme.background,
         content = { padding ->
             BoxWithConstraints(

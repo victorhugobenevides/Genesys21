@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
@@ -82,7 +83,15 @@ fun WhiteLabelScreen(
     }
 
     LaunchedEffect(isLoading, serverProducts, savedCategories, userPages) {
-        state = state.copy(isLoading = isLoading, availableProducts = serverProducts, allAvailableCategories = savedCategories, userPages = userPages)
+        state = state.copy(
+            isLoading = isLoading, 
+            availableProducts = serverProducts, 
+            allAvailableCategories = savedCategories, 
+            userPages = userPages,
+            editingComponentIndex = state.editingComponentIndex,
+            showCatalog = state.showCatalog,
+            showThemeSelector = state.showThemeSelector
+        )
     }
 
     LaunchedEffect(state.page) {
@@ -197,7 +206,11 @@ private fun WhiteLabelContent(
         },
         floatingActionButton = {
             if (!state.isLoading) {
-                GenesysFab(icon = GenesysIcons.Add, onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) })
+                GenesysFab(
+                    icon = GenesysIcons.Add, 
+                    onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) },
+                    modifier = Modifier.testTag("fab_add_block")
+                )
             }
         }
     ) {
@@ -213,7 +226,12 @@ private fun WhiteLabelContent(
                             if (state.page.components.isEmpty()) {
                                 item {
                                     GenesysEmptyState(icon = GenesysIcons.Magic, title = GenesysStrings.EmptyEditorTitle, description = GenesysStrings.EmptyEditorDescription, action = {
-                                        GenesysLoadingButton(text = GenesysStrings.AddBlockAction, onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) })
+                                        // ADICIONADA TAG PARA TESTE
+                                        GenesysLoadingButton(
+                                            text = GenesysStrings.AddBlockAction, 
+                                            onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) },
+                                            modifier = Modifier.testTag("btn_empty_add_block")
+                                        )
                                     })
                                 }
                             } else {
@@ -256,8 +274,16 @@ private fun WhiteLabelContent(
 
 @Composable
 private fun ComponentWrapperUI(component: PageComponent, index: Int, isEditing: Boolean, onEvent: (WhiteLabelEvent) -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().widthIn(max = 800.dp).clip(MaterialTheme.shapes.medium).then(if (isEditing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)).clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }.padding(4.dp)) {
-        PageComponentRenderer(component = component, isEditMode = true, onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) })
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .widthIn(max = 800.dp)
+        .clip(MaterialTheme.shapes.medium)
+        .then(if (isEditing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium))
+        .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }
+        .padding(4.dp)
+        .testTag("component_wrapper_$index")
+    ) {
+        PageComponentRenderer(component = component, isEditMode = true)
         Surface(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f), tonalElevation = 4.dp, shadowElevation = 2.dp) {
             Row(modifier = Modifier.padding(2.dp)) {
                 IconButton(onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) }, modifier = Modifier.size(32.dp)) { Icon(GenesysIcons.ArrowUp, null) }
@@ -429,9 +455,13 @@ private fun ComponentCatalogUI(state: WhiteLabelState, onEvent: (WhiteLabelEvent
             )
             
             catalogItems.forEach { (title, desc, component) ->
-                GenesysCard(modifier = Modifier.padding(bottom = 8.dp), onClick = {
-                    val newList = state.page.components.toMutableList().apply { add(component) }
-                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                // ADICIONADA TAG PARA TESTE
+                GenesysCard(modifier = Modifier.padding(bottom = 8.dp).testTag("catalog_item_$title"), onClick = {
+                    val newComponents = state.page.components.toMutableList().apply { add(component) }
+                    val updatedPage = state.page.copy(components = newComponents)
+                    onEvent(WhiteLabelEvent.OnPageUpdated(updatedPage))
+                    // AO ADICIONAR, JÁ SELECIONA PARA EDIÇÃO
+                    onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(newComponents.size - 1))
                     onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
                 }) {
                     GenesysRow {

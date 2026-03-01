@@ -1,71 +1,61 @@
+@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import kotlinx.coroutines.await
+import kotlinx.coroutines.delay
 import kotlin.js.Promise
 
-// Interop com as funções globais definidas no index.html
-@JsFun("(email, pass) => window.firebaseSignIn(email, pass)")
-external fun firebaseSignIn(email: String, pass: String): Promise<JsString>
+// Acessamos via globalThis para contornar restrições do SES/Lockdown
+@JsFun("() => !!(globalThis.FirebaseAuthBridge && globalThis.FirebaseAuthBridge.ready)")
+private external fun isFirebaseReady(): Boolean
 
-@JsFun("() => window.firebaseGetToken()")
-external fun firebaseGetToken(): Promise<JsString?>
+@JsFun("(email, pass) => globalThis.FirebaseAuthBridge.signIn(email, pass)")
+private external fun jsSignIn(email: String, pass: String): Promise<JsString>
 
-@JsFun("() => window.firebaseSignOut()")
-external fun firebaseSignOut(): Promise<JsAny?>
+@JsFun("() => globalThis.FirebaseAuthBridge.signOut()")
+private external fun jsSignOut(): Promise<JsAny?>
+
+@JsFun("() => globalThis.FirebaseAuthBridge.getCurrentUserToken()")
+private external fun jsGetCurrentUserToken(): Promise<JsString?>
 
 class WasmAuthRepository : AuthRepository {
-    
+
+    private suspend fun ensureReady() {
+        var attempts = 0
+        while (!isFirebaseReady() && attempts < 100) { 
+            delay(100)
+            attempts++
+        }
+    }
+
     override suspend fun signIn(email: String, password: String): Result<String?> {
         return try {
-            val token = firebaseSignIn(email, password).await().toString()
-            println("WASM: Login realizado com sucesso. Token obtido.")
-            Result.success(token)
+            ensureReady()
+            val token = jsSignIn(email, password).await<JsString>()
+            Result.success(token.toString())
         } catch (e: Exception) {
-            println("WASM: Erro no login -> \${e.message}")
-            Result.failure(Exception(e.message))
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun signOut(): Result<Unit> {
+        return try {
+            ensureReady()
+            jsSignOut().await<JsAny?>()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
     override suspend fun getCurrentUserToken(): String? {
         return try {
-            val token = firebaseGetToken().await()?.toString()
-            if (token == null) println("WASM: Nenhum usuário logado no Firebase.")
-            token
+            ensureReady()
+            if (!isFirebaseReady()) return null
+            jsGetCurrentUserToken().await<JsString?>()?.toString()
         } catch (e: Exception) {
-            println("WASM: Erro ao buscar token -> \${e.message}")
             null
         }
     }
-
-    override suspend fun signOut() {
-        try {
-            firebaseSignOut().await()
-            println("WASM: Logout realizado.")
-        } catch (e: Exception) { 
-            println("WASM: Erro no logout.")
-        }
-    }
 }
-
-// Extensão para aguardar Promises em Wasm
-private suspend fun <T : JsAny?> Promise<T>.await(): T =
-    suspendInternal { continuation ->
-        this.then(
-            { value -> 
-                continuation.resumeWith(Result.success(value))
-                null 
-            },
-            { error -> 
-                continuation.resumeWith(Result.failure(Exception("JS Error")))
-                null 
-            }
-        )
-    }
-
-private suspend fun <T> suspendInternal(block: (kotlin.coroutines.Continuation<T>) -> Unit): T =
-    kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn { continuation ->
-        block(continuation.intercepted())
-        kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
-    }
-
-private fun <T> kotlin.coroutines.Continuation<T>.intercepted(): kotlin.coroutines.Continuation<T> = this

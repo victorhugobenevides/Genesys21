@@ -36,7 +36,7 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 import org.koin.compose.koinInject
 
 @Composable
-fun App() {
+fun App(initialDeepLink: String? = null) {
     val router: Router = koinInject()
     val currentRoute = router.currentRoute
     val trackedOrder by router.viewModel.trackedOrder.collectAsState()
@@ -44,7 +44,11 @@ fun App() {
     var currentActivePageTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
 
     LaunchedEffect(Unit) {
-        router.handleDeepLink()
+        if (initialDeepLink != null) {
+            router.handleDeepLink(initialDeepLink)
+        } else {
+            router.handleDeepLink()
+        }
         onUrlChange { router.handleDeepLink() }
     }
 
@@ -84,7 +88,6 @@ fun App() {
                     when (route) {
                         is Route.Splash -> SplashScreen()
                         is Route.Login -> LoginScreen(
-                            viewModel = router.viewModel,
                             onLoginSuccess = { router.navigateTo(Route.PageList) }
                         )
                         is Route.PageList -> PageListScreen(

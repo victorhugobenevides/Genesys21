@@ -11,6 +11,7 @@ class JsAuthRepository : AuthRepository {
         return null
     }
 
-    override suspend fun signOut() {
+    override suspend fun signOut(): Result<Unit> {
+        return Result.success(Unit)
     }
 }

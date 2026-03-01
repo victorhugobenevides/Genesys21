@@ -59,3 +59,4 @@ server/src/main/resources/*.json
 /iosApp/iosApp/GoogleService-Info.plist
 /composeApp/google-services.json
 /deploy/
+/server/.env

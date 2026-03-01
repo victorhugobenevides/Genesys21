@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.itbenevides.genesys21.ui.components.feedback.GenesysLoadingIndicator
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.GenesysText
@@ -19,7 +20,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysStrings
 @Composable
 fun SplashScreen() {
     GenesysColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("splash_screen"),
         horizontalAlignment = GenesysAlignment.Center,
         verticalArrangement = Arrangement.Center,
         usePadding = true

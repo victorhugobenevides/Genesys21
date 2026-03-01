@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
@@ -58,7 +59,8 @@ fun TypographyComponentEditor(
                         if (id == "HEADER") fontSize = 28f
                         if (id == "SHADOW") fontSize = 42f
                     },
-                    label = { Text(label) }
+                    label = { Text(label) },
+                    modifier = Modifier.testTag("chip_style_$id")
                 )
             }
         }
@@ -71,7 +73,17 @@ fun TypographyComponentEditor(
         )
 
         GenesysSpacer(GenesysSpacing.Medium)
-        GenesysTextField(value = text, onValueChange = { text = it }, label = "Texto", singleLine = false, minLines = 3, icon = GenesysIcons.Edit)
+        
+        // CORREÇÃO: Passando a tag exata que o teste espera
+        GenesysTextField(
+            value = text, 
+            onValueChange = { text = it }, 
+            label = "Conteúdo do Texto", 
+            singleLine = false, 
+            minLines = 3, 
+            icon = GenesysIcons.Edit,
+            modifier = Modifier.testTag("input_typography_text")
+        )
         
         GenesysSpacer(GenesysSpacing.Medium)
         TextFormatControls(
@@ -87,6 +99,11 @@ fun TypographyComponentEditor(
         }
 
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysLoadingButton(text = "Confirmar Texto", fillWidth = true, onClick = { onSave(previewComponent) })
+        GenesysLoadingButton(
+            text = "Confirmar Texto", 
+            fillWidth = true, 
+            onClick = { onSave(previewComponent) },
+            modifier = Modifier.testTag("btn_confirm_typography")
+        )
     }
 }

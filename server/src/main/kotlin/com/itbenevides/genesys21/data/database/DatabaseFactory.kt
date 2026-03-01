@@ -55,10 +55,8 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
-            // Executa correções estruturais antes de deixar o Exposed criar as tabelas
             runFixes()
 
-            // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
             @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
                 CategoriesTable,
@@ -72,6 +70,13 @@ object DatabaseFactory {
                 OrdersTable,
                 OrderItemsTable
             )
+
+            // CRIAÇÃO SEGURA DE ÍNDICES:
+            // Usamos SQL puro para garantir que a inicialização não crash se o índice já existir.
+            exec("CREATE INDEX IF NOT EXISTS pages_owner_id ON pages (owner_id);")
+            exec("CREATE INDEX IF NOT EXISTS products_owner_id ON products (owner_id);")
+            // Índice único seguro para o domínio customizado
+            exec("CREATE UNIQUE INDEX IF NOT EXISTS pages_custom_domain ON pages (custom_domain);")
         }
     }
 

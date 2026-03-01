@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
@@ -16,48 +15,30 @@ import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import org.koin.compose.viewmodel.koinViewModel
 
+/**
+ * Entry point da tela de Login. Gerencia a injeção do ViewModel.
+ */
 @Composable
 fun LoginScreen(
-    viewModel: PageViewModel,
     onLoginSuccess: () -> Unit
 ) {
-    var state by remember { mutableStateOf(LoginState()) }
+    val viewModel: LoginViewModel = koinViewModel()
+    val state by viewModel.uiState.collectAsState()
 
-    val onEvent: (LoginEvent) -> Unit = { event ->
-        when (event) {
-            is LoginEvent.OnEmailChanged -> {
-                state = state.copy(
-                    email = event.email,
-                    canLogin = event.email.isNotBlank() && state.password.isNotBlank()
-                )
-            }
-            is LoginEvent.OnPasswordChanged -> {
-                state = state.copy(
-                    password = event.password,
-                    canLogin = state.email.isNotBlank() && event.password.isNotBlank()
-                )
-            }
-            is LoginEvent.OnLoginClicked -> {
-                state = state.copy(isLoading = true, errorMessage = "")
-                viewModel.signIn(state.email, state.password,
-                    onSuccess = { 
-                        state = state.copy(isLoading = false)
-                        onLoginSuccess() 
-                    },
-                    onFailure = { 
-                        state = state.copy(isLoading = false, errorMessage = it) 
-                    }
-                )
-            }
-        }
-    }
-
-    LoginContent(state, onEvent)
+    LoginContent(
+        state = state,
+        onEvent = { event -> viewModel.onEvent(event, onLoginSuccess) }
+    )
 }
 
+/**
+ * UI pura da tela de Login. 
+ * Esta função é agnóstica a ViewModel e Koin, facilitando testes de UI isolados.
+ */
 @Composable
-private fun LoginContent(
+fun LoginContent(
     state: LoginState,
     onEvent: (LoginEvent) -> Unit
 ) {
@@ -66,7 +47,6 @@ private fun LoginContent(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            // Container adaptativo: Card no Desktop, Column limpa no Mobile
             BoxWithConstraints {
                 val isWideScreen = maxWidth > 600.dp
                 
@@ -82,7 +62,6 @@ private fun LoginContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        // Logo/Ícone com cor primária
                         Icon(
                             imageVector = GenesysIcons.Magic,
                             contentDescription = null,

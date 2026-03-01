@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -88,15 +89,10 @@ internal fun GenesysTextFieldBase(
     ),
     weightValue: Float = 0f
 ) {
-    // 1. ESTADO LOCAL (One-Way Data Binding)
-    // O componente é o dono do estado enquanto focado para evitar o "ping-pong" com o ViewModel
     var localValue by remember { mutableStateOf(TextFieldValue(text = value)) }
     var isFocused by remember { mutableStateOf(false) }
-    
-    // Buffer para restauração em caso de bug da Samsung
     var lastSafeText by remember { mutableStateOf(value) }
 
-    // Sincroniza apenas se a mudança for externa e não houver foco
     LaunchedEffect(value) {
         if (!isFocused && value != localValue.text) {
             localValue = localValue.copy(text = value)
@@ -107,18 +103,11 @@ internal fun GenesysTextFieldBase(
     OutlinedTextField(
         value = localValue,
         onValueChange = { next ->
-            // --- SAMSUNG BUG GUARD ---
-            // Se o texto anterior não era vazio, o campo está focado, e o novo texto vem vazio,
-            // é o bug do espaço limpando o buffer. Nós REJEITAMOS essa mudança.
             if (isFocused && next.text.isEmpty() && lastSafeText.isNotEmpty()) {
-                // Mantém o estado atual e ignora o comando de limpar
                 return@OutlinedTextField
             }
-
             localValue = next
             lastSafeText = next.text
-            
-            // Notifica o ViewModel
             if (next.text != value) {
                 onValueChange(next.text)
             }
@@ -129,28 +118,24 @@ internal fun GenesysTextFieldBase(
         trailingIcon = trailingIcon,
         modifier = modifier
             .fillMaxWidth()
+            // CORREÇÃO: Adicionando testTag baseada no label para facilitar testes automatizados
+            .then(if (label != null) Modifier.testTag(label) else Modifier)
             .onFocusChanged { 
                 isFocused = it.isFocused 
                 if (!it.isFocused) {
-                    localValue = localValue.copy(text = value) // Sincroniza ao sair
+                    localValue = localValue.copy(text = value)
                 }
             },
         shape = shape,
         singleLine = singleLine,
         minLines = minLines,
-        // 2. CONFIGURAÇÃO ANTI-PREDIÇÃO: 
-        // Password força o teclado a desligar o dicionário (causa do bug), mas visualTransformation exibe o texto.
         keyboardOptions = keyboardOptions.copy(
             autoCorrectEnabled = false,
             keyboardType = if (keyboardOptions.keyboardType == KeyboardType.Text) KeyboardType.Password else keyboardOptions.keyboardType,
             capitalization = KeyboardCapitalization.None,
             imeAction = if (singleLine) ImeAction.Done else ImeAction.Default
         ),
-        visualTransformation = if (keyboardOptions.keyboardType == KeyboardType.Text && visualTransformation == VisualTransformation.None) {
-            VisualTransformation.None 
-        } else {
-            visualTransformation
-        },
+        visualTransformation = visualTransformation,
         isError = isError,
         supportingText = supportingText?.let { { Text(it) } },
         colors = colors

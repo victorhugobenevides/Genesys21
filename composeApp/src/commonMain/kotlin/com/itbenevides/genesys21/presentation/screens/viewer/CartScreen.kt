@@ -4,10 +4,14 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.model.Page
@@ -23,11 +27,12 @@ import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.Analytics
 import org.koin.compose.viewmodel.koinViewModel
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.input.GenesysQuantitySelector
+import kotlinx.coroutines.launch
 import kotlin.math.roundToLong
 
 @Composable
@@ -40,13 +45,18 @@ fun CartScreen(
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
     val customerName by viewModel.customerName.collectAsState()
-    val customerPhone by viewModel.customerPhone.collectAsState() // CARREGA TELEFONE SALVO
+    val customerPhone by viewModel.customerPhone.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isCreatingCheckout by viewModel.isCreatingCheckout.collectAsState()
+    val paymentUrl by viewModel.paymentUrl.collectAsState()
+    val error by viewModel.currentError.collectAsState()
     val backendUrl = remember { getBaseUrl() }
+    val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var state by remember { mutableStateOf(CartScreenState()) }
-    
-    // Sincroniza o estado inicial com os dados persistidos
+
     LaunchedEffect(customerName, customerPhone) {
         state = state.copy(
             customerName = customerName,
@@ -54,43 +64,68 @@ fun CartScreen(
         )
     }
 
-    LaunchedEffect(cartItems, total, isLoading) {
+    LaunchedEffect(cartItems, total, isLoading, isCreatingCheckout, paymentUrl) {
         state = state.copy(
             cartItems = cartItems,
             total = total,
-            isLoading = isLoading
+            isLoading = isLoading,
+            isCreatingCheckout = isCreatingCheckout,
+            paymentUrl = paymentUrl
         )
     }
 
+    LaunchedEffect(paymentUrl) {
+        paymentUrl?.let {
+            uriHandler.openUri(it)
+            viewModel.clearPaymentUrl()
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let {
+            snackbarHostState.showSnackbar(
+                message = it.message,
+                actionLabel = "Fechar"
+            )
+            viewModel.clearError()
+        }
+    }
+
     LaunchedEffect(Unit) {
-        AnalyticsManager.trackPageView(GenesysStrings.CartTitle)
+        Analytics.trackPageView(GenesysStrings.CartTitle)
     }
 
     val onEvent: (CartScreenEvent) -> Unit = { event ->
         when (event) {
             is CartScreenEvent.OnUpdateQuantity -> viewModel.updateCartQuantity(event.productId, event.newQuantity)
             is CartScreenEvent.OnRemoveItem -> {
-                AnalyticsManager.logEvent("remove_from_cart", mapOf("item_id" to event.productId))
+                Analytics.logEvent("remove_from_cart", mapOf("item_id" to event.productId))
                 viewModel.removeFromCart(event.productId)
             }
             is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
-            is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone) // SALVA TELEFONE NA HORA
+            is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone)
             is CartScreenEvent.OnCheckoutClicked -> {
                 viewModel.submitOrder(page, state.customerPhone) { orderId ->
                     onOrderSubmitted(orderId)
+                }
+            }
+            is CartScreenEvent.OnMercadoPagoCheckout -> {
+                scope.launch {
+                    viewModel.createMercadoPagoCheckout(page)
                 }
             }
             is CartScreenEvent.OnBackClicked -> onBack()
         }
     }
 
-    CartContent(state, backendUrl, onEvent)
+    CartContent(state, backendUrl, snackbarHostState, onEvent)
 }
 
 @Composable
 private fun CartContent(
     state: CartScreenState,
     backendUrl: String,
+    snackbarHostState: SnackbarHostState,
     onEvent: (CartScreenEvent) -> Unit
 ) {
     GenesysPage(
@@ -99,7 +134,8 @@ private fun CartContent(
                 title = GenesysStrings.CartTitle,
                 onBack = { onEvent(CartScreenEvent.OnBackClicked) }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > 900.dp
@@ -111,7 +147,7 @@ private fun CartContent(
                     description = GenesysStrings.EmptyCartDescription,
                     action = {
                         GenesysLoadingButton(
-                            text = GenesysStrings.Back, 
+                            text = GenesysStrings.Back,
                             onClick = { onEvent(CartScreenEvent.OnBackClicked) }
                         )
                     }
@@ -126,12 +162,12 @@ private fun CartContent(
                         GenesysWeightBox(0.65f) {
                             GenesysColumn(usePadding = true, useScroll = true) {
                                 GenesysText(
-                                    text = GenesysStrings.AppName, 
+                                    text = GenesysStrings.AppName,
                                     style = GenesysTextStyle.Title,
                                     fontWeight = GenesysFontWeight.ExtraBold
                                 )
                                 GenesysSpacer(GenesysSpacing.Medium)
-                                
+
                                 state.cartItems.forEach { item ->
                                     ModernCartItemRow(item, backendUrl, onEvent)
                                     GenesysSpacer(GenesysSpacing.Small)
@@ -185,12 +221,12 @@ private fun IdentificationCard(state: CartScreenState, onEvent: (CartScreenEvent
     GenesysCard {
         GenesysColumn(usePadding = false) {
             GenesysText(
-                text = GenesysStrings.Identification, 
+                text = GenesysStrings.Identification,
                 style = GenesysTextStyle.Title,
                 fontWeight = GenesysFontWeight.Bold
             )
             GenesysSpacer(GenesysSpacing.Medium)
-            
+
             GenesysTextField(
                 value = state.customerName,
                 onValueChange = { onEvent(CartScreenEvent.OnCustomerNameChanged(it)) },
@@ -198,9 +234,9 @@ private fun IdentificationCard(state: CartScreenState, onEvent: (CartScreenEvent
                 placeholder = GenesysStrings.CheckoutNameHint,
                 icon = GenesysIcons.Person
             )
-            
+
             GenesysSpacer(GenesysSpacing.Medium)
-            
+
             GenesysTextField(
                 value = state.customerPhone,
                 onValueChange = { onEvent(CartScreenEvent.OnCustomerPhoneChanged(it)) },
@@ -225,25 +261,35 @@ private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenE
                     }
                     val totalFormatted = (state.total * 100.0).roundToLong() / 100.0
                     GenesysText(
-                        text = "${GenesysStrings.PricePrefix}$totalFormatted", 
-                        style = GenesysTextStyle.Headline, 
+                        text = "${GenesysStrings.PricePrefix}$totalFormatted",
+                        style = GenesysTextStyle.Headline,
                         fontWeight = GenesysFontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.testTag("cart_total_price") // Tag unificada
                     )
                 }
                 GenesysSpacer(GenesysSpacing.Large)
                 GenesysLoadingButton(
-                    text = GenesysStrings.CheckoutButton,
+                    text = "Pagar com Mercado Livre",
+                    onClick = { onEvent(CartScreenEvent.OnMercadoPagoCheckout) },
+                    fillWidth = true,
+                    enabled = state.isCheckoutEnabled,
+                    isLoading = state.isCreatingCheckout
+                )
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysLoadingButton(
+                    text = "Finalizar via WhatsApp",
                     onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
                     fillWidth = true,
                     enabled = state.isCheckoutEnabled,
-                    icon = GenesysIcons.Check,
-                    isLoading = state.isLoading
+                    icon = GenesysIcons.Chat,
+                    isLoading = state.isLoading && !state.isCreatingCheckout,
+                    modifier = Modifier.testTag("btn_checkout_whatsapp")
                 )
                 if (!state.isCheckoutEnabled && state.cartItems.isNotEmpty()) {
                     GenesysSpacer(GenesysSpacing.Small)
                     GenesysText(
-                        text = "Preencha nome e telefone para continuar", 
+                        text = "Preencha nome e telefone para continuar",
                         style = GenesysTextStyle.Label,
                         textAlign = GenesysTextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
@@ -264,20 +310,30 @@ private fun MobileCheckoutFooter(state: CartScreenState, onEvent: (CartScreenEve
             }
             val totalFormatted = (state.total * 100.0).roundToLong() / 100.0
             GenesysText(
-                text = "${GenesysStrings.PricePrefix}$totalFormatted", 
-                style = GenesysTextStyle.Title, 
+                text = "${GenesysStrings.PricePrefix}$totalFormatted",
+                style = GenesysTextStyle.Title,
                 fontWeight = GenesysFontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.testTag("cart_total_price") // Mesma tag, mas apenas um renderizado
             )
         }
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysLoadingButton(
-            text = GenesysStrings.CheckoutButton,
+            text = "Pagar com Mercado Livre",
+            onClick = { onEvent(CartScreenEvent.OnMercadoPagoCheckout) },
+            fillWidth = true,
+            enabled = state.isCheckoutEnabled,
+            isLoading = state.isCreatingCheckout
+        )
+        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysLoadingButton(
+            text = "Finalizar via WhatsApp",
             onClick = { onEvent(CartScreenEvent.OnCheckoutClicked) },
             fillWidth = true,
             enabled = state.isCheckoutEnabled,
-            icon = GenesysIcons.Check,
-            isLoading = state.isLoading
+            icon = GenesysIcons.Chat,
+            isLoading = state.isLoading && !state.isCreatingCheckout,
+            modifier = Modifier.testTag("btn_checkout_whatsapp")
         )
     }
 }
@@ -324,7 +380,12 @@ private fun ModernCartItemRow(
                 GenesysColumn(usePadding = false) {
                     GenesysText(text = item.product.name, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
                     val priceFormatted = (item.product.price * 100.0).roundToLong() / 100.0
-                    GenesysText(text = "${GenesysStrings.PricePrefix}$priceFormatted", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.primary)
+                    GenesysText(
+                        text = "${GenesysStrings.PricePrefix}$priceFormatted", 
+                        style = GenesysTextStyle.Body, 
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.testTag("cart_item_price_${item.product.id}")
+                    )
                     GenesysSpacer(GenesysSpacing.Medium)
                     GenesysQuantitySelector(
                         quantity = item.quantity,

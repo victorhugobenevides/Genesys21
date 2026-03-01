@@ -8,10 +8,9 @@ import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.repository.SqliteCartRepository
 import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.data.repository.SqlitePageRepository
-import com.itbenevides.genesys21.routes.cartRoutes
-import com.itbenevides.genesys21.routes.categoryRoutes
-import com.itbenevides.genesys21.routes.orderRoutes
-import com.itbenevides.genesys21.routes.pageRoutes
+import com.itbenevides.genesys21.routes.*
+import com.mercadopago.MercadoPagoConfig
+import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
@@ -27,6 +26,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -41,15 +41,19 @@ fun main() {
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
-    
+    val dotenv = try { dotenv() } catch (e: Exception) { null }
+
     DatabaseFactory.init()
-    val pageRepository = SqlitePageRepository()
+    val jsonConfig = Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }
+    
+    // Injeção correta com o objeto JSON
+    val pageRepository = SqlitePageRepository(jsonConfig)
     val cartRepository = SqliteCartRepository()
     val orderRepository = SqliteOrderRepository()
 
-    val uploadDir = File("/app/uploads").absoluteFile
+    val uploadDir = File("uploads").absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
-    
+
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             logger.error("Erro Interno: ${cause.message}", cause)
@@ -57,16 +61,15 @@ fun Application.module() {
         }
     }
 
-    // Otimização: Compressão Gzip agressiva para reduzir transferência de dados (JS/JSON)
     install(Compression) {
         gzip { priority = 1.0 }
         deflate { priority = 10.0; minimumSize(1024) }
     }
 
-    install(ContentNegotiation) { 
-        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }) 
+    install(ContentNegotiation) {
+        json(jsonConfig)
     }
-    
+
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
@@ -97,9 +100,12 @@ fun Application.module() {
     }
 
     initFirebase(logger)
+    
+    dotenv?.get("MERCADOPAGO_ACCESS_TOKEN")?.let {
+        MercadoPagoConfig.setAccessToken(it)
+    }
 
     routing {
-        // Otimização: Cache agressivo para imagens de upload (30 dias)
         get("/uploads/{filename...}") {
             val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
             val file = File(uploadDir, filename)
@@ -111,40 +117,30 @@ fun Application.module() {
             }
         }
 
-        // Rota para Metadados Dinâmicos (SEO/Compartilhamento) com Redirecionamento
         get("/p/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val page = pageRepository.getPublicPage(id).getOrNull()
+            val pageResult = pageRepository.getPublicPage(id)
             
+            // Corrigido: Usando a forma correta do Result padrão
+            val page = pageResult.getOrNull()
+
             val title = page?.title ?: "Página não encontrada"
-            val description = "Confira esta página incrível."
-            val siteName = "Social Bio"
-            
             val html = """
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <meta charset="UTF-8">
                     <title>$title</title>
-                    <meta property="og:title" content="$title">
-                    <meta property="og:description" content="$description">
-                    <meta property="og:site_name" content="$siteName">
-                    <meta property="og:type" content="website">
-                    <meta name="twitter:card" content="summary_large_image">
-                    <meta name="twitter:title" content="$title">
-                    <meta name="twitter:description" content="$description">
-                    <script>
-                        window.location.replace("/?pageId=$id");
-                    </script>
+                    <script>window.location.replace("/?pageId=$id");</script>
                 </head>
-                <body>
-                    Redirecionando para $title...
-                </body>
+                <body>Redirecionando para $title...</body>
                 </html>
             """.trimIndent()
-            
             call.respondText(html, ContentType.Text.Html)
         }
+
+        // Rotas Públicas de Pedidos (Histórico do Cliente)
+        publicOrderRoutes(orderRepository)
 
         get("/") { call.respondText("API Online") }
 
@@ -153,7 +149,7 @@ fun Application.module() {
             cartRoutes(cartRepository)
             orderRoutes(orderRepository)
             categoryRoutes(pageRepository)
-            
+
             authenticate("firebase") {
                 post("/upload") {
                     val multipart = call.receiveMultipart()
@@ -163,14 +159,14 @@ fun Application.module() {
                         if (part is PartData.FileItem) {
                             val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
                             fileName = "${UUID.randomUUID()}.$ext"
-                            val channel = part.provider()
-                            fileBytes = channel.toByteArray()
+                            // Corrigido: Leitura de bytes no Ktor 3
+                            fileBytes = part.provider().readRemaining().readBytes()
                         }
                         part.dispose()
                     }
                     if (fileBytes != null) {
                         val file = File(uploadDir, fileName)
-                        file.writeBytes(fileBytes)
+                        file.writeBytes(fileBytes!!)
                         call.respondText("/uploads/$fileName")
                     } else {
                         call.respond(HttpStatusCode.BadRequest)

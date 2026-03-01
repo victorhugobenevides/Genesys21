@@ -1,10 +1,6 @@
 package com.itbenevides.genesys21
 
 import androidx.compose.ui.window.ComposeUIViewController
+import com.itbenevides.genesys21.di.initialDeepLink
 
-fun MainViewController() = ComposeUIViewController {
-    // Inicializa o Koin se ele ainda não estiver rodando
-    initKoinIos()
-    
-    App()
-}
+fun MainViewController() = ComposeUIViewController { App(initialDeepLink = initialDeepLink) }

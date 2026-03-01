@@ -1,10 +1,7 @@
 package com.itbenevides.genesys21.util
 
-interface Analytics {
-    fun logEvent(name: String, params: Map<String, Any> = emptyMap())
+expect object Analytics {
+    fun logEvent(name: String, params: Map<String, Any>? = null)
     fun trackPageView(pageName: String)
-    fun logException(throwable: Throwable, message: String? = null, additionalParams: Map<String, Any> = emptyMap())
+    fun logException(throwable: Throwable, message: String? = null, additionalParams: Map<String, Any>? = null)
 }
-
-// Singleton global para acesso simplificado
-expect val AnalyticsManager: Analytics

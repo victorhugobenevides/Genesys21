@@ -3,6 +3,8 @@ package com.itbenevides.genesys21.di
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.screens.login.LoginViewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 /**
@@ -16,9 +18,13 @@ val viewModelModule = module {
             get(), get(), get(), get(), get(), get(), get(), 
             get(), get(), get(), get(), get(), 
             get(), get(), get(), get(),
-            get(), get(), get() // ADICIONADO: Use cases de categoria
+            get(), get(), get(),
+            get() // OrderRepository
         ) 
     }
+
+    // LoginViewModel
+    viewModelOf(::LoginViewModel)
 
     // O Router precisa ser single para manter o estado da navegação global
     single { Router(get()) }

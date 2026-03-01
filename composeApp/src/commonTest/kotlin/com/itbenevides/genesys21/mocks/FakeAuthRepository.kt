@@ -13,7 +13,8 @@ class FakeAuthRepository : AuthRepository {
 
     override suspend fun getCurrentUserToken(): String? = mockToken
 
-    override suspend fun signOut() {
+    override suspend fun signOut(): Result<Unit> {
         mockToken = null
+        return Result.success(Unit)
     }
 }

@@ -10,7 +10,6 @@ object ProductsTable : Table("products") {
     val price = double("price")
     val description = text("description").nullable()
     
-    // CORREÇÃO: Vinculando à tabela de categorias recém-criada
     val categoryId = reference(
         "category_id", 
         CategoriesTable, 
@@ -19,13 +18,13 @@ object ProductsTable : Table("products") {
     ).nullable()
     
     val stock = integer("stock").default(0)
+    
+    // Simplificação: Armazenamos o produto completo em JSON para manter sincronia com o App
+    val detailsJson = text("details_json").default("{}")
 
     override val primaryKey = PrimaryKey(id)
 }
 
-/**
- * Normalização: Tabela para armazenar as URLs de imagem de forma atômica.
- */
 object ProductImagesTable : Table("product_images") {
     val id = integer("id").autoIncrement()
     val productId = varchar("product_id", 50).references(ProductsTable.id, onDelete = ReferenceOption.CASCADE)
@@ -35,9 +34,6 @@ object ProductImagesTable : Table("product_images") {
     override val primaryKey = PrimaryKey(id)
 }
 
-/**
- * Tabela de junção para normalizar a relação entre Componentes de Página e Produtos.
- */
 object ComponentProductsTable : Table("component_products") {
     val id = integer("id").autoIncrement()
     val componentId = integer("component_id").references(PageComponentsTable.id, onDelete = ReferenceOption.CASCADE)

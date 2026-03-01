@@ -4,7 +4,7 @@ import com.itbenevides.genesys21.domain.model.Category
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.PageRepository
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.Analytics
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.*
@@ -27,7 +27,7 @@ class KtorPageRepository(
 
     private fun logNetworkError(method: String, url: String, e: Exception) {
         println("NETWORK_ERROR [$method] $url: ${e.message}")
-        AnalyticsManager.logException(e, "Network Error: $method $url", mapOf(
+        Analytics.logException(e, "Network Error: $method $url", mapOf(
             "url" to url,
             "method" to method
         ))
@@ -119,7 +119,7 @@ class KtorPageRepository(
                 val errorBody = try { response.body<String>() } catch(e: Exception) { "No body" }
                 val errorMsg = "Erro ao salvar página: ${response.status} - $errorBody"
                 println("NETWORK_ERROR: $errorMsg")
-                AnalyticsManager.logEvent("network_save_page_error", mapOf(
+                Analytics.logEvent("network_save_page_error", mapOf(
                     "status" to response.status.value,
                     "page_id" to page.id
                 ))
@@ -192,6 +192,40 @@ class KtorPageRepository(
             }
         } catch (e: Exception) {
             logNetworkError("GET", url, e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun saveProduct(product: Product, token: String): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/products"
+        return try {
+            val response = client.post(url) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(product)
+            }
+            if (response.status.isSuccess()) Result.success(Unit)
+            else Result.failure(Exception("Erro ao salvar produto: ${response.status}"))
+        } catch (e: Exception) {
+            logNetworkError("POST_PRODUCT", url, e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteProduct(id: String, token: String): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        val url = "$baseUrl/api/products/$id"
+        return try {
+            val response = client.delete(url) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) Result.success(Unit)
+            else {
+                Result.failure(Exception("Erro ao excluir produto: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            logNetworkError("DELETE_PRODUCT", url, e)
             Result.failure(e)
         }
     }

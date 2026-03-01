@@ -3,7 +3,6 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -12,10 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.di.getBaseUrl
@@ -33,7 +32,7 @@ import com.itbenevides.genesys21.ui.components.navigation.GenesysPagerIndicator
 import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.Analytics
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -52,7 +51,7 @@ fun ProductDetailsScreen(
     var state by remember { mutableStateOf(ProductDetailsState(product = product)) }
 
     LaunchedEffect(product.id) {
-        AnalyticsManager.logEvent("view_item", mapOf("item_id" to product.id, "item_name" to product.name, "price" to product.price))
+        Analytics.logEvent("view_item", mapOf("item_id" to product.id, "item_name" to product.name, "price" to product.price))
     }
 
     val onEvent: (ProductDetailsEvent) -> Unit = { event ->
@@ -111,7 +110,6 @@ private fun ProductDetailsContent(
             val isWideScreen = maxWidth > 900.dp
 
             if (isWideScreen) {
-                // --- LAYOUT DESKTOP ---
                 GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
                     GenesysWeightBox(0.5f) {
                         GenesysBox(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -133,7 +131,6 @@ private fun ProductDetailsContent(
                     }
                 }
             } else {
-                // --- LAYOUT MOBILE ---
                 GenesysColumn(
                     modifier = Modifier.fillMaxSize(),
                     usePadding = false,
@@ -171,7 +168,7 @@ private fun ProductImageCarousel(
     onNavigate: (Int) -> Unit
 ) {
     GenesysCard(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().testTag("product_image_carousel"),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
         elevation = 0.dp
     ) {
@@ -193,7 +190,6 @@ private fun ProductImageCarousel(
                     )
                 }
                 
-                // Botões de Navegação Laterais
                 if (state.product.imageUrls.size > 1) {
                     if (pagerState.currentPage > 0) {
                         Surface(
@@ -204,6 +200,7 @@ private fun ProductImageCarousel(
                         ) {
                             GenesysIconButton(
                                 icon = GenesysIcons.ArrowLeft, 
+                                modifier = Modifier.testTag("btn_prev_image"),
                                 onClick = { onNavigate(pagerState.currentPage - 1) },
                                 tint = Color.White
                             )
@@ -219,6 +216,7 @@ private fun ProductImageCarousel(
                         ) {
                             GenesysIconButton(
                                 icon = GenesysIcons.ArrowRight, 
+                                modifier = Modifier.testTag("btn_next_image"),
                                 onClick = { onNavigate(pagerState.currentPage + 1) },
                                 tint = Color.White
                             )
@@ -255,7 +253,8 @@ private fun ProductInfoSection(
     GenesysText(
         text = state.product.name.ifBlank { GenesysStrings.ProductName }, 
         style = GenesysTextStyle.Headline, 
-        fontWeight = GenesysFontWeight.ExtraBold
+        fontWeight = GenesysFontWeight.ExtraBold,
+        modifier = Modifier.testTag("product_title")
     )
     
     GenesysSpacer(GenesysSpacing.Small)
@@ -265,7 +264,8 @@ private fun ProductInfoSection(
         text = "${GenesysStrings.PricePrefix}$priceFormatted", 
         style = GenesysTextStyle.Title, 
         fontWeight = GenesysFontWeight.ExtraBold, 
-        color = MaterialTheme.colorScheme.primary
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.testTag("product_price")
     )
     
     GenesysSpacer(GenesysSpacing.Medium)
@@ -293,7 +293,7 @@ private fun ProductInfoSection(
     GenesysLoadingButton(
         text = GenesysStrings.AddToCartAction,
         onClick = { onEvent(ProductDetailsEvent.OnAddToCartClicked) },
-        modifier = Modifier.fillMaxWidth().scale(buttonScale),
+        modifier = Modifier.fillMaxWidth().scale(buttonScale).testTag("btn_add_to_cart"),
         isLoading = state.isAddingToCart,
         enabled = state.product.stock > 0,
         icon = GenesysIcons.ShoppingBag,
@@ -311,6 +311,7 @@ private fun SuccessDialogUI(state: ProductDetailsState, onEvent: (ProductDetails
         confirmButton = { 
             GenesysLoadingButton(
                 text = GenesysStrings.ViewCart, 
+                modifier = Modifier.testTag("btn_dialog_view_cart"),
                 onClick = { onEvent(ProductDetailsEvent.OnViewCartClicked) },
                 fillWidth = true
             ) 
@@ -318,6 +319,7 @@ private fun SuccessDialogUI(state: ProductDetailsState, onEvent: (ProductDetails
         dismissButton = { 
             GenesysTextButton(
                 text = GenesysStrings.ContinueShopping, 
+                modifier = Modifier.testTag("btn_dialog_continue"),
                 onClick = { onEvent(ProductDetailsEvent.OnContinueShoppingClicked) }
             ) 
         }

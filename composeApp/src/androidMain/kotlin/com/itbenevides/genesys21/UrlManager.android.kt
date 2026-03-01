@@ -1,7 +1,7 @@
 package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.navigation.Screen
-import com.itbenevides.BuildConfig
+import com.itbenevides.genesys21.BuildConfig // Import correto após mudança de namespace
 
 actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?, title: String?) { }
 

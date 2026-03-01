@@ -7,10 +7,14 @@ import com.itbenevides.genesys21.domain.repository.OrderRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
-import org.jetbrains.exposed.sql.transactions.transaction
 
 class SqliteOrderRepository : OrderRepository {
+
+    override suspend fun createMercadoPagoCheckout(order: Order, token: String): Result<String> {
+        return Result.failure(UnsupportedOperationException("Operação não suportada no servidor"))
+    }
 
     override fun getOrders(token: String): Flow<List<Order>> = flow {
         val orders = dbQuery {
@@ -25,38 +29,38 @@ class SqliteOrderRepository : OrderRepository {
         emit(orders)
     }
 
-    override suspend fun getOrderById(orderId: String): Result<Order> = try {
+    override suspend fun getOrderById(orderId: String): Result<Order> = runCatching {
         dbQuery {
             OrdersTable.selectAll().where { OrdersTable.id eq orderId }
                 .map { row ->
                     val items = fetchOrderItems(orderId)
                     row.toOrder(items)
                 }
-                .singleOrNull()?.let { Result.success(it) }
-                ?: Result.failure(Exception("Pedido não encontrado"))
+                .singleOrNull() ?: throw Exception("Pedido não encontrado")
         }
-    } catch (e: Exception) {
-        Result.failure(e)
     }
 
-    override suspend fun getCustomerOrders(sessionId: String): Result<List<Order>> = try {
+    override suspend fun getCustomerOrders(sessionId: String): Result<List<Order>> = runCatching {
         dbQuery {
-            val orders = OrdersTable.selectAll().where { OrdersTable.customerId eq sessionId }
+            OrdersTable.selectAll().where { OrdersTable.customerId eq sessionId }
                 .orderBy(OrdersTable.createdAt to SortOrder.DESC)
                 .map { row ->
                     val orderId = row[OrdersTable.id]
                     val items = fetchOrderItems(orderId)
                     row.toOrder(items)
                 }
-            Result.success(orders)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
     }
 
-    override suspend fun createOrder(order: Order): Result<Unit> = try {
+    override suspend fun createOrder(order: Order): Result<String> = runCatching {
         dbQuery {
-            // 1. Inserir cabeçalho do pedido
+            // Verifica se pedido já existe para evitar duplicidade
+            val exists = OrdersTable.selectAll().where { OrdersTable.id eq order.id }.count() > 0
+            if (exists) return@dbQuery order.id
+
+            // Garante que o pedido tenha uma data de criação válida (timestamp atual em ms)
+            val timestamp = if (order.createdAt <= 0) System.currentTimeMillis() else order.createdAt
+
             OrdersTable.insert {
                 it[id] = order.id
                 it[userId] = order.userId
@@ -65,14 +69,12 @@ class SqliteOrderRepository : OrderRepository {
                 it[customerPhone] = order.customerPhone
                 it[total] = order.total
                 it[status] = order.status.name
-                it[createdAt] = order.createdAt
+                it[createdAt] = timestamp
                 it[whatsappContact] = order.whatsappContact
                 it[theme] = order.theme.name
             }
 
-            // 2. Inserir itens e atualizar estoque
             order.items.forEach { item ->
-                // Salva o item no histórico do pedido
                 OrderItemsTable.insert {
                     it[orderId] = order.id
                     it[productId] = item.product.id
@@ -81,28 +83,74 @@ class SqliteOrderRepository : OrderRepository {
                     it[quantity] = item.quantity
                 }
 
-                // CONTROLE DE ESTOQUE: Diminui a quantidade disponível
+                // Deduz do estoque
                 ProductsTable.update({ ProductsTable.id eq item.product.id }) {
-                    it.update(stock, stock minus item.quantity)
+                    with(SqlExpressionBuilder) {
+                        it.update(stock, stock - item.quantity)
+                    }
                 }
             }
-            
-            Result.success(Unit)
+            order.id
         }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        Result.failure(e)
     }
 
-    override suspend fun updateOrderStatus(token: String, orderId: String, status: OrderStatus): Result<Unit> = try {
+    override suspend fun updateOrderStatus(token: String, orderId: String, status: OrderStatus): Result<Unit> = runCatching {
         dbQuery {
+            val oldStatusName = OrdersTable.selectAll().where { OrdersTable.id eq orderId }
+                .map { it[OrdersTable.status] }.singleOrNull()
+            
             val updated = OrdersTable.update({ (OrdersTable.id eq orderId) and (OrdersTable.userId eq token) }) {
                 it[this.status] = status.name
             }
-            if (updated > 0) Result.success(Unit) else Result.failure(Exception("Acesso negado ou pedido inexistente"))
+            
+            if (updated > 0 && oldStatusName != null) {
+                handleStockOnStatusChange(orderId, OrderStatus.valueOf(oldStatusName), status)
+            }
         }
-    } catch (e: Exception) {
-        Result.failure(e)
+    }
+
+    suspend fun updateOrderStatusForWebhook(orderId: String, newStatus: OrderStatus): Result<Unit> = runCatching {
+        dbQuery {
+            val orderRow = OrdersTable.selectAll().where { OrdersTable.id eq orderId }.singleOrNull() 
+                ?: throw Exception("Pedido não encontrado")
+            
+            val oldStatus = OrderStatus.valueOf(orderRow[OrdersTable.status])
+            
+            if (oldStatus != newStatus) {
+                OrdersTable.update({ OrdersTable.id eq orderId }) {
+                    it[status] = newStatus.name
+                }
+                handleStockOnStatusChange(orderId, oldStatus, newStatus)
+            }
+        }
+    }
+
+    private fun handleStockOnStatusChange(orderId: String, oldStatus: OrderStatus, newStatus: OrderStatus) {
+        // Se o pedido for cancelado ou falhar, devolvemos os itens ao estoque
+        val isFailureStatus = newStatus == OrderStatus.CANCELLED || newStatus == OrderStatus.FAILED
+        val wasFailureStatus = oldStatus == OrderStatus.CANCELLED || oldStatus == OrderStatus.FAILED
+
+        if (isFailureStatus && !wasFailureStatus) {
+            // Devolver estoque
+            val items = fetchOrderItems(orderId)
+            items.forEach { item ->
+                ProductsTable.update({ ProductsTable.id eq item.product.id }) {
+                    with(SqlExpressionBuilder) {
+                        it.update(stock, stock + item.quantity)
+                    }
+                }
+            }
+        } else if (!isFailureStatus && wasFailureStatus) {
+            // Re-deduzir estoque se um pedido falho for reativado
+            val items = fetchOrderItems(orderId)
+            items.forEach { item ->
+                ProductsTable.update({ ProductsTable.id eq item.product.id }) {
+                    with(SqlExpressionBuilder) {
+                        it.update(stock, stock - item.quantity)
+                    }
+                }
+            }
+        }
     }
 
     private fun fetchOrderItems(orderId: String): List<CartItem> {
