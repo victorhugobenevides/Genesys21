@@ -235,6 +235,303 @@ class PageViewModelTest {
     }
 
     @Test
+    fun `loadPublicPage should return page when success`() = runTest {
+        val page = Page(id = "public1", ownerId = "user", title = "Public", components = emptyList())
+        coEvery { getPublicPageUseCase("public1") } returns Result.success(page)
+        
+        val viewModel = createViewModel()
+        val result = viewModel.loadPublicPage("public1")
+        
+        assertEquals(page, result)
+    }
+
+    @Test
+    fun `loadPublicPage should return null and set error when failure`() = runTest {
+        coEvery { getPublicPageUseCase("public1") } returns Result.failure(Exception("Not found"))
+        
+        val viewModel = createViewModel()
+        val result = viewModel.loadPublicPage("public1")
+        
+        assertNull(result)
+        assertNotNull(viewModel.currentError.value)
+    }
+
+    @Test
+    fun `loadPageByDomain should return page when success`() = runTest {
+        val page = Page(id = "domain1", ownerId = "user", title = "Domain", components = emptyList())
+        coEvery { getPageByDomainUseCase("example.com") } returns Result.success(page)
+        
+        val viewModel = createViewModel()
+        val result = viewModel.loadPageByDomain("example.com")
+        
+        assertEquals(page, result)
+    }
+
+    @Test
+    fun `loadFirstPublicPage should update pages list`() = runTest {
+        val page = Page(id = "first", ownerId = "", title = "First", components = emptyList())
+        coEvery { getFirstPublicPageUseCase() } returns page
+        
+        val viewModel = createViewModel()
+        val result = viewModel.loadFirstPublicPage()
+        
+        assertEquals(page, result)
+        assertEquals(listOf(page), viewModel.pages.value)
+    }
+
+    @Test
+    fun `uploadImage should call use case and invoke onSuccess`() = runTest {
+        val bytes = byteArrayOf(1, 2, 3)
+        val fileName = "image.jpg"
+        var uploadedUrl: String? = null
+        
+        coEvery { uploadImageUseCase(bytes, fileName, any()) } returns Result.success("/url/image.jpg")
+        
+        val viewModel = createViewModel()
+        viewModel.uploadImage(bytes, fileName) { uploadedUrl = it }
+        advanceUntilIdle()
+        
+        assertEquals("/url/image.jpg", uploadedUrl)
+        coVerify { uploadImageUseCase(bytes, fileName, "token_123") }
+    }
+
+    @Test
+    fun `updateOrderStatus should call use case`() = runTest {
+        val viewModel = createViewModel()
+        coEvery { updateOrderStatusUseCase(any(), any(), any()) } returns Result.success(Unit)
+        
+        viewModel.updateOrderStatus("order1", OrderStatus.PROCESSING)
+        advanceUntilIdle()
+        
+        coVerify { updateOrderStatusUseCase("token_123", "order1", OrderStatus.PROCESSING) }
+    }
+
+    @Test
+    fun `addToCart should return false when stock is zero`() {
+        val viewModel = createViewModel()
+        val product = Product(id = "p1", name = "Test", price = 10.0, stock = 0)
+
+        assertFalse(viewModel.addToCart(product))
+    }
+
+    @Test
+    fun `loadCustomerOrders should update customerOrders`() = runTest {
+        val orders = listOf(
+            Order(
+                id = "order1",
+                userId = "user1",
+                items = emptyList(),
+                total = 100.0,
+                status = OrderStatus.PENDING,
+                createdAt = 1234567890L
+            )
+        )
+        coEvery { getCustomerOrdersUseCase(any()) } returns Result.success(orders)
+
+        val viewModel = createViewModel()
+        viewModel.loadCustomerOrders()
+        advanceUntilIdle()
+
+        assertEquals(orders, viewModel.customerOrders.value)
+    }
+
+    @Test
+    fun `trackOrder should set trackedOrder when found`() = runTest {
+        val order = Order(
+            id = "order1",
+            userId = "user1",
+            items = emptyList(),
+            total = 100.0,
+            status = OrderStatus.COMPLETED,
+            createdAt = 1234567890L
+        )
+        coEvery { getOrderByIdUseCase("order1") } returns Result.success(order)
+
+        val viewModel = createViewModel()
+        viewModel.trackOrder("order1")
+        advanceUntilIdle()
+
+        assertEquals(order, viewModel.trackedOrder.value)
+    }
+
+    @Test
+    fun `trackOrder should set error when order not found`() = runTest {
+        coEvery { getOrderByIdUseCase("missing") } returns Result.failure(Exception("Not found"))
+
+        val viewModel = createViewModel()
+        viewModel.trackOrder("missing")
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.currentError.value)
+    }
+
+    @Test
+    fun `submitOrder should set error when cart is empty`() = runTest {
+        val viewModel = createViewModel()
+        val page = Page(id = "page1", ownerId = "owner", title = "Test", components = emptyList())
+
+        viewModel.submitOrder(page)
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.currentError.value)
+        coVerify(exactly = 0) { submitOrderUseCase(any()) }
+    }
+
+    @Test
+    fun `submitOrder should call use case and clear cart on success`() = runTest {
+        val viewModel = createViewModel()
+        val page = Page(id = "page1", ownerId = "owner", title = "Test", components = emptyList())
+        cartItemsFlow.value = listOf(CartItem(Product(id = "p1", name = "Test", price = 10.0), 1))
+        coEvery { submitOrderUseCase(any()) } returns Result.success("ORD-123")
+        var completedId: String? = null
+
+        viewModel.submitOrder(page) { completedId = it }
+        advanceUntilIdle()
+
+        assertEquals("ORD-123", completedId)
+        coVerify { cartRepository.clearCart() }
+    }
+
+    @Test
+    fun `createMercadoPagoCheckout should set paymentUrl on success`() = runTest {
+        val viewModel = createViewModel()
+        val page = Page(id = "page1", ownerId = "owner", title = "Test", components = emptyList())
+        cartItemsFlow.value = listOf(CartItem(Product(id = "p1", name = "Test", price = 10.0), 1))
+        coEvery { orderRepository.createMercadoPagoCheckout(any(), any()) } returns Result.success("https://mp")
+
+        viewModel.createMercadoPagoCheckout(page)
+        advanceUntilIdle()
+
+        assertEquals("https://mp", viewModel.paymentUrl.value)
+    }
+
+    @Test
+    fun `saveCustomerName should call repository`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.saveCustomerName("Victor")
+        advanceUntilIdle()
+        
+        coVerify { customerRepository.saveName("Victor") }
+    }
+
+    @Test
+    fun `saveCustomerPhone should call repository`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.saveCustomerPhone("11999999999")
+        advanceUntilIdle()
+        
+        coVerify { customerRepository.savePhone("11999999999") }
+    }
+
+    @Test
+    fun `clearPaymentUrl should set paymentUrl to null`() = runTest {
+        val viewModel = createViewModel()
+        val page = Page(id = "page1", ownerId = "owner", title = "Test", components = emptyList())
+        cartItemsFlow.value = listOf(CartItem(Product(id = "p1", name = "Test", price = 10.0), 1))
+        coEvery { orderRepository.createMercadoPagoCheckout(any(), any()) } returns Result.success("https://mp")
+
+        viewModel.createMercadoPagoCheckout(page)
+        advanceUntilIdle()
+        assertEquals("https://mp", viewModel.paymentUrl.value)
+
+        viewModel.clearPaymentUrl()
+        assertNull(viewModel.paymentUrl.value)
+    }
+
+    @Test
+    fun `saveDraft should call repository`() = runTest {
+        val viewModel = createViewModel()
+        val page = Page(id = "page1", ownerId = "user", title = "Draft", components = emptyList())
+        
+        viewModel.saveDraft(page)
+        
+        coVerify { pageDraftRepository.saveDraft(page) }
+    }
+
+    @Test
+    fun `clearDraft should call repository`() = runTest {
+        val viewModel = createViewModel()
+        
+        viewModel.clearDraft("page1")
+        
+        coVerify { pageDraftRepository.clearDraft("page1") }
+    }
+
+    @Test
+    fun `signIn should call authRepository and loadPages on success`() = runTest {
+        val viewModel = createViewModel()
+        val pages = listOf(Page(id = "1", ownerId = "u1", title = "Loja", components = emptyList()))
+        
+        coEvery { authRepository.signIn("email@test.com", "pass123") } returns Result.success("token_123")
+        coEvery { getPagesUseCase("token_123") } returns pages
+        
+        var successCalled = false
+        var failureMessage: String? = null
+        
+        viewModel.signIn("email@test.com", "pass123", 
+            onSuccess = { successCalled = true },
+            onFailure = { failureMessage = it }
+        )
+        advanceUntilIdle()
+        
+        assertTrue(successCalled)
+        assertNull(failureMessage)
+        coVerify { authRepository.signIn("email@test.com", "pass123") }
+        coVerify { getPagesUseCase("token_123") }
+    }
+
+    @Test
+    fun `signIn should call onFailure when authentication fails`() = runTest {
+        val viewModel = createViewModel()
+        
+        coEvery { authRepository.signIn("wrong@email.com", "wrong") } returns Result.failure(Exception("Invalid credentials"))
+        
+        var successCalled = false
+        var failureMessage: String? = null
+        
+        viewModel.signIn("wrong@email.com", "wrong",
+            onSuccess = { successCalled = true },
+            onFailure = { failureMessage = it }
+        )
+        advanceUntilIdle()
+        
+        assertFalse(successCalled)
+        assertNotNull(failureMessage)
+    }
+
+    @Test
+    fun `signOut should call authRepository`() = runTest {
+        val viewModel = createViewModel()
+        coEvery { authRepository.signOut() } returns Result.success(Unit)
+        
+        viewModel.signOut()
+        advanceUntilIdle()
+        
+        coVerify { authRepository.signOut() }
+    }
+
+    @Test
+    fun `getCurrentUserToken should return token from repository`() = runTest {
+        val viewModel = createViewModel()
+        
+        val token = viewModel.getCurrentUserToken()
+        
+        assertEquals("token_123", token)
+    }
+
+    @Test
+    fun `getDraft should return page from repository`() = runTest {
+        val viewModel = createViewModel()
+        val page = Page(id = "page1", ownerId = "user", title = "Draft", components = emptyList())
+        coEvery { pageDraftRepository.getDraft("page1") } returns page
+        
+        val result = viewModel.getDraft("page1")
+        
+        assertEquals(page, result)
+        coVerify { pageDraftRepository.getDraft("page1") }
+    }
+
+    @Test
     fun `initial state should have empty lists`() {
         val viewModel = createViewModel()
         

@@ -41,10 +41,7 @@ fun GenesysTextField(
     supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     shape: Shape = RoundedCornerShape(16.dp),
-    colors: TextFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-    ),
+    colors: TextFieldColors = adaptiveTextFieldColors(),
     weightValue: Float = 0f
 ) {
     GenesysTextFieldBase(
@@ -65,6 +62,55 @@ fun GenesysTextField(
         colors = colors,
         weightValue = weightValue
     )
+}
+
+/**
+ * Cores adaptativas para o TextField que melhoram contraste em temas escuros.
+ */
+@Composable
+private fun adaptiveTextFieldColors(): TextFieldColors {
+    val isDarkTheme = isDarkTheme()
+    
+    return OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = if (isDarkTheme) {
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+        } else {
+            MaterialTheme.colorScheme.outline
+        },
+        unfocusedContainerColor = if (isDarkTheme) {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+        },
+        focusedContainerColor = if (isDarkTheme) {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+        },
+        // Placeholder mais visível em temas escuros
+        disabledPlaceholderColor = if (isDarkTheme) {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        },
+        // Cursor sempre visível
+        cursorColor = MaterialTheme.colorScheme.primary,
+        // Texto desabilitado mais visível
+        disabledTextColor = if (isDarkTheme) {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        }
+    )
+}
+
+// Helper para detectar tema escuro
+@Composable
+private fun isDarkTheme(): Boolean {
+    val bg = MaterialTheme.colorScheme.background
+    val luminance = 0.2126f * bg.red + 0.7152f * bg.green + 0.0722f * bg.blue
+    return luminance < 0.5f
 }
 
 @Composable

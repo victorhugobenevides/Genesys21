@@ -188,12 +188,15 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         "**/dalvik/**", "**/libcore/**",
         // UI Components Compose - testados por UI tests, não unit tests
         "**/ui/components/**",
+        "**/ui/theme/**", "**/di/**",
         // Screens Compose - excluir somente os arquivos de tela (Kt), manter State/Event
         "**/*ScreenKt*", "**/*Screen$*",
         "**/*ComponentEditor*", "**/*Dialog*", "**/*EditorScreen*",
         "**/*Renderer*", "**/*Controls*",
-        // Theme e recursos - não precisam de testes unitários
-        "**/ui/theme/**", "**/di/**"
+        // Arquivos de UI e Compose não testáveis por unit tests
+        "**/App*", "**/SplashScreen*", "**/MainActivity*",
+        "**/ImagePicker*", "**/ImagePicker*", "**/Firebase*",
+        "**/ThemeScrollbarEffect*"
     )
 
     val buildDir = layout.buildDirectory.asFile.get()

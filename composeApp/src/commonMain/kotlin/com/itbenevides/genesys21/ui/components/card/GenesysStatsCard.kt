@@ -15,21 +15,29 @@ import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
 /**
  * Card de estatísticas do Design System seguindo Material 3.
  * Utiliza Tonal Elevation para profundidade e hierarquia tipográfica clara.
+ * 
+ * @param label Texto descritivo do valor (ex: "Total de Vendas")
+ * @param value Valor a ser destacado (ex: "R$ 1.234,56")
+ * @param color Cor de destaque para o valor
+ * @param modifier Modifier adicional
+ * @param contentPadding Padding interno do card (padrão: 16.dp)
  */
 @Composable
 fun GenesysStatsCard(
     label: String,
     value: String,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentPadding: androidx.compose.ui.unit.Dp = 16.dp
 ) {
     // Usamos GenesysCard mas customizamos para o estilo de Dashboard
     GenesysCard(
         modifier = modifier,
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        elevation = 2.dp // Tonal elevation leve do M3
+        elevation = 2.dp, // Tonal elevation leve do M3
+        contentPadding = contentPadding
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column {
             GenesysText(
                 text = label.uppercase(), 
                 style = GenesysTextStyle.Label, 

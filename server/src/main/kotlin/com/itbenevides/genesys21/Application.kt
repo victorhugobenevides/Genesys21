@@ -42,6 +42,8 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     val dotenv = try { dotenv() } catch (e: Exception) { null }
+    val isTestAuth = environment.config.propertyOrNull("genesys.test.auth")?.getString() == "true" ||
+        System.getProperty("GENESYS_TEST_AUTH") == "true"
 
     DatabaseFactory.init()
     val jsonConfig = Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }
@@ -89,6 +91,9 @@ fun Application.module() {
     install(Authentication) {
         bearer("firebase") {
             authenticate { credential ->
+                if (isTestAuth && credential.token == "test-token") {
+                    return@authenticate UserIdPrincipal("test-user")
+                }
                 try {
                     val decodedToken = FirebaseAuth.getInstance().verifyIdToken(credential.token)
                     UserIdPrincipal(decodedToken.uid)

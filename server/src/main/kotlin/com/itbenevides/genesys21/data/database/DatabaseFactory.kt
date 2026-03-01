@@ -12,6 +12,15 @@ import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
 
 object DatabaseFactory {
     private const val DB_PATH = "data/genesys21.db"
+    private var testDatabase: Database? = null
+    
+    /**
+     * Configura um banco de dados para testes.
+     * Quando configurado, todas as queries usarão este banco.
+     */
+    fun configureTestDatabase(database: Database?) {
+        testDatabase = database
+    }
     
     fun init() {
         setupDatabaseDirectory()
@@ -80,6 +89,12 @@ object DatabaseFactory {
         }
     }
 
-    suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
+    suspend fun <T> dbQuery(block: suspend () -> T): T {
+        val db = testDatabase
+        return if (db != null) {
+            newSuspendedTransaction(Dispatchers.IO, db) { block() }
+        } else {
+            newSuspendedTransaction(Dispatchers.IO) { block() }
+        }
+    }
 }

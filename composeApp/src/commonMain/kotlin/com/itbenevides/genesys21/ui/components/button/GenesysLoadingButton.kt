@@ -17,6 +17,11 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 /**
  * GenesysLoadingButton - Botão de ação primária seguindo Material 3.
  * Implementa estados de carregamento, ícones e hierarquia tipográfica padronizada.
+ * 
+ * @param text Texto do botão
+ * @param onClick Callback de clique
+ * @param icon Ícone opcional (requer iconContentDescription para acessibilidade)
+ * @param iconContentDescription Descrição do ícone para leitores de tela
  */
 @Composable
 fun GenesysLoadingButton(
@@ -26,6 +31,7 @@ fun GenesysLoadingButton(
     isLoading: Boolean = false,
     enabled: Boolean = true,
     icon: ImageVector? = null,
+    iconContentDescription: String? = null,
     containerColor: Color = MaterialTheme.colorScheme.primary,
     contentColor: Color = MaterialTheme.colorScheme.onPrimary,
     shape: Shape = RoundedCornerShape(GenesysDimens.CornerRadiusLarge),
@@ -61,7 +67,7 @@ fun GenesysLoadingButton(
                     icon?.let {
                         Icon(
                             imageVector = it, 
-                            contentDescription = null, 
+                            contentDescription = iconContentDescription, 
                             modifier = Modifier.size(GenesysDimens.IconMedium)
                         )
                         Spacer(Modifier.width(8.dp))

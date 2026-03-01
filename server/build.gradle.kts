@@ -58,7 +58,11 @@ tasks.register<JacocoReport>("jacocoServerTestReport") {
         html.required.set(true)
         html.outputLocation.set(layout.projectDirectory.dir("jacoco-reports/html"))
     }
-    val fileFilter = listOf("**/ApplicationKt*", "**/generated/**")
+    // Incluir todas as classes exceto ApplicationKt e generated
+    val fileFilter = listOf(
+        "**/ApplicationKt*",
+        "**/generated/**"
+    )
     val classTree = fileTree(layout.buildDirectory.dir("classes/kotlin/main")) {
         exclude(fileFilter)
     }
