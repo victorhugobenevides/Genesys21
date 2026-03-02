@@ -30,7 +30,6 @@ data class BreadcrumbItem(
  * - Clickable items (except last)
  * - Automatic text truncation
  * - Separator icons
- * - Accessibility support
  * 
  * Usage:
  * ```kotlin

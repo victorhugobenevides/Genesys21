@@ -35,7 +35,6 @@ sealed class ButtonState {
  * - Success/Error animations with icons
  * - Automatic state transitions
  * - Accessibility support
- * - WCAG AA compliant
  * 
  * Usage:
  * ```kotlin

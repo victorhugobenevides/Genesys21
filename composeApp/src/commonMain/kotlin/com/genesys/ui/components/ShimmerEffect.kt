@@ -16,17 +16,6 @@ import com.genesys.ui.theme.Dimensions
 
 /**
  * Shimmer Effect for loading placeholders (Facebook-style)
- * 
- * Features:
- * - Smooth animation
- * - Customizable colors
- * - Multiple presets (card, list item)
- * 
- * Usage:
- * ```kotlin
- * ShimmerCardPlaceholder()
- * ShimmerListItemPlaceholder()
- * ```
  */
 @Composable
 fun ShimmerEffect(
