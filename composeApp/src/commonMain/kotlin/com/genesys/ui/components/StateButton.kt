@@ -16,9 +16,6 @@ import androidx.compose.ui.unit.dp
 import com.genesys.ui.theme.Dimensions
 import kotlinx.coroutines.delay
 
-/**
- * Button states for visual feedback
- */
 sealed class ButtonState {
     object Normal : ButtonState()
     object Loading : ButtonState()
@@ -27,30 +24,6 @@ sealed class ButtonState {
     object Disabled : ButtonState()
 }
 
-/**
- * Smart Button with multiple visual states
- * 
- * Features:
- * - Loading state with progress indicator
- * - Success/Error animations with icons
- * - Automatic state transitions
- * - Accessibility support
- * 
- * Usage:
- * ```kotlin
- * var buttonState by remember { mutableStateOf<ButtonState>(ButtonState.Normal) }
- * 
- * StateButton(
- *     text = "Submit",
- *     state = buttonState,
- *     onClick = {
- *         buttonState = ButtonState.Loading
- *         // Perform action...
- *         buttonState = ButtonState.Success()
- *     }
- * )
- * ```
- */
 @Composable
 fun StateButton(
     text: String,

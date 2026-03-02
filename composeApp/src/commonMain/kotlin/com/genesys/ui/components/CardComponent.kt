@@ -18,28 +18,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import com.genesys.ui.theme.Dimensions
 
-/**
- * Reusable Card Component with visual states and accessibility
- * 
- * Features:
- * - Automatic dark mode support
- * - Animated elevation on press
- * - Optional icon
- * - Click handling with ripple effect
- * - Accessibility labels (WCAG AA)
- * - Disabled state support
- * - 48dp minimum touch target
- * 
- * Usage:
- * ```kotlin
- * CardComponent(
- *     title = "Card Title",
- *     subtitle = "Optional subtitle",
- *     icon = Icons.Default.Info,
- *     onClick = { /* Handle click */ }
- * )
- * ```
- */
 @Composable
 fun CardComponent(
     title: String,
@@ -91,7 +69,7 @@ fun CardComponent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = Dimensions.touch_target_min) // Accessibility: 48dp min
+                .heightIn(min = Dimensions.touch_target_min)
                 .padding(Dimensions.card_padding),
             verticalAlignment = Alignment.CenterVertically
         ) {
