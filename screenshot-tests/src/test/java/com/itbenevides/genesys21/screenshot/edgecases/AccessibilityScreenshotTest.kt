@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.edgecases
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*

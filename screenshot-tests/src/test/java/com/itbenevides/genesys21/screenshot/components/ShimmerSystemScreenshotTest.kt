@@ -1,17 +1,16 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.components
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.feedback.ShimmerCirclePlaceholder
 import com.itbenevides.genesys21.ui.components.feedback.ShimmerRectPlaceholder
 import com.itbenevides.genesys21.ui.components.feedback.ShimmerTextPlaceholder
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
+import com.itbenevides.genesys21.screenshot.base.TestImageProvider
 import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.text.GenesysText
@@ -88,7 +87,7 @@ class ShimmerSystemScreenshotTest {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             GenesysImage(url = "", size = 64.dp, isCircular = true)
                             GenesysImage(url = "loading", size = 64.dp, isCircular = true, showShimmer = true)
-                            GenesysImage(url = "https://picsum.photos/100/100", size = 64.dp, isCircular = true)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 64.dp, isCircular = true)
                         }
                     }
                 }
@@ -144,7 +143,7 @@ class ShimmerSystemScreenshotTest {
                             }
                             Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                                 GenesysText("Carregado", style = GenesysTextStyle.Label)
-                                GenesysImage(url = "https://picsum.photos/100/100", size = 100.dp)
+                                GenesysImage(url = TestImageProvider.mockImageUrl(), size = 100.dp)
                             }
                         }
                     }

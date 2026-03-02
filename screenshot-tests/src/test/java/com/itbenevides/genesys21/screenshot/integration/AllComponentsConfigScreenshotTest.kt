@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.integration
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
@@ -14,6 +14,7 @@ import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.model.StepItem
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
+import com.itbenevides.genesys21.screenshot.base.TestImageProvider
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
 import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
@@ -76,8 +77,8 @@ class AllComponentsConfigScreenshotTest {
     val paparazzi = Paparazzi()
 
     private fun sampleProducts() = listOf(
-        Product(id = "p1", name = "Produto 1", price = 99.9, categoryName = "Eletrônicos", imageUrls = listOf("https://picsum.photos/200/200")),
-        Product(id = "p2", name = "Produto 2", price = 49.9, categoryName = "Roupas", imageUrls = listOf("https://picsum.photos/200/201"))
+        Product(id = "p1", name = "Produto 1", price = 99.9, categoryName = "Eletrônicos", imageUrls = listOf(TestImageProvider.mockImageUrl())),
+        Product(id = "p2", name = "Produto 2", price = 49.9, categoryName = "Roupas", imageUrls = listOf(TestImageProvider.mockImageUrl()))
     )
 
     @Test
@@ -188,7 +189,7 @@ class AllComponentsConfigScreenshotTest {
                         }
 
                         GenesysPhotoPicker(
-                            urls = listOf("https://picsum.photos/100/100"),
+                            urls = listOf(TestImageProvider.mockImageUrl()),
                             onAddClick = {},
                             onRemoveClick = {},
                             isUploading = false,
@@ -221,13 +222,13 @@ class AllComponentsConfigScreenshotTest {
                         GenesysText("Imagens", style = GenesysTextStyle.Title)
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             GenesysImage(url = "", size = 64.dp)
-                            GenesysImage(url = "https://picsum.photos/100/100", size = 64.dp)
-                            GenesysImage(url = "https://picsum.photos/120/120", size = 64.dp, isCircular = true)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 64.dp)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 64.dp, isCircular = true)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            GenesysImage(url = "https://picsum.photos/200/140", size = 96.dp, isCircular = false)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 96.dp, isCircular = false)
                             GenesysImage(
-                                url = "https://picsum.photos/160/160",
+                                url = TestImageProvider.mockImageUrl(),
                                 size = 80.dp,
                                 isCircular = false,
                                 shape = MaterialTheme.shapes.large
@@ -269,7 +270,7 @@ icon = GenesysIcons.Search,
                 Surface(modifier = Modifier.padding(16.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         GenesysText("Imagem Retangular", style = GenesysTextStyle.Title)
-                        GenesysImage(url = "https://picsum.photos/240/160", size = 96.dp, isCircular = false)
+                        GenesysImage(url = TestImageProvider.mockImageUrl(), size = 96.dp, isCircular = false)
                     }
                 }
             }
@@ -280,7 +281,7 @@ icon = GenesysIcons.Search,
                 Surface(modifier = Modifier.padding(16.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         GenesysText("Imagem Circular", style = GenesysTextStyle.Title)
-                        GenesysImage(url = "https://picsum.photos/160/160", size = 80.dp, isCircular = true)
+                        GenesysImage(url = TestImageProvider.mockImageUrl(), size = 80.dp, isCircular = true)
                     }
                 }
             }
@@ -292,7 +293,7 @@ icon = GenesysIcons.Search,
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         GenesysText("Imagem com Shape", style = GenesysTextStyle.Title)
                         GenesysImage(
-                            url = "https://picsum.photos/200/200",
+                            url = TestImageProvider.mockImageUrl(),
                             size = 88.dp,
                             isCircular = false,
                             shape = MaterialTheme.shapes.large
@@ -466,15 +467,15 @@ paparazzi.snapshot(name = "dialogs_bottomsheet") {
         val components = listOf(
             PageComponent.Typography(text = "Texto", fontSize = 16),
             PageComponent.Header(title = "Título", fontSize = 24),
-            PageComponent.Media(url = "https://picsum.photos/800/400", title = "Mídia", layout = "FULL_WIDTH"),
-            PageComponent.Image(url = "https://picsum.photos/200/200", isCircular = true),
+            PageComponent.Media(url = TestImageProvider.mockImageUrl(), title = "Mídia", layout = "FULL_WIDTH"),
+            PageComponent.Image(url = TestImageProvider.mockImageUrl(), isCircular = true),
             PageComponent.Highlight(text = "Destaque", usePrimaryColor = true),
             PageComponent.ProductList(products = sampleProducts(), isHorizontal = true),
             PageComponent.CategoryFilter(),
             PageComponent.StepProcess(steps = listOf(StepItem("Passo 1", "Descrição"))),
             PageComponent.Testimonial(quote = "Excelente!", author = "Cliente"),
             PageComponent.SocialLinks(instagram = "@loja", whatsapp = "5511999999999", email = "contato@loja.com"),
-            PageComponent.ProfileHeader(imageUrl = "https://picsum.photos/100/100", name = "Nome", bio = "Bio"),
+            PageComponent.ProfileHeader(imageUrl = TestImageProvider.mockImageUrl(), name = "Nome", bio = "Bio"),
             PageComponent.Search(placeholder = "Buscar")
         )
 
@@ -485,6 +486,87 @@ paparazzi.snapshot(name = "dialogs_bottomsheet") {
                         components.forEach { component ->
                             PageComponentRenderer(component = component, allComponents = components, isEditMode = true)
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testMediaComponentVariations() {
+        // Testar Media com diferentes layouts
+        val mediaFullWidth = PageComponent.Media(
+            url = TestImageProvider.mockImageUrl(),
+            title = "Mídia Full Width",
+            description = "Esta é uma mídia em largura total, ocupando todo o espaço disponível na tela.",
+            layout = "FULL_WIDTH",
+            size = 200
+        )
+        
+        val mediaSideBySideLeft = PageComponent.Media(
+            url = TestImageProvider.mockImageUrl(),
+            title = "Mídia Lado a Lado",
+            description = "Layout side-by-side com a imagem à esquerda e o texto à direita. Ideal para apresentar conteúdo com imagem e descrição.",
+            layout = "SIDE_BY_SIDE",
+            size = 150,
+            imageOnRight = false
+        )
+        
+        val mediaSideBySideRight = PageComponent.Media(
+            url = TestImageProvider.mockImageUrl(),
+            title = "Imagem à Direita",
+            description = "Layout side-by-side com a imagem à direita e o texto à esquerda. Alternativa visual para destacar conteúdo.",
+            layout = "SIDE_BY_SIDE",
+            size = 150,
+            imageOnRight = true
+        )
+        
+        val mediaCircular = PageComponent.Media(
+            url = TestImageProvider.mockImageUrl(),
+            title = "Mídia Circular",
+            description = "Mídia em formato circular com bordas arredondadas. Perfeito para fotos de perfil ou avatares.",
+            layout = "CIRCULAR",
+            size = 120,
+            isRounded = true
+        )
+
+        paparazzi.snapshot(name = "media_component_variations") {
+            AppTheme(themeConfig = PageThemeConfig.ROYAL) {
+                Surface(modifier = Modifier.padding(16.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                        Text("Media Full Width", style = MaterialTheme.typography.titleMedium)
+                        PageComponentRenderer(
+                            component = mediaFullWidth,
+                            allComponents = listOf(mediaFullWidth),
+                            isEditMode = false
+                        )
+                        
+                        GenesysSpacer(GenesysSpacing.Large)
+                        
+                        Text("Media Side by Side (Imagem Esquerda)", style = MaterialTheme.typography.titleMedium)
+                        PageComponentRenderer(
+                            component = mediaSideBySideLeft,
+                            allComponents = listOf(mediaSideBySideLeft),
+                            isEditMode = false
+                        )
+                        
+                        GenesysSpacer(GenesysSpacing.Large)
+                        
+                        Text("Media Side by Side (Imagem Direita)", style = MaterialTheme.typography.titleMedium)
+                        PageComponentRenderer(
+                            component = mediaSideBySideRight,
+                            allComponents = listOf(mediaSideBySideRight),
+                            isEditMode = false
+                        )
+                        
+                        GenesysSpacer(GenesysSpacing.Large)
+                        
+                        Text("Media Circular", style = MaterialTheme.typography.titleMedium)
+                        PageComponentRenderer(
+                            component = mediaCircular,
+                            allComponents = listOf(mediaCircular),
+                            isEditMode = false
+                        )
                     }
                 }
             }

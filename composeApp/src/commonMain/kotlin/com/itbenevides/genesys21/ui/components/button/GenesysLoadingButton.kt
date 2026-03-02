@@ -77,7 +77,8 @@ fun GenesysLoadingButton(
                         text = text,
                         style = GenesysTextStyle.Label,
                         fontWeight = GenesysFontWeight.Bold,
-                        color = contentColor
+                        color = contentColor,
+                        maxLines = 1
                     )
                 }
             }

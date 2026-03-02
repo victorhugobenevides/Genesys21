@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.components
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.background
@@ -34,6 +34,7 @@ import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.screenshot.base.TestImageProvider
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -251,13 +252,13 @@ class ComponentIsolatedScreenshotTest {
                         }
                         GenesysText("Imagem - Retangular", style = GenesysTextStyle.Title)
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            GenesysImage(url = "https://picsum.photos/100/100", size = 64.dp, isCircular = false)
-                            GenesysImage(url = "https://picsum.photos/120/120", size = 80.dp, isCircular = false)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 64.dp, isCircular = false)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 80.dp, isCircular = false)
                         }
                         GenesysText("Imagem - Circular", style = GenesysTextStyle.Title)
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            GenesysImage(url = "https://picsum.photos/100/100", size = 64.dp, isCircular = true)
-                            GenesysImage(url = "https://picsum.photos/120/120", size = 80.dp, isCircular = true)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 64.dp, isCircular = true)
+                            GenesysImage(url = TestImageProvider.mockImageUrl(), size = 80.dp, isCircular = true)
                         }
                     }
                 }
@@ -720,7 +721,7 @@ class ComponentIsolatedScreenshotTest {
                             maxPhotos = 5
                         )
                         GenesysPhotoPicker(
-                            urls = listOf("https://picsum.photos/100/100"),
+                            urls = listOf(TestImageProvider.mockImageUrl()),
                             onAddClick = {},
                             onRemoveClick = {},
                             isUploading = false,

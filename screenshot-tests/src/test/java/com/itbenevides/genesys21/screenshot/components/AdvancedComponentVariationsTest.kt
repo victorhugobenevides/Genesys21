@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.components
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
@@ -16,6 +16,7 @@ import com.itbenevides.genesys21.ui.components.layout.GenesysSectionHeader
 import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.screenshot.base.TestImageProvider
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import org.junit.Rule
 import org.junit.Test
@@ -152,7 +153,7 @@ class AdvancedComponentVariationsTest {
                         
                         GenesysCard {
                             Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                GenesysImage(url = "https://picsum.photos/100/100", size = 80.dp)
+                                GenesysImage(url = TestImageProvider.mockImageUrl(), size = 80.dp)
                                 Column(modifier = Modifier.weight(1f)) {
                                     GenesysText("Fone Bluetooth Pro", style = GenesysTextStyle.Title)
                                     GenesysText("Áudio premium", style = GenesysTextStyle.Body)

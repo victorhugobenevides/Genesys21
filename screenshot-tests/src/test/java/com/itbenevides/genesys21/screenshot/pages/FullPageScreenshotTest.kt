@@ -1,21 +1,19 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.pages
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.model.StepItem
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
+import com.itbenevides.genesys21.screenshot.base.TestImageProvider
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.layout.GenesysLazyColumn
@@ -35,9 +33,9 @@ class FullPageScreenshotTest {
     val paparazzi = Paparazzi()
 
     private fun sampleProducts() = listOf(
-        Product(id = "1", name = "Produto 1", price = 99.9, categoryName = "Categoria A", imageUrls = listOf("https://picsum.photos/200/200")),
-        Product(id = "2", name = "Produto 2", price = 149.9, categoryName = "Categoria B", imageUrls = listOf("https://picsum.photos/200/201")),
-        Product(id = "3", name = "Produto 3", price = 199.9, categoryName = "Categoria A", imageUrls = listOf("https://picsum.photos/200/202"))
+        Product(id = "1", name = "Produto 1", price = 99.9, categoryName = "Categoria A", imageUrls = listOf(TestImageProvider.mockImageUrl())),
+        Product(id = "2", name = "Produto 2", price = 149.9, categoryName = "Categoria B", imageUrls = listOf(TestImageProvider.mockImageUrl())),
+        Product(id = "3", name = "Produto 3", price = 199.9, categoryName = "Categoria A", imageUrls = listOf(TestImageProvider.mockImageUrl()))
     )
 
     private fun buildFullPage(theme: PageThemeConfig, title: String) = Page(
@@ -48,7 +46,7 @@ class FullPageScreenshotTest {
         components = listOf(
             PageComponent.Header(title = "Bem-vindo", fontSize = 28, textAlign = "CENTER"),
             PageComponent.Typography(text = "Texto de apresentação", fontSize = 16, textAlign = "CENTER"),
-            PageComponent.Media(url = "https://picsum.photos/800/400", title = "Banner", layout = "FULL_WIDTH"),
+            PageComponent.Media(url = TestImageProvider.mockImageUrl(), title = "Banner", layout = "FULL_WIDTH"),
             PageComponent.Highlight(text = "Destaque Principal", type = "BUTTON", usePrimaryColor = true),
             PageComponent.ProductList(products = sampleProducts(), isHorizontal = true),
             PageComponent.ProductList(products = sampleProducts(), isHorizontal = false),
@@ -58,11 +56,11 @@ class FullPageScreenshotTest {
                 StepItem("Passo 3", "Descrição do passo 3")
             )),
             PageComponent.Testimonial(quote = "Excelente serviço!", author = "Cliente Satisfeito"),
-            PageComponent.ProfileHeader(imageUrl = "https://picsum.photos/100/100", name = "Loja Demo", bio = "Sua loja favorita"),
+            PageComponent.ProfileHeader(imageUrl = TestImageProvider.mockImageUrl(), name = "Loja Demo", bio = "Sua loja favorita"),
             PageComponent.SocialLinks(instagram = "@loja", whatsapp = "5511999999999", email = "contato@loja.com"),
             PageComponent.Search(placeholder = "Buscar produtos..."),
             PageComponent.CategoryFilter(),
-            PageComponent.Image(url = "https://picsum.photos/600/400", size = 200, isFullWidth = true)
+            PageComponent.Image(url = TestImageProvider.mockImageUrl(), size = 200, isFullWidth = true)
         )
     )
 

@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.edgecases
 
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
@@ -8,8 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
-import com.itbenevides.genesys21.ui.components.badge.GenesysStatusBadge
-import com.itbenevides.genesys21.ui.components.badge.GenesysStockBadge
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.feedback.*

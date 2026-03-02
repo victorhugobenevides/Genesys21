@@ -55,7 +55,7 @@ fun GenesysText(
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Clip,
+    overflow: TextOverflow = TextOverflow.Ellipsis,
     modifier: Modifier = Modifier
 ) {
     GenesysTextContent(
@@ -83,7 +83,7 @@ internal fun GenesysTextContent(
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Clip,
+    overflow: TextOverflow = TextOverflow.Ellipsis,
     modifier: Modifier = Modifier
 ) {
     val textStyle = when (style) {
@@ -134,7 +134,7 @@ fun RowScope.GenesysText(
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Clip,
+    overflow: TextOverflow = TextOverflow.Ellipsis,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {
@@ -164,7 +164,7 @@ fun ColumnScope.GenesysText(
     fontWeight: GenesysFontWeight? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Clip,
+    overflow: TextOverflow = TextOverflow.Ellipsis,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier
 ) {

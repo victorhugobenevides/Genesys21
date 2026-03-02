@@ -1,6 +1,5 @@
-package com.itbenevides.genesys21.screenshot
+package com.itbenevides.genesys21.screenshot.responsive
 
-import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
