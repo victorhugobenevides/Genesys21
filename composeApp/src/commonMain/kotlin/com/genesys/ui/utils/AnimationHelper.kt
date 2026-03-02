@@ -1,33 +1,17 @@
 package com.genesys.ui.utils
 
 import androidx.compose.animation.core.*
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 
-/**
- * Animation utilities and presets
- * 
- * Usage:
- * ```kotlin
- * Box(modifier = Modifier.animatePulse())
- * ```
- */
 object AnimationHelper {
-    
-    /**
-     * Standard animation duration
-     */
     const val DURATION_SHORT = 200
     const val DURATION_MEDIUM = 300
     const val DURATION_LONG = 500
     
-    /**
-     * Creates a spring animation spec
-     */
     fun <T> springSpec(
         dampingRatio: Float = Spring.DampingRatioMediumBouncy,
         stiffness: Float = Spring.StiffnessMedium
@@ -38,9 +22,6 @@ object AnimationHelper {
         )
     }
     
-    /**
-     * Creates a tween animation spec
-     */
     fun <T> tweenSpec(
         durationMillis: Int = DURATION_MEDIUM,
         easing: Easing = FastOutSlowInEasing
@@ -52,9 +33,6 @@ object AnimationHelper {
     }
 }
 
-/**
- * Pulse animation modifier
- */
 fun Modifier.animatePulse(): Modifier = composed {
     val infiniteTransition = rememberInfiniteTransition()
     val scale by infiniteTransition.animateFloat(
@@ -69,9 +47,6 @@ fun Modifier.animatePulse(): Modifier = composed {
     this.scale(scale)
 }
 
-/**
- * Bounce animation modifier
- */
 fun Modifier.animateBounce(): Modifier = composed {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetY by infiniteTransition.animateFloat(
@@ -88,9 +63,6 @@ fun Modifier.animateBounce(): Modifier = composed {
     }
 }
 
-/**
- * Shake animation modifier
- */
 fun Modifier.animateShake(): Modifier = composed {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetX by infiniteTransition.animateFloat(

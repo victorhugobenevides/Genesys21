@@ -1,8 +1,5 @@
 package com.genesys.ui.utils
 
-/**
- * UI Error types for user-friendly error handling
- */
 sealed class UiError {
     data class Network(val message: String = "Network connection failed") : UiError()
     data class Validation(val field: String, val message: String) : UiError()
@@ -13,22 +10,7 @@ sealed class UiError {
     data class Timeout(val message: String = "Request timed out") : UiError()
 }
 
-/**
- * Error Handler with user-friendly messages
- * Maps technical errors to readable messages
- * 
- * Usage:
- * ```kotlin
- * val errorMessage = ErrorHandler.getErrorMessage(
- *     UiError.Network()
- * )
- * ```
- */
 object ErrorHandler {
-    
-    /**
-     * Get user-friendly error message
-     */
     fun getErrorMessage(error: UiError): String {
         return when (error) {
             is UiError.Network -> 
@@ -48,9 +30,6 @@ object ErrorHandler {
         }
     }
     
-    /**
-     * Get error title for dialogs
-     */
     fun getErrorTitle(error: UiError): String {
         return when (error) {
             is UiError.Network -> "Connection Error"
@@ -63,9 +42,6 @@ object ErrorHandler {
         }
     }
     
-    /**
-     * Convert exception to UiError
-     */
     fun fromException(exception: Exception): UiError {
         return when {
             exception.message?.contains("network", ignoreCase = true) == true ->

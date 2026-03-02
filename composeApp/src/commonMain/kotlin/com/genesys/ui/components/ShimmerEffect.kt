@@ -14,9 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.genesys.ui.theme.Dimensions
 
-/**
- * Shimmer Effect for loading placeholders (Facebook-style)
- */
 @Composable
 fun ShimmerEffect(
     modifier: Modifier = Modifier,
@@ -47,9 +44,6 @@ fun ShimmerEffect(
     )
 }
 
-/**
- * Shimmer placeholder for card
- */
 @Composable
 fun ShimmerCardPlaceholder(
     modifier: Modifier = Modifier
@@ -89,9 +83,6 @@ fun ShimmerCardPlaceholder(
     }
 }
 
-/**
- * Shimmer placeholder for list item
- */
 @Composable
 fun ShimmerListItemPlaceholder(
     modifier: Modifier = Modifier

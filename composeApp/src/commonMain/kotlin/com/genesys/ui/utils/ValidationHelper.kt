@@ -1,22 +1,6 @@
 package com.genesys.ui.utils
 
-/**
- * Input validation utilities
- * 
- * Usage:
- * ```kotlin
- * val emailError = ValidationHelper.validateEmail("test@example.com")
- * if (emailError != null) {
- *     // Show error
- * }
- * ```
- */
 object ValidationHelper {
-    
-    /**
-     * Validates email format
-     * @return Error message if invalid, null if valid
-     */
     fun validateEmail(email: String): String? {
         return when {
             email.isBlank() -> "Email is required"
@@ -26,10 +10,6 @@ object ValidationHelper {
         }
     }
     
-    /**
-     * Validates phone number (Brazilian format)
-     * @return Error message if invalid, null if valid
-     */
     fun validatePhone(phone: String): String? {
         val digitsOnly = phone.replace(Regex("[^0-9]"), "")
         return when {
@@ -40,10 +20,6 @@ object ValidationHelper {
         }
     }
     
-    /**
-     * Validates CPF (Brazilian tax ID)
-     * @return Error message if invalid, null if valid
-     */
     fun validateCPF(cpf: String): String? {
         val digitsOnly = cpf.replace(Regex("[^0-9]"), "")
         
@@ -56,10 +32,6 @@ object ValidationHelper {
         }
     }
     
-    /**
-     * Validates password strength
-     * @return Error message if weak, null if strong
-     */
     fun validatePassword(password: String): String? {
         return when {
             password.isBlank() -> "Password is required"
@@ -71,36 +43,24 @@ object ValidationHelper {
         }
     }
     
-    /**
-     * Validates required field
-     */
     fun validateRequired(value: String, fieldName: String = "Field"): String? {
         return if (value.isBlank()) {
             "$fieldName is required"
         } else null
     }
     
-    /**
-     * Validates minimum length
-     */
     fun validateMinLength(value: String, minLength: Int, fieldName: String = "Field"): String? {
         return if (value.length < minLength) {
             "$fieldName must be at least $minLength characters"
         } else null
     }
     
-    /**
-     * Validates maximum length
-     */
     fun validateMaxLength(value: String, maxLength: Int, fieldName: String = "Field"): String? {
         return if (value.length > maxLength) {
             "$fieldName cannot exceed $maxLength characters"
         } else null
     }
     
-    /**
-     * CPF validation algorithm
-     */
     private fun isValidCPF(cpf: String): Boolean {
         if (cpf.length != 11) return false
         

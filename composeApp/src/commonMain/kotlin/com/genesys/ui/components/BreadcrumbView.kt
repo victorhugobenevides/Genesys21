@@ -14,34 +14,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.genesys.ui.theme.Dimensions
 
-/**
- * Breadcrumb item data
- */
 data class BreadcrumbItem(
     val label: String,
     val onClick: () -> Unit
 )
 
-/**
- * Breadcrumb navigation component
- * 
- * Features:
- * - Shows navigation hierarchy
- * - Clickable items (except last)
- * - Automatic text truncation
- * - Separator icons
- * 
- * Usage:
- * ```kotlin
- * BreadcrumbView(
- *     items = listOf(
- *         BreadcrumbItem("Home") { navController.popBackStack() },
- *         BreadcrumbItem("Settings") { navController.navigate("settings") },
- *         BreadcrumbItem("Profile") { }
- *     )
- * )
- * ```
- */
 @Composable
 fun BreadcrumbView(
     items: List<BreadcrumbItem>,

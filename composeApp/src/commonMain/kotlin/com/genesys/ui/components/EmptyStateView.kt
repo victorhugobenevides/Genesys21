@@ -14,27 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.genesys.ui.theme.Dimensions
 
-/**
- * Empty State View with illustration and action button
- * 
- * Features:
- * - Customizable icon/illustration
- * - Title and description
- * - Optional action button
- * - Entry animation
- * - Accessibility support
- * 
- * Usage:
- * ```kotlin
- * EmptyStateView(
- *     icon = Icons.Outlined.Search,
- *     title = "No results found",
- *     description = "Try adjusting your search terms",
- *     actionText = "Clear Filters",
- *     onAction = { /* Handle action */ }
- * )
- * ```
- */
 @Composable
 fun EmptyStateView(
     icon: ImageVector = Icons.Outlined.Info,

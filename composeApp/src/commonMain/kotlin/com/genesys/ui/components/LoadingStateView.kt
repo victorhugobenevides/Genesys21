@@ -11,19 +11,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.genesys.ui.theme.Dimensions
 
-/**
- * Loading State View with progress indicator
- * 
- * Features:
- * - Optional loading message
- * - Centered layout
- * - Accessibility support
- * 
- * Usage:
- * ```kotlin
- * LoadingStateView(message = "Loading data...")
- * ```
- */
 @Composable
 fun LoadingStateView(
     message: String? = "Loading...",

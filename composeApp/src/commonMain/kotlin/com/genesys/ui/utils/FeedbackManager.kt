@@ -4,17 +4,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 
-/**
- * Centralized feedback manager for Toast/Snackbar messages
- * 
- * Usage:
- * ```kotlin
- * val snackbarHostState = remember { SnackbarHostState() }
- * val feedbackManager = remember { FeedbackManager(snackbarHostState) }
- * 
- * feedbackManager.showSuccess("Item saved!")
- * ```
- */
 class FeedbackManager(
     private val snackbarHostState: SnackbarHostState
 ) {
