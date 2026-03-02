@@ -1,10 +1,12 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -14,6 +16,7 @@ import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
@@ -23,83 +26,131 @@ fun PageEditorScreen(
     page: Page?, 
     onBack: () -> Unit
 ) {
-    var state by remember { mutableStateOf(PageEditorState.initial(page)) }
+    var title by remember { mutableStateOf(page?.title ?: "") }
+    var whatsapp by remember { mutableStateOf(page?.whatsapp ?: "") }
+    var customDomain by remember { mutableStateOf(page?.customDomain ?: "") }
+    
     val isGlobalLoading by viewModel.isLoading.collectAsState()
+    val canSave = title.isNotBlank() && !isGlobalLoading
 
-    state = state.copy(isLoading = isGlobalLoading)
-
-    val onEvent: (PageEditorEvent) -> Unit = { event ->
-        when (event) {
-            is PageEditorEvent.OnTitleChanged -> {
-                state = state.copy(
-                    title = event.newTitle,
-                    canSave = event.newTitle.isNotBlank()
-                )
-            }
-            is PageEditorEvent.OnSaveClicked -> {
-                val newPage = (page ?: Page(state.id, state.title.trim())).copy(title = state.title.trim())
-                viewModel.savePage(newPage, isEditing = state.isEditing) { onBack() }
-            }
-            is PageEditorEvent.OnBackClicked -> onBack()
-        }
+    val onSave = {
+        val newPage = (page ?: Page(id = "", title = title.trim())).copy(
+            title = title.trim(),
+            whatsapp = whatsapp.trim(),
+            customDomain = customDomain.trim()
+        )
+        viewModel.savePage(newPage, isEditing = page != null) { onBack() }
     }
-
-    PageEditorContent(state, onEvent)
-}
-
-@Composable
-private fun PageEditorContent(
-    state: PageEditorState,
-    onEvent: (PageEditorEvent) -> Unit
-) {
-    val screenTitle = if (state.isEditing) GenesysStrings.EditPageTitle else GenesysStrings.NewPageTitle
 
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
-                title = screenTitle,
-                onBack = { onEvent(PageEditorEvent.OnBackClicked) },
+                title = if (page != null) GenesysStrings.EditPageTitle else GenesysStrings.NewPageTitle,
+                onBack = onBack,
                 modifier = Modifier.testTag("page_editor_app_bar")
             )
         }
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Box(modifier = Modifier.fillMaxSize()) {
             GenesysColumn(
                 maxWidth = GenesysDimens.EditorMaxWidth,
                 horizontalAlignment = GenesysAlignment.Center,
-                useScroll = true
+                useScroll = true,
+                modifier = Modifier.padding(bottom = 80.dp) // Espaço para o botão fixo
             ) {
+                // SEÇÃO 1: Identidade da Vitrine
                 GenesysCard {
                     GenesysColumn(usePadding = false) {
                         GenesysText(
-                            text = screenTitle, 
+                            text = "Identidade da Vitrine", 
                             style = GenesysTextStyle.Title,
-                            modifier = Modifier.testTag("page_editor_title") // Tag para o teste
+                            fontWeight = com.itbenevides.genesys21.ui.components.text.GenesysFontWeight.Bold
                         )
                         GenesysSpacer(GenesysSpacing.Medium)
                         
                         GenesysTextField(
-                            value = state.title, 
-                            onValueChange = { newValue -> onEvent(PageEditorEvent.OnTitleChanged(newValue)) }, 
+                            value = title, 
+                            onValueChange = { title = it }, 
                             label = GenesysStrings.PageTitleLabel,
                             placeholder = GenesysStrings.PageTitlePlaceholder,
+                            icon = GenesysIcons.Web,
                             modifier = Modifier.testTag("page_title_field")
                         )
                     }
                 }
                 
                 GenesysSpacer(GenesysSpacing.Large)
+
+                // SEÇÃO 2: Contato e Vendas
+                GenesysCard {
+                    GenesysColumn(usePadding = false) {
+                        GenesysText(
+                            text = "Contato e Vendas", 
+                            style = GenesysTextStyle.Title,
+                            fontWeight = com.itbenevides.genesys21.ui.components.text.GenesysFontWeight.Bold
+                        )
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        
+                        GenesysTextField(
+                            value = whatsapp, 
+                            onValueChange = { whatsapp = it }, 
+                            label = "WhatsApp para Pedidos",
+                            placeholder = "5511999999999",
+                            icon = GenesysIcons.Chat,
+                            modifier = Modifier.testTag("page_whatsapp_field")
+                        )
+                        
+                        GenesysSpacer(GenesysSpacing.Small)
+                        Text(
+                            text = "O número deve incluir o DDI (Ex: 55 para Brasil).",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                GenesysSpacer(GenesysSpacing.Large)
+
+                // SEÇÃO 3: Configurações Avançadas
+                GenesysCard {
+                    GenesysColumn(usePadding = false) {
+                        GenesysText(
+                            text = "Configurações Avançadas", 
+                            style = GenesysTextStyle.Title,
+                            fontWeight = com.itbenevides.genesys21.ui.components.text.GenesysFontWeight.Bold
+                        )
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        
+                        GenesysTextField(
+                            value = customDomain, 
+                            onValueChange = { customDomain = it }, 
+                            label = "Domínio Customizado",
+                            placeholder = "minha-loja.com",
+                            icon = GenesysIcons.Language,
+                            modifier = Modifier.testTag("page_domain_field")
+                        )
+                    }
+                }
                 
-                GenesysLoadingButton(
-                    onClick = { onEvent(PageEditorEvent.OnSaveClicked) },
-                    text = GenesysStrings.SavePageButton,
-                    isLoading = state.isLoading,
-                    enabled = state.canSave,
-                    fillWidth = true,
-                    modifier = Modifier.testTag("btn_save_page")
-                )
-                
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysSpacing.ExtraLarge)
+            }
+
+            // UX IMPROVEMENT: Botão de Salvar sempre visível no rodapé
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp
+            ) {
+                Box(Modifier.padding(16.dp)) {
+                    GenesysLoadingButton(
+                        onClick = onSave,
+                        text = GenesysStrings.SavePageButton,
+                        isLoading = isGlobalLoading,
+                        enabled = canSave,
+                        fillWidth = true,
+                        modifier = Modifier.testTag("btn_save_page")
+                    )
+                }
             }
         }
     }

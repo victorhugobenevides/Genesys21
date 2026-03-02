@@ -1,14 +1,22 @@
 package com.itbenevides.genesys21.presentation.screens.login
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.layout.*
@@ -17,9 +25,6 @@ import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import org.koin.compose.viewmodel.koinViewModel
 
-/**
- * Entry point da tela de Login. Gerencia a injeção do ViewModel.
- */
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit
@@ -33,15 +38,13 @@ fun LoginScreen(
     )
 }
 
-/**
- * UI pura da tela de Login. 
- * Esta função é agnóstica a ViewModel e Koin, facilitando testes de UI isolados.
- */
 @Composable
 fun LoginContent(
     state: LoginState,
     onEvent: (LoginEvent) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+
     GenesysPage(useMaxWidth = false) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -53,8 +56,9 @@ fun LoginContent(
                 GenesysCard(
                     modifier = Modifier
                         .widthIn(max = 450.dp)
-                        .padding(horizontal = 16.dp),
-                    elevation = if (isWideScreen) 2.dp else 0.dp,
+                        .padding(horizontal = 16.dp)
+                        .testTag("login_card"),
+                    elevation = if (isWideScreen) 4.dp else 0.dp,
                     backgroundColor = if (isWideScreen) MaterialTheme.colorScheme.surfaceContainerLow else Color.Transparent,
                     contentPadding = if (isWideScreen) 32.dp else 16.dp
                 ) {
@@ -62,68 +66,109 @@ fun LoginContent(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = GenesysIcons.Magic,
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Surface(
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(100.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = GenesysIcons.Magic,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(50.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                         
                         GenesysSpacer(GenesysSpacing.Large)
                         
                         GenesysText(
-                            text = GenesysStrings.Welcome,
+                            text = "Genesys21",
                             style = GenesysTextStyle.Headline,
                             fontWeight = GenesysFontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.primary
                         )
                         
                         GenesysText(
-                            text = GenesysStrings.LoginSubtitle,
+                            text = "Gerencie sua vitrine inteligente",
                             style = GenesysTextStyle.Body,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = GenesysTextAlign.Center // Corrigido para GenesysTextAlign
                         )
 
                         GenesysSpacer(GenesysSpacing.Huge)
 
                         GenesysTextField(
                             value = state.email, 
-                            onValueChange = { newValue -> onEvent(LoginEvent.OnEmailChanged(newValue)) }, 
+                            onValueChange = { onEvent(LoginEvent.OnEmailChanged(it)) }, 
                             label = GenesysStrings.EmailLabel,
                             icon = GenesysIcons.Email,
-                            modifier = Modifier.fillMaxWidth()
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Email,
+                                imeAction = ImeAction.Next
+                            ),
+                            modifier = Modifier.fillMaxWidth().testTag("email_field")
                         )
                         
                         GenesysSpacer(GenesysSpacing.Medium)
                         
                         GenesysTextField(
                             value = state.password,
-                            onValueChange = { newValue -> onEvent(LoginEvent.OnPasswordChanged(newValue)) },
+                            onValueChange = { onEvent(LoginEvent.OnPasswordChanged(it)) },
                             label = GenesysStrings.PasswordLabel,
                             icon = GenesysIcons.Lock,
                             visualTransformation = PasswordVisualTransformation(),
-                            modifier = Modifier.fillMaxWidth()
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done
+                            ),
+                            modifier = Modifier.fillMaxWidth().testTag("password_field")
                         )
 
-                        GenesysSpacer(GenesysSpacing.ExtraLarge)
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                            GenesysTextButton(
+                                text = "Esqueceu a senha?",
+                                onClick = { /* TODO */ },
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+
+                        GenesysSpacer(GenesysSpacing.Large)
 
                         GenesysLoadingButton(
                             text = GenesysStrings.LoginButton,
-                            onClick = { onEvent(LoginEvent.OnLoginClicked) },
+                            onClick = { 
+                                focusManager.clearFocus()
+                                onEvent(LoginEvent.OnLoginClicked) 
+                            },
                             fillWidth = true,
                             isLoading = state.isLoading,
                             enabled = state.canLogin,
-                            icon = GenesysIcons.Check
+                            icon = GenesysIcons.Check,
+                            modifier = Modifier.testTag("btn_login")
                         )
 
-                        if (state.errorMessage.isNotEmpty()) {
-                            GenesysSpacer(GenesysSpacing.Medium)
-                            GenesysText(
-                                text = state.errorMessage,
-                                style = GenesysTextStyle.Error,
-                                textAlign = GenesysTextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                        AnimatedVisibility(
+                            visible = state.errorMessage.isNotEmpty(),
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            Column {
+                                GenesysSpacer(GenesysSpacing.Medium)
+                                Surface(
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = state.errorMessage,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

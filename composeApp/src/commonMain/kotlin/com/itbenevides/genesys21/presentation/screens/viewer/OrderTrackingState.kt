@@ -18,4 +18,5 @@ sealed class OrderTrackingEvent {
     data class OnTrackOrder(val orderId: String) : OrderTrackingEvent()
     object OnCopyOrderIdClicked : OrderTrackingEvent()
     object OnBackClicked : OrderTrackingEvent()
+    object OnContactSeller : OrderTrackingEvent() // Adicionado para correção de compilação
 }

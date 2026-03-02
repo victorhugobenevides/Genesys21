@@ -1,11 +1,13 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,10 +60,7 @@ fun CartScreen(
     var state by remember { mutableStateOf(CartScreenState()) }
 
     LaunchedEffect(customerName, customerPhone) {
-        state = state.copy(
-            customerName = customerName,
-            customerPhone = customerPhone
-        )
+        state = state.copy(customerName = customerName, customerPhone = customerPhone)
     }
 
     LaunchedEffect(cartItems, total, isLoading, isCreatingCheckout, paymentUrl) {
@@ -83,10 +82,7 @@ fun CartScreen(
 
     LaunchedEffect(error) {
         error?.let {
-            snackbarHostState.showSnackbar(
-                message = it.message,
-                actionLabel = "Fechar"
-            )
+            snackbarHostState.showSnackbar(message = it.message, actionLabel = "Fechar")
             viewModel.clearError()
         }
     }
@@ -97,7 +93,10 @@ fun CartScreen(
 
     val onEvent: (CartScreenEvent) -> Unit = { event ->
         when (event) {
-            is CartScreenEvent.OnUpdateQuantity -> viewModel.updateCartQuantity(event.productId, event.newQuantity)
+            is CartScreenEvent.OnUpdateQuantity -> {
+                Analytics.logEvent("update_quantity", mapOf("item_id" to event.productId, "quantity" to event.newQuantity))
+                viewModel.updateCartQuantity(event.productId, event.newQuantity)
+            }
             is CartScreenEvent.OnRemoveItem -> {
                 Analytics.logEvent("remove_from_cart", mapOf("item_id" to event.productId))
                 viewModel.removeFromCart(event.productId)
@@ -110,9 +109,7 @@ fun CartScreen(
                 }
             }
             is CartScreenEvent.OnMercadoPagoCheckout -> {
-                scope.launch {
-                    viewModel.createMercadoPagoCheckout(page)
-                }
+                scope.launch { viewModel.createMercadoPagoCheckout(page) }
             }
             is CartScreenEvent.OnBackClicked -> onBack()
         }
@@ -154,63 +151,87 @@ private fun CartContent(
                 )
             } else {
                 if (isWideScreen) {
-                    GenesysRow(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                        verticalAlignment = Alignment.Top,
-                        usePadding = false
-                    ) {
-                        GenesysWeightBox(0.65f) {
-                            GenesysColumn(usePadding = true, useScroll = true) {
-                                GenesysText(
-                                    text = GenesysStrings.AppName,
-                                    style = GenesysTextStyle.Title,
-                                    fontWeight = GenesysFontWeight.ExtraBold
-                                )
-                                GenesysSpacer(GenesysSpacing.Medium)
-
-                                state.cartItems.forEach { item ->
-                                    ModernCartItemRow(item, backendUrl, onEvent)
-                                    GenesysSpacer(GenesysSpacing.Small)
-                                }
-                            }
-                        }
-
-                        GenesysSpacer(GenesysSpacing.Large)
-
-                        GenesysWeightBox(0.35f) {
-                            GenesysColumn(usePadding = true) {
-                                CheckoutSummarySection(state, onEvent)
-                            }
-                        }
-                    }
+                    DesktopCartLayout(state, backendUrl, onEvent)
                 } else {
-                    GenesysColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = GenesysAlignment.Center,
-                        usePadding = false
-                    ) {
-                        GenesysWeightBox(1f) {
-                            GenesysColumn(usePadding = true, useScroll = true) {
-                                CartStepperUI(step = 1)
-                                GenesysSpacer(GenesysSpacing.Large)
-                                state.cartItems.forEach { item ->
-                                    ModernCartItemRow(item, backendUrl, onEvent)
-                                    GenesysSpacer(GenesysSpacing.Small)
-                                }
-                                GenesysSpacer(GenesysSpacing.Large)
-                                IdentificationCard(state, onEvent)
-                                GenesysSpacer(GenesysSpacing.ExtraLarge)
-                            }
-                        }
+                    MobileCartLayout(state, backendUrl, onEvent)
+                }
+            }
+        }
+    }
+}
 
-                        GenesysCard(
-                            elevation = GenesysDimens.ElevationHigh,
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            MobileCheckoutFooter(state, onEvent)
+@Composable
+private fun MobileCartLayout(state: CartScreenState, backendUrl: String, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = GenesysAlignment.Center,
+        usePadding = false
+    ) {
+        GenesysWeightBox(1f) {
+            GenesysColumn(usePadding = true, useScroll = true) {
+                CartStepperUI(step = 1)
+                GenesysSpacer(GenesysSpacing.Large)
+                
+                // UX IMPROVEMENT: Animação na lista de itens
+                state.cartItems.forEach { item ->
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn() + slideInHorizontally(),
+                        exit = fadeOut() + slideOutHorizontally()
+                    ) {
+                        Column {
+                            ModernCartItemRow(item, backendUrl, onEvent)
+                            GenesysSpacer(GenesysSpacing.Small)
                         }
                     }
                 }
+                
+                GenesysSpacer(GenesysSpacing.Large)
+                IdentificationCard(state, onEvent)
+                GenesysSpacer(GenesysSpacing.ExtraLarge)
+            }
+        }
+
+        // UX IMPROVEMENT: Rodapé fixo com elevação visual
+        GenesysCard(
+            elevation = GenesysDimens.ElevationHigh,
+            modifier = Modifier
+                .padding(16.dp)
+                .testTag("sticky_cart_footer")
+        ) {
+            MobileCheckoutFooter(state, onEvent)
+        }
+    }
+}
+
+@Composable
+private fun DesktopCartLayout(state: CartScreenState, backendUrl: String, onEvent: (CartScreenEvent) -> Unit) {
+    GenesysRow(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.Top,
+        usePadding = false
+    ) {
+        GenesysWeightBox(0.65f) {
+            GenesysColumn(usePadding = true, useScroll = true) {
+                GenesysText(
+                    text = GenesysStrings.AppName,
+                    style = GenesysTextStyle.Title,
+                    fontWeight = GenesysFontWeight.ExtraBold
+                )
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                state.cartItems.forEach { item ->
+                    ModernCartItemRow(item, backendUrl, onEvent)
+                    GenesysSpacer(GenesysSpacing.Small)
+                }
+            }
+        }
+
+        GenesysSpacer(GenesysSpacing.Large)
+
+        GenesysWeightBox(0.35f) {
+            GenesysColumn(usePadding = true) {
+                CheckoutSummarySection(state, onEvent)
             }
         }
     }
@@ -265,12 +286,12 @@ private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenE
                         style = GenesysTextStyle.Headline,
                         fontWeight = GenesysFontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.testTag("cart_total_price") // Tag unificada
+                        modifier = Modifier.testTag("cart_total_price")
                     )
                 }
                 GenesysSpacer(GenesysSpacing.Large)
                 GenesysLoadingButton(
-                    text = "Pagar com Mercado Livre",
+                    text = "Pagar com Mercado Pago",
                     onClick = { onEvent(CartScreenEvent.OnMercadoPagoCheckout) },
                     fillWidth = true,
                     enabled = state.isCheckoutEnabled,
@@ -286,16 +307,6 @@ private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenE
                     isLoading = state.isLoading && !state.isCreatingCheckout,
                     modifier = Modifier.testTag("btn_checkout_whatsapp")
                 )
-                if (!state.isCheckoutEnabled && state.cartItems.isNotEmpty()) {
-                    GenesysSpacer(GenesysSpacing.Small)
-                    GenesysText(
-                        text = "Preencha nome e telefone para continuar",
-                        style = GenesysTextStyle.Label,
-                        textAlign = GenesysTextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
             }
         }
     }
@@ -314,12 +325,12 @@ private fun MobileCheckoutFooter(state: CartScreenState, onEvent: (CartScreenEve
                 style = GenesysTextStyle.Title,
                 fontWeight = GenesysFontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.testTag("cart_total_price") // Mesma tag, mas apenas um renderizado
+                modifier = Modifier.testTag("cart_total_price")
             )
         }
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysLoadingButton(
-            text = "Pagar com Mercado Livre",
+            text = "Pagar com Mercado Pago",
             onClick = { onEvent(CartScreenEvent.OnMercadoPagoCheckout) },
             fillWidth = true,
             enabled = state.isCheckoutEnabled,

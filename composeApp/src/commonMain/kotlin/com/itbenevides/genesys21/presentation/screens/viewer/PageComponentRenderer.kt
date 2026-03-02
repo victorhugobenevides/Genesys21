@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,7 +34,7 @@ import com.itbenevides.genesys21.util.Analytics
 @Composable
 fun PageComponentRenderer(
     component: PageComponent,
-    allComponents: List<PageComponent> = emptyList(), // Adicionado para extrair categorias
+    allComponents: List<PageComponent> = emptyList(),
     isEditMode: Boolean = false,
     onProductClick: (Product) -> Unit = {},
     selectedCategory: String? = null,
@@ -41,40 +42,49 @@ fun PageComponentRenderer(
 ) {
     val backendUrl = remember { getBaseUrl() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("page_component_${component::class.simpleName}")
-            .then(
-                if (component.backgroundColor != null) {
-                    Modifier.background(parseHexColor(component.backgroundColor!!))
-                } else Modifier
-            )
+    // UX IMPROVEMENT: Adicionando animação de entrada para os componentes
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn() + expandVertically()
     ) {
-        when (component) {
-            is PageComponent.Typography -> TypographyRenderer(component)
-            is PageComponent.Header -> HeaderRenderer(component)
-            is PageComponent.Media -> MediaRenderer(component, backendUrl)
-            is PageComponent.Image -> ImageRenderer(component, backendUrl)
-            is PageComponent.Highlight -> HighlightRenderer(component)
-            is PageComponent.ProductList -> ProductListRenderer(component, backendUrl, onProductClick, selectedCategory)
-            is PageComponent.CategoryFilter -> CategoryFilterRenderer(
-                allComponents = allComponents,
-                selectedCategory = selectedCategory,
-                onCategorySelect = { 
-                    Analytics.logEvent("select_category", mapOf("category" to (it ?: "all")))
-                    onCategorySelect(it) 
-                }
-            )
-            is PageComponent.StepProcess -> StepProcessRenderer(component)
-            is PageComponent.Testimonial -> TestimonialRenderer(component)
-            is PageComponent.SocialLinks -> SocialLinksRenderer(component)
-            is PageComponent.ProfileHeader -> ProfileHeaderRenderer(component, backendUrl)
-            is PageComponent.Search -> SearchBarRenderer(component)
-            else -> { /* Unknown component */ }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("page_component_${component::class.simpleName}")
+                .then(
+                    if (component.backgroundColor != null) {
+                        Modifier.background(parseHexColor(component.backgroundColor!!))
+                    } else Modifier
+                )
+        ) {
+            when (component) {
+                is PageComponent.Typography -> TypographyRenderer(component)
+                is PageComponent.Header -> HeaderRenderer(component)
+                is PageComponent.Media -> MediaRenderer(component, backendUrl)
+                is PageComponent.Image -> ImageRenderer(component, backendUrl)
+                is PageComponent.Highlight -> HighlightRenderer(component)
+                is PageComponent.ProductList -> ProductListRenderer(component, backendUrl, onProductClick, selectedCategory)
+                is PageComponent.CategoryFilter -> CategoryFilterRenderer(
+                    allComponents = allComponents,
+                    selectedCategory = selectedCategory,
+                    onCategorySelect = { 
+                        Analytics.logEvent("select_category", mapOf("category" to (it ?: "all")))
+                        onCategorySelect(it) 
+                    }
+                )
+                is PageComponent.StepProcess -> StepProcessRenderer(component)
+                is PageComponent.Testimonial -> TestimonialRenderer(component)
+                is PageComponent.SocialLinks -> SocialLinksRenderer(component)
+                is PageComponent.ProfileHeader -> ProfileHeaderRenderer(component, backendUrl)
+                is PageComponent.Search -> SearchBarRenderer(component)
+                else -> { /* Unknown component */ }
+            }
         }
     }
 }
+
+// ... restante das funções auxiliares permanecem as mesmas (TypographyRenderer, HeaderRenderer, etc.)
+// ... (Omitido para brevidade, mas o código original é mantido abaixo)
 
 @Composable
 private fun TypographyRenderer(comp: PageComponent.Typography) {
@@ -213,7 +223,7 @@ private fun HighlightRenderer(comp: PageComponent.Highlight) {
         contentAlignment = Alignment.Center
     ) {
         Button(
-            onClick = { /* Handle elsewhere */ },
+            onClick = { /* Action handled elsewhere */ },
             modifier = Modifier.fillMaxWidth().testTag("highlight_button"),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (comp.usePrimaryColor) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
@@ -307,7 +317,7 @@ private fun ProductCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryFilterRenderer(
-    allComponents: List<PageComponent>, // Extrai categorias dos produtos da página
+    allComponents: List<PageComponent>,
     selectedCategory: String?,
     onCategorySelect: (String?) -> Unit
 ) {
@@ -485,9 +495,6 @@ private fun SearchBarRenderer(comp: PageComponent.Search) {
     }
 }
 
-/**
- * Função de parse de cor compatível com KMP (Kotlin Multiplatform).
- */
 private fun parseHexColor(colorString: String): Color {
     return try {
         val hex = colorString.removePrefix("#")
