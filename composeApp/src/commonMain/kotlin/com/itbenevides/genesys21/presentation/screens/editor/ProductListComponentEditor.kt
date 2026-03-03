@@ -51,7 +51,12 @@ fun ProductListComponentEditor(
         
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-            GenesysText("Exibir em Lista Horizontal?", style = GenesysTextStyle.Body, weightValue = 1f)
+            // CORREÇÃO: Usando modifier para weight em vez de parâmetro removido
+            GenesysText(
+                text = "Exibir em Lista Horizontal?", 
+                style = GenesysTextStyle.Body, 
+                modifier = Modifier.weight(1f)
+            )
             Switch(checked = isHorizontal, onCheckedChange = { isHorizontal = it })
         }
 

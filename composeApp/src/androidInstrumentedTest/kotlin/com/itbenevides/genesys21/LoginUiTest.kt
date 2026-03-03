@@ -34,12 +34,19 @@ class LoginUiTest : KoinTest {
 
     @Test
     fun testLoginScreenElementsAreDisplayed() {
+        // Corrigido: A tela de login não contém o texto "Bem-vindo" (Welcome)
+        // Usamos EmailLabel que é garantido estar lá.
         composeTestRule.waitUntil(20000) {
-            composeTestRule.onAllNodesWithText(GenesysStrings.Welcome).fetchSemanticsNodes().isNotEmpty()
+            composeTestRule.onAllNodesWithText(GenesysStrings.EmailLabel).fetchSemanticsNodes().isNotEmpty()
         }
         
         composeTestRule.onNodeWithText(GenesysStrings.EmailLabel).assertExists()
         composeTestRule.onNodeWithText(GenesysStrings.PasswordLabel).assertExists()
         composeTestRule.onNodeWithText(GenesysStrings.LoginButton).assertExists()
+        
+        // Verifica as tags de teste
+        composeTestRule.onNodeWithTag("email_field").assertExists()
+        composeTestRule.onNodeWithTag("password_field").assertExists()
+        composeTestRule.onNodeWithTag("btn_login").assertExists()
     }
 }

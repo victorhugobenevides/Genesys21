@@ -1,4 +1,3 @@
-@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository

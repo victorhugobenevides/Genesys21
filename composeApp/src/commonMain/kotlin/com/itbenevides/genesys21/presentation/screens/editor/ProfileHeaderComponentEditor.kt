@@ -71,7 +71,12 @@ fun ProfileHeaderComponentEditor(
         GenesysSpacer(GenesysSpacing.Medium)
         
         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-            GenesysText("Foto Circular?", style = GenesysTextStyle.Body, weightValue = 1f)
+            // CORREÇÃO: Usando Modifier.weight(1f) em vez de weightValue
+            GenesysText(
+                text = "Foto Circular?", 
+                style = GenesysTextStyle.Body, 
+                modifier = Modifier.weight(1f)
+            )
             Switch(checked = isCircular, onCheckedChange = { isCircular = it })
         }
 

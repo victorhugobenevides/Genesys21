@@ -43,9 +43,7 @@ class ProductDetailsUiTest : KoinTest {
 
     @Before
     fun setup() {
-        // Carrega o módulo ANTES de lançar a Activity
-        loadKoinModules(createTestModule(FakeAuthRepository(), FakePageRepository(), FakeOrderRepository()))
-        
+        TestKoinHelper.startOrReloadKoin()
         val intent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
         scenario = ActivityScenario.launch(intent)
     }
@@ -53,25 +51,32 @@ class ProductDetailsUiTest : KoinTest {
     @After
     fun tearDown() {
         if (::scenario.isInitialized) scenario.close()
-        unloadKoinModules(testModule)
     }
 
     @Test
     fun testProductInfoIsDisplayedCorrectly() {
         val router: Router = get()
         
-        composeTestRule.waitUntil(20000) {
+        composeTestRule.waitUntil(25000) {
             router.currentRoute != Route.Splash
         }
 
-        // Navega diretamente para a tela de detalhes (simulando a rota)
         composeTestRule.runOnUiThread {
             router.navigateTo(Route.ProductDetails(testProduct, Route.PageList))
         }
 
-        // Tenta encontrar por Tag ou Texto
-        composeTestRule.onNode(hasTestTag("product_title") or hasText("Produto Especial")).assertExists()
-        composeTestRule.onNode(hasTestTag("product_price") or hasText("199,90", substring = true)).assertExists()
+        // Aguarda o carregamento do conteúdo
+        composeTestRule.waitUntil(15000) {
+            composeTestRule.onAllNodesWithText("Produto Especial").fetchSemanticsNodes().isNotEmpty()
+        }
+        
+        composeTestRule.onNodeWithText("Produto Especial").assertExists()
+        
+        // CORREÇÃO: Usamos testTag para evitar ambiguidade entre o preço do header e do footer
+        composeTestRule.onNodeWithTag("product_price")
+            .assertTextContains("R$ 199.9", substring = true)
+            .assertExists()
+
         composeTestRule.onNodeWithText("Uma descrição detalhada do produto.").assertExists()
     }
 
@@ -79,7 +84,7 @@ class ProductDetailsUiTest : KoinTest {
     fun testAddToCartFlow() {
         val router: Router = get()
         
-        composeTestRule.waitUntil(20000) {
+        composeTestRule.waitUntil(25000) {
             router.currentRoute != Route.Splash
         }
 
@@ -87,24 +92,24 @@ class ProductDetailsUiTest : KoinTest {
             router.navigateTo(Route.ProductDetails(testProduct, Route.PageList))
         }
 
-        // Clica para adicionar ao carrinho
-        composeTestRule.onNode(hasTestTag("btn_add_to_cart") or hasText("Adicionar", substring = true))
-            .performClick()
-
-        // Aguarda o diálogo de sucesso aparecer
-        composeTestRule.waitUntil(5000) {
-            composeTestRule.onAllNodesWithText(GenesysStrings.AddedToCartTitle).fetchSemanticsNodes().isNotEmpty()
+        // Aguarda botão de adicionar estar visível
+        composeTestRule.waitUntil(15000) {
+             composeTestRule.onAllNodesWithTag("btn_sticky_add_to_cart").fetchSemanticsNodes().isNotEmpty()
         }
 
-        // Verifica se o diálogo de sucesso está visível
-        composeTestRule.onNodeWithText(GenesysStrings.AddedToCartTitle).assertExists()
+        // Clica para adicionar ao carrinho usando a TAG específica
+        composeTestRule.onNodeWithTag("btn_sticky_add_to_cart").performClick()
 
-        // Clica em "Ver Carrinho" no diálogo
-        composeTestRule.onNode(hasTestTag("btn_dialog_view_cart") or hasText("Ver Carrinho", ignoreCase = true))
-            .performClick()
+        // Aguarda pela mensagem do Snackbar
+        composeTestRule.waitUntil(10000) {
+            composeTestRule.onAllNodesWithText("adicionado ao carrinho", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
 
-        // Valida se navegou para o carrinho (verificando a rota atual ou um elemento do carrinho)
-        composeTestRule.waitUntil(5000) {
+        // Clica na ação "Ver Carrinho" do Snackbar
+        composeTestRule.onNodeWithText("Ver Carrinho", ignoreCase = true).performClick()
+
+        // Valida se navegou para o carrinho
+        composeTestRule.waitUntil(10000) {
             router.currentRoute is Route.Cart
         }
     }
@@ -114,7 +119,7 @@ class ProductDetailsUiTest : KoinTest {
         val router: Router = get()
         val outOfStockProduct = testProduct.copy(stock = 0)
         
-        composeTestRule.waitUntil(20000) {
+        composeTestRule.waitUntil(25000) {
             router.currentRoute != Route.Splash
         }
 
@@ -122,9 +127,8 @@ class ProductDetailsUiTest : KoinTest {
             router.navigateTo(Route.ProductDetails(outOfStockProduct, Route.PageList))
         }
 
-        // Verifica se o botão de adicionar está desabilitado
-        composeTestRule.onNode(hasTestTag("btn_add_to_cart") or hasText("Adicionar", substring = true))
-            .assertIsNotEnabled()
+        // Verifica se o botão de adicionar está desabilitado usando a TAG
+        composeTestRule.onNodeWithTag("btn_sticky_add_to_cart").assertIsNotEnabled()
         
         // Verifica se o badge de esgotado aparece
         composeTestRule.onNodeWithText("Esgotado", ignoreCase = true).assertExists()

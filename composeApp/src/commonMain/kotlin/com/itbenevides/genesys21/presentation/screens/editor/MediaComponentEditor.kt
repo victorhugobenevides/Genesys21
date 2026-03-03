@@ -91,7 +91,12 @@ fun MediaComponentEditor(
             GenesysTextField(value = description, onValueChange = { description = it }, label = "Descrição", singleLine = false, minLines = 3)
             
             GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-                GenesysText("Imagem na Direita?", style = GenesysTextStyle.Body, weightValue = 1f)
+                // CORREÇÃO: Usando Modifier.weight(1f)
+                GenesysText(
+                    text = "Imagem na Direita?", 
+                    style = GenesysTextStyle.Body, 
+                    modifier = Modifier.weight(1f)
+                )
                 Switch(checked = imageOnRight, onCheckedChange = { imageOnRight = it })
             }
         }

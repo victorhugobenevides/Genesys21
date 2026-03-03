@@ -1,7 +1,5 @@
 package com.itbenevides.genesys21.ui.components.text
 
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -119,65 +117,5 @@ internal fun GenesysTextContent(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow
-    )
-}
-
-/**
- * Extensão para RowScope.
- */
-@Composable
-fun RowScope.GenesysText(
-    text: String,
-    style: GenesysTextStyle = GenesysTextStyle.Body,
-    color: Color = Color.Unspecified,
-    textAlign: GenesysTextAlign? = null,
-    fontWeight: GenesysFontWeight? = null,
-    fontSize: TextUnit = TextUnit.Unspecified,
-    maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Ellipsis,
-    weightValue: Float = 0f,
-    modifier: Modifier = Modifier
-) {
-    val finalModifier = if (weightValue > 0f) Modifier.weight(weightValue).then(modifier) else modifier
-    GenesysTextContent(
-        text = text,
-        style = style,
-        color = color,
-        textAlign = textAlign,
-        fontWeight = fontWeight,
-        fontSize = fontSize,
-        maxLines = maxLines,
-        overflow = overflow,
-        modifier = finalModifier
-    )
-}
-
-/**
- * Extensão para ColumnScope.
- */
-@Composable
-fun ColumnScope.GenesysText(
-    text: String,
-    style: GenesysTextStyle = GenesysTextStyle.Body,
-    color: Color = Color.Unspecified,
-    textAlign: GenesysTextAlign? = null,
-    fontWeight: GenesysFontWeight? = null,
-    fontSize: TextUnit = TextUnit.Unspecified,
-    maxLines: Int = Int.MAX_VALUE,
-    overflow: TextOverflow = TextOverflow.Ellipsis,
-    weightValue: Float = 0f,
-    modifier: Modifier = Modifier
-) {
-    val finalModifier = if (weightValue > 0f) Modifier.weight(weightValue).then(modifier) else modifier
-    GenesysTextContent(
-        text = text,
-        style = style,
-        color = color,
-        textAlign = textAlign,
-        fontWeight = fontWeight,
-        fontSize = fontSize,
-        maxLines = maxLines,
-        overflow = overflow,
-        modifier = finalModifier
     )
 }

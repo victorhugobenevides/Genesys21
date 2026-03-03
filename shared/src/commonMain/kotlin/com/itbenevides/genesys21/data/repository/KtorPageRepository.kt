@@ -12,7 +12,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
-import kotlin.time.Clock.System.now
+import kotlinx.datetime.Clock
 
 /**
  * Implementação do repositório de páginas usando Ktor Client.
@@ -23,7 +23,7 @@ class KtorPageRepository(
     private val baseUrl: String = "http://localhost:8080"
 ) : PageRepository {
 
-    private fun getTimestamp() = now().toEpochMilliseconds()
+    private fun getTimestamp() = Clock.System.now().toEpochMilliseconds()
 
     private fun logNetworkError(method: String, url: String, e: Exception) {
         println("NETWORK_ERROR [$method] $url: ${e.message}")
@@ -283,7 +283,9 @@ class KtorPageRepository(
                 header(HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao excluir categoria: ${response.status}"))
+            else {
+                Result.failure(Exception("Erro ao excluir categoria: ${response.status}"))
+            }
         } catch (e: Exception) {
             logNetworkError("DELETE_CAT", url, e)
             Result.failure(e)

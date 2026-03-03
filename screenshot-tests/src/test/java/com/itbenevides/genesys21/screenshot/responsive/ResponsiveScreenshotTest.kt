@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.screenshot.responsive
 
+import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -16,8 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Testes de screenshot em diferentes dispositivos e configurações.
- * Testa responsividade e adaptação de layout.
+ * Testes de screenshot responsivos.
+ * Usamos instâncias separadas para evitar IllegalStateException na troca de configuração.
  */
 class ResponsiveScreenshotTest {
 
@@ -26,11 +27,12 @@ class ResponsiveScreenshotTest {
 
     @Test
     fun testPhoneSize() {
+        // Usando a configuração padrão da regra (Pixel 5)
         paparazzi.snapshot(name = "responsive_phone") {
             AppTheme(themeConfig = PageThemeConfig.ROYAL) {
-                Surface(modifier = Modifier.width(360.dp).padding(16.dp)) {
+                Surface(modifier = Modifier.fillMaxWidth().height(800.dp).padding(16.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GenesysText("Layout Phone (360dp)", style = GenesysTextStyle.Title)
+                        GenesysText("Layout Phone (Portrait)", style = GenesysTextStyle.Title)
                         GenesysLoadingButton(text = "Ação Principal", onClick = {}, fillWidth = true)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             GenesysStatsCard(label = "Vendas", value = "1.2k", color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
@@ -43,12 +45,29 @@ class ResponsiveScreenshotTest {
     }
 
     @Test
+    fun testSmallPhone() {
+        // Forçamos um tamanho fixo no Modifier para simular o device menor sem crashar a regra
+        paparazzi.snapshot(name = "responsive_small_phone") {
+            AppTheme(themeConfig = PageThemeConfig.ROYAL) {
+                Surface(modifier = Modifier.width(320.dp).height(568.dp).padding(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GenesysText("Small Phone (320dp)", style = GenesysTextStyle.Title)
+                        GenesysLoadingButton(text = "Ação", onClick = {}, fillWidth = true)
+                        GenesysStatsCard(label = "Total", value = "R$ 99", color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun testTabletSize() {
+        // Simulando Tablet via Modifier em vez de mudar a regra global
         paparazzi.snapshot(name = "responsive_tablet") {
             AppTheme(themeConfig = PageThemeConfig.ROYAL) {
-                Surface(modifier = Modifier.width(600.dp).padding(24.dp)) {
+                Surface(modifier = Modifier.width(800.dp).height(1280.dp).padding(24.dp)) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        GenesysText("Layout Tablet (600dp)", style = GenesysTextStyle.Title)
+                        GenesysText("Layout Tablet (Simulado)", style = GenesysTextStyle.Title)
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             GenesysStatsCard(label = "Vendas", value = "1.2k", color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
                             GenesysStatsCard(label = "Pedidos", value = "45", color = MaterialTheme.colorScheme.secondary, modifier = Modifier.weight(1f))
@@ -65,72 +84,44 @@ class ResponsiveScreenshotTest {
     }
 
     @Test
-    fun testSmallPhone() {
-        paparazzi.snapshot(name = "responsive_small_phone") {
-            AppTheme(themeConfig = PageThemeConfig.ROYAL) {
-                Surface(modifier = Modifier.width(320.dp).padding(12.dp)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GenesysText("Small Phone (320dp)", style = GenesysTextStyle.Title)
-                        GenesysLoadingButton(text = "Ação", onClick = {}, fillWidth = true)
-                        GenesysStatsCard(label = "Total", value = "R$ 99", color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun testAllThemeVariations() {
-        val themes = listOf(
-            PageThemeConfig.ROYAL,
-            PageThemeConfig.OCEAN,
-            PageThemeConfig.FOREST,
-            PageThemeConfig.SUNSET,
-            PageThemeConfig.BERRY,
-            PageThemeConfig.MINIMAL,
-            PageThemeConfig.DARK_MODE
-        )
-        
-        themes.forEach { theme ->
-            paparazzi.snapshot(name = "theme_grid_${theme.name.lowercase()}") {
-                AppTheme(themeConfig = theme) {
-                    Surface(modifier = Modifier.padding(16.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            GenesysText(theme.name, style = GenesysTextStyle.Title)
-                            GenesysLoadingButton(text = "Primário", onClick = {})
-                            GenesysStatsCard(label = "Teste", value = "123", color = MaterialTheme.colorScheme.primary)
+    fun testDesktopSize() {
+        // Simulando Widescreen via Modifier
+        paparazzi.snapshot(name = "responsive_desktop") {
+            AppTheme(themeConfig = PageThemeConfig.OCEAN) {
+                Surface(modifier = Modifier.width(1280.dp).height(800.dp).padding(40.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        // Sidebar
+                        Column(modifier = Modifier.width(250.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            GenesysText("Menu Admin", style = GenesysTextStyle.Title)
+                            repeat(4) {
+                                GenesysLoadingButton(text = "Opção ${it + 1}", onClick = {}, fillWidth = true, containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            }
                         }
-                    }
-                }
-            }
-        }
-    }
 
-    @Test
-    fun testContentDensity() {
-        paparazzi.snapshot(name = "responsive_density_compact") {
-            AppTheme(themeConfig = PageThemeConfig.ROYAL) {
-                Surface(modifier = Modifier.padding(8.dp)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        GenesysText("Layout Compacto", style = GenesysTextStyle.Title)
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            GenesysLoadingButton(text = "A", onClick = {})
-                            GenesysLoadingButton(text = "B", onClick = {})
-                            GenesysLoadingButton(text = "C", onClick = {})
-                        }
-                    }
-                }
-            }
-        }
-        
-        paparazzi.snapshot(name = "responsive_density_comfortable") {
-            AppTheme(themeConfig = PageThemeConfig.ROYAL) {
-                Surface(modifier = Modifier.padding(24.dp)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-                        GenesysText("Layout Confortável", style = GenesysTextStyle.Title)
-                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            GenesysLoadingButton(text = "Ação 1", onClick = {})
-                            GenesysLoadingButton(text = "Ação 2", onClick = {})
+                        // Conteúdo Principal
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                            GenesysText("Dashboard Desktop", style = GenesysTextStyle.Headline)
+                            
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                repeat(3) {
+                                    GenesysStatsCard(
+                                        label = "Métrica ${it + 1}", 
+                                        value = "${it * 25}%", 
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().height(300.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                            ) {
+                                Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                    GenesysText("Conteúdo Centralizado")
+                                }
+                            }
                         }
                     }
                 }

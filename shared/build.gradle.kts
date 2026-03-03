@@ -46,6 +46,11 @@ kotlin {
 android {
     namespace = "com.itbenevides.genesys21.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    
+    defaultConfig {
+        minSdk = 23
+    }
+
     buildTypes {
         getByName("debug") {
             enableUnitTestCoverage = true
@@ -66,6 +71,7 @@ tasks.register<JacocoReport>("jacocoSharedTestReport") {
         xml.required.set(true)
         html.required.set(true)
         html.outputLocation.set(layout.projectDirectory.dir("jacoco-reports/html"))
+        xml.outputLocation.set(layout.projectDirectory.file("jacoco-reports/report.xml"))
     }
 
     val fileFilter = listOf(

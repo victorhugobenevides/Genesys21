@@ -3,15 +3,10 @@ package com.itbenevides.genesys21
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
-import coil3.ImageLoader
-import coil3.compose.setSingletonImageLoaderFactory
-import coil3.network.ktor3.KtorNetworkFetcherFactory
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    // A configuração do Coil DEVE estar definida antes ou dentro do App()
-    // Mas como o startComposeApp gerencia o Viewport, podemos injetar isso lá ou aqui.
-    // Vamos chamar o inicializador comum que agora está no webMain
+    // Chama o inicializador comum que está no webMain
     startComposeApp()
 }
 

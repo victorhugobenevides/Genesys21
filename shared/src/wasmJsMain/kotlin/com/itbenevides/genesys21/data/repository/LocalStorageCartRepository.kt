@@ -1,4 +1,3 @@
-@file:OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.CartItem
@@ -17,7 +16,6 @@ private external fun getSessionIdFromLocalStorage(): String?
 @JsFun("(sessionId) => localStorage.setItem('cart_session_id', sessionId)")
 private external fun setSessionIdInLocalStorage(sessionId: String)
 
-// Renomeado para WasmCartRepository para forçar a regeneração de símbolos no Linker
 class WasmCartRepository : CartRepository, KoinComponent {
 
     private val authRepository: AuthRepository by inject()

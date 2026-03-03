@@ -1,14 +1,10 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,17 +14,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageTemplateType
-import com.itbenevides.genesys21.getWebBaseUrl
+import com.itbenevides.genesys21.domain.model.PageTemplates
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
@@ -39,17 +32,11 @@ import com.itbenevides.genesys21.ui.components.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.components.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.input.GenesysFilterChip
-import com.itbenevides.genesys21.ui.components.input.GenesysStatusPicker
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import com.itbenevides.genesys21.util.downloadFile
-import com.itbenevides.genesys21.util.rememberFileHandler
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlin.math.roundToLong
 
 @Composable
@@ -88,7 +75,8 @@ fun PageListScreen(
             is PageListEvent.OnDismissCreateDialog -> state = state.copy(showCreateDialog = false, newPageTitle = "")
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
-                val newPage = Page(id = "", title = state.newPageTitle.trim())
+                // CORREÇÃO: Usando o PageTemplates para criar a página baseada no tipo selecionado
+                val newPage = PageTemplates.create(event.templateType, state.newPageTitle.trim())
                 viewModel.savePage(newPage, isEditing = false) {
                     state = state.copy(showCreateDialog = false, newPageTitle = "")
                     viewModel.loadPages()
@@ -109,7 +97,7 @@ fun PageListScreen(
             is PageListEvent.OnGlobalSettingsClicked -> state = state.copy(showGlobalSettings = true)
             is PageListEvent.OnDismissGlobalSettings -> state = state.copy(showGlobalSettings = false)
             is PageListEvent.OnUpdateOrderStatus -> viewModel.updateOrderStatus(event.orderId, event.newStatus)
-            else -> { /* Outros eventos de exportação omitidos para brevidade */ }
+            else -> { }
         }
     }
 
@@ -249,7 +237,6 @@ private fun PageItemRow(page: Page, onView: () -> Unit, onEdit: () -> Unit, onRe
                 GenesysText(text = page.customDomain ?: "ID: ${page.id}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             
-            // UX IMPROVEMENT: Ações primárias destacadas
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysIconButton(icon = GenesysIcons.Visibility, onClick = onView, contentDescription = "Ver")
                 GenesysIconButton(icon = GenesysIcons.Edit, onClick = onEdit, contentDescription = "Editar")
@@ -271,28 +258,90 @@ private fun PageItemRow(page: Page, onView: () -> Unit, onEdit: () -> Unit, onRe
 private fun LogoutButtonUI(onEvent: (PageListEvent) -> Unit) {
     GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
         GenesysSpacer(GenesysSpacing.Huge)
-        GenesysTextButton(text = GenesysStrings.Logout, onClick = { onEvent(PageListEvent.OnLogoutClicked) }, color = MaterialTheme.colorScheme.error)
+        GenesysTextButton(text = GenesysStrings.Logout, onClick = { onLogoutClicked(onEvent) }, color = MaterialTheme.colorScheme.error)
         GenesysSpacer(GenesysSpacing.Huge)
     }
+}
+
+private fun onLogoutClicked(onEvent: (PageListEvent) -> Unit) {
+    onEvent(PageListEvent.OnLogoutClicked)
 }
 
 @Composable
 private fun CreatePageDialog(state: PageListState, onEvent: (PageListEvent) -> Unit) {
     var title by remember { mutableStateOf("") }
+    var selectedTemplate by remember { mutableStateOf(PageTemplateType.STORE) }
+
     GenesysDialog(
         onDismissRequest = { onEvent(PageListEvent.OnDismissCreateDialog) },
-        title = "Nova Vitrine",
+        title = GenesysStrings.NewPageTitle,
         confirmButton = { 
             GenesysLoadingButton(
                 text = "Criar", 
-                onClick = { onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY)) }, 
+                onClick = { onEvent(PageListEvent.OnConfirmCreatePage(selectedTemplate)) }, 
                 enabled = title.isNotBlank(), 
                 isLoading = state.isLoading,
-                fillWidth = true
+                fillWidth = true,
+                modifier = Modifier.testTag("btn_confirm_create_page")
             ) 
         }
     ) {
-        GenesysTextField(value = title, onValueChange = { title = it; onEvent(PageListEvent.OnNewPageTitleChanged(it)) }, label = "Título da Vitrine", placeholder = "Ex: Loja de Roupas")
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            GenesysTextField(
+                value = title, 
+                onValueChange = { title = it; onEvent(PageListEvent.OnNewPageTitleChanged(it)) }, 
+                label = "Título da Vitrine", 
+                placeholder = "Ex: Minha Loja Premium",
+                modifier = Modifier.testTag("input_new_page_title")
+            )
+
+            Text("Selecione um Modelo:", style = MaterialTheme.typography.labelMedium)
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TemplateOption(
+                    label = "Loja", 
+                    icon = GenesysIcons.ShoppingBag, 
+                    isSelected = selectedTemplate == PageTemplateType.STORE,
+                    onClick = { selectedTemplate = PageTemplateType.STORE }
+                )
+                TemplateOption(
+                    label = "Bio", 
+                    icon = GenesysIcons.Person, 
+                    isSelected = selectedTemplate == PageTemplateType.BIO,
+                    onClick = { selectedTemplate = PageTemplateType.BIO }
+                )
+                TemplateOption(
+                    label = "Landing", 
+                    icon = GenesysIcons.Web, 
+                    isSelected = selectedTemplate == PageTemplateType.LANDING,
+                    onClick = { selectedTemplate = PageTemplateType.LANDING }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.TemplateOption(
+    label: String, 
+    icon: androidx.compose.ui.graphics.vector.ImageVector, 
+    isSelected: Boolean, 
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.weight(1f).clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, null, tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -310,10 +359,8 @@ private fun RenamePageDialog(state: PageListState, onEvent: (PageListEvent) -> U
 
 @Composable
 private fun OrdersLayoutUI(state: PageListState, onEvent: (PageListEvent) -> Unit, isWideScreen: Boolean, onContact: (String, String, String) -> Unit) {
-    // Implementação simplificada mantendo a lógica de filtros
     Column(Modifier.fillMaxSize()) {
         OrderFiltersRow(state, onEvent)
-        // ... lista de pedidos ...
     }
 }
 
@@ -321,6 +368,5 @@ private fun OrdersLayoutUI(state: PageListState, onEvent: (PageListEvent) -> Uni
 private fun OrderFiltersRow(state: PageListState, onEvent: (PageListEvent) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         GenesysFilterChip(selected = state.selectedStatusFilter == null, onClick = { onEvent(PageListEvent.OnStatusFilterSelected(null)) }, label = "Todos", badgeCount = state.orders.size)
-        // Outros filtros omitidos para brevidade
     }
 }

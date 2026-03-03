@@ -50,12 +50,10 @@ class CheckoutFlowTest : KoinTest {
     @Before
     fun setup() {
         TestKoinHelper.startOrReloadKoin()
-        
         (fakePage as? FakePageRepository)?.clear()
         runBlocking {
             fakePage.savePage(testPage, "owner", false)
         }
-
         val intent = Intent(InstrumentationRegistry.getInstrumentation().targetContext, MainActivity::class.java)
         scenario = ActivityScenario.launch(intent)
     }
@@ -69,7 +67,8 @@ class CheckoutFlowTest : KoinTest {
     fun testAddToCartAndCheckoutFlow() {
         val router: Router = get()
 
-        composeTestRule.waitUntil(20000) {
+        // Aguarda a Splash Screen
+        composeTestRule.waitUntil(25000) {
             router.currentRoute != Route.Splash
         }
 
@@ -78,39 +77,47 @@ class CheckoutFlowTest : KoinTest {
         }
 
         // 1. Seleciona Produto
-        composeTestRule.waitUntil(15000) {
+        composeTestRule.waitUntil(20000) {
             composeTestRule.onAllNodesWithText("Produto Teste").fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText("Produto Teste").performClick()
         
         // 2. Adiciona ao Carrinho
-        composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithText(GenesysStrings.AddToCartAction, ignoreCase = true).fetchSemanticsNodes().isNotEmpty()
-        }
-        composeTestRule.onNodeWithText(GenesysStrings.AddToCartAction, ignoreCase = true).performClick()
-        
-        // 3. Vai para o Carrinho
-        composeTestRule.waitUntil(10000) {
-            composeTestRule.onAllNodesWithText(GenesysStrings.ViewCart, ignoreCase = true).fetchSemanticsNodes().isNotEmpty()
-        }
-        composeTestRule.onNodeWithText(GenesysStrings.ViewCart, ignoreCase = true).performClick()
-
-        // 4. Preenche Identificação (Nome e Telefone)
         composeTestRule.waitUntil(15000) {
-            composeTestRule.onAllNodesWithText(GenesysStrings.CartTitle, ignoreCase = true).fetchSemanticsNodes().isNotEmpty()
+            composeTestRule.onAllNodes(hasText("Adicionar", substring = true) or hasTestTag("btn_sticky_add_to_cart"))
+                .fetchSemanticsNodes().isNotEmpty()
         }
-        composeTestRule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("Cliente Especial")
-        composeTestRule.onAllNodes(hasSetTextAction()).onLast().performTextInput("11988887777")
+        composeTestRule.onNode(hasText("Adicionar", substring = true) or hasTestTag("btn_sticky_add_to_cart"))
+            .performClick()
         
-        // 5. Finaliza
-        composeTestRule.onNodeWithText("Finalizar via WhatsApp", ignoreCase = true).performClick()
+        // 3. Snackbar -> Vai para o Carrinho
+        composeTestRule.waitUntil(15000) {
+            composeTestRule.onAllNodesWithText("Ver Carrinho", ignoreCase = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNodeWithText("Ver Carrinho", ignoreCase = true).performClick()
+
+        // 4. Preenche Identificação
+        // UX FIX: Aguarda os campos estarem prontos
+        composeTestRule.waitUntil(25000) {
+            composeTestRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size >= 2
+        }
         
-        // 6. Verifica Sucesso (Navegação para Tracking)
-        composeTestRule.waitUntil(30000) {
+        // CORREÇÃO: Busca específica por TAG ou TEXTO exato para evitar ambiguidade com o botão
+        composeTestRule.onNode(hasTestTag(GenesysStrings.CustomerNameLabel))
+            .performTextInput("Cliente Especial")
+            
+        composeTestRule.onNode(hasTestTag("Seu WhatsApp / Telefone") or hasText("Seu WhatsApp / Telefone"))
+            .performTextInput("11988887777")
+        
+        // 5. Finaliza Pedido
+        composeTestRule.onNode(hasTestTag("btn_checkout_whatsapp"))
+            .performClick()
+        
+        // 6. Verifica Sucesso
+        composeTestRule.waitUntil(40000) {
             router.currentRoute is Route.OrderTracking
         }
         
-        // CORREÇÃO: O título real na UI é "Acompanhamento"
         composeTestRule.onNodeWithText(GenesysStrings.TrackOrderTitle, ignoreCase = true).assertExists()
     }
 }

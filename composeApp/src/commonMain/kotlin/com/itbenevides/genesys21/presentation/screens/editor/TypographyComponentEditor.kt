@@ -94,7 +94,12 @@ fun TypographyComponentEditor(
         )
 
         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-            GenesysText("Usar cor da marca?", style = GenesysTextStyle.Body, weightValue = 1f)
+            // CORREÇÃO: Usando Modifier.weight(1f)
+            GenesysText(
+                text = "Usar cor da marca?", 
+                style = GenesysTextStyle.Body, 
+                modifier = Modifier.weight(1f)
+            )
             Switch(checked = usePrimaryColor, onCheckedChange = { usePrimaryColor = it })
         }
 

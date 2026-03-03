@@ -36,7 +36,6 @@ kotlin {
         browser {
             commonWebpackConfig {
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static(project.file("src/webMain/resources").canonicalPath)
                     proxy = mutableListOf(
                         KotlinWebpackConfig.DevServer.Proxy(mutableListOf("/api", "/uploads", "/upload"), "http://localhost:8080")
                     )
@@ -64,6 +63,14 @@ kotlin {
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
         }
+
+        // CORREÇÃO: Configurando webMain como fonte comum para JS e WasmJS
+        val webMain by creating {
+            dependsOn(commonMain.get())
+        }
+        
+        jsMain.get().dependsOn(webMain)
+        wasmJsMain.get().dependsOn(webMain)
 
         androidMain.dependencies {
             implementation(compose.preview)
@@ -154,10 +161,8 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     group = "Reporting"
     description = "Gera relatório de cobertura para testes unitários Android do composeApp"
 
-    // Depende dos testes unitários debug
     dependsOn("testDebugUnitTest")
 
-    // Limpa o diretório de relatórios antes de gerar novo
     doFirst {
         delete(layout.projectDirectory.dir("jacoco-reports"))
     }
@@ -170,30 +175,19 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     }
 
     val fileFilter = listOf(
-        // Classes geradas pelo Android
         "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*",
-        "**/generated/**",
-        // Classes de teste
-        "**/*Test*.*", "android/**/*.*",
-        // Classes geradas pelo Kotlin/Compose
+        "**/generated/**", "**/*Test*.*", "android/**/*.*",
         "**/Lambda$*.class", "**/Lambda.class",
         "**/*Lambda.class", "**/*Lambda*.class", "**/*\$serializer.class",
-        "**/ComposableSingletons$*.*",
-        // Outras plataformas (não Android)
-        "**/*_desktop*.*",
-        // Bibliotecas externas - excluir do relatório
+        "**/ComposableSingletons$*.*", "**/*_desktop*.*",
         "**/androidx/**", "**/com/google/**", "**/com/android/**",
         "**/org/koin/**", "**/org/jetbrains/**", "**/io/ktor/**",
         "**/kotlin/**", "**/kotlinx/**", "**/javax/**", "**/java/**",
         "**/dalvik/**", "**/libcore/**",
-        // UI Components Compose - testados por UI tests, não unit tests
-        "**/ui/components/**",
-        "**/ui/theme/**", "**/di/**",
-        // Screens Compose - excluir somente os arquivos de tela (Kt), manter State/Event
+        "**/ui/components/**", "**/ui/theme/**", "**/di/**",
         "**/*ScreenKt*", "**/*Screen$*",
         "**/*ComponentEditor*", "**/*Dialog*", "**/*EditorScreen*",
         "**/*Renderer*", "**/*Controls*",
-        // Arquivos de UI e Compose não testáveis por unit tests
         "**/App*", "**/SplashScreen*", "**/MainActivity*",
         "**/ImagePicker*", "**/ImagePicker*", "**/Firebase*",
         "**/ThemeScrollbarEffect*"
@@ -201,8 +195,6 @@ tasks.register<JacocoReport>("jacocoTestReport") {
 
     val buildDir = layout.buildDirectory.asFile.get()
 
-    // Configuração dos diretórios de classes para o JaCoCo
-    // Inclui apenas as classes do projeto (com.itbenevides), excluindo bibliotecas externas
     classDirectories.setFrom(
         fileTree("$buildDir/intermediates/classes/debug/transformDebugClassesWithAsm/dirs") {
             include("com/itbenevides/**")
@@ -218,8 +210,6 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         )
     )
 
-    // Caminho específico para o arquivo de execução JaCoCo
-    // Usa o arquivo gerado pela task testDebugUnitTest
     executionData.setFrom(
         files("$buildDir/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
     )

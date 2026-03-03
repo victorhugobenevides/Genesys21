@@ -57,6 +57,7 @@ tasks.register<JacocoReport>("jacocoServerTestReport") {
         xml.required.set(true)
         html.required.set(true)
         html.outputLocation.set(layout.projectDirectory.dir("jacoco-reports/html"))
+        xml.outputLocation.set(layout.projectDirectory.file("jacoco-reports/report.xml"))
     }
     // Incluir todas as classes exceto ApplicationKt e generated
     val fileFilter = listOf(

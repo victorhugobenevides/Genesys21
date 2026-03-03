@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.genesys.ui.theme.Dimensions
+import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import kotlinx.coroutines.delay
 
 sealed class ButtonState {
@@ -24,6 +24,7 @@ sealed class ButtonState {
     object Disabled : ButtonState()
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun StateButton(
     text: String,
@@ -61,14 +62,14 @@ fun StateButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .height(Dimensions.button_height)
+            .height(GenesysDimens.ButtonHeight)
             .semantics { contentDescription = contentDescriptionText },
         colors = buttonColors
     ) {
         AnimatedContent(
             targetState = state,
             transitionSpec = {
-                fadeIn(animationSpec = tween(300)) with
+                fadeIn(animationSpec = tween(300)) togetherWith
                     fadeOut(animationSpec = tween(300))
             }
         ) { targetState ->
@@ -86,7 +87,7 @@ fun StateButton(
                             color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
-                        Spacer(modifier = Modifier.width(Dimensions.spacing_sm))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "Loading...")
                     }
                     is ButtonState.Success -> {
@@ -95,7 +96,7 @@ fun StateButton(
                             contentDescription = "Success",
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(Dimensions.spacing_sm))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(text = targetState.message ?: "Success!")
                     }
                     is ButtonState.Error -> {
@@ -104,7 +105,7 @@ fun StateButton(
                             contentDescription = "Error",
                             modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(Dimensions.spacing_sm))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(text = targetState.message ?: "Error")
                     }
                 }

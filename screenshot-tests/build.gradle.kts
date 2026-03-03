@@ -9,7 +9,8 @@ plugins {
 
 android {
     namespace = "com.itbenevides.genesys21.screenshot"
-    compileSdk = 34
+    // Atualizado de 34 para 36 conforme erro de AAR metadata
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()

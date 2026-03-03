@@ -1,9 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -17,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -31,7 +27,6 @@ import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.badge.GenesysStockBadge
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.navigation.GenesysPagerIndicator
@@ -68,7 +63,6 @@ fun ProductDetailsScreen(
                     state = state.copy(isAddingToCart = true)
                     if (viewModel.addToCart(product)) {
                         delay(200)
-                        // UX IMPROVEMENT: Feedback via Snackbar em vez de Dialog bloqueante
                         val result = snackbarHostState.showSnackbar(
                             message = "${product.name} adicionado ao carrinho",
                             actionLabel = "Ver Carrinho",
@@ -89,7 +83,6 @@ fun ProductDetailsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            // UX IMPROVEMENT: Botão fixo no rodapé para dispositivos móveis
             BoxWithConstraints {
                 if (maxWidth < 900.dp) {
                     StickyAddToCartFooter(state, onEvent)
@@ -114,7 +107,6 @@ private fun ProductDetailsContent(
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
-    val isWideScreen = BoxWithConstraintsScope.run { maxWidth > 900.dp } // Simulado para o contexto
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val wide = maxWidth > 900.dp
@@ -144,7 +136,6 @@ private fun MobileLayout(
         Box(modifier = Modifier.fillMaxWidth().aspectRatio(0.9f)) {
             ProductImageCarousel(state, pagerState, backendUrl)
             
-            // UX IMPROVEMENT: Botão de voltar flutuante com fundo para visibilidade
             Surface(
                 modifier = Modifier.padding(16.dp).align(Alignment.TopStart),
                 shape = CircleShape,
@@ -167,7 +158,6 @@ private fun MobileLayout(
             
             ProductDescriptionSection(state)
             
-            // Espaço extra para não ser coberto pelo sticky footer
             Spacer(Modifier.height(100.dp))
         }
     }
@@ -191,7 +181,8 @@ private fun ProductHeaderSection(state: ProductDetailsState) {
                 text = "${GenesysStrings.PricePrefix}$priceFormatted", 
                 style = GenesysTextStyle.Title, 
                 color = MaterialTheme.colorScheme.primary,
-                fontWeight = GenesysFontWeight.ExtraBold
+                fontWeight = GenesysFontWeight.ExtraBold,
+                modifier = Modifier.testTag("product_price")
             )
         }
         GenesysStockBadge(stock = state.product.stock)
@@ -234,7 +225,8 @@ private fun StickyAddToCartFooter(
                     "${GenesysStrings.PricePrefix}$priceFormatted",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.testTag("footer_total_price")
                 )
             }
             
@@ -251,7 +243,6 @@ private fun StickyAddToCartFooter(
     }
 }
 
-// ... ProductImageCarousel e DesktopLayout mantidos com refinamentos visuais
 @Composable
 private fun ProductImageCarousel(
     state: ProductDetailsState, 
@@ -280,5 +271,24 @@ private fun ProductImageCarousel(
 
 @Composable
 private fun DesktopLayout(state: ProductDetailsState, backendUrl: String, onEvent: (ProductDetailsEvent) -> Unit) {
-    // Implementação Desktop similar à atual mas com refinamento de grid 50/50
+    Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f)) {
+             val pagerState = rememberPagerState(pageCount = { state.product.imageUrls.size.coerceAtLeast(1) })
+             ProductImageCarousel(state, pagerState, backendUrl)
+        }
+        Column(modifier = Modifier.weight(1f).padding(40.dp).verticalScroll(rememberScrollState())) {
+            ProductHeaderSection(state)
+            GenesysSpacer(GenesysSpacing.Large)
+            ProductDescriptionSection(state)
+            GenesysSpacer(GenesysSpacing.Huge)
+            GenesysLoadingButton(
+                text = "Adicionar ao Carrinho",
+                onClick = { onEvent(ProductDetailsEvent.OnAddToCartClicked) },
+                isLoading = state.isAddingToCart,
+                enabled = state.product.stock > 0,
+                icon = GenesysIcons.ShoppingBag,
+                fillWidth = true
+            )
+        }
+    }
 }
