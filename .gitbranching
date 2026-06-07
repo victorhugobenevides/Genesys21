@@ -1,0 +1,4 @@
+# Branch naming conventions
+# feature/<ticket-id>-<short-desc>
+# release/<version>
+# hotfix/<ticket-id>-<short-desc>
