@@ -1,40 +1,28 @@
 #!/usr/bin/env bash
 
-# gitflow_init.sh – bootstrap GitFlow workflow
-# Creates develop branch (if missing), sets branch naming conventions,
-# and applies branch protection rules via setup_branch_protection.sh
+# gitflow_init.sh – cria a branch develop (se não existir) e aplica proteção de branches
 
-set -euo pipefail
+set -e
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
-cd "$REPO_ROOT"
+# Ensure we are at repo root
+cd "$(git rev-parse --show-toplevel)"
 
-# 1. Ensure we are on main and up to date
-git checkout main
-git pull origin main
-
-# 2. Create develop branch if it does not exist
-if ! git show-ref --verify --quiet refs/heads/develop; then
-  git checkout -b develop
+# Create develop branch from main if it doesn't exist
+if ! git rev-parse --verify develop >/dev/null 2>&1; then
+  echo "Creating develop branch from main..."
+  git checkout -b develop main
   git push -u origin develop
 else
-  echo "Branch 'develop' already exists."
+  echo "Develop branch already exists."
 fi
 
-# 3. Push naming convention enforcement (no actual enforcement script, just documentation)
-cat <<EOF > .gitbranching
-# Branch naming conventions
-# feature/<ticket-id>-<short-desc>
-# release/<version>
-# hotfix/<ticket-id>-<short-desc>
-EOF
+# Run branch protection setup (placeholder script)
+if [ -f scripts/setup_branch_protection.sh ]; then
+  chmod +x scripts/setup_branch_protection.sh
+  ./scripts/setup_branch_protection.sh
+else
+  echo "No setup_branch_protection.sh found – you may add branch protection rules manually in GitHub settings."
+fi
 
-git add .gitbranching
-git commit -m "Add branch naming conventions file"
-
-git push
-
-# 4. Run branch protection setup
-./scripts/setup_branch_protection.sh
-
-echo "GitFlow initialization complete."
+# Switch back to main for safety
+git checkout main
