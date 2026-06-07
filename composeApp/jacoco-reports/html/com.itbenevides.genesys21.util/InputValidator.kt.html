@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InputValidator.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.util</a> &gt; <span class="el_source">InputValidator.kt</span></div><h1>InputValidator.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.util
+
+object InputValidator {
+    
+    fun validatePrice(input: String): String {
+        // Permite apenas números, uma vírgula ou um ponto
+        // Remove espaços e caracteres inválidos
+<span class="fc bfc" id="L8" title="All 6 branches covered.">        return input.filter { it.isDigit() || it == '.' || it == ',' }</span>
+<span class="fc" id="L9">            .replace(&quot;,&quot;, &quot;.&quot;)</span>
+<span class="fc" id="L10">            .let { </span>
+                // Garante apenas um ponto decimal
+<span class="fc" id="L12">                val parts = it.split(&quot;.&quot;)</span>
+<span class="fc bfc" id="L13" title="All 2 branches covered.">                if (parts.size &gt; 2) {</span>
+<span class="fc" id="L14">                    parts[0] + &quot;.&quot; + parts.drop(1).joinToString(&quot;&quot;)</span>
+<span class="fc" id="L15">                } else it</span>
+            }
+    }
+
+    fun validateStock(input: String): String {
+        // Permite apenas dígitos
+<span class="fc" id="L21">        return input.filter { it.isDigit() }</span>
+    }
+
+    fun parsePrice(input: String): Double {
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        return input.toDoubleOrNull() ?: 0.0</span>
+    }
+
+    fun parseStock(input: String): Int {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        return input.toIntOrNull() ?: 0</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

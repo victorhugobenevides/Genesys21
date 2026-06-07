@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SqliteCartRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.repository</a> &gt; <span class="el_source">SqliteCartRepository.kt</span></div><h1>SqliteCartRepository.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.repository
+
+import com.itbenevides.genesys21.data.database.*
+import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
+import com.itbenevides.genesys21.domain.model.CartItem
+import com.itbenevides.genesys21.domain.model.Product
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+
+<span class="fc" id="L10">class SqliteCartRepository {</span>
+
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">    suspend fun getCart(userId: String): List&lt;CartItem&gt; = dbQuery {</span>
+        // 1. Garantir que o carrinho mestre exista
+<span class="pc bpc" id="L14" title="1 of 2 branches missed.">        if (CartsTable.selectAll().where { CartsTable.userId eq userId }.count() == 0L) {</span>
+<span class="fc" id="L15">            CartsTable.insert { it[CartsTable.userId] = userId }</span>
+<span class="fc" id="L16">            return@dbQuery emptyList&lt;CartItem&gt;()</span>
+        }
+
+        // 2. Busca com tratamento de nulos para produtos de template
+<span class="nc" id="L20">        (CartItemsTable leftJoin ProductsTable leftJoin CategoriesTable)</span>
+<span class="nc" id="L21">            .selectAll().where { CartItemsTable.userId eq userId }</span>
+<span class="nc" id="L22">            .map { row -&gt;</span>
+<span class="nc" id="L23">                val productId = row[CartItemsTable.productId]</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">                val hasProductMaster = row.getOrNull(ProductsTable.id) != null</span>
+
+<span class="nc bnc" id="L26" title="All 2 branches missed.">                val images = if (hasProductMaster) {</span>
+<span class="nc" id="L27">                    ProductImagesTable.selectAll()</span>
+<span class="nc" id="L28">                        .where { ProductImagesTable.productId eq productId }</span>
+<span class="nc" id="L29">                        .orderBy(ProductImagesTable.order to SortOrder.ASC)</span>
+<span class="nc" id="L30">                        .map { it[ProductImagesTable.imageUrl] }</span>
+<span class="nc" id="L31">                } else emptyList()</span>
+
+<span class="nc" id="L33">                CartItem(</span>
+<span class="nc" id="L34">                    product = Product(</span>
+<span class="nc" id="L35">                        id = productId,</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">                        name = if (hasProductMaster) row[ProductsTable.name] else &quot;Produto de Exemplo&quot;,</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">                        price = if (hasProductMaster) row[ProductsTable.price] else 0.0,</span>
+<span class="nc" id="L38">                        imageUrls = images,</span>
+<span class="nc bnc" id="L39" title="All 4 branches missed.">                        description = if (hasProductMaster) (row[ProductsTable.description] ?: &quot;&quot;) else &quot;&quot;,</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                        categoryId = row[ProductsTable.categoryId]?.value,</span>
+<span class="nc" id="L41">                        categoryName = row.getOrNull(CategoriesTable.name),</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                        stock = if (hasProductMaster) row[ProductsTable.stock] else 0</span>
+                    ),
+<span class="nc" id="L44">                    quantity = row[CartItemsTable.quantity]</span>
+<span class="nc" id="L45">                )</span>
+<span class="nc" id="L46">            }</span>
+<span class="fc" id="L47">    }</span>
+
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">    suspend fun saveCart(userId: String, items: List&lt;CartItem&gt;) = dbQuery {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (CartsTable.selectAll().where { CartsTable.userId eq userId }.count() == 0L) {</span>
+<span class="fc" id="L51">            CartsTable.insert { it[CartsTable.userId] = userId }</span>
+        }
+
+<span class="fc" id="L54">        CartItemsTable.deleteWhere { CartItemsTable.userId eq userId }</span>
+        
+<span class="fc" id="L56">        items.forEach { item -&gt;</span>
+<span class="fc" id="L57">            CartItemsTable.insert {</span>
+<span class="fc" id="L58">                it[CartItemsTable.userId] = userId</span>
+<span class="fc" id="L59">                it[productId] = item.product.id</span>
+<span class="fc" id="L60">                it[quantity] = item.quantity</span>
+<span class="fc" id="L61">            }</span>
+<span class="fc" id="L62">        }</span>
+<span class="pc" id="L63">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

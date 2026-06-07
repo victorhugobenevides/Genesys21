@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrderRoutes.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.routes</a> &gt; <span class="el_source">OrderRoutes.kt</span></div><h1>OrderRoutes.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.routes
+
+import com.itbenevides.genesys21.data.repository.MercadoPagoCheckoutRequest
+import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
+import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.domain.repository.OrderRepository
+import com.mercadopago.MercadoPagoConfig
+import com.mercadopago.client.payment.PaymentClient
+import com.mercadopago.client.preference.*
+import com.mercadopago.exceptions.MPApiException
+import io.ktor.http.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.coroutines.flow.first
+import java.math.BigDecimal
+import java.math.RoundingMode
+
+fun Route.orderRoutes(orderRepository: OrderRepository) {
+<span class="fc" id="L22">    val sqliteOrderRepository = orderRepository as SqliteOrderRepository</span>
+
+<span class="fc" id="L24">    authenticate(&quot;firebase&quot;) {</span>
+<span class="fc" id="L25">        get(&quot;/orders&quot;) {</span>
+<span class="pc bpc" id="L26" title="2 of 4 branches missed.">            val userId = call.principal&lt;UserIdPrincipal&gt;()?.name ?: return@get call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="fc" id="L27">            try {</span>
+<span class="fc" id="L28">                val orders = sqliteOrderRepository.getOrders(userId).first()</span>
+<span class="fc" id="L29">                call.respond(orders)</span>
+<span class="nc" id="L30">            } catch (e: Exception) {</span>
+<span class="nc" id="L31">                call.respond(HttpStatusCode.InternalServerError, &quot;Erro ao buscar pedidos&quot;)</span>
+            }
+<span class="fc" id="L33">        }</span>
+
+<span class="pc" id="L35">        patch(&quot;/orders/{orderId}/status&quot;) {</span>
+<span class="pc bpc" id="L36" title="2 of 4 branches missed.">            val userId = call.principal&lt;UserIdPrincipal&gt;()?.name ?: return@patch call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">            val orderId = call.parameters[&quot;orderId&quot;] ?: return@patch call.respond(HttpStatusCode.BadRequest, &quot;ID do pedido ausente.&quot;)</span>
+<span class="fc" id="L38">            try {</span>
+<span class="fc" id="L39">                val newStatus = call.receive&lt;OrderStatus&gt;()</span>
+<span class="pc bpc" id="L40" title="2 of 4 branches missed.">                sqliteOrderRepository.updateOrderStatus(userId, orderId, newStatus).fold(</span>
+<span class="fc" id="L41">                    onSuccess = { call.respond(HttpStatusCode.OK) },</span>
+<span class="nc" id="L42">                    onFailure = { ex -&gt; call.respond(HttpStatusCode.InternalServerError, &quot;Erro ao atualizar status: ${ex.message}&quot;) }</span>
+                )
+<span class="fc" id="L44">            } catch (e: Exception) {</span>
+<span class="fc" id="L45">                call.respond(HttpStatusCode.BadRequest, &quot;Dados inválidos&quot;)</span>
+            }
+<span class="fc" id="L47">        }</span>
+
+<span class="pc" id="L49">        get(&quot;/orders/{orderId}/logs&quot;) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            val orderId = call.parameters[&quot;orderId&quot;] ?: return@get call.respond(HttpStatusCode.BadRequest, &quot;ID ausente&quot;)</span>
+<span class="nc bnc" id="L51" title="All 4 branches missed.">            orderRepository.getOrderStatusLogs(orderId).fold(</span>
+<span class="nc" id="L52">                onSuccess = { call.respond(it) },</span>
+<span class="nc" id="L53">                onFailure = { call.respond(HttpStatusCode.InternalServerError, &quot;Erro ao buscar logs&quot;) }</span>
+            )
+<span class="nc" id="L55">        }</span>
+<span class="fc" id="L56">    }</span>
+
+<span class="pc" id="L58">    post(&quot;/checkout/mercadopago&quot;) {</span>
+<span class="fc" id="L59">        try {</span>
+<span class="fc" id="L60">            val token = MercadoPagoConfig.getAccessToken()</span>
+<span class="pc bpc" id="L61" title="3 of 6 branches missed.">            if (token.isNullOrBlank()) {</span>
+<span class="nc" id="L62">                call.respond(HttpStatusCode.ServiceUnavailable, &quot;Mercado Pago não configurado no servidor&quot;)</span>
+<span class="nc" id="L63">                return@post</span>
+            }
+
+<span class="fc" id="L66">            val request = call.receive&lt;MercadoPagoCheckoutRequest&gt;()</span>
+<span class="fc" id="L67">            val order = request.order</span>
+            
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            sqliteOrderRepository.createOrder(order.copy(status = OrderStatus.PAYMENT_PENDING))</span>
+            
+<span class="fc" id="L71">            val items = order.items.map {</span>
+<span class="fc" id="L72">                PreferenceItemRequest.builder()</span>
+<span class="fc" id="L73">                    .id(it.product.id)</span>
+<span class="fc" id="L74">                    .title(it.product.name.take(50))</span>
+<span class="fc" id="L75">                    .quantity(it.quantity)</span>
+<span class="fc" id="L76">                    .currencyId(&quot;BRL&quot;)</span>
+<span class="fc" id="L77">                    .unitPrice(BigDecimal(it.product.price).setScale(2, RoundingMode.HALF_UP))</span>
+<span class="fc" id="L78">                    .build()</span>
+            }
+            
+<span class="fc" id="L81">            val payer = PreferencePayerRequest.builder()</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                .name(order.customerName ?: &quot;Cliente&quot;)</span>
+<span class="fc" id="L83">                .email(&quot;comprador@genesys21.com&quot;)</span>
+<span class="fc" id="L84">                .build()</span>
+
+<span class="fc" id="L86">            val preferenceRequest = PreferenceRequest.builder()</span>
+<span class="fc" id="L87">                .items(items)</span>
+<span class="fc" id="L88">                .payer(payer)</span>
+<span class="fc" id="L89">                .externalReference(order.id)</span>
+<span class="fc" id="L90">                .build()</span>
+
+<span class="fc" id="L92">            val client = PreferenceClient()</span>
+<span class="fc" id="L93">            val preference = client.create(preferenceRequest)</span>
+<span class="fc" id="L94">            call.respond(HttpStatusCode.OK, preference.initPoint)</span>
+            
+<span class="fc" id="L96">        } catch (e: Exception) {</span>
+<span class="fc" id="L97">            call.respond(HttpStatusCode.InternalServerError, &quot;Erro no checkout: ${e.message}&quot;)</span>
+        }
+<span class="fc" id="L99">    }</span>
+
+<span class="fc" id="L101">    post(&quot;/webhook/mercadopago&quot;) {</span>
+<span class="fc" id="L102">        call.respond(HttpStatusCode.OK)</span>
+<span class="fc" id="L103">    }</span>
+<span class="fc" id="L104">}</span>
+
+fun Route.publicOrderRoutes(orderRepository: OrderRepository) {
+<span class="fc" id="L107">    val sqliteOrderRepository = orderRepository as SqliteOrderRepository</span>
+
+<span class="fc" id="L109">    route(&quot;/public/orders&quot;) {</span>
+        // CORREÇÃO: Adicionando a rota POST para criar o pedido
+<span class="pc" id="L111">        post {</span>
+<span class="nc" id="L112">            try {</span>
+<span class="nc" id="L113">                val order = call.receive&lt;Order&gt;()</span>
+<span class="nc bnc" id="L114" title="All 4 branches missed.">                sqliteOrderRepository.createOrder(order).fold(</span>
+<span class="nc" id="L115">                    onSuccess = { call.respond(HttpStatusCode.Created, it) },</span>
+<span class="nc" id="L116">                    onFailure = { call.respond(HttpStatusCode.InternalServerError, &quot;Erro ao salvar pedido&quot;) }</span>
+                )
+<span class="nc" id="L118">            } catch (e: Exception) {</span>
+<span class="nc" id="L119">                call.respond(HttpStatusCode.BadRequest, &quot;Erro ao processar pedido: ${e.message}&quot;)</span>
+            }
+<span class="nc" id="L121">        }</span>
+
+<span class="pc" id="L123">        get(&quot;/customer/{sessionId}&quot;) {</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">            val sessionId = call.parameters[&quot;sessionId&quot;] ?: &quot;&quot;</span>
+<span class="pc bpc" id="L125" title="2 of 4 branches missed.">            sqliteOrderRepository.getCustomerOrders(sessionId).fold(</span>
+<span class="fc" id="L126">                onSuccess = { call.respond(it) },</span>
+<span class="nc" id="L127">                onFailure = { call.respond(HttpStatusCode.InternalServerError, &quot;Erro ao buscar histórico&quot;) }</span>
+            )
+<span class="fc" id="L129">        }</span>
+
+<span class="pc" id="L131">        get(&quot;/{orderId}&quot;) {</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            val orderId = call.parameters[&quot;orderId&quot;] ?: &quot;&quot;</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">            sqliteOrderRepository.getOrderById(orderId).fold(</span>
+<span class="nc" id="L134">                onSuccess = { call.respond(it) },</span>
+<span class="nc" id="L135">                onFailure = { call.respond(HttpStatusCode.NotFound, &quot;Não encontrado&quot;) }</span>
+            )
+<span class="nc" id="L137">        }</span>
+
+<span class="pc" id="L139">        get(&quot;/{orderId}/logs&quot;) {</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">            val orderId = call.parameters[&quot;orderId&quot;] ?: &quot;&quot;</span>
+<span class="nc bnc" id="L141" title="All 4 branches missed.">            sqliteOrderRepository.getOrderStatusLogs(orderId).fold(</span>
+<span class="nc" id="L142">                onSuccess = { call.respond(it) },</span>
+<span class="nc" id="L143">                onFailure = { call.respond(HttpStatusCode.NotFound, &quot;Não encontrado&quot;) }</span>
+            )
+<span class="nc" id="L145">        }</span>
+<span class="fc" id="L146">    }</span>
+<span class="fc" id="L147">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

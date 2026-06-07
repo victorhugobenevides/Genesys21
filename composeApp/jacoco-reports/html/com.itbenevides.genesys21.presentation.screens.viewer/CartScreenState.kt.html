@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CartScreenState.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.presentation.screens.viewer</a> &gt; <span class="el_source">CartScreenState.kt</span></div><h1>CartScreenState.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.presentation.screens.viewer
+
+import com.itbenevides.genesys21.domain.model.CartItem
+
+/**
+ * UI State para a tela de Carrinho.
+ */
+<span class="fc" id="L8">data class CartScreenState(</span>
+<span class="fc" id="L9">    val cartItems: List&lt;CartItem&gt; = emptyList(),</span>
+<span class="fc" id="L10">    val total: Double = 0.0,</span>
+<span class="fc" id="L11">    val customerName: String = &quot;&quot;,</span>
+<span class="fc" id="L12">    val customerPhone: String = &quot;&quot;,</span>
+<span class="fc" id="L13">    val isLoading: Boolean = false,</span>
+<span class="fc" id="L14">    val isCreatingCheckout: Boolean = false, // Novo estado para o botão de pagamento</span>
+<span class="fc" id="L15">    val paymentUrl: String? = null</span>
+<span class="fc" id="L16">) {</span>
+    val isCheckoutEnabled: Boolean get() =
+<span class="fc bfc" id="L18" title="All 4 branches covered.">        customerName.isNotBlank() &amp;&amp;</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        customerPhone.length &gt;= 8 &amp;&amp;</span>
+<span class="fc bfc" id="L20" title="All 4 branches covered.">        cartItems.isNotEmpty() &amp;&amp;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        !isLoading</span>
+}
+
+/**
+ * UI Intents (Eventos) para a tela de Carrinho.
+ */
+sealed class CartScreenEvent {
+<span class="fc" id="L28">    data class OnUpdateQuantity(val productId: String, val newQuantity: Int) : CartScreenEvent()</span>
+<span class="fc" id="L29">    data class OnRemoveItem(val productId: String) : CartScreenEvent()</span>
+<span class="fc" id="L30">    data class OnCustomerNameChanged(val name: String) : CartScreenEvent()</span>
+<span class="fc" id="L31">    data class OnCustomerPhoneChanged(val phone: String) : CartScreenEvent()</span>
+<span class="nc" id="L32">    object OnCheckoutClicked : CartScreenEvent()</span>
+<span class="nc" id="L33">    object OnMercadoPagoCheckout : CartScreenEvent()</span>
+<span class="nc" id="L34">    object OnBackClicked : CartScreenEvent()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

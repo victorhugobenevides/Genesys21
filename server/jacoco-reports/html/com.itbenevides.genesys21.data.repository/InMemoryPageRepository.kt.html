@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InMemoryPageRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.repository</a> &gt; <span class="el_source">InMemoryPageRepository.kt</span></div><h1>InMemoryPageRepository.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.repository
+
+import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.repository.PageRepository
+
+<span class="fc" id="L6">class InMemoryPageRepository : PageRepository {</span>
+<span class="fc" id="L7">    private val pages = mutableListOf&lt;Page&gt;()</span>
+<span class="fc" id="L8">    private val products = mutableListOf&lt;Product&gt;()</span>
+<span class="fc" id="L9">    private val categories = mutableListOf&lt;Category&gt;()</span>
+
+<span class="pc" id="L11">    override suspend fun getPages(token: String): Result&lt;List&lt;Page&gt;&gt; = runCatching {</span>
+<span class="fc" id="L12">        pages.filter { it.ownerId == token }</span>
+<span class="fc" id="L13">    }</span>
+
+<span class="fc" id="L15">    override suspend fun getPublicPage(id: String): Result&lt;Page&gt; = runCatching {</span>
+<span class="pc bpc" id="L16" title="1 of 6 branches missed.">        pages.find { it.id == id } ?: throw Exception(&quot;Page not found&quot;)</span>
+<span class="fc" id="L17">    }</span>
+
+<span class="fc" id="L19">    override suspend fun getPageByDomain(domain: String): Result&lt;Page&gt; = runCatching {</span>
+<span class="pc bpc" id="L20" title="1 of 6 branches missed.">        pages.find { it.customDomain == domain } ?: throw Exception(&quot;Domain not found&quot;)</span>
+<span class="fc" id="L21">    }</span>
+
+<span class="fc" id="L23">    override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result&lt;Unit&gt; = runCatching {</span>
+<span class="fc bfc" id="L24" title="All 4 branches covered.">        if (page.ownerId != token &amp;&amp; page.ownerId != null) {</span>
+<span class="fc" id="L25">            throw SecurityException(&quot;Unauthorized&quot;)</span>
+        }
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        val pageWithOwner = if (page.ownerId == null) page.copy(ownerId = token) else page</span>
+
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (isEditing) {</span>
+<span class="fc" id="L30">            val index = pages.indexOfFirst { it.id == pageWithOwner.id }</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            if (index != -1) pages[index] = pageWithOwner else throw Exception(&quot;Page to edit not found&quot;)</span>
+        } else {
+<span class="fc" id="L33">            pages.add(pageWithOwner)</span>
+        }
+<span class="fc" id="L35">    }</span>
+
+<span class="fc" id="L37">    override suspend fun deletePage(id: String, token: String): Result&lt;Unit&gt; = runCatching {</span>
+<span class="pc bpc" id="L38" title="1 of 4 branches missed.">        val removed = pages.removeIf { it.id == id &amp;&amp; it.ownerId == token }</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (!removed) throw Exception(&quot;Page not found or unauthorized&quot;)</span>
+<span class="fc" id="L40">    }</span>
+
+<span class="nc" id="L42">    override suspend fun deleteAllPages(token: String): Result&lt;Unit&gt; = runCatching {</span>
+<span class="nc" id="L43">        pages.removeIf { it.ownerId == token }</span>
+        Unit
+<span class="nc" id="L45">    }</span>
+
+    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result&lt;String&gt; {
+<span class="fc" id="L48">        return Result.failure(UnsupportedOperationException(&quot;Not implemented&quot;))</span>
+    }
+
+    override suspend fun getAllProducts(token: String): Result&lt;List&lt;Product&gt;&gt; {
+<span class="fc" id="L52">        return Result.success(products)</span>
+    }
+
+<span class="pc" id="L55">    override suspend fun saveProduct(product: Product, token: String): Result&lt;Unit&gt; = runCatching {</span>
+<span class="fc" id="L56">        val index = products.indexOfFirst { it.id == product.id }</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (index != -1) {</span>
+<span class="fc" id="L58">            products[index] = product</span>
+        } else {
+<span class="fc" id="L60">            products.add(product)</span>
+        }
+<span class="fc" id="L62">    }</span>
+
+<span class="pc" id="L64">    override suspend fun deleteProduct(id: String, token: String): Result&lt;Unit&gt; = runCatching {</span>
+<span class="fc" id="L65">        products.removeIf { it.id == id }</span>
+<span class="fc" id="L66">    }</span>
+
+    override suspend fun getCategories(token: String): Result&lt;List&lt;Category&gt;&gt; {
+<span class="fc" id="L69">        return Result.success(categories.filter { it.ownerId == token })</span>
+    }
+
+<span class="fc" id="L72">    override suspend fun saveCategory(category: Category, token: String): Result&lt;Unit&gt; = runCatching {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (category.ownerId != token) throw SecurityException(&quot;Unauthorized&quot;)</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        val categoryId = category.id ?: 0</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (categoryId &gt; 0) {</span>
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">            val index = categories.indexOfFirst { it.id == categoryId }</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (index != -1) categories[index] = category else throw Exception(&quot;Category not found&quot;)</span>
+        } else {
+<span class="pc bpc" id="L79" title="1 of 4 branches missed.">            val maxId = categories.map { it.id ?: 0 }.maxOrNull() ?: 0</span>
+<span class="fc" id="L80">            categories.add(category.copy(id = maxId + 1))</span>
+        }
+<span class="fc" id="L82">    }</span>
+
+<span class="fc" id="L84">    override suspend fun deleteCategory(id: Int, token: String): Result&lt;Unit&gt; = runCatching {</span>
+<span class="pc bpc" id="L85" title="2 of 6 branches missed.">        val removed = categories.removeIf { it.id == id &amp;&amp; it.ownerId == token }</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (!removed) throw Exception(&quot;Category not found or unauthorized&quot;)</span>
+<span class="fc" id="L87">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

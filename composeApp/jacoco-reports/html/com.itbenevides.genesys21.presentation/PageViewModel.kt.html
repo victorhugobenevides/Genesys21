@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.presentation</a> &gt; <span class="el_source">PageViewModel.kt</span></div><h1>PageViewModel.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.presentation
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.repository.*
+import com.itbenevides.genesys21.domain.usecase.*
+import com.itbenevides.genesys21.util.Analytics
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.random.Random
+
+data class AppError(
+    val title: String,
+    val message: String,
+    val stackTrace: String? = null
+)
+
+<span class="fc" id="L22">class PageViewModel(</span>
+<span class="fc" id="L23">    private val getPagesUseCase: GetPagesUseCase,</span>
+<span class="fc" id="L24">    private val savePageUseCase: SavePageUseCase,</span>
+<span class="fc" id="L25">    private val deletePageUseCase: DeletePageUseCase,</span>
+<span class="fc" id="L26">    private val getPublicPageUseCase: GetPublicPageUseCase,</span>
+<span class="fc" id="L27">    private val getPageByDomainUseCase: GetPageByDomainUseCase,</span>
+<span class="fc" id="L28">    private val getFirstPublicPageUseCase: GetFirstPublicPageUseCase,</span>
+<span class="fc" id="L29">    private val uploadImageUseCase: UploadImageUseCase,</span>
+<span class="fc" id="L30">    private val getOrdersUseCase: GetOrdersUseCase,</span>
+<span class="fc" id="L31">    private val getCustomerOrdersUseCase: GetCustomerOrdersUseCase,</span>
+<span class="fc" id="L32">    private val getOrderByIdUseCase: GetOrderByIdUseCase,</span>
+<span class="fc" id="L33">    private val submitOrderUseCase: SubmitOrderUseCase,</span>
+<span class="fc" id="L34">    private val updateOrderStatusUseCase: UpdateOrderStatusUseCase,</span>
+<span class="fc" id="L35">    private val authRepository: AuthRepository,</span>
+<span class="fc" id="L36">    private val cartRepository: CartRepository,</span>
+<span class="fc" id="L37">    private val customerRepository: CustomerRepository,</span>
+<span class="fc" id="L38">    private val pageDraftRepository: PageDraftRepository,</span>
+<span class="fc" id="L39">    private val getCategoriesUseCase: GetCategoriesUseCase,</span>
+<span class="fc" id="L40">    private val saveCategoryUseCase: SaveCategoryUseCase,</span>
+<span class="fc" id="L41">    private val deleteCategoryUseCase: DeleteCategoryUseCase,</span>
+<span class="fc" id="L42">    private val orderRepository: OrderRepository</span>
+<span class="fc" id="L43">) : ViewModel() {</span>
+
+<span class="fc" id="L45">    private val _pages = MutableStateFlow&lt;List&lt;Page&gt;&gt;(emptyList())</span>
+<span class="fc" id="L46">    val pages: StateFlow&lt;List&lt;Page&gt;&gt; = _pages.asStateFlow()</span>
+
+<span class="fc" id="L48">    private val _orders = MutableStateFlow&lt;List&lt;Order&gt;&gt;(emptyList())</span>
+<span class="fc" id="L49">    val orders: StateFlow&lt;List&lt;Order&gt;&gt; = _orders.asStateFlow()</span>
+    
+<span class="fc" id="L51">    private val _paymentUrl = MutableStateFlow&lt;String?&gt;(null)</span>
+<span class="fc" id="L52">    val paymentUrl: StateFlow&lt;String?&gt; = _paymentUrl.asStateFlow()</span>
+    
+<span class="fc" id="L54">    private val _isCreatingCheckout = MutableStateFlow(false)</span>
+<span class="pc" id="L55">    val isCreatingCheckout: StateFlow&lt;Boolean&gt; = _isCreatingCheckout.asStateFlow()</span>
+
+<span class="fc" id="L57">    private val _customerOrders = MutableStateFlow&lt;List&lt;Order&gt;&gt;(emptyList())</span>
+<span class="fc" id="L58">    val customerOrders: StateFlow&lt;List&lt;Order&gt;&gt; = _customerOrders.asStateFlow()</span>
+
+<span class="fc" id="L60">    private val _categories = MutableStateFlow&lt;List&lt;Category&gt;&gt;(emptyList())</span>
+<span class="fc" id="L61">    val categories: StateFlow&lt;List&lt;Category&gt;&gt; = _categories.asStateFlow()</span>
+
+<span class="fc" id="L63">    private val _trackedOrder = MutableStateFlow&lt;Order?&gt;(null)</span>
+<span class="fc" id="L64">    val trackedOrder: StateFlow&lt;Order?&gt; = _trackedOrder.asStateFlow()</span>
+
+<span class="fc" id="L66">    private val _isLoading = MutableStateFlow(false)</span>
+<span class="fc" id="L67">    val isLoading = _isLoading.asStateFlow()</span>
+
+<span class="fc" id="L69">    private val _currentError = MutableStateFlow&lt;AppError?&gt;(null)</span>
+<span class="fc" id="L70">    val currentError = _currentError.asStateFlow()</span>
+
+<span class="fc" id="L72">    val customerName = customerRepository.customerName</span>
+<span class="fc" id="L73">    val customerPhone = customerRepository.customerPhone</span>
+
+    private var pollingJob: Job? = null
+
+<span class="fc" id="L77">    init {</span>
+<span class="fc" id="L78">        viewModelScope.launch {</span>
+<span class="fc" id="L79">            cartRepository.loadInitialCart()</span>
+<span class="fc" id="L80">            customerRepository.loadData()</span>
+<span class="fc" id="L81">        }</span>
+<span class="fc" id="L82">    }</span>
+
+    fun saveCustomerName(name: String) {
+<span class="fc" id="L85">        viewModelScope.launch {</span>
+<span class="fc" id="L86">            customerRepository.saveName(name)</span>
+<span class="fc" id="L87">        }</span>
+<span class="fc" id="L88">    }</span>
+
+    fun saveCustomerPhone(phone: String) {
+<span class="fc" id="L91">        viewModelScope.launch {</span>
+<span class="fc" id="L92">            customerRepository.savePhone(phone)</span>
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">    }</span>
+    
+    fun clearPaymentUrl() {
+<span class="fc" id="L97">        _paymentUrl.value = null</span>
+<span class="fc" id="L98">    }</span>
+
+<span class="fc" id="L100">    fun clearError() { _currentError.value = null }</span>
+
+    private fun handleError(title: String, e: Throwable) {
+<span class="fc" id="L103">        println(&quot;LOG_ERROR [$title]: ${e.message}&quot;)</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        _currentError.value = AppError(title, e.message ?: &quot;Erro desconhecido&quot;, e.stackTraceToString())</span>
+<span class="fc" id="L105">        Analytics.logException(throwable = e, message = title, additionalParams = mapOf(&quot;error_context&quot; to title))</span>
+<span class="fc" id="L106">    }</span>
+
+    // Cart
+<span class="fc" id="L109">    val cart = cartRepository.cartItems</span>
+<span class="fc" id="L110">    val cartTotal = cart.map { items -&gt; items.sumOf { it.product.price * it.quantity } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)</span>
+<span class="pc" id="L111">    val cartCount = cart.map { items -&gt; items.sumOf { it.quantity } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)</span>
+
+    fun addToCart(product: Product): Boolean {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (product.stock &lt;= 0) return false</span>
+<span class="pc" id="L115">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L116" title="2 of 4 branches missed.">            cartRepository.addToCart(CartItem(product, 1)).onFailure { handleError(&quot;Erro ao adicionar ao carrinho&quot;, it) }</span>
+<span class="fc" id="L117">            Analytics.logEvent(&quot;add_to_cart&quot;, mapOf(&quot;item_id&quot; to product.id, &quot;item_name&quot; to product.name))</span>
+<span class="fc" id="L118">        }</span>
+<span class="fc" id="L119">        return true</span>
+    }
+
+    fun removeFromCart(productId: String) {
+<span class="pc bpc" id="L123" title="2 of 4 branches missed.">        viewModelScope.launch { cartRepository.removeFromCart(productId).onFailure { handleError(&quot;Erro ao remover do carrinho&quot;, it) } }</span>
+<span class="fc" id="L124">    }</span>
+
+    fun updateCartQuantity(productId: String, quantity: Int) {
+<span class="pc bpc" id="L127" title="2 of 4 branches missed.">        viewModelScope.launch { cartRepository.updateQuantity(productId, quantity).onFailure { handleError(&quot;Erro ao atualizar quantidade&quot;, it) } }</span>
+<span class="fc" id="L128">    }</span>
+
+    // Orders
+    fun loadOrders() {
+<span class="fc" id="L132">        viewModelScope.launch {</span>
+<span class="fc" id="L133">            try {</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                val token = authRepository.getCurrentUserToken() ?: &quot;&quot;</span>
+<span class="pc bpc" id="L135" title="2 of 4 branches missed.">                if (token.isNotBlank()) {</span>
+<span class="fc" id="L136">                    _isLoading.value = true</span>
+<span class="fc" id="L137">                    getOrdersUseCase(token).collect { </span>
+<span class="fc" id="L138">                        _orders.value = it </span>
+<span class="fc" id="L139">                        _isLoading.value = false</span>
+<span class="fc" id="L140">                    }</span>
+                }
+<span class="nc" id="L142">            } catch (e: Exception) {</span>
+<span class="nc" id="L143">                _isLoading.value = false</span>
+<span class="nc" id="L144">                handleError(&quot;Falha ao carregar pedidos&quot;, e)</span>
+            }
+<span class="fc" id="L146">        }</span>
+<span class="fc" id="L147">    }</span>
+
+    fun loadCustomerOrders() {
+<span class="pc" id="L150">        viewModelScope.launch {</span>
+<span class="fc" id="L151">            _isLoading.value = true</span>
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">            getCustomerOrdersUseCase(cartRepository.getSessionId())</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">                .onSuccess { _customerOrders.value = it }</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao buscar histórico&quot;, it) }</span>
+<span class="fc" id="L155">            _isLoading.value = false</span>
+<span class="fc" id="L156">        }</span>
+<span class="fc" id="L157">    }</span>
+
+    fun trackOrder(orderId: String) {
+<span class="fc" id="L160">        stopOrderPolling() // Cancela qualquer polling anterior</span>
+
+<span class="pc" id="L162">        viewModelScope.launch {</span>
+<span class="fc" id="L163">            _trackedOrder.value = null</span>
+<span class="fc" id="L164">            _isLoading.value = true</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            getOrderByIdUseCase(orderId)</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">                .onSuccess { initialOrder -&gt;</span>
+<span class="fc" id="L167">                    _trackedOrder.value = initialOrder</span>
+                    // Se o pedido está em um estado que pode mudar, inicia o polling
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                    if (initialOrder.status in listOf(OrderStatus.PENDING, OrderStatus.PAYMENT_PENDING, OrderStatus.PROCESSING)) {</span>
+<span class="nc" id="L170">                        startOrderPolling(orderId)</span>
+                    }
+<span class="fc" id="L172">                }</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                .onFailure { handleError(&quot;Pedido não encontrado&quot;, it) }</span>
+<span class="fc" id="L174">            _isLoading.value = false</span>
+<span class="fc" id="L175">        }</span>
+<span class="fc" id="L176">    }</span>
+    
+    private fun startOrderPolling(orderId: String) {
+<span class="nc" id="L179">        pollingJob = viewModelScope.launch {</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            while (isActive) { // Este loop roda enquanto o scope do ViewModel estiver ativo</span>
+<span class="nc" id="L181">                delay(5000) // Aguarda 5 segundos para a próxima verificação</span>
+
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                getOrderByIdUseCase(orderId)</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                    .onSuccess { updatedOrder -&gt;</span>
+                        // Atualiza a UI somente se o status mudou, para evitar recomposições desnecessárias
+<span class="nc bnc" id="L186" title="All 4 branches missed.">                        if (_trackedOrder.value?.status != updatedOrder.status) {</span>
+<span class="nc" id="L187">                            _trackedOrder.value = updatedOrder</span>
+                        }
+
+                        // Para o polling se o pedido atingiu um estado final
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                        if (updatedOrder.status !in listOf(OrderStatus.PENDING, OrderStatus.PAYMENT_PENDING, OrderStatus.PROCESSING)) {</span>
+<span class="nc" id="L192">                            stopOrderPolling()</span>
+                        }
+<span class="nc" id="L194">                    }</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                    .onFailure {</span>
+                        // Para o polling em caso de erro (ex: pedido não encontrado)
+<span class="nc" id="L197">                        handleError(&quot;Falha no Polling do Pedido&quot;, it)</span>
+<span class="nc" id="L198">                        stopOrderPolling()</span>
+<span class="nc" id="L199">                    }</span>
+            }
+<span class="nc" id="L201">        }</span>
+<span class="nc" id="L202">    }</span>
+
+    fun stopOrderPolling() {
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        pollingJob?.cancel()</span>
+<span class="fc" id="L206">        pollingJob = null</span>
+<span class="fc" id="L207">    }</span>
+
+    // Chame este método na sua UI quando a tela de tracking for descartada
+    fun onDispose() {
+<span class="nc" id="L211">        stopOrderPolling()</span>
+<span class="nc" id="L212">    }</span>
+
+<span class="pc" id="L214">    fun submitOrder(page: Page?, phone: String = &quot;&quot;, onComplete: (String) -&gt; Unit = {}) {</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">        val ownerId = page?.ownerId</span>
+<span class="pc bpc" id="L216" title="1 of 4 branches missed.">        if (ownerId == null || cart.value.isEmpty()) {</span>
+<span class="fc" id="L217">            handleError(&quot;Erro no Pedido&quot;, Exception(&quot;Não foi possível identificar o dono desta vitrine ou carrinho vazio.&quot;))</span>
+<span class="fc" id="L218">            return</span>
+        }
+        
+<span class="pc" id="L221">        viewModelScope.launch {</span>
+<span class="fc" id="L222">            _isLoading.value = true</span>
+<span class="fc" id="L223">            val orderId = &quot;ORD-&quot; + Random.nextInt(100000, 999999).toString()</span>
+            
+<span class="pc bpc" id="L225" title="2 of 4 branches missed.">            val newOrder = Order(id = orderId, userId = ownerId, customerId = cartRepository.getSessionId(), customerName = customerName.value, customerPhone = if (phone.isNotBlank()) phone else customerPhone.value, items = cart.value, total = cartTotal.value, status = OrderStatus.PENDING, createdAt = 0L, whatsappContact = page.whatsapp, theme = page.theme)</span>
+            
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">            submitOrderUseCase(newOrder)</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">                .onSuccess { generatedId -&gt;</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">                    cartRepository.clearCart()</span>
+<span class="pc bpc" id="L230" title="2 of 4 branches missed.">                    if (phone.isNotBlank()) saveCustomerPhone(phone)</span>
+<span class="fc" id="L231">                    Analytics.logEvent(&quot;purchase&quot;, mapOf(&quot;transaction_id&quot; to generatedId, &quot;value&quot; to cartTotal.value))</span>
+<span class="fc" id="L232">                    onComplete(generatedId)</span>
+<span class="fc" id="L233">                }</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao submeter pedido&quot;, it) }</span>
+<span class="fc" id="L235">            _isLoading.value = false</span>
+<span class="fc" id="L236">        }</span>
+<span class="fc" id="L237">    }</span>
+    
+    suspend fun createMercadoPagoCheckout(page: Page?) {
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">        val ownerId = page?.ownerId</span>
+<span class="pc bpc" id="L241" title="2 of 4 branches missed.">        if (ownerId == null || cart.value.isEmpty()) {</span>
+<span class="nc" id="L242">            handleError(&quot;Erro no Pedido&quot;, Exception(&quot;Não foi possível identificar o dono desta vitrine ou carrinho vazio.&quot;))</span>
+<span class="nc" id="L243">            return</span>
+        }
+
+<span class="pc" id="L246">        viewModelScope.launch {</span>
+<span class="fc" id="L247">            _isCreatingCheckout.value = true</span>
+<span class="fc" id="L248">            val orderId = &quot;MP-&quot; + Random.nextInt(100000, 999999).toString()</span>
+<span class="fc" id="L249">            val newOrder = Order(id = orderId, userId = ownerId, customerId = cartRepository.getSessionId(), customerName = customerName.value, customerPhone = customerPhone.value, items = cart.value, total = cartTotal.value, status = OrderStatus.PENDING, createdAt = 0L, whatsappContact = page.whatsapp, theme = page.theme)</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">            val token = authRepository.getCurrentUserToken() ?: &quot;&quot;</span>
+
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">            orderRepository.createMercadoPagoCheckout(newOrder, token)</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">                .onSuccess { </span>
+<span class="fc" id="L254">                    _paymentUrl.value = it </span>
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">                    cartRepository.clearCart()</span>
+<span class="fc" id="L256">                    Analytics.logEvent(&quot;begin_checkout&quot;, mapOf(&quot;transaction_id&quot; to orderId, &quot;value&quot; to cartTotal.value))</span>
+<span class="fc" id="L257">                }</span>
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao criar checkout&quot;, it) }</span>
+<span class="fc" id="L259">            _isCreatingCheckout.value = false</span>
+<span class="fc" id="L260">        }</span>
+<span class="fc" id="L261">    }</span>
+
+    fun updateOrderStatus(orderId: String, status: OrderStatus) {
+<span class="pc" id="L264">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            val token = authRepository.getCurrentUserToken() ?: return@launch</span>
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">            updateOrderStatusUseCase(token, orderId, status)</span>
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao atualizar status&quot;, it) }</span>
+<span class="fc" id="L268">        }</span>
+<span class="fc" id="L269">    }</span>
+
+    // Pages
+    fun loadPages() {
+<span class="fc" id="L273">        viewModelScope.launch {</span>
+<span class="fc" id="L274">            _isLoading.value = true</span>
+<span class="fc" id="L275">            runCatching {</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">                val token = authRepository.getCurrentUserToken() ?: &quot;&quot;</span>
+<span class="fc" id="L277">                getPagesUseCase(token)</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">            }.onSuccess {</span>
+<span class="fc" id="L279">                _pages.value = it</span>
+<span class="fc" id="L280">                loadCategories() </span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">            }.onFailure {</span>
+<span class="fc" id="L282">                handleError(&quot;Falha ao carregar páginas&quot;, it)</span>
+<span class="fc" id="L283">            }</span>
+<span class="fc" id="L284">            _isLoading.value = false</span>
+<span class="fc" id="L285">        }</span>
+<span class="fc" id="L286">    }</span>
+
+<span class="nc" id="L288">    suspend fun loadPublicPage(id: String): Page? {</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">        return getPublicPageUseCase(id)</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">            .getOrElse {</span>
+<span class="fc" id="L291">                handleError(&quot;Erro na página pública&quot;, it)</span>
+<span class="fc" id="L292">                null</span>
+            }
+    }
+
+<span class="nc" id="L296">    suspend fun loadPageByDomain(domain: String): Page? {</span>
+<span class="pc bpc" id="L297" title="2 of 4 branches missed.">        return getPageByDomainUseCase(domain).getOrNull()</span>
+    }
+
+<span class="fc" id="L300">    suspend fun loadFirstPublicPage(): Page? {</span>
+<span class="fc" id="L301">        val page = getFirstPublicPageUseCase()</span>
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">        page?.let { _pages.value = listOf(it) }</span>
+<span class="fc" id="L303">        return page</span>
+    }
+
+    fun savePage(page: Page, isEditing: Boolean, onComplete: () -&gt; Unit) {
+<span class="pc" id="L307">        viewModelScope.launch {</span>
+<span class="fc" id="L308">            _isLoading.value = true</span>
+<span class="pc bpc" id="L309" title="2 of 4 branches missed.">            savePageUseCase(page, authRepository.getCurrentUserToken() ?: &quot;&quot;, isEditing)</span>
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">                .onSuccess {</span>
+<span class="fc" id="L311">                    pageDraftRepository.clearDraft(page.id)</span>
+<span class="fc" id="L312">                    loadPages()</span>
+<span class="fc" id="L313">                    onComplete()</span>
+<span class="fc" id="L314">                }</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao salvar página&quot;, it) }</span>
+<span class="fc" id="L316">            _isLoading.value = false</span>
+<span class="fc" id="L317">        }</span>
+<span class="fc" id="L318">    }</span>
+
+    fun deletePage(id: String, onComplete: () -&gt; Unit) {
+<span class="pc" id="L321">        viewModelScope.launch {</span>
+<span class="fc" id="L322">            _isLoading.value = true</span>
+<span class="pc bpc" id="L323" title="2 of 4 branches missed.">            deletePageUseCase(id, authRepository.getCurrentUserToken() ?: &quot;&quot;)</span>
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">                .onSuccess {</span>
+<span class="fc" id="L325">                    pageDraftRepository.clearDraft(id)</span>
+<span class="fc" id="L326">                    loadPages()</span>
+<span class="fc" id="L327">                    onComplete()</span>
+<span class="fc" id="L328">                }</span>
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao excluir página&quot;, it) }</span>
+<span class="fc" id="L330">            _isLoading.value = false</span>
+<span class="fc" id="L331">        }</span>
+<span class="fc" id="L332">    }</span>
+
+    fun uploadImage(bytes: ByteArray, fileName: String, onSuccess: (String) -&gt; Unit) {
+<span class="pc" id="L335">        viewModelScope.launch {</span>
+<span class="fc" id="L336">            _isLoading.value = true</span>
+<span class="pc bpc" id="L337" title="2 of 4 branches missed.">            uploadImageUseCase(bytes, fileName, authRepository.getCurrentUserToken() ?: &quot;&quot;)</span>
+<span class="pc bpc" id="L338" title="1 of 2 branches missed.">                .onSuccess(onSuccess)</span>
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Erro no upload de imagem&quot;, it) }</span>
+<span class="fc" id="L340">            _isLoading.value = false</span>
+<span class="fc" id="L341">        }</span>
+<span class="fc" id="L342">    }</span>
+
+    // Categories
+    fun loadCategories() {
+<span class="pc" id="L346">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">            val token = authRepository.getCurrentUserToken() ?: return@launch</span>
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">            getCategoriesUseCase(token)</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao carregar categorias&quot;, it) }</span>
+<span class="fc" id="L350">        }</span>
+<span class="fc" id="L351">    }</span>
+
+<span class="fc" id="L353">    fun saveCategory(category: Category, onComplete: () -&gt; Unit = {}) {</span>
+<span class="pc" id="L354">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L355" title="1 of 2 branches missed.">            val token = authRepository.getCurrentUserToken() ?: return@launch</span>
+<span class="pc bpc" id="L356" title="1 of 2 branches missed.">            saveCategoryUseCase(category, token)</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">                .onSuccess {</span>
+<span class="fc" id="L358">                    loadCategories()</span>
+<span class="fc" id="L359">                    onComplete()</span>
+<span class="fc" id="L360">                }</span>
+<span class="pc bpc" id="L361" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao salvar categoria&quot;, it) }</span>
+<span class="fc" id="L362">        }</span>
+<span class="fc" id="L363">    }</span>
+
+    fun deleteCategory(id: Int) {
+<span class="pc" id="L366">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L367" title="1 of 2 branches missed.">            val token = authRepository.getCurrentUserToken() ?: return@launch</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">            deleteCategoryUseCase(id, token)</span>
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">                .onSuccess { loadCategories() }</span>
+<span class="pc bpc" id="L370" title="1 of 2 branches missed.">                .onFailure { handleError(&quot;Falha ao excluir categoria&quot;, it) }</span>
+<span class="fc" id="L371">        }</span>
+<span class="fc" id="L372">    }</span>
+
+<span class="pc" id="L374">    val allAvailableProducts: StateFlow&lt;List&lt;Product&gt;&gt; = _pages.map { pageList -&gt;</span>
+        pageList.flatMap { page -&gt; page.components.filterIsInstance&lt;PageComponent.ProductList&gt;().flatMap { it.products } }
+            .distinctBy { it.id }
+<span class="fc" id="L377">    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())</span>
+
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">    val allAvailableCategories: StateFlow&lt;List&lt;String&gt;&gt; = combine(categories, allAvailableProducts) { cats, products -&gt;</span>
+<span class="pc" id="L380">        (cats.map { it.name } + products.mapNotNull { it.categoryName })</span>
+<span class="pc bnc" id="L381" title="All 2 branches missed.">            .filter { it.isNotBlank() }.distinct().sorted()</span>
+<span class="fc" id="L382">    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())</span>
+
+    // Drafts
+<span class="fc" id="L385">    fun saveDraft(page: Page) { pageDraftRepository.saveDraft(page) }</span>
+<span class="fc" id="L386">    fun getDraft(pageId: String): Page? = pageDraftRepository.getDraft(pageId)</span>
+<span class="fc" id="L387">    fun clearDraft(pageId: String) { pageDraftRepository.clearDraft(pageId) }</span>
+
+    // Auth
+<span class="fc" id="L390">    suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()</span>
+    
+    fun signIn(email: String, pass: String, onSuccess: () -&gt; Unit, onFailure: (String) -&gt; Unit) {
+<span class="pc" id="L393">        viewModelScope.launch {</span>
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">            authRepository.signIn(email, pass)</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">                .onSuccess {</span>
+<span class="fc" id="L396">                    Analytics.logEvent(&quot;login&quot;)</span>
+<span class="fc" id="L397">                    loadPages()</span>
+<span class="fc" id="L398">                    onSuccess() </span>
+<span class="fc" id="L399">                }</span>
+<span class="fc bfc" id="L400" title="All 2 branches covered.">                .onFailure { </span>
+<span class="fc" id="L401">                    handleError(&quot;Erro de Login&quot;, it)</span>
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">                    onFailure(it.message ?: &quot;Erro&quot;) </span>
+<span class="fc" id="L403">                }</span>
+<span class="fc" id="L404">        }</span>
+<span class="fc" id="L405">    }</span>
+
+    fun signOut() {
+<span class="pc" id="L408">        viewModelScope.launch { </span>
+<span class="fc" id="L409">            Analytics.trackPageView(&quot;logout&quot;)</span>
+<span class="pc bpc" id="L410" title="2 of 4 branches missed.">            authRepository.signOut().onFailure { handleError(&quot;Erro ao fazer Logout&quot;, it) }</span>
+<span class="fc" id="L411">        }</span>
+<span class="fc" id="L412">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
