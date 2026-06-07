@@ -94,3 +94,19 @@ jobs:
             echo "Coverage below 80% - failing."
             exit 1
           fi
+codeql:
+  runs-on: ubuntu-latest
+  permissions:
+    security-events: write
+    actions: read
+    contents: read
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: kotlin, java
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
