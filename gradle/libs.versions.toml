@@ -28,7 +28,7 @@ coil = "3.1.0"
 exposed = "0.59.0"
 sqlite-jdbc = "3.49.0.0"
 thumbnailator = "0.4.20"
-kotlinx-datetime = "0.7.1"
+kotlinx-datetime = "0.8.0"
 
 [libraries]
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
