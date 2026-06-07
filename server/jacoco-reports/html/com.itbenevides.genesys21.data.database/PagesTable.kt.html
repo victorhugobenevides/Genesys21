@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PagesTable.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.database</a> &gt; <span class="el_source">PagesTable.kt</span></div><h1>PagesTable.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.database
+
+import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Table
+
+<span class="fc" id="L6">object PagesTable : Table(&quot;pages&quot;) {</span>
+<span class="fc" id="L7">    val id = varchar(&quot;id&quot;, 50)</span>
+<span class="fc" id="L8">    val ownerId = varchar(&quot;owner_id&quot;, 100)</span>
+<span class="fc" id="L9">    val title = varchar(&quot;title&quot;, 200)</span>
+    // O índice único será criado manualmente no DatabaseFactory para evitar crashes de inicialização
+<span class="fc" id="L11">    val customDomain = varchar(&quot;custom_domain&quot;, 255).nullable()</span>
+<span class="fc" id="L12">    val whatsapp = varchar(&quot;whatsapp&quot;, 50).nullable()</span>
+<span class="fc" id="L13">    val theme = varchar(&quot;theme&quot;, 50).default(&quot;ROYAL&quot;)</span>
+<span class="fc" id="L14">    val componentsJson = text(&quot;components_json&quot;).default(&quot;[]&quot;)</span>
+    
+<span class="fc" id="L16">    override val primaryKey = PrimaryKey(id)</span>
+}
+
+<span class="fc" id="L19">object PageComponentsTable : IntIdTable(&quot;page_components&quot;) {</span>
+<span class="pc" id="L20">    val pageId = varchar(&quot;page_id&quot;, 50).index()</span>
+<span class="pc" id="L21">    val type = varchar(&quot;type&quot;, 50)</span>
+<span class="pc" id="L22">    val customLabel = varchar(&quot;custom_label&quot;, 100).nullable()</span>
+<span class="pc" id="L23">    val isFilterable = bool(&quot;is_filterable&quot;).default(true)</span>
+<span class="pc" id="L24">    val order = integer(&quot;order_index&quot;)</span>
+<span class="pc" id="L25">    val content = text(&quot;content&quot;).nullable()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,80 @@
+package com.itbenevides.genesys21.data.database
+
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import kotlinx.coroutines.Dispatchers
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
+import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
+
+object DatabaseFactory {
+    private const val DB_PATH = "data/genesys21.db"
+    
+    fun init() {
+        setupDatabaseDirectory()
+        
+        applySqliteOptimizations()
+
+        val dataSource = hikari()
+        Database.connect(dataSource)
+        
+        runMigrations()
+    }
+
+    private fun setupDatabaseDirectory() {
+        val dataFolder = File("data")
+        if (!dataFolder.exists()) dataFolder.mkdirs()
+    }
+
+    private fun applySqliteOptimizations() {
+        try {
+            if (File(DB_PATH).exists()) {
+                Class.forName("org.sqlite.JDBC")
+                java.sql.DriverManager.getConnection("jdbc:sqlite:$DB_PATH").use { conn ->
+                    conn.createStatement().use { stmt ->
+                        stmt.execute("PRAGMA journal_mode=WAL;")
+                        stmt.execute("PRAGMA synchronous=NORMAL;")
+                    }
+                }
+            }
+        } catch (e: Exception) { }
+    }
+
+    private fun hikari(): HikariDataSource {
+        val config = HikariConfig()
+        config.driverClassName = "org.sqlite.JDBC"
+        config.jdbcUrl = "jdbc:sqlite:$DB_PATH"
+        config.maximumPoolSize = 3 
+        config.isAutoCommit = true
+        config.validate()
+        return HikariDataSource(config)
+    }
+
+    private fun runMigrations() {
+        transaction {
+            // Executa correções estruturais antes de deixar o Exposed criar as tabelas
+            runFixes()
+
+            // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
+            @Suppress("DEPRECATION")
+            SchemaUtils.createMissingTablesAndColumns(
+                CategoriesTable,
+                PagesTable, 
+                PageComponentsTable,
+                ProductsTable,
+                ProductImagesTable,
+                ComponentProductsTable,
+                CartsTable, 
+                CartItemsTable,
+                OrdersTable,
+                OrderItemsTable
+            )
+        }
+    }
+
+    suspend fun <T> dbQuery(block: suspend () -> T): T =
+        newSuspendedTransaction(Dispatchers.IO) { block() }
+}

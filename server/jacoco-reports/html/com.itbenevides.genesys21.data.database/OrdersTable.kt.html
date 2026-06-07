@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrdersTable.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.database</a> &gt; <span class="el_source">OrdersTable.kt</span></div><h1>OrdersTable.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.database
+
+import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.ReferenceOption
+
+<span class="fc" id="L6">object OrdersTable : Table(&quot;orders&quot;) {</span>
+<span class="fc" id="L7">    val id = varchar(&quot;id&quot;, 50)</span>
+<span class="fc" id="L8">    val userId = varchar(&quot;user_id&quot;, 100)</span>
+<span class="fc" id="L9">    val customerId = varchar(&quot;customer_id&quot;, 100).nullable()</span>
+<span class="fc" id="L10">    val customerName = varchar(&quot;customer_name&quot;, 255).nullable()</span>
+<span class="fc" id="L11">    val customerPhone = varchar(&quot;customer_phone&quot;, 50).nullable() // ADICIONADO</span>
+<span class="fc" id="L12">    val total = double(&quot;total&quot;)</span>
+<span class="fc" id="L13">    val status = varchar(&quot;status&quot;, 50)</span>
+<span class="fc" id="L14">    val createdAt = long(&quot;created_at&quot;)</span>
+<span class="fc" id="L15">    val whatsappContact = varchar(&quot;whatsapp_contact&quot;, 50).nullable()</span>
+<span class="fc" id="L16">    val theme = varchar(&quot;theme&quot;, 50).default(&quot;ROYAL&quot;)</span>
+
+<span class="fc" id="L18">    override val primaryKey = PrimaryKey(id)</span>
+}
+
+<span class="fc" id="L21">object OrderItemsTable : Table(&quot;order_items&quot;) {</span>
+<span class="pc" id="L22">    val id = integer(&quot;id&quot;).autoIncrement()</span>
+<span class="fc" id="L23">    val orderId = varchar(&quot;order_id&quot;, 50).references(OrdersTable.id, onDelete = ReferenceOption.CASCADE)</span>
+<span class="fc" id="L24">    val productId = varchar(&quot;product_id&quot;, 50)</span>
+<span class="fc" id="L25">    val productName = varchar(&quot;product_name&quot;, 255)</span>
+<span class="fc" id="L26">    val productPrice = double(&quot;product_price&quot;)</span>
+<span class="fc" id="L27">    val quantity = integer(&quot;quantity&quot;)</span>
+
+<span class="fc" id="L29">    override val primaryKey = PrimaryKey(id)</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

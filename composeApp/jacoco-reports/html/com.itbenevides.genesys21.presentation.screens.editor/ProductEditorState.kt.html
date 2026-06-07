@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProductEditorState.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.presentation.screens.editor</a> &gt; <span class="el_source">ProductEditorState.kt</span></div><h1>ProductEditorState.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.presentation.screens.editor
+
+import com.itbenevides.genesys21.domain.model.Product
+
+/**
+ * UI State para a tela de Editor de Produtos.
+ */
+<span class="fc" id="L8">data class ProductEditorState(</span>
+<span class="fc" id="L9">    val name: String = &quot;&quot;,</span>
+<span class="fc" id="L10">    val price: String = &quot;&quot;,</span>
+<span class="fc" id="L11">    val imageUrls: List&lt;String&gt; = emptyList(),</span>
+<span class="fc" id="L12">    val description: String = &quot;&quot;,</span>
+<span class="fc" id="L13">    val categoryId: Int? = null,</span>
+<span class="fc" id="L14">    val categoryName: String = &quot;&quot;,</span>
+<span class="fc" id="L15">    val stock: String = &quot;0&quot;,</span>
+<span class="fc" id="L16">    val isLoading: Boolean = false,</span>
+<span class="fc" id="L17">    val isUploading: Boolean = false,</span>
+<span class="fc" id="L18">    val isEditing: Boolean = false</span>
+<span class="fc" id="L19">) {</span>
+    companion object {
+<span class="fc" id="L21">        fun initial(product: Product?) = ProductEditorState(</span>
+<span class="pc bpc" id="L22" title="1 of 4 branches missed.">            name = product?.name ?: &quot;&quot;,</span>
+<span class="pc bpc" id="L23" title="2 of 6 branches missed.">            price = product?.price?.toString()?.replace(&quot;.&quot;, &quot;,&quot;) ?: &quot;&quot;,</span>
+<span class="pc bpc" id="L24" title="1 of 4 branches missed.">            imageUrls = product?.imageUrls ?: emptyList(),</span>
+<span class="pc bpc" id="L25" title="1 of 4 branches missed.">            description = product?.description ?: &quot;&quot;,</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            categoryId = product?.categoryId,</span>
+<span class="pc bpc" id="L27" title="1 of 4 branches missed.">            categoryName = product?.categoryName ?: &quot;&quot;,</span>
+<span class="pc bpc" id="L28" title="1 of 4 branches missed.">            stock = product?.stock?.toString() ?: &quot;0&quot;,</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">            isEditing = product != null</span>
+<span class="fc" id="L30">        )</span>
+    }
+
+<span class="fc bfc" id="L33" title="All 8 branches covered.">    val canSave: Boolean get() = name.isNotBlank() &amp;&amp; !isUploading &amp;&amp; !isLoading</span>
+}
+
+/**
+ * UI Intents (Eventos) para a tela de Editor de Produtos.
+ */
+sealed class ProductEditorEvent {
+<span class="fc" id="L40">    data class OnNameChanged(val name: String) : ProductEditorEvent()</span>
+<span class="fc" id="L41">    data class OnPriceChanged(val price: String) : ProductEditorEvent()</span>
+<span class="fc" id="L42">    data class OnDescriptionChanged(val description: String) : ProductEditorEvent()</span>
+<span class="fc" id="L43">    data class OnCategoryChanged(val categoryId: Int?, val categoryName: String) : ProductEditorEvent()</span>
+<span class="fc" id="L44">    data class OnStockChanged(val stock: String) : ProductEditorEvent()</span>
+<span class="fc" id="L45">    object OnAddPhotoClicked : ProductEditorEvent()</span>
+<span class="fc" id="L46">    data class OnRemovePhotoClicked(val url: String) : ProductEditorEvent()</span>
+<span class="fc" id="L47">    object OnSaveClicked : ProductEditorEvent()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

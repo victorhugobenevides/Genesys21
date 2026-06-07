@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SqliteOrderRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.repository</a> &gt; <span class="el_source">SqliteOrderRepository.kt</span></div><h1>SqliteOrderRepository.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.repository
+
+import com.itbenevides.genesys21.data.database.*
+import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
+import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.repository.OrderRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
+
+<span class="fc" id="L13">class SqliteOrderRepository : OrderRepository {</span>
+
+    override suspend fun createMercadoPagoCheckout(order: Order, token: String): Result&lt;String&gt; {
+<span class="nc" id="L16">        return Result.failure(UnsupportedOperationException(&quot;Operação não suportada no servidor&quot;))</span>
+    }
+
+<span class="fc" id="L19">    override fun getOrders(token: String): Flow&lt;List&lt;Order&gt;&gt; = flow {</span>
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">        val orders = dbQuery {</span>
+<span class="fc" id="L21">            OrdersTable.selectAll().where { OrdersTable.userId eq token }</span>
+<span class="fc" id="L22">                .orderBy(OrdersTable.createdAt to SortOrder.DESC)</span>
+<span class="fc" id="L23">                .map { row -&gt;</span>
+<span class="fc" id="L24">                    val orderId = row[OrdersTable.id]</span>
+<span class="fc" id="L25">                    val items = fetchOrderItems(orderId)</span>
+<span class="fc" id="L26">                    row.toOrder(items)</span>
+<span class="fc" id="L27">                }</span>
+        }
+<span class="nc" id="L29">        emit(orders)</span>
+<span class="pc" id="L30">    }</span>
+
+<span class="pc" id="L32">    override suspend fun getOrderById(orderId: String): Result&lt;Order&gt; = runCatching {</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        dbQuery {</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            OrdersTable.selectAll().where { OrdersTable.id eq orderId }</span>
+<span class="fc" id="L35">                .map { row -&gt;</span>
+<span class="fc" id="L36">                    val items = fetchOrderItems(orderId)</span>
+<span class="fc" id="L37">                    row.toOrder(items)</span>
+                }
+<span class="pc" id="L39">                .singleOrNull() ?: throw Exception(&quot;Pedido não encontrado&quot;)</span>
+<span class="fc" id="L40">        }</span>
+<span class="fc" id="L41">    }</span>
+
+<span class="pc" id="L43">    override suspend fun getCustomerOrders(sessionId: String): Result&lt;List&lt;Order&gt;&gt; = runCatching {</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        dbQuery {</span>
+<span class="fc" id="L45">            OrdersTable.selectAll().where { OrdersTable.customerId eq sessionId }</span>
+<span class="fc" id="L46">                .orderBy(OrdersTable.createdAt to SortOrder.DESC)</span>
+<span class="fc" id="L47">                .map { row -&gt;</span>
+<span class="fc" id="L48">                    val orderId = row[OrdersTable.id]</span>
+<span class="fc" id="L49">                    val items = fetchOrderItems(orderId)</span>
+<span class="fc" id="L50">                    row.toOrder(items)</span>
+<span class="fc" id="L51">                }</span>
+<span class="fc" id="L52">        }</span>
+<span class="fc" id="L53">    }</span>
+
+<span class="fc" id="L55">    override suspend fun createOrder(order: Order): Result&lt;String&gt; = runCatching {</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        dbQuery {</span>
+            // Verifica se pedido já existe para evitar duplicidade
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            val exists = OrdersTable.selectAll().where { OrdersTable.id eq order.id }.count() &gt; 0</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (exists) return@dbQuery order.id</span>
+
+            // Garante que o pedido tenha uma data de criação válida (timestamp atual em ms)
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            val timestamp = if (order.createdAt &lt;= 0) System.currentTimeMillis() else order.createdAt</span>
+
+<span class="fc" id="L64">            OrdersTable.insert {</span>
+<span class="fc" id="L65">                it[id] = order.id</span>
+<span class="fc" id="L66">                it[userId] = order.userId</span>
+<span class="fc" id="L67">                it[customerId] = order.customerId</span>
+<span class="fc" id="L68">                it[customerName] = order.customerName</span>
+<span class="fc" id="L69">                it[customerPhone] = order.customerPhone</span>
+<span class="fc" id="L70">                it[total] = order.total</span>
+<span class="fc" id="L71">                it[status] = order.status.name</span>
+<span class="fc" id="L72">                it[createdAt] = timestamp</span>
+<span class="fc" id="L73">                it[whatsappContact] = order.whatsappContact</span>
+<span class="fc" id="L74">                it[theme] = order.theme.name</span>
+<span class="fc" id="L75">            }</span>
+
+<span class="fc" id="L77">            order.items.forEach { item -&gt;</span>
+<span class="fc" id="L78">                OrderItemsTable.insert {</span>
+<span class="fc" id="L79">                    it[orderId] = order.id</span>
+<span class="fc" id="L80">                    it[productId] = item.product.id</span>
+<span class="fc" id="L81">                    it[productName] = item.product.name</span>
+<span class="fc" id="L82">                    it[productPrice] = item.product.price</span>
+<span class="fc" id="L83">                    it[quantity] = item.quantity</span>
+<span class="fc" id="L84">                }</span>
+
+                // Deduz do estoque
+<span class="fc" id="L87">                ProductsTable.update({ ProductsTable.id eq item.product.id }) {</span>
+<span class="fc" id="L88">                    with(SqlExpressionBuilder) {</span>
+<span class="fc" id="L89">                        it.update(stock, stock - item.quantity)</span>
+<span class="fc" id="L90">                    }</span>
+<span class="fc" id="L91">                }</span>
+<span class="fc" id="L92">            }</span>
+
+            // Grava LOG inicial
+<span class="fc" id="L95">            recordStatusLogInternal(OrderStatusLog(</span>
+<span class="fc" id="L96">                orderId = order.id,</span>
+<span class="fc" id="L97">                oldStatus = null,</span>
+<span class="fc" id="L98">                newStatus = order.status,</span>
+<span class="fc" id="L99">                timestamp = timestamp,</span>
+<span class="fc" id="L100">                note = &quot;Pedido criado&quot;</span>
+            ))
+
+<span class="fc" id="L103">            order.id</span>
+<span class="fc" id="L104">        }</span>
+<span class="fc" id="L105">    }</span>
+
+<span class="pc" id="L107">    override suspend fun updateOrderStatus(token: String, orderId: String, status: OrderStatus): Result&lt;Unit&gt; = runCatching {</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        dbQuery {</span>
+<span class="fc" id="L109">            val oldStatusName = OrdersTable.selectAll().where { OrdersTable.id eq orderId }</span>
+<span class="fc" id="L110">                .map { it[OrdersTable.status] }.singleOrNull()</span>
+            
+<span class="fc" id="L112">            val updated = OrdersTable.update({ (OrdersTable.id eq orderId) and (OrdersTable.userId eq token) }) {</span>
+<span class="fc" id="L113">                it[this.status] = status.name</span>
+<span class="fc" id="L114">            }</span>
+            
+<span class="pc bpc" id="L116" title="1 of 4 branches missed.">            if (updated &gt; 0 &amp;&amp; oldStatusName != null) {</span>
+<span class="fc" id="L117">                val oldStatus = OrderStatus.valueOf(oldStatusName)</span>
+<span class="fc" id="L118">                handleStockOnStatusChange(orderId, oldStatus, status)</span>
+                
+                // Grava LOG
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">                if (oldStatus != status) {</span>
+<span class="fc" id="L122">                    recordStatusLogInternal(OrderStatusLog(</span>
+<span class="fc" id="L123">                        orderId = orderId,</span>
+<span class="fc" id="L124">                        oldStatus = oldStatus,</span>
+<span class="fc" id="L125">                        newStatus = status,</span>
+<span class="fc" id="L126">                        timestamp = System.currentTimeMillis(),</span>
+<span class="fc" id="L127">                        note = &quot;Alterado pelo lojista&quot;</span>
+                    ))
+                }
+            }
+<span class="fc" id="L131">        }</span>
+<span class="fc" id="L132">    }</span>
+
+<span class="nc" id="L134">    suspend fun updateOrderStatusForWebhook(orderId: String, newStatus: OrderStatus): Result&lt;Unit&gt; = runCatching {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        dbQuery {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            val orderRow = OrdersTable.selectAll().where { OrdersTable.id eq orderId }.singleOrNull() </span>
+<span class="nc" id="L137">                ?: throw Exception(&quot;Pedido não encontrado&quot;)</span>
+            
+<span class="nc" id="L139">            val oldStatus = OrderStatus.valueOf(orderRow[OrdersTable.status])</span>
+            
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (oldStatus != newStatus) {</span>
+<span class="nc" id="L142">                OrdersTable.update({ OrdersTable.id eq orderId }) {</span>
+<span class="nc" id="L143">                    it[status] = newStatus.name</span>
+<span class="nc" id="L144">                }</span>
+<span class="nc" id="L145">                handleStockOnStatusChange(orderId, oldStatus, newStatus)</span>
+
+                // Grava LOG
+<span class="nc" id="L148">                recordStatusLogInternal(OrderStatusLog(</span>
+<span class="nc" id="L149">                    orderId = orderId,</span>
+<span class="nc" id="L150">                    oldStatus = oldStatus,</span>
+<span class="nc" id="L151">                    newStatus = newStatus,</span>
+<span class="nc" id="L152">                    timestamp = System.currentTimeMillis(),</span>
+<span class="nc" id="L153">                    note = &quot;Atualização automática (Mercado Pago)&quot;</span>
+                ))
+            }
+<span class="nc" id="L156">        }</span>
+<span class="nc" id="L157">    }</span>
+
+<span class="nc" id="L159">    override suspend fun recordStatusLog(log: OrderStatusLog): Result&lt;Unit&gt; = runCatching {</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        dbQuery { recordStatusLogInternal(log) }</span>
+<span class="nc" id="L161">    }</span>
+
+    private fun recordStatusLogInternal(log: OrderStatusLog) {
+<span class="fc" id="L164">        OrderStatusLogsTable.insert {</span>
+<span class="fc" id="L165">            it[orderId] = log.orderId</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">            it[oldStatus] = log.oldStatus?.name</span>
+<span class="fc" id="L167">            it[newStatus] = log.newStatus.name</span>
+<span class="fc" id="L168">            it[timestamp] = log.timestamp</span>
+<span class="fc" id="L169">            it[note] = log.note</span>
+<span class="fc" id="L170">        }</span>
+<span class="fc" id="L171">    }</span>
+
+<span class="pc" id="L173">    override suspend fun getOrderStatusLogs(orderId: String): Result&lt;List&lt;OrderStatusLog&gt;&gt; = runCatching {</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        dbQuery {</span>
+<span class="fc" id="L175">            OrderStatusLogsTable.selectAll().where { OrderStatusLogsTable.orderId eq orderId }</span>
+<span class="fc" id="L176">                .orderBy(OrderStatusLogsTable.timestamp to SortOrder.DESC)</span>
+<span class="fc" id="L177">                .map { row -&gt;</span>
+<span class="fc" id="L178">                    OrderStatusLog(</span>
+<span class="fc" id="L179">                        id = row[OrderStatusLogsTable.id],</span>
+<span class="fc" id="L180">                        orderId = row[OrderStatusLogsTable.orderId],</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                        oldStatus = row[OrderStatusLogsTable.oldStatus]?.let { OrderStatus.valueOf(it) },</span>
+<span class="fc" id="L182">                        newStatus = OrderStatus.valueOf(row[OrderStatusLogsTable.newStatus]),</span>
+<span class="fc" id="L183">                        timestamp = row[OrderStatusLogsTable.timestamp],</span>
+<span class="fc" id="L184">                        note = row[OrderStatusLogsTable.note]</span>
+<span class="fc" id="L185">                    )</span>
+<span class="fc" id="L186">                }</span>
+<span class="fc" id="L187">        }</span>
+<span class="fc" id="L188">    }</span>
+
+    private fun handleStockOnStatusChange(orderId: String, oldStatus: OrderStatus, newStatus: OrderStatus) {
+        // Se o pedido for cancelado ou falhar, devolvemos os itens ao estoque
+<span class="pc bpc" id="L192" title="2 of 4 branches missed.">        val isFailureStatus = newStatus == OrderStatus.CANCELLED || newStatus == OrderStatus.FAILED</span>
+<span class="pc bpc" id="L193" title="2 of 4 branches missed.">        val wasFailureStatus = oldStatus == OrderStatus.CANCELLED || oldStatus == OrderStatus.FAILED</span>
+
+<span class="pc bpc" id="L195" title="3 of 4 branches missed.">        if (isFailureStatus &amp;&amp; !wasFailureStatus) {</span>
+            // Devolver estoque
+<span class="nc" id="L197">            val items = fetchOrderItems(orderId)</span>
+<span class="nc" id="L198">            items.forEach { item -&gt;</span>
+<span class="nc" id="L199">                ProductsTable.update({ ProductsTable.id eq item.product.id }) {</span>
+<span class="nc" id="L200">                    with(SqlExpressionBuilder) {</span>
+<span class="nc" id="L201">                        it.update(stock, stock + item.quantity)</span>
+<span class="nc" id="L202">                    }</span>
+<span class="nc" id="L203">                }</span>
+<span class="nc" id="L204">            }</span>
+<span class="pc bpc" id="L205" title="2 of 4 branches missed.">        } else if (!isFailureStatus &amp;&amp; wasFailureStatus) {</span>
+            // Re-deduzir estoque se um pedido falho for reativado
+<span class="nc" id="L207">            val items = fetchOrderItems(orderId)</span>
+<span class="nc" id="L208">            items.forEach { item -&gt;</span>
+<span class="nc" id="L209">                ProductsTable.update({ ProductsTable.id eq item.product.id }) {</span>
+<span class="nc" id="L210">                    with(SqlExpressionBuilder) {</span>
+<span class="nc" id="L211">                        it.update(stock, stock - item.quantity)</span>
+<span class="nc" id="L212">                    }</span>
+<span class="nc" id="L213">                }</span>
+<span class="nc" id="L214">            }</span>
+        }
+<span class="fc" id="L216">    }</span>
+
+    private fun fetchOrderItems(orderId: String): List&lt;CartItem&gt; {
+<span class="fc" id="L219">        return OrderItemsTable.selectAll().where { OrderItemsTable.orderId eq orderId }</span>
+<span class="fc" id="L220">            .map { row -&gt;</span>
+<span class="fc" id="L221">                CartItem(</span>
+<span class="fc" id="L222">                    product = Product(</span>
+<span class="fc" id="L223">                        id = row[OrderItemsTable.productId],</span>
+<span class="fc" id="L224">                        name = row[OrderItemsTable.productName],</span>
+<span class="fc" id="L225">                        price = row[OrderItemsTable.productPrice]</span>
+                    ),
+<span class="fc" id="L227">                    quantity = row[OrderItemsTable.quantity]</span>
+<span class="fc" id="L228">                )</span>
+            }
+    }
+
+<span class="fc" id="L232">    private fun ResultRow.toOrder(items: List&lt;CartItem&gt;) = Order(</span>
+<span class="fc" id="L233">        id = this[OrdersTable.id],</span>
+<span class="fc" id="L234">        userId = this[OrdersTable.userId],</span>
+<span class="fc" id="L235">        customerId = this[OrdersTable.customerId],</span>
+<span class="fc" id="L236">        customerName = this[OrdersTable.customerName],</span>
+<span class="fc" id="L237">        customerPhone = this[OrdersTable.customerPhone],</span>
+<span class="fc" id="L238">        items = items,</span>
+<span class="fc" id="L239">        total = this[OrdersTable.total],</span>
+<span class="pc" id="L240">        status = try { OrderStatus.valueOf(this[OrdersTable.status]) } catch (e: Exception) { OrderStatus.PENDING },</span>
+<span class="fc" id="L241">        createdAt = this[OrdersTable.createdAt],</span>
+<span class="fc" id="L242">        whatsappContact = this[OrdersTable.whatsappContact],</span>
+<span class="pc" id="L243">        theme = try { PageThemeConfig.valueOf(this[OrdersTable.theme]) } catch (e: Exception) { PageThemeConfig.ROYAL }</span>
+<span class="fc" id="L244">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

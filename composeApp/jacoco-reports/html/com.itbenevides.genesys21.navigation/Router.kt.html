@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Router.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.navigation</a> &gt; <span class="el_source">Router.kt</span></div><h1>Router.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.navigation
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.itbenevides.genesys21.di.getCurrentUrl
+import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.presentation.PageViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+
+<span class="fc" id="L16">class Router(val viewModel: PageViewModel) {</span>
+<span class="fc" id="L17">    var currentRoute by mutableStateOf&lt;Route&gt;(Route.Splash)</span>
+        private set
+
+<span class="fc" id="L20">    private val scope = CoroutineScope(Dispatchers.Main)</span>
+<span class="fc" id="L21">    private val navigationStack = mutableListOf&lt;Route&gt;()</span>
+
+<span class="fc" id="L23">    fun navigateTo(route: Route, replace: Boolean = false) {</span>
+<span class="pc bpc" id="L24" title="2 of 6 branches missed.">        if (replace &amp;&amp; navigationStack.isNotEmpty()) {</span>
+<span class="nc" id="L25">            navigationStack.removeAt(navigationStack.size - 1)</span>
+        }
+<span class="fc" id="L27">        navigationStack.add(route)</span>
+<span class="fc" id="L28">        currentRoute = route</span>
+<span class="fc" id="L29">    }</span>
+
+    fun goBack() {
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (navigationStack.size &gt; 1) {</span>
+<span class="fc" id="L33">            navigationStack.removeAt(navigationStack.size - 1)</span>
+<span class="fc" id="L34">            currentRoute = navigationStack.last()</span>
+        }
+<span class="fc" id="L36">    }</span>
+
+<span class="nc" id="L38">    fun handleDeepLink(url: String? = getCurrentUrl()) {</span>
+<span class="fc" id="L39">        scope.launch {</span>
+<span class="fc" id="L40">            try {</span>
+                // REDUÇÃO DE DELAY: Sair da Splash o mais rápido possível
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">                if (currentRoute == Route.Splash) delay(200)</span>
+
+<span class="pc bfc" id="L44" title="All 2 branches covered.">                url?.let {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">                    if (it.contains(&quot;genesys21://order/&quot;)) {</span>
+<span class="fc" id="L46">                        val orderId = it.substringAfterLast(&quot;/&quot;)</span>
+<span class="fc" id="L47">                        navigateTo(Route.OrderTracking(orderId), replace = true)</span>
+<span class="fc" id="L48">                        return@launch</span>
+                    }
+                    
+<span class="fc" id="L51">                    val params = it.substringAfter(&quot;?&quot;, &quot;&quot;).split(&quot;&amp;&quot;).mapNotNull { pair -&gt;</span>
+<span class="fc" id="L52">                        val parts = pair.split(&quot;=&quot;)</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                        if (parts.size == 2) parts[0] to parts[1] else null</span>
+<span class="fc" id="L54">                    }.toMap()</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                    params[&quot;pageId&quot;]?.let { pageId -&gt;</span>
+                        // Timeout de 3s para carregar a página pública, se demorar, vai pro Login
+<span class="fc" id="L58">                        val page = withTimeoutOrNull(3000) { viewModel.loadPublicPage(pageId) }</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                        if (page != null) {</span>
+<span class="fc" id="L60">                            navigateTo(Route.PublicViewer(page), replace = true)</span>
+<span class="fc" id="L61">                            return@launch</span>
+                        }
+<span class="nc" id="L63">                    }</span>
+                }
+
+                // NAVEGAÇÃO DE SEGURANÇA: Timeout de 3s para checar token (Firebase)
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                if (currentRoute == Route.Splash) {</span>
+<span class="fc" id="L68">                    val token = withTimeoutOrNull(3000) { viewModel.getCurrentUserToken() }</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                    if (token != null) {</span>
+<span class="fc" id="L70">                        navigateTo(Route.PageList, replace = true)</span>
+                    } else {
+<span class="fc" id="L72">                        navigateTo(Route.Login, replace = true)</span>
+                    }
+                }
+<span class="nc" id="L75">            } catch (e: Exception) {</span>
+<span class="nc" id="L76">                println(&quot;ROUTER ERROR: ${e.message}&quot;)</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                if (currentRoute == Route.Splash) {</span>
+<span class="nc" id="L78">                    navigateTo(Route.Login, replace = true)</span>
+                }
+            }
+<span class="fc" id="L81">        }</span>
+<span class="fc" id="L82">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

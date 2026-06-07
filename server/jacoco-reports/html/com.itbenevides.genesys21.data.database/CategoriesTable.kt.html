@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CategoriesTable.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.database</a> &gt; <span class="el_source">CategoriesTable.kt</span></div><h1>CategoriesTable.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.database
+
+import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.Table
+
+/**
+ * Tabela dedicada para categorias, permitindo expansão futura (cores, ícones, etc).
+ */
+<span class="fc" id="L9">object CategoriesTable : IntIdTable(&quot;categories&quot;) {</span>
+<span class="fc" id="L10">    val ownerId = varchar(&quot;owner_id&quot;, 100).index() // Vincula a categoria ao lojista</span>
+<span class="fc" id="L11">    val name = varchar(&quot;name&quot;, 100)</span>
+<span class="pc" id="L12">    val icon = varchar(&quot;icon_name&quot;, 50).nullable()</span>
+<span class="pc" id="L13">    val color = varchar(&quot;color_hex&quot;, 10).nullable()</span>
+    
+<span class="fc" id="L15">    init {</span>
+        // Garante que o mesmo lojista não crie categorias duplicadas com o mesmo nome
+<span class="fc" id="L17">        uniqueIndex(&quot;unique_category_per_owner&quot;, ownerId, name)</span>
+<span class="fc" id="L18">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

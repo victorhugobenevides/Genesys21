@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseFactory.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.database</a> &gt; <span class="el_source">DatabaseFactory.kt</span></div><h1>DatabaseFactory.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.database
+
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import kotlinx.coroutines.Dispatchers
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
+import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
+
+object DatabaseFactory {
+    private const val DB_PATH = &quot;data/genesys21.db&quot;
+    private var testDatabase: Database? = null
+    
+    /**
+     * Configura um banco de dados para testes.
+     * Quando configurado, todas as queries usarão este banco.
+     */
+    fun configureTestDatabase(database: Database?) {
+<span class="fc" id="L22">        testDatabase = database</span>
+<span class="fc" id="L23">    }</span>
+    
+    fun init() {
+<span class="fc" id="L26">        setupDatabaseDirectory()</span>
+        
+<span class="fc" id="L28">        applySqliteOptimizations()</span>
+
+<span class="fc" id="L30">        val dataSource = hikari()</span>
+<span class="fc" id="L31">        Database.connect(dataSource)</span>
+        
+<span class="fc" id="L33">        runMigrations()</span>
+<span class="fc" id="L34">    }</span>
+
+    private fun setupDatabaseDirectory() {
+<span class="fc" id="L37">        val dataFolder = File(&quot;data&quot;)</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (!dataFolder.exists()) dataFolder.mkdirs()</span>
+<span class="fc" id="L39">    }</span>
+
+    private fun applySqliteOptimizations() {
+<span class="fc" id="L42">        try {</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            if (File(DB_PATH).exists()) {</span>
+<span class="fc" id="L44">                Class.forName(&quot;org.sqlite.JDBC&quot;)</span>
+<span class="pc" id="L45">                java.sql.DriverManager.getConnection(&quot;jdbc:sqlite:$DB_PATH&quot;).use { conn -&gt;</span>
+<span class="pc" id="L46">                    conn.createStatement().use { stmt -&gt;</span>
+<span class="fc" id="L47">                        stmt.execute(&quot;PRAGMA journal_mode=WAL;&quot;)</span>
+<span class="fc" id="L48">                        stmt.execute(&quot;PRAGMA synchronous=NORMAL;&quot;)</span>
+<span class="fc" id="L49">                    }</span>
+                }
+            }
+<span class="nc" id="L52">        } catch (e: Exception) { }</span>
+<span class="fc" id="L53">    }</span>
+
+    private fun hikari(): HikariDataSource {
+<span class="fc" id="L56">        val config = HikariConfig()</span>
+<span class="fc" id="L57">        config.driverClassName = &quot;org.sqlite.JDBC&quot;</span>
+<span class="fc" id="L58">        config.jdbcUrl = &quot;jdbc:sqlite:$DB_PATH&quot;</span>
+<span class="fc" id="L59">        config.maximumPoolSize = 3 </span>
+<span class="fc" id="L60">        config.isAutoCommit = true</span>
+<span class="fc" id="L61">        config.validate()</span>
+<span class="fc" id="L62">        return HikariDataSource(config)</span>
+    }
+
+    private fun runMigrations() {
+<span class="fc" id="L66">        transaction {</span>
+<span class="fc" id="L67">            runFixes()</span>
+
+            @Suppress(&quot;DEPRECATION&quot;)
+<span class="fc" id="L70">            SchemaUtils.createMissingTablesAndColumns(</span>
+<span class="fc" id="L71">                CategoriesTable,</span>
+<span class="fc" id="L72">                PagesTable, </span>
+<span class="fc" id="L73">                PageComponentsTable,</span>
+<span class="fc" id="L74">                ProductsTable,</span>
+<span class="fc" id="L75">                ProductImagesTable,</span>
+<span class="fc" id="L76">                ComponentProductsTable,</span>
+<span class="fc" id="L77">                CartsTable, </span>
+<span class="fc" id="L78">                CartItemsTable,</span>
+<span class="fc" id="L79">                OrdersTable,</span>
+<span class="fc" id="L80">                OrderItemsTable,</span>
+<span class="fc" id="L81">                OrderStatusLogsTable</span>
+            )
+
+            // CRIAÇÃO SEGURA DE ÍNDICES:
+            // Usamos SQL puro para garantir que a inicialização não crash se o índice já existir.
+<span class="fc" id="L86">            exec(&quot;CREATE INDEX IF NOT EXISTS pages_owner_id ON pages (owner_id);&quot;)</span>
+<span class="fc" id="L87">            exec(&quot;CREATE INDEX IF NOT EXISTS products_owner_id ON products (owner_id);&quot;)</span>
+<span class="fc" id="L88">            exec(&quot;CREATE INDEX IF NOT EXISTS orders_user_id ON orders (user_id);&quot;)</span>
+<span class="fc" id="L89">            exec(&quot;CREATE INDEX IF NOT EXISTS orders_customer_id ON orders (customer_id);&quot;)</span>
+<span class="fc" id="L90">            exec(&quot;CREATE INDEX IF NOT EXISTS order_items_order_id ON order_items (order_id);&quot;)</span>
+<span class="fc" id="L91">            exec(&quot;CREATE INDEX IF NOT EXISTS order_status_logs_order_id ON order_status_logs (order_id);&quot;)</span>
+<span class="fc" id="L92">            exec(&quot;CREATE INDEX IF NOT EXISTS cart_items_user_id ON cart_items (user_id);&quot;)</span>
+            // Índice único seguro para o domínio customizado
+<span class="fc" id="L94">            exec(&quot;CREATE UNIQUE INDEX IF NOT EXISTS pages_custom_domain ON pages (custom_domain);&quot;)</span>
+        }
+<span class="fc" id="L96">    }</span>
+
+    suspend fun &lt;T&gt; dbQuery(block: suspend () -&gt; T): T {
+<span class="fc" id="L99">        val db = testDatabase</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        return if (db != null) {</span>
+<span class="fc" id="L101">            newSuspendedTransaction(Dispatchers.IO, db) { block() }</span>
+        } else {
+<span class="fc" id="L103">            newSuspendedTransaction(Dispatchers.IO) { block() }</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseMigrator.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.data.database</a> &gt; <span class="el_source">DatabaseMigrator.kt</span></div><h1>DatabaseMigrator.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.data.database
+
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.Transaction
+
+/**
+ * Utilitário para lidar com migrações e correções estruturais manuais.
+ */
+object DatabaseMigrator {
+
+    fun Transaction.runFixes() {
+<span class="fc" id="L12">        fixCustomDomainConstraint()</span>
+<span class="fc" id="L13">        fixResidualIndices()</span>
+<span class="fc" id="L14">    }</span>
+
+    private fun Transaction.fixResidualIndices() {
+<span class="fc" id="L17">        try {</span>
+<span class="fc" id="L18">            val residualIndices = listOf(&quot;page_components_page_id&quot;, &quot;pages_custom_domain_unique&quot;, &quot;pages_owner_id&quot;, &quot;products_owner_id&quot;)</span>
+            
+<span class="fc" id="L20">            residualIndices.forEach { indexName -&gt;</span>
+<span class="fc" id="L21">                exec(&quot;DROP INDEX IF EXISTS $indexName&quot;)</span>
+<span class="fc" id="L22">            }</span>
+<span class="nc" id="L23">        } catch (e: Exception) {</span>
+<span class="nc" id="L24">            println(&quot;DatabaseMigrator: Erro ao limpar índices - ${e.message}&quot;)</span>
+        }
+<span class="fc" id="L26">    }</span>
+
+    private fun Transaction.fixCustomDomainConstraint() {
+<span class="fc" id="L29">        try {</span>
+            // Verifica se a tabela pages existe e se pages_old já existe
+<span class="fc" id="L31">            val pagesExists = exec(&quot;SELECT name FROM sqlite_master WHERE type='table' AND name='pages'&quot;) { rs -&gt; rs.next() } == true</span>
+<span class="fc" id="L32">            val pagesOldExists = exec(&quot;SELECT name FROM sqlite_master WHERE type='table' AND name='pages_old'&quot;) { rs -&gt; rs.next() } == true</span>
+
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">            if (!pagesExists) return</span>
+
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">            val tableSql = exec(&quot;SELECT sql FROM sqlite_master WHERE type='table' AND name='pages'&quot;) { rs -&gt;</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">                if (rs.next()) rs.getString(&quot;sql&quot;) else &quot;&quot;</span>
+<span class="nc" id="L38">            } ?: &quot;&quot;</span>
+
+            // Verifica se a tabela ainda tem a estrutura antiga ou a coluna de componentes obsoleta
+<span class="pc bpc" id="L41" title="3 of 4 branches missed.">            val needsMigration = tableSql.contains(&quot;components&quot;, true) || tableSql.contains(&quot;UNIQUE&quot;, true)</span>
+
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">            if (needsMigration) {</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">                if (pagesOldExists) {</span>
+<span class="nc" id="L45">                    exec(&quot;DROP TABLE IF EXISTS pages_old&quot;)</span>
+                }
+<span class="fc" id="L47">                rebuildPagesTable()</span>
+            }
+            
+<span class="nc" id="L50">        } catch (e: Exception) {</span>
+<span class="nc" id="L51">            println(&quot;DatabaseMigrator: Erro na migração de 'pages' - ${e.message}&quot;)</span>
+        }
+<span class="fc" id="L53">    }</span>
+
+    private fun Transaction.rebuildPagesTable() {
+<span class="fc" id="L56">        println(&quot;DatabaseMigrator: Reconstruindo tabela 'pages' para normalização...&quot;)</span>
+        
+<span class="fc" id="L58">        exec(&quot;ALTER TABLE pages RENAME TO pages_old&quot;)</span>
+        
+        // Cria a nova estrutura baseada na definição atual
+<span class="fc" id="L61">        SchemaUtils.create(PagesTable)</span>
+        
+        // Tenta copiar os dados de forma segura, ignorando colunas que não existem mais
+<span class="fc" id="L64">        exec(&quot;&quot;&quot;</span>
+            INSERT INTO pages (id, title, owner_id, theme, custom_domain, whatsapp, components_json) 
+            SELECT id, title, owner_id, theme, custom_domain, whatsapp, '[]' FROM pages_old
+<span class="fc" id="L67">        &quot;&quot;&quot;.trimIndent())</span>
+        
+<span class="fc" id="L69">        exec(&quot;DROP TABLE pages_old&quot;)</span>
+<span class="fc" id="L70">        println(&quot;DatabaseMigrator: Tabela 'pages' normalizada com sucesso!&quot;)</span>
+<span class="fc" id="L71">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

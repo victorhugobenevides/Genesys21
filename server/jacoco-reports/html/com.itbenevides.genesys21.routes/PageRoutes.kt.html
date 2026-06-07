@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageRoutes.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">server</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.routes</a> &gt; <span class="el_source">PageRoutes.kt</span></div><h1>PageRoutes.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.routes
+
+import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.domain.repository.PageRepository
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+
+fun Route.pageRoutes(pageRepository: PageRepository) {
+    
+<span class="fc" id="L15">    route(&quot;/public&quot;) {</span>
+<span class="pc" id="L16">        get(&quot;/pages/first&quot;) {</span>
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">            pageRepository.getPages(&quot;&quot;)</span>
+<span class="pc bpc" id="L18" title="2 of 6 branches missed.">                .getOrNull()?.firstOrNull()?.let { call.respond(it) }</span>
+<span class="fc" id="L19">                ?: call.respond(HttpStatusCode.NotFound, &quot;Nenhuma página disponível&quot;)</span>
+<span class="fc" id="L20">        }</span>
+
+<span class="pc" id="L22">        get(&quot;/pages/{id}&quot;) {</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">            val id = call.parameters[&quot;id&quot;] ?: return@get call.respond(HttpStatusCode.BadRequest)</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">            pageRepository.getPublicPage(id)</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">                .onSuccess { page -&gt; call.respond(page) }</span>
+<span class="pc bpc" id="L26" title="2 of 4 branches missed.">                .onFailure { call.respond(HttpStatusCode.NotFound, it.message ?: &quot;Não encontrado&quot;) }</span>
+<span class="fc" id="L27">        }</span>
+<span class="fc" id="L28">    }</span>
+
+<span class="fc" id="L30">    authenticate(&quot;firebase&quot;) {</span>
+<span class="fc" id="L31">        route(&quot;/pages&quot;) {</span>
+<span class="pc" id="L32">            get {</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">                val principal = call.principal&lt;UserIdPrincipal&gt;() ?: return@get call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">                pageRepository.getPages(principal.name)</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">                    .onSuccess { call.respond(it) }</span>
+<span class="pc bpc" id="L36" title="3 of 4 branches missed.">                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: &quot;Erro ao buscar páginas&quot;) }</span>
+<span class="fc" id="L37">            }</span>
+
+<span class="pc" id="L39">            delete(&quot;/all&quot;) {</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                val principal = call.principal&lt;UserIdPrincipal&gt;() ?: return@delete call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">                pageRepository.deleteAllPages(principal.name)</span>
+<span class="nc" id="L42">                call.respond(HttpStatusCode.OK, &quot;Todas as páginas foram removidas&quot;)</span>
+<span class="nc" id="L43">            }</span>
+
+<span class="pc" id="L45">            delete(&quot;/cleanup/orphans&quot;) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                val principal = call.principal&lt;UserIdPrincipal&gt;() ?: return@delete call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                pageRepository.deletePage(&quot;empty_id&quot;, principal.name)</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">                    .onSuccess { call.respond(HttpStatusCode.OK, &quot;Páginas órfãs removidas&quot;) }</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                    .onFailure { call.respond(HttpStatusCode.InternalServerError) }</span>
+<span class="nc" id="L50">            }</span>
+
+<span class="pc" id="L52">            delete(&quot;/{id}&quot;) {</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                val principal = call.principal&lt;UserIdPrincipal&gt;() ?: return@delete call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">                val id = call.parameters[&quot;id&quot;] ?: return@delete call.respond(HttpStatusCode.BadRequest)</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">                pageRepository.deletePage(id, principal.name)</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                    .onSuccess { call.respond(HttpStatusCode.OK) }</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">                    .onFailure { call.respond(HttpStatusCode.NotFound) }</span>
+<span class="fc" id="L58">            }</span>
+            
+<span class="pc" id="L60">            post {</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                val principal = call.principal&lt;UserIdPrincipal&gt;() ?: return@post call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="fc" id="L62">                val page = call.receive&lt;Page&gt;()</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                pageRepository.savePage(page, principal.name, isEditing = false)</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                    .onSuccess { call.respond(HttpStatusCode.Created) }</span>
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: &quot;Erro&quot;) }</span>
+<span class="fc" id="L66">            }</span>
+
+<span class="pc" id="L68">            put {</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                val principal = call.principal&lt;UserIdPrincipal&gt;() ?: return@put call.respond(HttpStatusCode.Unauthorized)</span>
+<span class="fc" id="L70">                val page = call.receive&lt;Page&gt;()</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                pageRepository.savePage(page, principal.name, isEditing = true)</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">                    .onSuccess { call.respond(HttpStatusCode.OK) }</span>
+<span class="pc bpc" id="L73" title="3 of 4 branches missed.">                    .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: &quot;Erro&quot;) }</span>
+<span class="fc" id="L74">            }</span>
+<span class="fc" id="L75">        }</span>
+<span class="fc" id="L76">    }</span>
+<span class="fc" id="L77">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

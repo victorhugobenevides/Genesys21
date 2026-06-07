@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WhiteLabelState.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.presentation.screens.viewer</a> &gt; <span class="el_source">WhiteLabelState.kt</span></div><h1>WhiteLabelState.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.presentation.screens.viewer
+
+import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
+import com.itbenevides.genesys21.domain.model.Product
+
+/**
+ * UI State para a tela de Editor Administrativo (WhiteLabel).
+ */
+<span class="fc" id="L11">data class WhiteLabelState(</span>
+<span class="fc" id="L12">    val page: Page,</span>
+<span class="fc" id="L13">    val isLoading: Boolean = false,</span>
+<span class="fc" id="L14">    val isUploading: Boolean = false, // ADICIONADO: Controle de upload de imagem</span>
+<span class="fc" id="L15">    val availableProducts: List&lt;Product&gt; = emptyList(),</span>
+<span class="fc" id="L16">    val allAvailableCategories: List&lt;String&gt; = emptyList(),</span>
+<span class="fc" id="L17">    val showCatalog: Boolean = false,</span>
+<span class="fc" id="L18">    val showThemeSelector: Boolean = false,</span>
+<span class="fc" id="L19">    val showPageSettings: Boolean = false,</span>
+<span class="fc" id="L20">    val editingComponentIndex: Int? = null,</span>
+<span class="fc" id="L21">    val pendingNewComponent: PageComponent? = null,</span>
+<span class="fc" id="L22">    val filterQuery: String = &quot;&quot;,</span>
+<span class="fc" id="L23">    val userPages: List&lt;Page&gt; = emptyList()</span>
+<span class="fc" id="L24">)</span>
+
+/**
+ * UI Intents (Eventos) para a tela de Editor Administrativo.
+ */
+sealed class WhiteLabelEvent {
+<span class="fc" id="L30">    data class OnPageUpdated(val newPage: Page) : WhiteLabelEvent()</span>
+<span class="fc" id="L31">    object OnPublishClicked : WhiteLabelEvent()</span>
+<span class="fc" id="L32">    object OnBackClicked : WhiteLabelEvent()</span>
+<span class="fc" id="L33">    data class OnEditProductClicked(val product: Product?, val componentIndex: Int?) : WhiteLabelEvent()</span>
+    
+    // UI Toggles
+<span class="fc" id="L36">    data class OnShowCatalogChanged(val show: Boolean) : WhiteLabelEvent()</span>
+<span class="fc" id="L37">    data class OnShowThemeSelectorChanged(val show: Boolean) : WhiteLabelEvent()</span>
+<span class="fc" id="L38">    data class OnShowPageSettingsChanged(val show: Boolean) : WhiteLabelEvent()</span>
+<span class="fc" id="L39">    data class OnEditingComponentIndexChanged(val index: Int?) : WhiteLabelEvent()</span>
+<span class="nc" id="L40">    data class OnPendingNewComponentChanged(val component: PageComponent?) : WhiteLabelEvent()</span>
+<span class="fc" id="L41">    data class OnFilterQueryChanged(val query: String) : WhiteLabelEvent()</span>
+    
+    // Upload de Imagem
+<span class="fc" id="L44">    data class OnImageUploadStarted(val isUploading: Boolean) : WhiteLabelEvent()</span>
+    
+    // Ações de Componentes
+<span class="fc" id="L47">    data class OnDeleteComponent(val index: Int) : WhiteLabelEvent()</span>
+<span class="fc" id="L48">    data class OnDuplicateComponent(val index: Int) : WhiteLabelEvent()</span>
+<span class="fc" id="L49">    data class OnMoveComponentUp(val index: Int) : WhiteLabelEvent()</span>
+<span class="fc" id="L50">    data class OnMoveComponentDown(val index: Int) : WhiteLabelEvent()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

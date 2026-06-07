@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageViewerScreenState.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">composeApp</a> &gt; <a href="index.source.html" class="el_package">com.itbenevides.genesys21.presentation.screens.viewer</a> &gt; <span class="el_source">PageViewerScreenState.kt</span></div><h1>PageViewerScreenState.kt</h1><pre class="source lang-java linenums">package com.itbenevides.genesys21.presentation.screens.viewer
+
+import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.Product
+
+/**
+ * UI State para a tela de Vitrine Pública.
+ */
+<span class="fc" id="L10">data class PageViewerScreenState(</span>
+<span class="fc" id="L11">    val page: Page,</span>
+<span class="fc" id="L12">    val filterQuery: String = &quot;&quot;,</span>
+<span class="fc" id="L13">    val isLoggedIn: Boolean = false,</span>
+<span class="fc" id="L14">    val cartCount: Int = 0,</span>
+<span class="fc" id="L15">    val isLoading: Boolean = false,</span>
+<span class="fc" id="L16">    val allStoreCategories: List&lt;String&gt; = emptyList() // ADICIONADO: Lista global do lojista</span>
+<span class="fc" id="L17">) {</span>
+<span class="fc" id="L18">    val hasProductList: Boolean = page.components.any { it is PageComponent.ProductList }</span>
+}
+
+/**
+ * UI Intents (Eventos) para a tela de Vitrine Pública.
+ */
+sealed class PageViewerScreenEvent {
+<span class="fc" id="L25">    data class OnFilterQueryChanged(val query: String) : PageViewerScreenEvent()</span>
+<span class="fc" id="L26">    data class OnProductClicked(val product: Product) : PageViewerScreenEvent()</span>
+<span class="fc" id="L27">    object OnOpenCartClicked : PageViewerScreenEvent()</span>
+<span class="fc" id="L28">    object OnOpenHistoryClicked : PageViewerScreenEvent()</span>
+<span class="fc" id="L29">    object OnOpenAdminSettingsClicked : PageViewerScreenEvent()</span>
+<span class="fc" id="L30">    object OnBackClicked : PageViewerScreenEvent()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
