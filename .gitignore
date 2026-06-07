@@ -50,6 +50,7 @@ build/dist/
 # google-services.json
 # GoogleService-Info.plist
 # *.json (for service account keys)
+genesys21-32035-firebase-adminsdk.json
 # It's recommended to keep secrets out of version control.
 # If you want to ignore your specific service account key:
 server/src/main/resources/*.json
@@ -59,3 +60,4 @@ server/src/main/resources/*.json
 /iosApp/iosApp/GoogleService-Info.plist
 /composeApp/google-services.json
 /deploy/
+genesys21-32035-firebase-adminsdk.json
