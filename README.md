@@ -67,3 +67,14 @@ Open the `iosApp` directory in Xcode.
 - [/shared](./shared/src): Shared business logic and platform abstractions.
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html) and [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform).
+
+## 🛠️ GitFlow
+
+- **Branch strategy:** `main` (production), `develop` (integration), `feature/*`, `release/*`, `hotfix/*`.
+- **Starting a feature:** `git checkout -b feature/<ticket-id>-short-description develop`
+- **Creating a release:** `git checkout -b release/<version> develop` then PR to `main`.
+- **Hotfix:** `git checkout -b hotfix/<ticket-id> main` then PR to `main` and `develop`.
+- **Pull request template:** already added (`.github/pull_request_template.md`).
+- **Issue templates:** `feature_request.md` and `bug_report.md` in `.github/ISSUE_TEMPLATE`.
+
+Refer to the `scripts/gitflow_init.sh` for automation.
