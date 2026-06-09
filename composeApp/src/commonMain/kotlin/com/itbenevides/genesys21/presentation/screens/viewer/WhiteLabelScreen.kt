@@ -163,8 +163,6 @@ fun WhiteLabelScreen(
         }
     }
 
-    val allProducts by viewModel.allAvailableProducts.collectAsState()
-
     AppTheme(themeConfig = state.page.theme) {
         WhiteLabelContent(
             state = state, 
@@ -172,7 +170,6 @@ fun WhiteLabelScreen(
             onEvent = ::onEvent, 
             originalPage = pristinePage,
             displayCategories = effectiveCategories,
-            allProducts = allProducts,
             onManageCategories = { showCategoryManagement = true },
             onPickImage = { imagePicker() },
             onDiscardClicked = { showDiscardDialog = true }

@@ -17,13 +17,14 @@ fun <T> GenesysLazyColumnIndexed(
     maxWidth: Dp? = null,
     spacing: GenesysSpacing = GenesysSpacing.Medium,
     usePadding: Boolean = true,
+    key: ((Int, T) -> Any)? = null,
+    itemModifier: ((Int, T) -> Modifier)? = null,
     content: @Composable (Int, T) -> Unit
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         val columnModifier = if (maxWidth != null) modifier.widthIn(max = maxWidth) else modifier.fillMaxWidth()
         
         // Responsividade: Reduz padding em telas estreitas (mobile)
-        // Usamos this.maxWidth para referenciar o valor do BoxWithConstraintsScope e não o parâmetro da função
         val horizontalPadding = if (this.maxWidth < 600.dp) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
         
         LazyColumn(
@@ -35,8 +36,14 @@ fun <T> GenesysLazyColumnIndexed(
             },
             verticalArrangement = Arrangement.spacedBy(if (usePadding) spacing.value else 0.dp)
         ) {
-            itemsIndexed(items) { index, item ->
-                content(index, item)
+            itemsIndexed(
+                items = items,
+                key = key
+            ) { index, item ->
+                val baseModifier = itemModifier?.invoke(index, item) ?: Modifier
+                Box(modifier = baseModifier) {
+                    content(index, item)
+                }
             }
         }
     }

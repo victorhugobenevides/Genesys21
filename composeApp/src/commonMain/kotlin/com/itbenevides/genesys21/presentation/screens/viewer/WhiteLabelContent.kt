@@ -43,7 +43,6 @@ fun WhiteLabelContent(
     onEvent: (WhiteLabelEvent) -> Unit,
     originalPage: Page,
     displayCategories: List<String>,
-    allProducts: List<Product>,
     onManageCategories: () -> Unit,
     onPickImage: () -> Unit,
     onDiscardClicked: () -> Unit
@@ -93,6 +92,9 @@ fun WhiteLabelContent(
             if (state.isLoading) {
                 GenesysLoadingOverlay()
             } else {
+                // Debug info (Remove later)
+                // Text("Debug: CompCount=${state.page.components.size}, isWide=$isWideScreen", modifier = Modifier.padding(8.dp).align(Alignment.BottomStart), color = androidx.compose.ui.graphics.Color.Red)
+
                 GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
                     GenesysWeightBox(if (isWideScreen) 0.65f else 1f) {
                         GenesysColumn(
@@ -119,11 +121,10 @@ fun WhiteLabelContent(
                                     maxWidth = GenesysDimens.ViewerMaxWidth,
                                     usePadding = true,
                                     spacing = GenesysSpacing.Medium, // Reduzido para celulares
-                                    key = { _, component -> component.hashCode() },
-                                    itemModifier = { _, _ -> Modifier.animateItem() }
+                                    key = { _, component -> component.hashCode() }
                                 ) { index, component ->
                                     val isEditing = state.editingComponentIndex == index
-                                    ComponentWrapperUI(component, index, isEditing, displayCategories, allProducts, onEvent)
+                                    ComponentWrapperUI(component, index, isEditing, displayCategories, onEvent)
                                 }
                             }
                         }
@@ -183,7 +184,6 @@ private fun ComponentWrapperUI(
     index: Int,
     isEditing: Boolean,
     allCategories: List<String>,
-    allProducts: List<Product>,
     onEvent: (WhiteLabelEvent) -> Unit
 ) {
     Box(
@@ -201,7 +201,6 @@ private fun ComponentWrapperUI(
             isEditMode = true,
             onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
             allAvailableCategories = allCategories,
-            allProducts = allProducts,
             onProductClick = { product ->
                 onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
             }
