@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.domain.model
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.SerialName
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 
@@ -18,6 +19,7 @@ sealed class PageComponent {
     open val destinationUrl: String? = null
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Text")
     data class Text(
         val content: String,
         val style: String = "BODY", // TITLE, SUBTITLE, BODY, CAPTION
@@ -37,6 +39,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Header")
     data class Header(
         val title: String,
         val isUppercase: Boolean = false,
@@ -55,6 +58,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Image")
     data class Image(
         val url: String,
         val caption: String? = null,
@@ -73,6 +77,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Button")
     data class Button(
         val text: String,
         val url: String,
@@ -88,6 +93,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProfileHeader")
     data class ProfileHeader(
         val imageUrl: String,
         val name: String,
@@ -105,6 +111,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.SocialLinks")
     data class SocialLinks(
         val instagram: String? = null,
         val whatsapp: String? = null,
@@ -121,6 +128,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductGrid")
     data class ProductGrid(
         val productIds: List<String>,
         val columns: Int = 2,
@@ -136,6 +144,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CartComponent")
     data class CartComponent(
         val title: String = "Carrinho",
         @Transient
@@ -149,6 +158,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.OrderTrackingComponent")
     data class OrderTrackingComponent(
         val title: String = "Acompanhar Pedido",
         @Transient
@@ -162,6 +172,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryComponent")
     data class CategoryComponent(
         val categoryName: String,
         val title: String? = null,
@@ -177,6 +188,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
     data class CategoryFilter(
         @Transient
         override val customLabel: String? = null,
@@ -189,6 +201,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Filter")
     data class Filter(
         val placeholder: String = "Buscar...",
         @Transient
@@ -202,6 +215,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.FeaturedProductsComponent")
     data class FeaturedProductsComponent(
         val productIds: List<String>,
         val title: String = "Destaques",
@@ -216,6 +230,7 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductList")
     data class ProductList(
         val products: List<Product> = emptyList(),
         val title: String = "Lista de Produtos",
