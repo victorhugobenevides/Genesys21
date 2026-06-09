@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
 
 /**
