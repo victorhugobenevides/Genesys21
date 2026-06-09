@@ -7,9 +7,18 @@ import com.itbenevides.genesys21.data.repository.AndroidAuthRepository
 import com.itbenevides.genesys21.data.repository.AndroidCartRepository
 import com.itbenevides.genesys21.data.repository.AndroidCustomerRepository
 import org.koin.dsl.module
+import org.koin.android.ext.koin.androidContext
 
 actual fun platformModule() = module {
     single<AuthRepository> { AndroidAuthRepository() }
-    single<CartRepository> { AndroidCartRepository() }
+    single<CartRepository> { 
+        AndroidCartRepository(
+            context = androidContext(),
+            httpClient = get(),
+            baseUrl = getBaseUrl(),
+            json = get(),
+            authRepository = get()
+        ) 
+    }
     single<CustomerRepository> { AndroidCustomerRepository() }
 }

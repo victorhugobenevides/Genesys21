@@ -50,7 +50,8 @@ fun HeaderComponentEditor(
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
             component = previewComponent,
-            isEditMode = false
+            isEditMode = false,
+            allProducts = emptyList()
         )
         
         GenesysSpacer(GenesysSpacing.Large)

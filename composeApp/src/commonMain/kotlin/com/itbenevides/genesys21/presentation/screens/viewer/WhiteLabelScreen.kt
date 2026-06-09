@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -33,6 +34,7 @@ import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.feedback.GenesysLoadingOverlay
 import com.itbenevides.genesys21.ui.components.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.feedback.GenesysBottomSheet
+import com.itbenevides.genesys21.ui.components.feedback.GenesysConfirmDialog
 import com.itbenevides.genesys21.ui.components.image.GenesysColorCircle
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
 import com.itbenevides.genesys21.ui.components.layout.*
@@ -58,6 +60,7 @@ fun WhiteLabelScreen(
 
     val pristinePage = remember(page.id) { page }
     var showCategoryManagement by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
 
     var state by remember { 
         val draft = viewModel.getDraft(page.id)
@@ -188,6 +191,8 @@ fun WhiteLabelScreen(
         }
     }
 
+    val allProducts by viewModel.allAvailableProducts.collectAsState()
+
     AppTheme(themeConfig = state.page.theme) {
         WhiteLabelContent(
             state = state, 
@@ -195,14 +200,41 @@ fun WhiteLabelScreen(
             onEvent = ::onEvent, 
             originalPage = pristinePage,
             displayCategories = effectiveCategories,
+            allProducts = allProducts,
             onManageCategories = { showCategoryManagement = true },
-            onPickImage = { imagePicker() }
+            onPickImage = { imagePicker() },
+            onDiscardClicked = { showDiscardDialog = true }
         )
 
         if (showCategoryManagement) {
             CategoryManagementDialog(
                 viewModel = viewModel,
                 onDismiss = { showCategoryManagement = false }
+            )
+        }
+
+        if (showDiscardDialog) {
+            GenesysConfirmDialog(
+                onDismissRequest = { showDiscardDialog = false },
+                title = GenesysStrings.DiscardDraft,
+                text = "Tem certeza que deseja descartar todas as alterações não publicadas?",
+                icon = GenesysIcons.Delete,
+                confirmButton = {
+                    GenesysLoadingButton(
+                        text = "Descartar",
+                        onClick = {
+                            viewModel.clearDraft(state.page.id)
+                            onEvent(WhiteLabelEvent.OnPageUpdated(pristinePage))
+                            showDiscardDialog = false
+                        },
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = { showDiscardDialog = false }) {
+                        androidx.compose.material3.Text("Cancelar")
+                    }
+                }
             )
         }
     }
@@ -215,8 +247,10 @@ private fun WhiteLabelContent(
     onEvent: (WhiteLabelEvent) -> Unit,
     originalPage: Page,
     displayCategories: List<String>,
+    allProducts: List<Product>,
     onManageCategories: () -> Unit,
-    onPickImage: () -> Unit
+    onPickImage: () -> Unit,
+    onDiscardClicked: () -> Unit
 ) {
     GenesysPage(
         topBar = {
@@ -235,10 +269,7 @@ private fun WhiteLabelContent(
                             icon = GenesysIcons.Delete,
                             contentDescription = GenesysStrings.DiscardDraft,
                             tint = MaterialTheme.colorScheme.error,
-                            onClick = {
-                                viewModel.clearDraft(state.page.id)
-                                onEvent(WhiteLabelEvent.OnPageUpdated(originalPage))
-                            }
+                            onClick = onDiscardClicked
                         )
                     }
 
@@ -291,10 +322,12 @@ private fun WhiteLabelContent(
                                     items = state.page.components,
                                     maxWidth = GenesysDimens.ViewerMaxWidth,
                                     usePadding = true,
-                                    spacing = GenesysSpacing.Medium // Reduzido para celulares
+                                    spacing = GenesysSpacing.Medium, // Reduzido para celulares
+                                    key = { _, component -> component.hashCode() },
+                                    itemModifier = { _, _ -> Modifier.animateItem() }
                                 ) { index, component ->
                                     val isEditing = state.editingComponentIndex == index
-                                    ComponentWrapperUI(component, index, isEditing, displayCategories, onEvent)
+                                    ComponentWrapperUI(component, index, isEditing, displayCategories, allProducts, onEvent)
                                 }
                             }
                         }
@@ -358,6 +391,7 @@ private fun ComponentWrapperUI(
     index: Int,
     isEditing: Boolean,
     allCategories: List<String>,
+    allProducts: List<Product>,
     onEvent: (WhiteLabelEvent) -> Unit
 ) {
     Box(
@@ -375,6 +409,7 @@ private fun ComponentWrapperUI(
             isEditMode = true,
             onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
             allAvailableCategories = allCategories,
+            allProducts = allProducts,
             onProductClick = { product ->
                 onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
             }

@@ -51,6 +51,7 @@ fun PageComponentRenderer(
     filterQuery: String = "",
     onFilterQueryChange: (String) -> Unit = {},
     allAvailableCategories: List<String> = emptyList(),
+    allProducts: List<Product> = emptyList(),
     isEditMode: Boolean = false,
     onEditClick: (() -> Unit)? = null
 ) {
@@ -93,6 +94,30 @@ fun PageComponentRenderer(
                         it.name.contains(filterQuery, ignoreCase = true) || 
                         (it.categoryName?.contains(filterQuery, ignoreCase = true) == true)
                     }
+                }
+            }
+            is PageComponent.ProductGrid -> {
+                val gridProducts = allProducts.filter { it.id in component.productIds }
+                if (isCategoryFilterActive) {
+                    gridProducts.any { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
+                } else {
+                    gridProducts.any { it.name.contains(filterQuery, ignoreCase = true) || (it.categoryName?.contains(filterQuery, ignoreCase = true) == true) }
+                }
+            }
+            is PageComponent.FeaturedProductsComponent -> {
+                val featProducts = allProducts.filter { it.id in component.productIds }
+                if (isCategoryFilterActive) {
+                    featProducts.any { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
+                } else {
+                    featProducts.any { it.name.contains(filterQuery, ignoreCase = true) || (it.categoryName?.contains(filterQuery, ignoreCase = true) == true) }
+                }
+            }
+            is PageComponent.CategoryComponent -> {
+                if (isCategoryFilterActive) {
+                    component.categoryName.equals(filterQuery, ignoreCase = true)
+                } else {
+                    val catProducts = allProducts.filter { it.categoryName == component.categoryName }
+                    catProducts.any { it.name.contains(filterQuery, ignoreCase = true) }
                 }
             }
             is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
@@ -365,7 +390,111 @@ fun PageComponentRenderer(
                     }
                 }
             }
-            else -> {}
+            is PageComponent.ProductGrid -> {
+                val productsToDisplay = remember(component.productIds, allProducts) {
+                    allProducts.filter { it.id in component.productIds }
+                }
+                if (productsToDisplay.isNotEmpty()) {
+                    ProductGridLayout(
+                        products = productsToDisplay,
+                        columns = component.columns,
+                        showPrice = component.showPrice,
+                        onProductClick = onProductClick,
+                        onAddToCart = { router.viewModel.addToCart(it) },
+                        isEditMode = isEditMode
+                    )
+                }
+            }
+            is PageComponent.FeaturedProductsComponent -> {
+                val productsToDisplay = remember(component.productIds, allProducts) {
+                    allProducts.filter { it.id in component.productIds }
+                }
+                if (productsToDisplay.isNotEmpty()) {
+                    GenesysColumn(usePadding = true) {
+                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            items(productsToDisplay) { product ->
+                                ProductCard(
+                                    product = product,
+                                    modifier = Modifier.width(200.dp),
+                                    onClick = onProductClick,
+                                    onAddToCart = { router.viewModel.addToCart(product) },
+                                    isEditMode = isEditMode
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            is PageComponent.CategoryComponent -> {
+                val productsToDisplay = remember(component.categoryName, allProducts) {
+                    allProducts.filter { it.categoryName == component.categoryName }
+                }
+                if (productsToDisplay.isNotEmpty()) {
+                    GenesysColumn(usePadding = true) {
+                        component.title?.let {
+                            GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                            GenesysSpacer(GenesysSpacing.Medium)
+                        }
+                        if (component.layout == "HORIZONTAL") {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(vertical = 8.dp)
+                            ) {
+                                items(productsToDisplay) { product ->
+                                    ProductCard(
+                                        product = product,
+                                        modifier = Modifier.width(180.dp),
+                                        onClick = onProductClick,
+                                        onAddToCart = { router.viewModel.addToCart(product) },
+                                        isEditMode = isEditMode
+                                    )
+                                }
+                            }
+                        } else {
+                            ProductGridLayout(
+                                products = productsToDisplay,
+                                columns = 2,
+                                onProductClick = onProductClick,
+                                onAddToCart = { router.viewModel.addToCart(it) },
+                                isEditMode = isEditMode
+                            )
+                        }
+                    }
+                }
+            }
+            is PageComponent.CartComponent -> {
+                GenesysCard(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    onClick = { if(!isEditMode) router.navigateTo(Route.Cart(router.viewModel.pages.value.find { it.id == component.destinationPageId } ?: router.viewModel.pages.value.first())) }
+                ) {
+                    GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(GenesysIcons.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Icon(GenesysIcons.ArrowRight, null)
+                    }
+                }
+            }
+            is PageComponent.OrderTrackingComponent -> {
+                GenesysCard(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    onClick = { if(!isEditMode) router.navigateTo(Route.CustomerOrderHistory(router.viewModel.pages.value.first())) }
+                ) {
+                    GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(GenesysIcons.List, null, tint = MaterialTheme.colorScheme.primary)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Icon(GenesysIcons.ArrowRight, null)
+                    }
+                }
+            }
         }
 
         if (isEditMode) {
@@ -388,6 +517,38 @@ fun PageComponentRenderer(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProductGridLayout(
+    products: List<Product>,
+    columns: Int,
+    showPrice: Boolean = true,
+    onProductClick: ((Product) -> Unit)? = null,
+    onAddToCart: ((Product) -> Unit)? = null,
+    isEditMode: Boolean = false
+) {
+    GenesysColumn(usePadding = true) {
+        products.chunked(columns).forEach { rowProducts ->
+            GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                rowProducts.forEach { product ->
+                    GenesysWeightBox(1f) {
+                        ProductCard(
+                            product = product,
+                            showPrice = showPrice,
+                            onClick = onProductClick,
+                            onAddToCart = { onAddToCart?.invoke(product) },
+                            isEditMode = isEditMode
+                        )
+                    }
+                }
+                if (rowProducts.size < columns) {
+                    repeat(columns - rowProducts.size) { GenesysWeightSpacer(1f) }
+                }
+            }
+            GenesysSpacer(GenesysSpacing.Medium)
         }
     }
 }
@@ -429,6 +590,7 @@ private fun SocialLinkItem(
 fun ProductCard(
     product: Product,
     modifier: Modifier = Modifier,
+    showPrice: Boolean = true,
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null,
     isEditMode: Boolean = false
@@ -516,7 +678,7 @@ fun ProductCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                     
-                    if (product.price > 0) {
+                    if (product.price > 0 && showPrice) {
                         GenesysSpacer(GenesysSpacing.Small)
                         
                         GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

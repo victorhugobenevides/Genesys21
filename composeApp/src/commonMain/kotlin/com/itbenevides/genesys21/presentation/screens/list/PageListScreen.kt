@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.createDefaultPageTemplate
+import com.itbenevides.genesys21.domain.model.profileTemplate
+import com.itbenevides.genesys21.domain.model.blogPostTemplate
 import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -86,9 +89,9 @@ fun PageListScreen(
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
                 val newPage = when(event.templateType) {
-                    PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
-                    PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
-                    PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.PROFESSIONAL_VITRINE -> createDefaultPageTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.BIO_PROFILE -> profileTemplate(id, state.newPageTitle.trim())
+                    PageTemplateType.BLOG_POST -> blogPostTemplate(id, state.newPageTitle.trim())
                     PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
                 }
                 

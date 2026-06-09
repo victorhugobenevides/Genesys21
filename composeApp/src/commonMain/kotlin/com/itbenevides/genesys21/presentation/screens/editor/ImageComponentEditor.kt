@@ -33,9 +33,9 @@ fun ImageComponentEditor(
     var isFullWidth by remember { mutableStateOf(component.isFullWidth) }
 
     val pageOptions = remember(userPages) { userPages.map { it.title } }
-    var currentLinkValue by remember(component.string, component.destinationPageId, userPages) {
+    var currentLinkValue by remember(component.destinationUrl, component.destinationPageId, userPages) {
         val internalTitle = userPages.find { it.id == component.destinationPageId }?.title
-        mutableStateOf(internalTitle ?: component.string)
+        mutableStateOf(internalTitle ?: component.destinationUrl ?: "")
     }
 
     // Cria uma versão temporária do componente para renderizar na pre-visualização real
@@ -51,10 +51,10 @@ fun ImageComponentEditor(
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
         
-        // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
             component = previewComponent,
-            isEditMode = false
+            isEditMode = false,
+            allProducts = emptyList()
         )
         
         GenesysSpacer(GenesysSpacing.Large)
@@ -107,7 +107,7 @@ fun ImageComponentEditor(
                 size = sizeValue.toInt(),
                 isCircular = isCircular,
                 isFullWidth = isFullWidth,
-                string = if (matchingPage == null) currentLinkValue else "",
+                destinationUrl = if (matchingPage == null) currentLinkValue else "",
                 destinationPageId = matchingPage?.id
             ))
         })

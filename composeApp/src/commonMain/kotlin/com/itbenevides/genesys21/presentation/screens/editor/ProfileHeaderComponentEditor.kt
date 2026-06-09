@@ -47,7 +47,8 @@ fun ProfileHeaderComponentEditor(
         
         PageComponentRenderer(
             component = previewComponent,
-            isEditMode = false
+            isEditMode = false,
+            allProducts = emptyList()
         )
         
         GenesysSpacer(GenesysSpacing.Large)

@@ -232,23 +232,21 @@ private fun DataFormSection(
             GenesysSpacer(GenesysSpacing.Medium)
 
             GenesysRow {
-                GenesysWeightBox(1f) {
-                    GenesysTextField(
-                        value = state.price,
-                        onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
-                        label = GenesysStrings.ProductPrice,
-                        icon = GenesysIcons.Payments
-                    )
-                }
+                GenesysTextField(
+                    value = state.price,
+                    onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
+                    label = GenesysStrings.ProductPrice,
+                    icon = GenesysIcons.Payments,
+                    weightValue = 1f
+                )
                 GenesysSpacer(GenesysSpacing.Medium)
-                GenesysWeightBox(1f) {
-                    GenesysTextField(
-                        value = state.stock,
-                        onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
-                        label = GenesysStrings.ProductStock,
-                        icon = GenesysIcons.Numbers
-                    )
-                }
+                GenesysTextField(
+                    value = state.stock,
+                    onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
+                    label = GenesysStrings.ProductStock,
+                    icon = GenesysIcons.Numbers,
+                    weightValue = 1f
+                )
             }
 
             GenesysSpacer(GenesysSpacing.Medium)

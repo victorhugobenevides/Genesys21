@@ -1,45 +1,56 @@
 package com.itbenevides.genesys21.data.repository
 
+import android.content.Context
 import com.itbenevides.genesys21.domain.model.CartItem
-import com.itbenevides.genesys21.domain.repository.CartRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.itbenevides.genesys21.domain.repository.AuthRepository
+import io.ktor.client.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.UUID
 
-class AndroidCartRepository : CartRepository {
-    private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
-    override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
+class AndroidCartRepository(
+    private val context: Context,
+    httpClient: HttpClient,
+    baseUrl: String,
+    json: Json,
+    authRepository: AuthRepository
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
 
-    override suspend fun addToCart(item: CartItem): Result<Unit> {
-        val current = _cartItems.value.toMutableList()
-        val existing = current.find { it.product.id == item.product.id }
-        if (existing != null) {
-            val idx = current.indexOf(existing)
-            current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
-        } else {
-            current.add(item)
+    private val prefs = context.getSharedPreferences("genesys21_prefs", Context.MODE_PRIVATE)
+    private val CART_KEY = "cart_items"
+    private val SESSION_KEY = "session_id"
+    private var cachedSessionId: String? = null
+
+    override fun getSessionId(): String {
+        cachedSessionId?.let { return it }
+        var id = prefs.getString(SESSION_KEY, null)
+        if (id == null) {
+            id = "sess_" + UUID.randomUUID().toString()
+            prefs.edit().putString(SESSION_KEY, id).apply()
         }
-        _cartItems.value = current
-        return Result.success(Unit)
+        cachedSessionId = id
+        return id
     }
 
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filter { it.product.id != productId }
-        return Result.success(Unit)
+    override suspend fun saveToLocal(items: List<CartItem>) {
+        prefs.edit().putString(CART_KEY, json.encodeToString(items)).apply()
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
-        if (quantity <= 0) return removeFromCart(productId)
-        _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
-        return Result.success(Unit)
+    override suspend fun loadFromLocal(): List<CartItem> {
+        val cached = prefs.getString(CART_KEY, null) ?: return emptyList()
+        return try {
+            json.decodeFromString(cached)
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
-    override suspend fun clearCart(): Result<Unit> {
-        _cartItems.value = emptyList()
-        return Result.success(Unit)
+    override suspend fun saveSessionId(id: String) {
+        prefs.edit().putString(SESSION_KEY, id).apply()
+        cachedSessionId = id
     }
 
-    override suspend fun syncWithServer(): Result<Unit> = Result.success(Unit)
-    override suspend fun loadInitialCart() {}
-    override fun getSessionId(): String = "android_session"
+    override suspend fun loadSessionId(): String? {
+        return prefs.getString(SESSION_KEY, null)
+    }
 }

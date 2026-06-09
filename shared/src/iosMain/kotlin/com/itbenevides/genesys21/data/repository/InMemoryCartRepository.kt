@@ -1,45 +1,37 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.CartItem
-import com.itbenevides.genesys21.domain.repository.CartRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.itbenevides.genesys21.domain.repository.AuthRepository
+import io.ktor.client.*
+import kotlinx.serialization.json.Json
 
-class InMemoryCartRepository : CartRepository {
-    private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
-    override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
+class InMemoryCartRepository(
+    httpClient: HttpClient,
+    baseUrl: String,
+    json: Json,
+    authRepository: AuthRepository
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
 
-    override suspend fun addToCart(item: CartItem): Result<Unit> {
-        val current = _cartItems.value.toMutableList()
-        val existing = current.find { it.product.id == item.product.id }
-        if (existing != null) {
-            val idx = current.indexOf(existing)
-            current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
-        } else {
-            current.add(item)
-        }
-        _cartItems.value = current
-        return Result.success(Unit)
+    private var session: String? = null
+
+    override fun getSessionId(): String {
+        if (session == null) session = "ios_sess_" + (1..8).map { (0..9).random() }.joinToString("")
+        return session!!
     }
 
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filter { it.product.id != productId }
-        return Result.success(Unit)
+    override suspend fun saveToLocal(items: List<CartItem>) {
+        // Just in memory
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
-        if (quantity <= 0) return removeFromCart(productId)
-        _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
-        return Result.success(Unit)
+    override suspend fun loadFromLocal(): List<CartItem> {
+        return emptyList()
     }
 
-    override suspend fun clearCart(): Result<Unit> {
-        _cartItems.value = emptyList()
-        return Result.success(Unit)
+    override suspend fun saveSessionId(id: String) {
+        session = id
     }
 
-    override suspend fun syncWithServer(): Result<Unit> = Result.success(Unit)
-    override suspend fun loadInitialCart() {}
-    override fun getSessionId(): String = "ios_session"
+    override suspend fun loadSessionId(): String? {
+        return session
+    }
 }

@@ -228,6 +228,8 @@ fun AppTheme(
         PageThemeConfig.DEEP_SPACE -> DeepSpaceColorScheme
         PageThemeConfig.LUXURY_GOLD -> LuxuryGoldColorScheme
         PageThemeConfig.RADARANI -> RadaraniColorScheme
+        PageThemeConfig.CLEAN -> MinimalColorScheme
+        PageThemeConfig.MODERN -> OceanColorScheme
         PageThemeConfig.DEFAULT -> RoyalColorScheme
     }
 

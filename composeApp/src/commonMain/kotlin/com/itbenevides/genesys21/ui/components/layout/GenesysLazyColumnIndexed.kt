@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.ui.components.layout
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,15 +18,15 @@ fun <T> GenesysLazyColumnIndexed(
     maxWidth: Dp? = null,
     spacing: GenesysSpacing = GenesysSpacing.Medium,
     usePadding: Boolean = true,
+    key: ((Int, T) -> Any)? = null,
+    itemModifier: @Composable LazyItemScope.(Int, T) -> Modifier = { _, _ -> Modifier },
     content: @Composable (Int, T) -> Unit
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         val columnModifier = if (maxWidth != null) modifier.widthIn(max = maxWidth) else modifier.fillMaxWidth()
-        
-        // Responsividade: Reduz padding em telas estreitas (mobile)
-        // Usamos this.maxWidth para referenciar o valor do BoxWithConstraintsScope e não o parâmetro da função
+      
         val horizontalPadding = if (this.maxWidth < 600.dp) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
-        
+      
         LazyColumn(
             modifier = columnModifier.fillMaxHeight(),
             contentPadding = if (usePadding) {
@@ -35,8 +36,13 @@ fun <T> GenesysLazyColumnIndexed(
             },
             verticalArrangement = Arrangement.spacedBy(if (usePadding) spacing.value else 0.dp)
         ) {
-            itemsIndexed(items) { index, item ->
-                content(index, item)
+            itemsIndexed(
+                items = items,
+                key = key
+            ) { index, item ->
+                Box(modifier = itemModifier(index, item)) {
+                    content(index, item)
+                }
             }
         }
     }
