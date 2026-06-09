@@ -16,7 +16,11 @@ This document defines the branching and development standards for the Genesys21 
 4. **Pull Requests**:
    - Must include a description of the changes.
    - Should be reviewed (if possible).
-   - Must pass build checks (CI).
+   - **MUST PASS CI BUILD**: Direct merge to `develop` or `main` without passing CI is strictly prohibited.
+5. **Static Analysis**: All PRs must have no "ERROR" level warnings in Android Studio/IntelliJ inspections before being marked as ready for review.
+6. **Automated Testing**: 
+   - Feature additions must include Unit Tests.
+   - Bug fixes must include a regression test when applicable (e.g., verifying State transitions).
 
 ## Commit Messages
 
