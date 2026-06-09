@@ -46,19 +46,19 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.koin.android)
             implementation(libs.firebase.auth.kmp)
-            implementation("dev.gitlive:firebase-analytics:2.1.0")
+            implementation("dev.gitlive:firebase-analytics:2.4.0")
         }
         
         val iosMain by getting {
             dependencies {
                 implementation(libs.firebase.auth.kmp)
-                implementation("dev.gitlive:firebase-analytics:2.1.0")
+                implementation("dev.gitlive:firebase-analytics:2.4.0")
             }
         }
         
         jsMain.dependencies {
             implementation(libs.firebase.auth.kmp)
-            implementation("dev.gitlive:firebase-analytics:2.1.0") 
+            implementation("dev.gitlive:firebase-analytics:2.4.0") 
         }
 
         wasmJsMain.dependencies {
