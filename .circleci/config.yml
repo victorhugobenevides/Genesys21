@@ -1,0 +1,66 @@
+version: 2.1
+
+orbs:
+  android: circleci/android@2.5.0
+
+jobs:
+  test-and-validate:
+    executor:
+      name: android/android-machine
+      resource-class: large
+      tag: 2024.01.1
+    steps:
+      - checkout
+      - run:
+          name: Grant execute permission for gradlew
+          command: chmod +x gradlew
+      - run:
+          name: Decode Google Services JSON (Android)
+          command: echo "${GOOGLE_SERVICES_JSON_ANDROID}" > composeApp/google-services.json
+      - run:
+          name: Decode Firebase Admin JSON (Server)
+          command: |
+            mkdir -p server/src/main/resources
+            echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json
+      - run:
+          name: Run Unit Tests (Common & Android)
+          command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest -Pandroid.useAndroidX=true
+      - run:
+          name: Build Server & Run Tests
+          command: ./gradlew :server:test :server:build -Pandroid.useAndroidX=true
+      - run:
+          name: Validate WasmJs Compilation
+          command: ./gradlew :composeApp:compileKotlinWasmJs -Pandroid.useAndroidX=true
+
+  test-and-validate-ios:
+    macos:
+      xcode: 15.2.0
+    resource_class: macos.m1.large.gen1
+    steps:
+      - checkout
+      - run:
+          name: Grant execute permission for gradlew
+          command: chmod +x gradlew
+      - run:
+          name: Decode Google Service Info Plist (iOS)
+          command: echo "${GOOGLE_SERVICES_PLIST_IOS}" > iosApp/iosApp/GoogleService-Info.plist
+      - run:
+          name: Build iOS Framework (Link Validation)
+          command: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -Pandroid.useAndroidX=true
+      - run:
+          name: Validate Xcode Build (Simulated)
+          command: |
+            cd iosApp
+            xcodebuild -project iosApp.xcodeproj \
+                       -scheme iosApp \
+                       -sdk iphonesimulator \
+                       -configuration Debug \
+                       build \
+                       CODE_SIGNING_ALLOWED=NO
+
+workflows:
+  version: 2
+  validate-project:
+    jobs:
+      - test-and-validate
+      - test-and-validate-ios
