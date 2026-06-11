@@ -202,6 +202,20 @@ fun PageComponentRenderer(
                     }
                 }
             }
+            is PageComponent.CategoryComponent -> {
+                // Implementação básica para evitar falha de renderização, pode ser expandida depois
+                GenesysColumn(usePadding = true) {
+                    component.title?.let {
+                        GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysSpacing.Small)
+                    }
+                    GenesysLoadingButton(
+                        text = "Ver Categoria: ${component.categoryName}",
+                        onClick = { onFilterQueryChange(component.categoryName) },
+                        fillWidth = true
+                    )
+                }
+            }
             is PageComponent.Filter -> {
                 GenesysBox(Modifier.padding(vertical = GenesysDimens.SpacingMedium)) {
                     GenesysSearchBar(

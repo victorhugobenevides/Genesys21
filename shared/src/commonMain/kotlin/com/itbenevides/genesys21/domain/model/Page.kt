@@ -114,6 +114,18 @@ sealed class PageComponent {
     ) : PageComponent()
 
     @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryComponent")
+    data class CategoryComponent(
+        val categoryName: String,
+        val title: String? = null,
+        val layout: String = "GRID", // GRID, HORIZONTAL
+        override val customLabel: String? = null,
+        override val isFilterable: Boolean = false,
+        override val destinationUrl: String? = null,
+        override val destinationPageId: String? = null
+    ) : PageComponent()
+
+    @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
     data class CategoryFilter(
         override val customLabel: String? = null,
