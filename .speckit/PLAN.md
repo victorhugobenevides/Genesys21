@@ -50,7 +50,7 @@ The Genesys21 architecture follows **Clean Architecture** principles, separating
 - **Description**: Add unit tests for `WhiteLabelState` transitions and `PageViewModel` draft logic.
 - **Acceptance Criteria**:
   - [x] `WhiteLabelStateTest.kt` implemented.
-  - [ ] `PageViewModelTest.kt` updated with draft persistence scenarios.
+  - [x] `PageViewModelTest.kt` updated with draft persistence scenarios.
 
 ### Wave 3: Validation & Polish
 **T005: Multiplatform CI/CD Verification**
@@ -58,9 +58,9 @@ The Genesys21 architecture follows **Clean Architecture** principles, separating
 - **Estimated Time**: 1 hour
 - **Description**: Run the full CI pipeline to ensure no regressions across any platform.
 - **Acceptance Criteria**:
-  - [ ] Android build passes.
-  - [ ] iOS framework links successfully.
-  - [ ] WasmJs browser distribution build passes.
+  - [x] Android build passes.
+  - [x] iOS framework links successfully.
+  - [x] WasmJs browser distribution build passes.
 
 ## Execution Timeline
 
