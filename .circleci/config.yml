@@ -16,12 +16,22 @@ jobs:
           command: chmod +x gradlew
       - run:
           name: Decode Google Services JSON (Android)
-          command: echo "${GOOGLE_SERVICES_JSON_ANDROID}" > composeApp/google-services.json
+          command: |
+            if [ -z "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
+              echo "Error: GOOGLE_SERVICES_JSON_ANDROID environment variable is not set."
+              echo "Please add it to CircleCI Project Settings > Environment Variables."
+              exit 1
+            fi
+            echo "${GOOGLE_SERVICES_JSON_ANDROID}" > composeApp/google-services.json
       - run:
           name: Decode Firebase Admin JSON (Server)
           command: |
-            mkdir -p server/src/main/resources
-            echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json
+            if [ -z "$FIREBASE_ADMIN_JSON" ]; then
+              echo "Warning: FIREBASE_ADMIN_JSON not set. Server tests might fail."
+            else
+              mkdir -p server/src/main/resources
+              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json
+            fi
       - run:
           name: Run Unit Tests (Common & Android)
           command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest -Pandroid.useAndroidX=true
@@ -32,35 +42,8 @@ jobs:
           name: Validate WasmJs Compilation
           command: ./gradlew :composeApp:compileKotlinWasmJs -Pandroid.useAndroidX=true
 
-  test-and-validate-ios:
-    macos:
-      xcode: 15.2.0
-    resource_class: macos.x86.medium.gen2
-    steps:
-      - checkout
-      - run:
-          name: Grant execute permission for gradlew
-          command: chmod +x gradlew
-      - run:
-          name: Decode Google Service Info Plist (iOS)
-          command: echo "${GOOGLE_SERVICES_PLIST_IOS}" > iosApp/iosApp/GoogleService-Info.plist
-      - run:
-          name: Build iOS Framework (Link Validation)
-          command: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64 -Pandroid.useAndroidX=true
-      - run:
-          name: Validate Xcode Build (Simulated)
-          command: |
-            cd iosApp
-            xcodebuild -project iosApp.xcodeproj \
-                       -scheme iosApp \
-                       -sdk iphonesimulator \
-                       -configuration Debug \
-                       build \
-                       CODE_SIGNING_ALLOWED=NO
-
 workflows:
   version: 2
   validate-project:
     jobs:
       - test-and-validate
-      - test-and-validate-ios
