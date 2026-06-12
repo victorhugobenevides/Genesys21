@@ -19,10 +19,22 @@ jobs:
           command: |
             if [ -z "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
               echo "Error: GOOGLE_SERVICES_JSON_ANDROID environment variable is not set."
-              echo "Please add it to CircleCI Project Settings > Environment Variables."
               exit 1
             fi
-            echo "${GOOGLE_SERVICES_JSON_ANDROID}" > composeApp/google-services.json
+            # Tenta decodificar como base64, se falhar assume que é texto puro
+            if echo "$GOOGLE_SERVICES_JSON_ANDROID" | base64 --decode > /dev/null 2>&1; then
+              echo "$GOOGLE_SERVICES_JSON_ANDROID" | base64 --decode > composeApp/google-services.json
+              echo "Decoded from Base64"
+            else
+              echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
+              echo "Used raw text"
+            fi
+            # Validação básica de JSON
+            if ! grep -q "project_info" composeApp/google-services.json; then
+              echo "Error: google-services.json is invalid or missing project_info."
+              cat composeApp/google-services.json # Debug (cuidado se houver secrets sensíveis no console)
+              exit 1
+            fi
       - run:
           name: Decode Firebase Admin JSON (Server)
           command: |
