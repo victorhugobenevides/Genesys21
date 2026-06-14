@@ -1,0 +1,65 @@
+version: 2.1
+
+orbs:
+  android: circleci/android@2.5.0
+
+jobs:
+  test-and-validate:
+    executor:
+      name: android/android-machine
+      resource-class: large
+      tag: 2024.01.1
+    steps:
+      - checkout
+      - run:
+          name: Grant execute permission for gradlew
+          command: chmod +x gradlew
+      - run:
+          name: Decode Google Services JSON (Android)
+          command: |
+            if [ -z "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
+              echo "Error: GOOGLE_SERVICES_JSON_ANDROID environment variable is not set."
+              exit 1
+            fi
+            
+            # Remove espaços e quebras de linha para o teste de base64
+            CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
+            
+            # Tenta decodificar e verifica se o resultado contém a chave obrigatória
+            DECODED=$(echo "$CLEAN_VAR" | base64 --decode 2>/dev/null || echo "failed")
+            
+            if echo "$DECODED" | grep -q "project_info"; then
+              echo "$DECODED" > composeApp/google-services.json
+              echo "✓ Decoded from Base64"
+            elif echo "$GOOGLE_SERVICES_JSON_ANDROID" | grep -q "project_info"; then
+              echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
+              echo "✓ Used raw text (contains project_info)"
+            else
+              echo "CRITICAL ERROR: Variable content does not appear to be a valid google-services.json."
+              echo "Length of variable: ${#GOOGLE_SERVICES_JSON_ANDROID} characters."
+              exit 1
+            fi
+      - run:
+          name: Decode Firebase Admin JSON (Server)
+          command: |
+            if [ -z "$FIREBASE_ADMIN_JSON" ]; then
+              echo "Warning: FIREBASE_ADMIN_JSON not set. Server tests might fail."
+            else
+              mkdir -p server/src/main/resources
+              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json
+            fi
+      - run:
+          name: Run Unit Tests (Common & Android)
+          command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest -Pandroid.useAndroidX=true
+      - run:
+          name: Build Server & Run Tests
+          command: ./gradlew :server:test :server:build -Pandroid.useAndroidX=true
+      - run:
+          name: Validate WasmJs Compilation
+          command: ./gradlew :composeApp:compileKotlinWasmJs -Pandroid.useAndroidX=true
+
+workflows:
+  version: 2
+  validate-project:
+    jobs:
+      - test-and-validate
