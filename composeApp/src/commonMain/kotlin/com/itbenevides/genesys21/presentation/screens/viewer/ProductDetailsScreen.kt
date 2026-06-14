@@ -15,6 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.util.glassmorphic
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -197,9 +200,12 @@ private fun ProductImageCarousel(
                 if (state.product.imageUrls.size > 1) {
                     if (pagerState.currentPage > 0) {
                         Surface(
-                            modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp),
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .padding(start = 16.dp)
+                                .glassmorphic(CircleShape, alpha = 0.4f),
                             shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.3f),
+                            color = Color.Transparent,
                             contentColor = Color.White
                         ) {
                             GenesysIconButton(
@@ -212,9 +218,12 @@ private fun ProductImageCarousel(
                     
                     if (pagerState.currentPage < state.product.imageUrls.size - 1) {
                         Surface(
-                            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 16.dp)
+                                .glassmorphic(CircleShape, alpha = 0.4f),
                             shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.3f),
+                            color = Color.Transparent,
                             contentColor = Color.White
                         ) {
                             GenesysIconButton(

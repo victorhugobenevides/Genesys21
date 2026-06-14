@@ -2,7 +2,7 @@
 
 Este arquivo contém a lista ordenada de tarefas para a implementação da Fase 2. Cada tarefa deve ser executada em sua própria branch seguindo o fluxo de Gitflow.
 
-## Wave 1: Foundation (Design System Tokens)
+## Wave 1: Foundation (Design System Tokens) - COMPLETED
 
 - [x] **T006: Design System Tokens & Custom Modifiers**
     - **GitHub Issue**: #82
@@ -19,7 +19,7 @@ Este arquivo contém a lista ordenada de tarefas para a implementação da Fase 
 
 ---
 
-## Wave 2: Screen Enhancements (Visual Identity)
+## Wave 2: Screen Enhancements (Visual Identity) - COMPLETED
 
 - [x] **T007: Premium Login Screen Redesign**
     - **GitHub Issue**: #83
@@ -47,36 +47,36 @@ Este arquivo contém a lista ordenada de tarefas para a implementação da Fase 
 
 ---
 
-## Wave 3: Systems & Advanced Interactions
+## Wave 3: Systems & Advanced Interactions - COMPLETED
 
-- [ ] **T010: Cart & Stepper Refinement**
+- [x] **T010: Cart & Stepper Refinement**
     - **GitHub Issue**: #86
     - **Dependencies**: T006
     - **Description**: Animate progress dots and cart item removal transitions.
     - **Acceptance Criteria**:
-        - [ ] Stepper dots scale dynamically.
-        - [ ] Cart item removal uses fade + slide animation.
+        - [x] Stepper dots scale dynamically.
+        - [x] Cart item removal uses fade + slide animation.
 
-- [ ] **T011: Snappy Product Carousel & Page Indicators**
+- [x] **T011: Snappy Product Carousel & Page Indicators**
     - **GitHub Issue**: #87
     - **Dependencies**: T006
     - **Description**: Upgrade carousels with page-snapping and scaling dots.
     - **Acceptance Criteria**:
-        - [ ] Snappy transitions in `HorizontalPager`.
-        - [ ] Active dot scaling to 1.5x radius.
+        - [x] Snappy transitions in `HorizontalPager`.
+        - [x] Active dot scaling to 1.5x radius.
 
-- [ ] **T014: Dashboard-Style Floating Editor (Desktop)**
+- [x] **T014: Dashboard-Style Floating Editor (Desktop)**
     - **GitHub Issue**: #90
     - **Dependencies**: T006
     - **Description**: Refactor WhiteLabel Editor into a floating glass panel.
     - **Acceptance Criteria**:
-        - [ ] Desktop layout (>1000dp) uses floating card.
-        - [ ] Seamless transition from Mobile UI.
+        - [x] Desktop layout (>1000dp) uses floating card.
+        - [x] Seamless transition from Mobile UI.
 
-- [ ] **T012: Editor Loading Skeletons & Highlights**
+- [x] **T012: Editor Loading Skeletons & Highlights**
     - **GitHub Issue**: #88
     - **Dependencies**: T006
     - **Description**: Add pulsing handles for drag operations and skeleton shimmers.
     - **Acceptance Criteria**:
-        - [ ] Shimmers active during component loading.
-        - [ ] Pulsing highlight on active reorder handle.
+        - [x] Shimmers active during component loading.
+        - [x] Pulsing highlight on active reorder handle.

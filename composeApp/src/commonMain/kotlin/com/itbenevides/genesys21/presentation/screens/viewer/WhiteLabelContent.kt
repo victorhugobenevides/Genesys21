@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -13,6 +14,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
@@ -35,6 +39,10 @@ import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.glassmorphic
+import com.itbenevides.genesys21.ui.util.pulse
+import com.itbenevides.genesys21.ui.util.shimmerBrush
+import com.itbenevides.genesys21.ui.util.staggeredEntry
 
 @Composable
 fun WhiteLabelContent(
@@ -52,6 +60,7 @@ fun WhiteLabelContent(
             GenesysTopAppBar(
                 title = state.page.title,
                 onBack = { onEvent(WhiteLabelEvent.OnBackClicked) },
+                isTranslucent = true,
                 actions = {
                      GenesysIconButton(
                         icon = GenesysIcons.Palette, 
@@ -92,11 +101,14 @@ fun WhiteLabelContent(
             if (state.isLoading) {
                 GenesysLoadingOverlay()
             } else {
-                // Debug info (Remove later)
-                // Text("Debug: CompCount=${state.page.components.size}, isWide=$isWideScreen", modifier = Modifier.padding(8.dp).align(Alignment.BottomStart), color = androidx.compose.ui.graphics.Color.Red)
-
-                GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
-                    GenesysWeightBox(if (isWideScreen) 0.65f else 1f) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Pre-renderização da Vitrine (Preview)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = if (isWideScreen) 0.dp else 0.dp), // Ajustado pela TopBar translúcida
+                        contentAlignment = Alignment.TopCenter
+                    ) {
                         GenesysColumn(
                             maxWidth = GenesysDimens.ViewerMaxWidth,
                             horizontalAlignment = GenesysAlignment.Center,
@@ -120,7 +132,7 @@ fun WhiteLabelContent(
                                     items = state.page.components,
                                     maxWidth = GenesysDimens.ViewerMaxWidth,
                                     usePadding = true,
-                                    spacing = GenesysSpacing.Medium, // Reduzido para celulares
+                                    spacing = GenesysSpacing.Medium,
                                     key = { _, component -> component.hashCode() }
                                 ) { index, component ->
                                     val isEditing = state.editingComponentIndex == index
@@ -130,11 +142,22 @@ fun WhiteLabelContent(
                         }
                     }
 
+                    // Floating Dashboard para Desktop
                     if (isWideScreen) {
-                        GenesysWeightBox(0.35f) {
-                            GenesysCard(
-                                modifier = Modifier.fillMaxHeight().padding(16.dp),
-                                elevation = GenesysDimens.ElevationMedium
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .width(400.dp)
+                                .align(Alignment.CenterEnd)
+                                .padding(24.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .glassmorphic(RoundedCornerShape(32.dp)),
+                                shape = RoundedCornerShape(32.dp),
+                                tonalElevation = 8.dp,
+                                color = Color.Transparent
                             ) {
                                 state.editingComponentIndex?.let { index ->
                                     ComponentEditorUI(
@@ -160,6 +183,7 @@ fun WhiteLabelContent(
                 }
             }
             
+            // Editor em BottomSheet para Mobile
             if (!isWideScreen) {
                 state.editingComponentIndex?.let { index ->
                     ComponentEditorUI(
@@ -189,11 +213,12 @@ private fun ComponentWrapperUI(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .staggeredEntry(index)
             .then(
                 if (isEditing) Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
                 else Modifier
             )
-            .padding(2.dp) // Reduzido para mobile
+            .padding(2.dp)
             .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) }
     ) {
         PageComponentRenderer(
@@ -206,14 +231,15 @@ private fun ComponentWrapperUI(
             }
         )
 
-        // SEMPRE VISÍVEL: Controles de Gerenciamento (Mover e Excluir)
+        // Controles de Gerenciamento
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val isMobile = maxWidth < 400.dp
             
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(if (isMobile) 4.dp else 8.dp),
+                    .padding(if (isMobile) 4.dp else 8.dp)
+                    .then(if (isEditing) Modifier.pulse() else Modifier),
                 shape = CircleShape,
                 color = if (isEditing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
                 tonalElevation = 6.dp
@@ -302,7 +328,7 @@ private fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
                 }
@@ -312,7 +338,7 @@ private fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
                 }
@@ -325,7 +351,7 @@ private fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
                 }
@@ -345,7 +371,7 @@ private fun ComponentEditorUI(
                             val updated = component.copy(customLabel = newLabel.ifBlank { null }, isHorizontal = isHorizontal)
                             val newList = state.page.components.toMutableList().apply { set(index, updated) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
                 }
@@ -367,7 +393,7 @@ private fun ComponentEditorUI(
                         onSave = { updated: PageComponent.ProfileHeader ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         },
                         onPickImage = onPickImage,
                         isUploading = state.isUploading
@@ -379,7 +405,7 @@ private fun ComponentEditorUI(
                         onSave = { updated: PageComponent.SocialLinks ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
                 }
@@ -389,7 +415,7 @@ private fun ComponentEditorUI(
                         onSave = { updated: PageComponent.Button ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                         }
                     )
                 }

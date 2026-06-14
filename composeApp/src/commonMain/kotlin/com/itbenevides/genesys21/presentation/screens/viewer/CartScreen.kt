@@ -1,8 +1,10 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +25,8 @@ import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.util.glassmorphic
 import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.viewmodel.koinViewModel
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
@@ -40,13 +44,12 @@ fun CartScreen(
     val cartItems by viewModel.cart.collectAsState()
     val total by viewModel.cartTotal.collectAsState()
     val customerName by viewModel.customerName.collectAsState()
-    val customerPhone by viewModel.customerPhone.collectAsState() // CARREGA TELEFONE SALVO
+    val customerPhone by viewModel.customerPhone.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
 
     var state by remember { mutableStateOf(CartScreenState()) }
     
-    // Sincroniza o estado inicial com os dados persistidos
     LaunchedEffect(customerName, customerPhone) {
         state = state.copy(
             customerName = customerName,
@@ -74,7 +77,7 @@ fun CartScreen(
                 viewModel.removeFromCart(event.productId)
             }
             is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
-            is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone) // SALVA TELEFONE NA HORA
+            is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone)
             is CartScreenEvent.OnCheckoutClicked -> {
                 viewModel.submitOrder(page, state.customerPhone) { orderId ->
                     onOrderSubmitted(orderId)
@@ -217,7 +220,10 @@ private fun CheckoutSummarySection(state: CartScreenState, onEvent: (CartScreenE
     GenesysColumn(usePadding = false) {
         IdentificationCard(state, onEvent)
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysCard(backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)) {
+        GenesysCard(
+            modifier = Modifier.glassmorphic(androidx.compose.foundation.shape.RoundedCornerShape(24.dp)),
+            backgroundColor = Color.Transparent
+        ) {
             GenesysColumn(usePadding = false) {
                 GenesysRow {
                     GenesysWeightBox(1f) {
@@ -286,16 +292,34 @@ private fun MobileCheckoutFooter(state: CartScreenState, onEvent: (CartScreenEve
 private fun CartStepperUI(step: Int) {
     GenesysRow(horizontalArrangement = Arrangement.Center) {
         repeat(3) { index ->
-            val active = index + 1 <= step
-            val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            val currentStep = index + 1
+            val active = currentStep <= step
+            
+            val color by animateColorAsState(
+                targetValue = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                animationSpec = GenesysMotion.colorSpring,
+                label = "stepperColor"
+            )
+            
+            val size by animateDpAsState(
+                targetValue = if (currentStep == step) 12.dp else 8.dp,
+                animationSpec = spring(dampingRatio = 0.7f),
+                label = "stepperSize"
+            )
+
             Box(
                 modifier = Modifier
-                    .size(if (index + 1 == step) 12.dp else 8.dp)
-                    .background(color, androidx.compose.foundation.shape.CircleShape)
+                    .size(size)
+                    .background(color, CircleShape)
             )
+            
             if (index < 2) {
                 Box(
-                    modifier = Modifier.width(24.dp).height(2.dp).background(MaterialTheme.colorScheme.outlineVariant).align(Alignment.CenterVertically)
+                    modifier = Modifier
+                        .width(24.dp)
+                        .height(2.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                        .align(Alignment.CenterVertically)
                 )
             }
         }
@@ -313,7 +337,10 @@ private fun ModernCartItemRow(
         if (first.startsWith("/")) "$backendUrl$first" else first
     }
 
-    GenesysCard(elevation = GenesysDimens.ElevationLow) {
+    GenesysCard(
+        elevation = GenesysDimens.ElevationLow,
+        modifier = Modifier.animateContentSize()
+    ) {
         GenesysRow(verticalAlignment = Alignment.Top) {
             GenesysImage(
                 url = displayImageUrl,
@@ -336,7 +363,7 @@ private fun ModernCartItemRow(
             GenesysIconButton(
                 icon = GenesysIcons.Delete,
                 onClick = { onEvent(CartScreenEvent.OnRemoveItem(item.product.id)) },
-                tint = Color.Red.copy(alpha = 0.6f)
+                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
             )
         }
     }
