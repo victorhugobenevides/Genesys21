@@ -17,23 +17,23 @@ fun GenesysLoadingIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
     strokeWidth: Dp = 3.dp,
-    size: Dp = 48.dp
+    size: Dp = 48.dp,
 ) {
     CircularProgressIndicator(
         modifier = modifier.size(size),
         color = color,
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
 }
 
 @Composable
 fun GenesysLoadingOverlay(
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         GenesysLoadingIndicator(color = color)
     }

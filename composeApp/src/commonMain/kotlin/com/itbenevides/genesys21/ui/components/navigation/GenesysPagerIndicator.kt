@@ -19,35 +19,40 @@ import com.itbenevides.genesys21.ui.theme.GenesysMotion
 fun GenesysPagerIndicator(
     count: Int,
     currentPage: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(count) { iteration ->
             val isSelected = currentPage == iteration
-            
+
             val color by animateColorAsState(
-                targetValue = if (isSelected) MaterialTheme.colorScheme.primary 
-                              else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                targetValue =
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                    },
                 animationSpec = GenesysMotion.colorSpring,
-                label = "indicatorColor"
+                label = "indicatorColor",
             )
-            
+
             val size by animateDpAsState(
                 targetValue = if (isSelected) 10.dp else 6.dp,
                 animationSpec = spring(dampingRatio = 0.8f),
-                label = "indicatorSize"
+                label = "indicatorSize",
             )
-            
+
             Box(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .clip(CircleShape)
-                    .background(color)
-                    .size(size)
+                modifier =
+                    Modifier
+                        .padding(horizontal = 4.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                        .size(size),
             )
         }
     }

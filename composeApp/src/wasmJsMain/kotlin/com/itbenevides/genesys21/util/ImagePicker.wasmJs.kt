@@ -16,7 +16,7 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
             val input = document.createElement("input") as HTMLInputElement
             input.type = "file"
             input.accept = "image/*"
-            
+
             input.onchange = {
                 val files = input.files
                 if (files != null && files.length > 0) {
@@ -37,7 +37,7 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
                     onResult(null)
                 }
             }
-            
+
             input.click()
         }
     }

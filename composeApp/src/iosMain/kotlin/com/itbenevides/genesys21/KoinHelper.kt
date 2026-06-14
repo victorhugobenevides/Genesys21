@@ -6,7 +6,7 @@ import org.koin.core.context.stopKoin
 
 fun initKoinIos() {
     println("[DEBUG] Iniciando initKoinIos...")
-    
+
     // Tenta parar qualquer instância prévia para evitar erros de re-inicialização
     try {
         stopKoin()
@@ -14,7 +14,7 @@ fun initKoinIos() {
     } catch (e: Exception) {
         println("[DEBUG] Erro ao parar Koin: ${e.message}")
     }
-    
+
     try {
         initKoin {
             modules(viewModelModule)

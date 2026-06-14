@@ -11,5 +11,5 @@ enum class GenesysSpacing(val value: Dp) {
     Medium(GenesysDimens.SpacingMedium),
     Large(GenesysDimens.SpacingLarge),
     ExtraLarge(GenesysDimens.SpacingExtraLarge),
-    Huge(GenesysDimens.SpacingHuge)
+    Huge(GenesysDimens.SpacingHuge),
 }

@@ -1,7 +1,7 @@
 package com.itbenevides.genesys21.data.database
 
-import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.Table
 
 object ProductsTable : Table("products") {
     val id = varchar("id", 50)
@@ -9,15 +9,16 @@ object ProductsTable : Table("products") {
     val name = varchar("name", 255)
     val price = double("price")
     val description = text("description").nullable()
-    
+
     // CORREÇÃO: Vinculando à tabela de categorias recém-criada
-    val categoryId = reference(
-        "category_id", 
-        CategoriesTable, 
-        onDelete = ReferenceOption.SET_NULL, 
-        onUpdate = ReferenceOption.CASCADE
-    ).nullable()
-    
+    val categoryId =
+        reference(
+            "category_id",
+            CategoriesTable,
+            onDelete = ReferenceOption.SET_NULL,
+            onUpdate = ReferenceOption.CASCADE,
+        ).nullable()
+
     val stock = integer("stock").default(0)
 
     override val primaryKey = PrimaryKey(id)

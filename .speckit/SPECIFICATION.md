@@ -40,7 +40,7 @@ This document defines the high-fidelity requirements for Phase 2 of the Genesys2
 
 ### 4.1. Rendering Integrity (NFR005)
 *   **Performance**: Maintain a steady 60 FPS for all animations. Use `Modifier.graphicsLayer` to minimize main-thread recomposition work.
-*   **Responsiveness**: 
+*   **Responsiveness**:
     *   **Mobile (< 600dp)**: Single width, BottomSheet editors.
     *   **Tablet (600-1000dp)**: Adaptive grids, expanded info cards.
     *   **Desktop (> 1000dp)**: Floating Dashboard, split-pane active preview.

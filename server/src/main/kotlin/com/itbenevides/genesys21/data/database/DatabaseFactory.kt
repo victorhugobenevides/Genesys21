@@ -1,14 +1,14 @@
 package com.itbenevides.genesys21.data.database
 
+import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
-import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
+import kotlinx.coroutines.Dispatchers
 
 object DatabaseFactory {
     private var database: Database? = null
@@ -21,7 +21,7 @@ object DatabaseFactory {
 
         val dataSource = hikari(jdbcUrl)
         database = Database.connect(dataSource)
-        
+
         runMigrations()
     }
 
@@ -42,7 +42,8 @@ object DatabaseFactory {
                     }
                 }
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+        }
     }
 
     private fun hikari(jdbcUrl: String): HikariDataSource {
@@ -64,19 +65,18 @@ object DatabaseFactory {
             @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
                 CategoriesTable,
-                PagesTable, 
+                PagesTable,
                 PageComponentsTable,
                 ProductsTable,
                 ProductImagesTable,
                 ComponentProductsTable,
-                CartsTable, 
+                CartsTable,
                 CartItemsTable,
                 OrdersTable,
-                OrderItemsTable
+                OrderItemsTable,
             )
         }
     }
 
-    suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
+    suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
 }

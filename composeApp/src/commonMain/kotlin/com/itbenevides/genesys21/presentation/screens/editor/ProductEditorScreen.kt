@@ -19,7 +19,6 @@ import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.input.GenesysPhotoPicker
 import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
 import com.itbenevides.genesys21.ui.components.layout.GenesysPage
 import com.itbenevides.genesys21.ui.components.layout.GenesysRow
@@ -44,30 +43,32 @@ fun ProductEditorScreen(
     product: Product?,
     existingCategories: List<String>,
     onSave: (Product) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     var state by remember { mutableStateOf(ProductEditorState.initial(product)) }
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
     val categories by viewModel.categories.collectAsState()
-    
+
     var showCategoryManagement by remember { mutableStateOf(false) }
 
     state = state.copy(isLoading = isGlobalLoading)
 
-    val imagePicker = rememberImagePicker { bytes ->
-        bytes?.let {
-            if (state.imageUrls.size < 5) {
-                state = state.copy(isUploading = true)
-                viewModel.uploadImage(it, "prod_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
-                    state = state.copy(
-                        imageUrls = state.imageUrls + uploadedUrl,
-                        isUploading = false
-                    )
+    val imagePicker =
+        rememberImagePicker { bytes ->
+            bytes?.let {
+                if (state.imageUrls.size < 5) {
+                    state = state.copy(isUploading = true)
+                    viewModel.uploadImage(it, "prod_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
+                        state =
+                            state.copy(
+                                imageUrls = state.imageUrls + uploadedUrl,
+                                isUploading = false,
+                            )
+                    }
                 }
             }
         }
-    }
 
     val onEvent: (ProductEditorEvent) -> Unit = { event ->
         when (event) {
@@ -80,22 +81,24 @@ fun ProductEditorScreen(
             is ProductEditorEvent.OnStockChanged -> state = state.copy(stock = InputValidator.validateStock(event.stock))
             is ProductEditorEvent.OnAddPhotoClicked -> if (!state.isUploading && state.imageUrls.size < 5) imagePicker()
             is ProductEditorEvent.OnRemovePhotoClicked -> {
-                val toRemove = state.imageUrls.find { 
-                    (if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it) == event.url 
-                } ?: event.url
+                val toRemove =
+                    state.imageUrls.find {
+                        (if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it) == event.url
+                    } ?: event.url
                 state = state.copy(imageUrls = state.imageUrls.filter { it != toRemove })
             }
             is ProductEditorEvent.OnSaveClicked -> {
-                val finalProduct = Product(
-                    id = product?.id ?: "P-${Random.nextInt(1000, 9999)}",
-                    name = state.name.trim(),
-                    price = InputValidator.parsePrice(state.price.replace(",", ".")),
-                    imageUrls = state.imageUrls,
-                    description = state.description.trim(),
-                    categoryId = state.categoryId,
-                    categoryName = state.categoryName,
-                    stock = InputValidator.parseStock(state.stock)
-                )
+                val finalProduct =
+                    Product(
+                        id = product?.id ?: "P-${Random.nextInt(1000, 9999)}",
+                        name = state.name.trim(),
+                        price = InputValidator.parsePrice(state.price.replace(",", ".")),
+                        imageUrls = state.imageUrls,
+                        description = state.description.trim(),
+                        categoryId = state.categoryId,
+                        categoryName = state.categoryName,
+                        stock = InputValidator.parseStock(state.stock),
+                    )
                 onSave(finalProduct)
             }
         }
@@ -103,18 +106,18 @@ fun ProductEditorScreen(
 
     AppTheme(themeConfig = page.theme) {
         ProductEditorContent(
-            state = state, 
-            backendUrl = backendUrl, 
-            categoryOptions = categories.map { it.name }, 
-            onEvent = onEvent, 
-            onBack = onBack, 
-            onManageCategories = { showCategoryManagement = true }
+            state = state,
+            backendUrl = backendUrl,
+            categoryOptions = categories.map { it.name },
+            onEvent = onEvent,
+            onBack = onBack,
+            onManageCategories = { showCategoryManagement = true },
         )
-        
+
         if (showCategoryManagement) {
             CategoryManagementDialog(
                 viewModel = viewModel,
-                onDismiss = { showCategoryManagement = false }
+                onDismiss = { showCategoryManagement = false },
             )
         }
     }
@@ -127,9 +130,9 @@ private fun ProductEditorContent(
     categoryOptions: List<String>,
     onEvent: (ProductEditorEvent) -> Unit,
     onBack: () -> Unit,
-    onManageCategories: () -> Unit
+    onManageCategories: () -> Unit,
 ) {
-     GenesysPage(
+    GenesysPage(
         topBar = {
             GenesysTopAppBar(
                 title = if (state.isEditing) GenesysStrings.EditProduct else GenesysStrings.NewProduct,
@@ -140,11 +143,11 @@ private fun ProductEditorContent(
                         onClick = { onEvent(ProductEditorEvent.OnSaveClicked) },
                         isLoading = state.isLoading,
                         enabled = state.canSave,
-                        icon = GenesysIcons.Check
+                        icon = GenesysIcons.Check,
                     )
-                }
+                },
             )
-        }
+        },
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > 900.dp
@@ -153,10 +156,11 @@ private fun ProductEditorContent(
             // Root Container com largura máxima centralizada
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 Column(
-                    modifier = Modifier
-                        .widthIn(max = 1200.dp)
-                        .fillMaxSize()
-                        .then(if (!isWideScreen) Modifier.verticalScroll(scrollState) else Modifier)
+                    modifier =
+                        Modifier
+                            .widthIn(max = 1200.dp)
+                            .fillMaxSize()
+                            .then(if (!isWideScreen) Modifier.verticalScroll(scrollState) else Modifier),
                 ) {
                     if (isWideScreen) {
                         // DESKTOP: Lado a Lado
@@ -165,9 +169,9 @@ private fun ProductEditorContent(
                             Box(modifier = Modifier.weight(0.45f)) {
                                 PhotosSection(state, backendUrl, onEvent)
                             }
-                            
+
                             Spacer(Modifier.width(24.dp))
-                            
+
                             // Seção Dados (com scroll interno no desktop)
                             Box(modifier = Modifier.weight(0.55f).fillMaxHeight()) {
                                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -191,31 +195,36 @@ private fun ProductEditorContent(
 }
 
 @Composable
-private fun PhotosSection(state: ProductEditorState, backendUrl: String, onEvent: (ProductEditorEvent) -> Unit) {
+private fun PhotosSection(
+    state: ProductEditorState,
+    backendUrl: String,
+    onEvent: (ProductEditorEvent) -> Unit,
+) {
     GenesysColumn(usePadding = false) {
         GenesysSectionHeader(
             title = GenesysStrings.PhotosTitle,
-            subtitle = "${state.imageUrls.size}/5"
+            subtitle = "${state.imageUrls.size}/5",
         )
         GenesysSpacer(GenesysSpacing.Small)
-        val displayUrls = remember(state.imageUrls, backendUrl) {
-            state.imageUrls.map { if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it }
-        }
+        val displayUrls =
+            remember(state.imageUrls, backendUrl) {
+                state.imageUrls.map { if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it }
+            }
         GenesysPhotoPicker(
             urls = displayUrls,
             onAddClick = { onEvent(ProductEditorEvent.OnAddPhotoClicked) },
             onRemoveClick = { onEvent(ProductEditorEvent.OnRemovePhotoClicked(it)) },
-            isUploading = state.isUploading
+            isUploading = state.isUploading,
         )
     }
 }
 
 @Composable
 private fun DataFormSection(
-    state: ProductEditorState, 
-    categoryOptions: List<String>, 
+    state: ProductEditorState,
+    categoryOptions: List<String>,
     onEvent: (ProductEditorEvent) -> Unit,
-    onManageCategories: () -> Unit
+    onManageCategories: () -> Unit,
 ) {
     GenesysCard {
         GenesysColumn(usePadding = false) {
@@ -226,7 +235,7 @@ private fun DataFormSection(
                 value = state.name,
                 onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
                 label = GenesysStrings.ProductName,
-                icon = GenesysIcons.Inventory
+                icon = GenesysIcons.Inventory,
             )
 
             GenesysSpacer(GenesysSpacing.Medium)
@@ -237,7 +246,7 @@ private fun DataFormSection(
                         value = state.price,
                         onValueChange = { onEvent(ProductEditorEvent.OnPriceChanged(it)) },
                         label = GenesysStrings.ProductPrice,
-                        icon = GenesysIcons.Payments
+                        icon = GenesysIcons.Payments,
                     )
                 }
                 GenesysSpacer(GenesysSpacing.Medium)
@@ -246,7 +255,7 @@ private fun DataFormSection(
                         value = state.stock,
                         onValueChange = { onEvent(ProductEditorEvent.OnStockChanged(it)) },
                         label = GenesysStrings.ProductStock,
-                        icon = GenesysIcons.Numbers
+                        icon = GenesysIcons.Numbers,
                     )
                 }
             }
@@ -262,14 +271,14 @@ private fun DataFormSection(
                         },
                         label = GenesysStrings.ProductCategory,
                         options = categoryOptions,
-                        icon = GenesysIcons.Category
+                        icon = GenesysIcons.Category,
                     )
                 }
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysIconButton(
-                    icon = GenesysIcons.Settings, 
+                    icon = GenesysIcons.Settings,
                     onClick = onManageCategories,
-                    contentDescription = "Gerenciar Categorias"
+                    contentDescription = "Gerenciar Categorias",
                 )
             }
 
@@ -281,7 +290,7 @@ private fun DataFormSection(
                 label = GenesysStrings.ProductDescription,
                 icon = GenesysIcons.Description,
                 singleLine = false,
-                minLines = 6
+                minLines = 6,
             )
         }
     }

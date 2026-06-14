@@ -9,7 +9,7 @@ data class ProductDetailsState(
     val product: Product,
     val isAddingToCart: Boolean = false,
     val showSuccessDialog: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 /**
@@ -17,8 +17,12 @@ data class ProductDetailsState(
  */
 sealed class ProductDetailsEvent {
     object OnAddToCartClicked : ProductDetailsEvent()
+
     object OnDismissSuccessDialog : ProductDetailsEvent()
+
     object OnViewCartClicked : ProductDetailsEvent()
+
     object OnContinueShoppingClicked : ProductDetailsEvent()
+
     object OnBackClicked : ProductDetailsEvent()
 }

@@ -18,9 +18,8 @@ class LocalStorageCartRepository(
     private val httpClient: HttpClient,
     private val baseUrl: String,
     private val json: Json,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : CartRepository {
-
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
 
@@ -48,10 +47,14 @@ class LocalStorageCartRepository(
 
         try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.get("$baseUrl/api/cart") {
-                if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
-                else header("X-Cart-Session-Id", getSessionId())
-            }
+            val response =
+                httpClient.get("$baseUrl/api/cart") {
+                    if (token != null) {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    } else {
+                        header("X-Cart-Session-Id", getSessionId())
+                    }
+                }
             if (response.status.isSuccess()) {
                 val serverItems: List<CartItem> = response.body()
                 if (serverItems.isNotEmpty()) {
@@ -71,7 +74,7 @@ class LocalStorageCartRepository(
     override suspend fun addToCart(item: CartItem): Result<Unit> {
         val current = _cartItems.value.toMutableList()
         val existing = current.find { it.product.id == item.product.id }
-        
+
         // VALIDAÇÃO DE ESTOQUE
         val newQuantity = if (existing != null) existing.quantity + item.quantity else item.quantity
         if (newQuantity > item.product.stock) {
@@ -95,9 +98,12 @@ class LocalStorageCartRepository(
         return syncWithServer()
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
+    override suspend fun updateQuantity(
+        productId: String,
+        quantity: Int,
+    ): Result<Unit> {
         if (quantity <= 0) return removeFromCart(productId)
-        
+
         // VALIDAÇÃO DE ESTOQUE NA ATUALIZAÇÃO
         val item = _cartItems.value.find { it.product.id == productId }
         if (item != null && quantity > item.product.stock) {
@@ -118,15 +124,22 @@ class LocalStorageCartRepository(
     override suspend fun syncWithServer(): Result<Unit> {
         return try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.post("$baseUrl/api/cart") {
-                if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
-                else header("X-Cart-Session-Id", getSessionId())
-                
-                contentType(ContentType.Application.Json)
-                setBody(_cartItems.value)
+            val response =
+                httpClient.post("$baseUrl/api/cart") {
+                    if (token != null) {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    } else {
+                        header("X-Cart-Session-Id", getSessionId())
+                    }
+
+                    contentType(ContentType.Application.Json)
+                    setBody(_cartItems.value)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Server error"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Server error"))
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -19,23 +19,23 @@ dependencies {
     implementation(libs.ktor.serverAuth)
     implementation(libs.ktor.serverContentNegotiation)
     implementation(libs.ktor.serverCors)
-    
+
     // CORREÇÃO: Usando string direta para garantir que o build não falhe por falta no catálogo
     implementation("io.ktor:ktor-server-status-pages:3.0.3")
-    
+
     implementation(libs.ktor.server.compression)
     implementation(libs.ktor.server.caching.headers)
-    
+
     implementation(libs.ktor.serializationJson)
     implementation(libs.firebase.admin)
-    
+
     // Database
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
     implementation(libs.sqlite.jdbc)
     implementation(libs.hikaricp)
-    
+
     // Manipulação de Imagem
     implementation(libs.thumbnailator)
 

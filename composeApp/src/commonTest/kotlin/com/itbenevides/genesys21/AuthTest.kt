@@ -4,7 +4,6 @@ import com.itbenevides.genesys21.di.getAuthRepository
 import kotlin.test.*
 
 class AuthTest {
-
     @Test
     @Ignore // Desabilitado em unit tests pois depende de SDKs nativos (Firebase)
     fun testAuthRepositoryAvailability() {
@@ -14,7 +13,7 @@ class AuthTest {
 
     @Test
     fun testFirebaseAvailabilityOnNativeTargets() {
-        // Este teste verifica se o Firebase está disponível. 
+        // Este teste verifica se o Firebase está disponível.
         // Em ambientes de CI sem chaves, ele pode retornar false, o que é esperado.
         val available = isFirebaseAvailable()
         println("Firebase disponível nesta plataforma: $available")

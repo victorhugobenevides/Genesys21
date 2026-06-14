@@ -6,10 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.feedback.GenesysLoadingIndicator
 import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysTextAlign
+import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
@@ -22,27 +22,27 @@ fun SplashScreen() {
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = GenesysAlignment.Center,
         verticalArrangement = Arrangement.Center,
-        usePadding = true
+        usePadding = true,
     ) {
         // Ícone representativo usando o padrão do sistema
         Icon(
             imageVector = GenesysIcons.Magic,
             contentDescription = null,
             modifier = Modifier.size(GenesysSpacing.Huge.value * 2), // Tamanho proporcional aos tokens
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
-        
+
         GenesysSpacer(GenesysSpacing.Large)
-        
+
         // Nome da marca usando GenesysText
         GenesysText(
             text = GenesysStrings.AppName,
             style = GenesysTextStyle.Headline,
             fontWeight = GenesysFontWeight.ExtraBold,
             textAlign = GenesysTextAlign.Center,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
-        
+
         GenesysSpacer(GenesysSpacing.ExtraLarge)
 
         // Indicador de carregamento padronizado do sistema

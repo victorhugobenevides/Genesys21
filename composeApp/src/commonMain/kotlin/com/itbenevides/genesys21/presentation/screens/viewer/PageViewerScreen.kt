@@ -33,22 +33,23 @@ import org.koin.compose.koinInject
 
 @Composable
 fun PageViewerScreen(
-    page: Page, 
+    page: Page,
     onBack: () -> Unit,
-    onProductClick: (Product) -> Unit
+    onProductClick: (Product) -> Unit,
 ) {
     val router: Router = koinInject()
     val cartCount by router.viewModel.cartCount.collectAsState()
     val storeCategories by router.viewModel.allAvailableCategories.collectAsState()
-    
-    val state = remember(page, cartCount, storeCategories) { 
-        PageViewerScreenState(
-            page = page,
-            cartCount = cartCount,
-            allStoreCategories = storeCategories
-        ) 
-    }
-    
+
+    val state =
+        remember(page, cartCount, storeCategories) {
+            PageViewerScreenState(
+                page = page,
+                cartCount = cartCount,
+                allStoreCategories = storeCategories,
+            )
+        }
+
     var isLoggedIn by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -82,33 +83,33 @@ fun PageViewerScreen(
 @Composable
 private fun PageViewerContent(
     state: PageViewerScreenState,
-    onEvent: (PageViewerScreenEvent) -> Unit
+    onEvent: (PageViewerScreenEvent) -> Unit,
 ) {
     var currentFilterQuery by remember { mutableStateOf("") }
 
     GenesysPage(
         topBar = {
-             GenesysTopAppBar(
+            GenesysTopAppBar(
                 title = state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
                     // BOTÃO MEUS PEDIDOS: Apenas se houver lista de produtos na página
                     if (state.hasProductList) {
                         GenesysIconButton(
-                            icon = GenesysIcons.List, 
+                            icon = GenesysIcons.List,
                             contentDescription = GenesysStrings.OrderHistoryTitle,
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
                         )
                     }
 
                     if (state.isLoggedIn) {
                         GenesysIconButton(
-                            icon = GenesysIcons.Settings, 
+                            icon = GenesysIcons.Settings,
                             contentDescription = GenesysStrings.AdminTitle,
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenAdminSettingsClicked) }
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenAdminSettingsClicked) },
                         )
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
@@ -120,12 +121,12 @@ private fun PageViewerContent(
                             Badge(
                                 containerColor = MaterialTheme.colorScheme.error,
                                 contentColor = MaterialTheme.colorScheme.onError,
-                                modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
+                                modifier = Modifier.offset(x = (-8).dp, y = 8.dp),
                             ) {
                                 GenesysText(text = state.cartCount.toString(), style = GenesysTextStyle.Label)
                             }
                         }
-                    }
+                    },
                 ) {
                     ExtendedFloatingActionButton(
                         onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
@@ -133,22 +134,22 @@ private fun PageViewerContent(
                         contentColor = MaterialTheme.colorScheme.onPrimary,
                         shape = androidx.compose.foundation.shape.CircleShape,
                         icon = { Icon(GenesysIcons.ShoppingBag, null) },
-                        text = { GenesysText(text = GenesysStrings.ViewCart, style = GenesysTextStyle.Body) }
+                        text = { GenesysText(text = GenesysStrings.ViewCart, style = GenesysTextStyle.Body) },
                     )
                 }
             }
-        }
+        },
     ) {
         GenesysColumn(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = GenesysAlignment.Center,
-            usePadding = false
+            usePadding = false,
         ) {
             GenesysColumn(
                 maxWidth = GenesysDimens.ViewerMaxWidth,
                 usePadding = false,
                 useScroll = true,
-                weightValue = 1f
+                weightValue = 1f,
             ) {
                 state.page.components.forEach { component ->
                     PageComponentRenderer(
@@ -156,10 +157,10 @@ private fun PageViewerContent(
                         onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
                         filterQuery = currentFilterQuery,
                         onFilterQueryChange = { currentFilterQuery = it },
-                        allAvailableCategories = state.allStoreCategories
+                        allAvailableCategories = state.allStoreCategories,
                     )
                 }
-                
+
                 GenesysSpacer(GenesysSpacing.Huge)
             }
         }

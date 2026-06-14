@@ -20,10 +20,14 @@ class FakeCartRepository : CartRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
-        _cartItems.value = _cartItems.value.map {
-            if (it.product.id == productId) it.copy(quantity = quantity) else it
-        }
+    override suspend fun updateQuantity(
+        productId: String,
+        quantity: Int,
+    ): Result<Unit> {
+        _cartItems.value =
+            _cartItems.value.map {
+                if (it.product.id == productId) it.copy(quantity = quantity) else it
+            }
         return Result.success(Unit)
     }
 
@@ -33,7 +37,9 @@ class FakeCartRepository : CartRepository {
     }
 
     override suspend fun syncWithServer(): Result<Unit> = Result.success(Unit)
+
     override suspend fun loadInitialCart() {}
+
     override fun getSessionId(): String = "test-session"
 }
 
@@ -41,16 +47,31 @@ class FakeCustomerRepository : CustomerRepository {
     override val customerName = MutableStateFlow("")
     override val customerPhone = MutableStateFlow("")
 
-    override suspend fun saveName(name: String) { customerName.value = name }
-    override suspend fun savePhone(phone: String) { customerPhone.value = phone }
+    override suspend fun saveName(name: String) {
+        customerName.value = name
+    }
+
+    override suspend fun savePhone(phone: String) {
+        customerPhone.value = phone
+    }
+
     override suspend fun loadData() {}
+
     override suspend fun loadName() {}
 }
 
 class FakeOrderRepository : com.itbenevides.genesys21.domain.repository.OrderRepository {
     override fun getOrders(token: String) = kotlinx.coroutines.flow.flowOf(emptyList<Order>())
+
     override suspend fun createOrder(order: Order) = Result.success(Unit)
+
     override suspend fun getCustomerOrders(sessionId: String) = Result.success(emptyList<Order>())
+
     override suspend fun getOrderById(orderId: String): Result<Order> = Result.failure(Exception("Not found"))
-    override suspend fun updateOrderStatus(token: String, orderId: String, status: OrderStatus) = Result.success(Unit)
+
+    override suspend fun updateOrderStatus(
+        token: String,
+        orderId: String,
+        status: OrderStatus,
+    ) = Result.success(Unit)
 }

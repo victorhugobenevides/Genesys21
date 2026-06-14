@@ -16,10 +16,10 @@ import androidx.compose.ui.unit.dp
 fun GenesysPage(
     topBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
-    
+
     Scaffold(
         topBar = topBar,
         floatingActionButton = floatingActionButton,
@@ -29,23 +29,24 @@ fun GenesysPage(
                 Box(modifier = Modifier.weight(1f)) {
                     content()
                 }
-                
+
                 // Link Simples de Rodapé (Assinatura)
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .clickable { uriHandler.openUri("https://victorbenevides.dev") },
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
+                            .clickable { uriHandler.openUri("https://victorbenevides.dev") },
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "desenvolvido por victorbenevides.dev",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        textAlign = TextAlign.Start
+                        textAlign = TextAlign.Start,
                     )
                 }
             }
-        }
+        },
     )
 }

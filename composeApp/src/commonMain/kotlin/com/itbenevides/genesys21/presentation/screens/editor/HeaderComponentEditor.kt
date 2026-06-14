@@ -1,11 +1,11 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
@@ -16,75 +16,75 @@ import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import androidx.compose.material3.Switch
-import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun HeaderComponentEditor(
     component: PageComponent.Header,
-    onSave: (PageComponent.Header) -> Unit
+    onSave: (PageComponent.Header) -> Unit,
 ) {
     var title by remember { mutableStateOf(component.title) }
     var alignment by remember { mutableStateOf(component.textAlign) }
     var fontSize by remember { mutableStateOf(component.fontSize.toFloat()) }
     var isUppercase by remember { mutableStateOf(component.isUppercase) }
     var usePrimaryColor by remember { mutableStateOf(component.usePrimaryColor) }
-    
+
     val primaryColor = MaterialTheme.colorScheme.primary
 
     // Cria uma versão temporária do componente para renderizar na pre-visualização real
-    val previewComponent = remember(title, alignment, fontSize, isUppercase, usePrimaryColor) {
-        component.copy(
-            title = title,
-            textAlign = alignment,
-            fontSize = fontSize.toInt(),
-            isUppercase = isUppercase,
-            usePrimaryColor = usePrimaryColor
-        )
-    }
+    val previewComponent =
+        remember(title, alignment, fontSize, isUppercase, usePrimaryColor) {
+            component.copy(
+                title = title,
+                textAlign = alignment,
+                fontSize = fontSize.toInt(),
+                isUppercase = isUppercase,
+                usePrimaryColor = usePrimaryColor,
+            )
+        }
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
-        
+
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
             component = previewComponent,
-            isEditMode = false
+            isEditMode = false,
         )
-        
+
         GenesysSpacer(GenesysSpacing.Large)
         GenesysTextField(
-            value = title, 
-            onValueChange = { title = it }, 
-            label = GenesysStrings.TitleTextLabel, 
-            icon = GenesysIcons.Description
+            value = title,
+            onValueChange = { title = it },
+            label = GenesysStrings.TitleTextLabel,
+            icon = GenesysIcons.Description,
         )
-        
+
         GenesysSpacer(GenesysSpacing.Medium)
-        
+
         GenesysText(text = GenesysStrings.Alignment, style = GenesysTextStyle.Label)
         GenesysRow(modifier = Modifier.fillMaxWidth()) {
             listOf("LEFT", "CENTER", "RIGHT").forEach { align ->
                 val isSelected = alignment == align
                 GenesysIconButton(
-                    icon = when(align) {
-                        "LEFT" -> GenesysIcons.AlignLeft
-                        "RIGHT" -> GenesysIcons.AlignRight
-                        else -> GenesysIcons.AlignCenter
-                    },
+                    icon =
+                        when (align) {
+                            "LEFT" -> GenesysIcons.AlignLeft
+                            "RIGHT" -> GenesysIcons.AlignRight
+                            else -> GenesysIcons.AlignCenter
+                        },
                     onClick = { alignment = align },
-                    tint = if (isSelected) primaryColor else Color.Unspecified
+                    tint = if (isSelected) primaryColor else Color.Unspecified,
                 )
             }
         }
 
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysSlider(
-            value = fontSize, 
-            onValueChange = { fontSize = it }, 
-            label = GenesysStrings.FontSize, 
-            valueRange = 18f..48f
+            value = fontSize,
+            onValueChange = { fontSize = it },
+            label = GenesysStrings.FontSize,
+            valueRange = 18f..48f,
         )
 
         GenesysSpacer(GenesysSpacing.Medium)
@@ -105,11 +105,11 @@ fun HeaderComponentEditor(
 
         GenesysSpacer(GenesysSpacing.Large)
         GenesysLoadingButton(
-            text = GenesysStrings.UpdateTitle, 
+            text = GenesysStrings.UpdateTitle,
             fillWidth = true,
             onClick = {
                 onSave(previewComponent)
-            }
+            },
         )
     }
 }

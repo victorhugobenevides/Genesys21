@@ -19,37 +19,39 @@ fun GenesysTopAppBar(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     containerColor: Color = Color.Transparent,
-    isTranslucent: Boolean = false
+    isTranslucent: Boolean = false,
 ) {
-    val finalContainerColor = if (isTranslucent) {
-        MaterialTheme.colorScheme.background.copy(alpha = 0.8f)
-    } else {
-        containerColor
-    }
+    val finalContainerColor =
+        if (isTranslucent) {
+            MaterialTheme.colorScheme.background.copy(alpha = 0.8f)
+        } else {
+            containerColor
+        }
 
     CenterAlignedTopAppBar(
         modifier = if (isTranslucent) Modifier.background(Color.Transparent) else Modifier,
-        title = { 
+        title = {
             Text(
-                title, 
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            ) 
+                title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            )
         },
         navigationIcon = {
             onBack?.let {
                 IconButton(onClick = it) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack, 
-                        "Voltar", 
-                        modifier = Modifier.size(20.dp)
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        "Voltar",
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
         },
         actions = actions,
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = finalContainerColor,
-            scrolledContainerColor = finalContainerColor
-        )
+        colors =
+            TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = finalContainerColor,
+                scrolledContainerColor = finalContainerColor,
+            ),
     )
 }

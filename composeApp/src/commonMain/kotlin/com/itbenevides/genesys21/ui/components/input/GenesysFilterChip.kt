@@ -20,57 +20,66 @@ fun GenesysFilterChip(
     onClick: () -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    badgeCount: Int = 0
+    badgeCount: Int = 0,
 ) {
     val containerColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
         animationSpec = GenesysMotion.colorSpring,
-        label = "chipColor"
+        label = "chipColor",
     )
-    
+
     val labelColor by animateColorAsState(
         targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = GenesysMotion.colorSpring,
-        label = "labelColor"
+        label = "labelColor",
     )
 
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { 
+        label = {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-            ) 
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            )
             if (badgeCount > 0) {
                 Surface(
-                    color = if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primaryContainer,
+                    color =
+                        if (selected) {
+                            MaterialTheme.colorScheme.onPrimary.copy(
+                                alpha = 0.2f,
+                            )
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        },
                     shape = CircleShape,
-                    modifier = Modifier.padding(start = 8.dp)
+                    modifier = Modifier.padding(start = 8.dp),
                 ) {
                     Text(
                         text = badgeCount.toString(),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer
+                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }
         },
         shape = CircleShape,
         modifier = modifier.animateContentSize(),
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = containerColor,
-            selectedLabelColor = labelColor,
-            containerColor = containerColor,
-            labelColor = labelColor
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true, 
-            selected = selected, 
-            borderColor = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-            selectedBorderColor = Color.Transparent
-        )
+        colors =
+            FilterChipDefaults.filterChipColors(
+                selectedContainerColor = containerColor,
+                selectedLabelColor = labelColor,
+                containerColor = containerColor,
+                labelColor = labelColor,
+            ),
+        border =
+            FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+                borderColor = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                selectedBorderColor = Color.Transparent,
+            ),
     )
 }

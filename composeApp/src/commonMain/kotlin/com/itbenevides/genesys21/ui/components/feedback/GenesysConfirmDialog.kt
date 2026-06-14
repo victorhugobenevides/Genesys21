@@ -18,31 +18,31 @@ fun GenesysConfirmDialog(
     text: String,
     icon: ImageVector? = null,
     confirmButton: @Composable () -> Unit,
-    dismissButton: (@Composable () -> Unit)? = null
+    dismissButton: (@Composable () -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         icon = icon?.let { { Icon(it, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) } },
-        title = { 
+        title = {
             Text(
-                title, 
-                textAlign = TextAlign.Center, 
-                modifier = Modifier.fillMaxWidth(), 
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleLarge
-            ) 
-        },
-        text = { 
-            Text(
-                text, 
-                textAlign = TextAlign.Center, 
+                title,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium
-            ) 
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
+        text = {
+            Text(
+                text,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         },
         confirmButton = confirmButton,
         dismissButton = dismissButton,
         shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
     )
 }

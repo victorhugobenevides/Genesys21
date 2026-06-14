@@ -27,7 +27,10 @@ Genesys21 is a premier **Kotlin Multiplatform (KMP)** vitrine builder and e-comm
 ## 5. Quality Standards & Barriers
 *   **Zero-Direct-Commit Policy**: No direct pushes to `main` or `develop`.
 *   **CI/CD Hard-Gates**: Every Pull Request must pass builds for all targets and all unit tests in **CircleCI**.
-*   **Static Analysis**: No "ERROR" level inspections in Android Studio. Unused imports or parameters should be removed before review.
+*   **Linting & Static Analysis**:
+    *   **Mandatory Checks**: Must run `./gradlew ktlintCheck` before every PR.
+    *   **Clean Code Policy**: Unused imports and wildcard imports (`.*`) are strictly prohibited and will block the PR.
+    *   **Auto-Fix**: Developers are encouraged to run `./gradlew ktlintFormat` to resolve style issues automatically.
 *   **Code Coverage**: Aim for >80% coverage on the `shared` module and `ViewModel` logic.
 
 ## 6. Constraints & Guidelines

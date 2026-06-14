@@ -17,10 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.components.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.image.GenesysImage
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.text.GenesysText
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 
 /**
@@ -34,13 +32,13 @@ fun GenesysPhotoPicker(
     onRemoveClick: (String) -> Unit,
     isUploading: Boolean = false,
     maxPhotos: Int = 5,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(GenesysDimens.SpacingSmall),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // Renderiza as fotos existentes
         items(urls) { url ->
@@ -48,21 +46,22 @@ fun GenesysPhotoPicker(
                 GenesysImage(
                     url = url,
                     modifier = Modifier.fillMaxSize(),
-                    shape = RoundedCornerShape(GenesysDimens.PhotoPickerCorner)
+                    shape = RoundedCornerShape(GenesysDimens.PhotoPickerCorner),
                 )
                 IconButton(
                     onClick = { onRemoveClick(url) },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(GenesysDimens.SpacingSmall)
-                        .size(GenesysDimens.IconHuge)
-                        .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(GenesysDimens.SpacingSmall)
+                            .size(GenesysDimens.IconHuge)
+                            .background(Color.Black.copy(alpha = 0.5f), CircleShape),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close, 
-                        contentDescription = null, 
-                        tint = Color.White, 
-                        modifier = Modifier.size(GenesysDimens.IconSmall)
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(GenesysDimens.IconSmall),
                     )
                 }
             }
@@ -74,7 +73,7 @@ fun GenesysPhotoPicker(
                 GenesysCard(
                     modifier = Modifier.size(GenesysDimens.PhotoPickerSize),
                     onClick = onAddClick,
-                    shape = RoundedCornerShape(GenesysDimens.PhotoPickerCorner)
+                    shape = RoundedCornerShape(GenesysDimens.PhotoPickerCorner),
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (isUploading) {
@@ -82,14 +81,14 @@ fun GenesysPhotoPicker(
                         } else {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(
-                                    imageVector = Icons.Default.AddPhotoAlternate, 
-                                    contentDescription = null, 
-                                    tint = MaterialTheme.colorScheme.primary, 
-                                    modifier = Modifier.size(32.dp)
+                                    imageVector = Icons.Default.AddPhotoAlternate,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(32.dp),
                                 )
                                 GenesysText(
-                                    text = "Adicionar", 
-                                    fontWeight = GenesysFontWeight.Bold
+                                    text = "Adicionar",
+                                    fontWeight = GenesysFontWeight.Bold,
                                 )
                             }
                         }

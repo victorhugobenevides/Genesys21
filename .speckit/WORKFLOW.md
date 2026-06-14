@@ -29,6 +29,7 @@ Os comandos abaixo são utilizados através de agentes de IA (como Claude Code o
 *   **`/speckit.clarify`**: Identifica e resolve áreas subespecificadas nos requisitos antes do planejamento.
 *   **`/speckit.analyze`**: Realiza análise de consistência entre artefatos (requisitos vs plano vs código).
 *   **`/speckit.checklist`**: Gera checklists de qualidade personalizados para validar artefatos.
+*   **`/speckit.lint`**: Executa a verificação de qualidade de código (ktlint), remove imports não utilizados e garante padrões de estilo (Configurado via `.claude/commands/lint`).
 
 ---
 

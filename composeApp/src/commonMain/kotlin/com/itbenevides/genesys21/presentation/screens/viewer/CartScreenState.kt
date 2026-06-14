@@ -10,14 +10,14 @@ data class CartScreenState(
     val total: Double = 0.0,
     val customerName: String = "",
     val customerPhone: String = "", // ADICIONADO
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
 ) {
     // ATUALIZADO: Checkout exige Nome e Telefone
-    val isCheckoutEnabled: Boolean get() = 
-        customerName.isNotBlank() && 
-        customerPhone.length >= 8 && 
-        cartItems.isNotEmpty() && 
-        !isLoading
+    val isCheckoutEnabled: Boolean get() =
+        customerName.isNotBlank() &&
+            customerPhone.length >= 8 &&
+            cartItems.isNotEmpty() &&
+            !isLoading
 }
 
 /**
@@ -25,9 +25,14 @@ data class CartScreenState(
  */
 sealed class CartScreenEvent {
     data class OnUpdateQuantity(val productId: String, val newQuantity: Int) : CartScreenEvent()
+
     data class OnRemoveItem(val productId: String) : CartScreenEvent()
+
     data class OnCustomerNameChanged(val name: String) : CartScreenEvent()
+
     data class OnCustomerPhoneChanged(val phone: String) : CartScreenEvent() // ADICIONADO
+
     object OnCheckoutClicked : CartScreenEvent()
+
     object OnBackClicked : CartScreenEvent()
 }

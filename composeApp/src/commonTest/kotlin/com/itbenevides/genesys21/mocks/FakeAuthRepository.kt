@@ -6,9 +6,15 @@ class FakeAuthRepository : AuthRepository {
     var shouldReturnError = false
     var mockToken: String? = "fake_token"
 
-    override suspend fun signIn(email: String, password: String): Result<String?> {
-        return if (shouldReturnError) Result.failure(Exception("Login falhou"))
-        else Result.success(mockToken)
+    override suspend fun signIn(
+        email: String,
+        password: String,
+    ): Result<String?> {
+        return if (shouldReturnError) {
+            Result.failure(Exception("Login falhou"))
+        } else {
+            Result.success(mockToken)
+        }
     }
 
     override suspend fun getCurrentUserToken(): String? = mockToken

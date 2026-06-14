@@ -5,14 +5,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
-import com.itbenevides.genesys21.ui.theme.AppTheme
-import com.itbenevides.genesys21.ui.components.feedback.GenesysConfirmDialog
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.feedback.GenesysConfirmDialog
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
@@ -23,7 +23,7 @@ fun WhiteLabelScreen(
     page: Page,
     onPageChange: (Page) -> Unit,
     onBack: () -> Unit,
-    onEditProduct: (Product?, Int?) -> Unit
+    onEditProduct: (Product?, Int?) -> Unit,
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val serverProducts by viewModel.allAvailableProducts.collectAsState()
@@ -34,7 +34,7 @@ fun WhiteLabelScreen(
     var showCategoryManagement by remember { mutableStateOf(false) }
     var showDiscardDialog by remember { mutableStateOf(false) }
 
-    var state by remember { 
+    var state by remember {
         val draft = viewModel.getDraft(page.id)
         mutableStateOf(
             WhiteLabelState(
@@ -42,61 +42,67 @@ fun WhiteLabelScreen(
                 isLoading = isLoading,
                 availableProducts = serverProducts,
                 allAvailableCategories = savedCategories,
-                userPages = userPages
-            )
+                userPages = userPages,
+            ),
         )
     }
 
     LaunchedEffect(Unit) {
         viewModel.loadPages()
         viewModel.loadCategories()
-        
+
         viewModel.getDraft(page.id)?.let { updatedDraft ->
             state = state.copy(page = updatedDraft)
         }
     }
 
     LaunchedEffect(isLoading, serverProducts, savedCategories, userPages) {
-        state = state.copy(
-            isLoading = isLoading,
-            availableProducts = serverProducts,
-            allAvailableCategories = savedCategories,
-            userPages = userPages
-        )
+        state =
+            state.copy(
+                isLoading = isLoading,
+                availableProducts = serverProducts,
+                allAvailableCategories = savedCategories,
+                userPages = userPages,
+            )
     }
 
     LaunchedEffect(state.page) {
         viewModel.saveDraft(state.page)
     }
 
-    val effectiveCategories = remember(savedCategories, state.page) {
-        val categoriesInDraft = state.page.components
-            .filterIsInstance<PageComponent.ProductList>()
-            .flatMap { it.products }
-            .mapNotNull { it.categoryName }
-        (savedCategories + categoriesInDraft).filter { it.isNotBlank() }.distinct().sorted()
-    }
+    val effectiveCategories =
+        remember(savedCategories, state.page) {
+            val categoriesInDraft =
+                state.page.components
+                    .filterIsInstance<PageComponent.ProductList>()
+                    .flatMap { it.products }
+                    .mapNotNull { it.categoryName }
+            (savedCategories + categoriesInDraft).filter { it.isNotBlank() }.distinct().sorted()
+        }
 
-    val imagePicker = rememberImagePicker { bytes: ByteArray? ->
-        bytes?.let {
-            state = state.copy(isUploading = true)
-            viewModel.uploadImage(it, "profile_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
-                state.editingComponentIndex?.let { index ->
-                    val component = state.page.components[index]
-                    val updated = when(component) {
-                        is PageComponent.Image -> component.copy(url = uploadedUrl)
-                        is PageComponent.ProfileHeader -> component.copy(imageUrl = uploadedUrl)
-                        else -> component
+    val imagePicker =
+        rememberImagePicker { bytes: ByteArray? ->
+            bytes?.let {
+                state = state.copy(isUploading = true)
+                viewModel.uploadImage(it, "profile_${Random.nextInt(10000)}.jpg") { uploadedUrl ->
+                    state.editingComponentIndex?.let { index ->
+                        val component = state.page.components[index]
+                        val updated =
+                            when (component) {
+                                is PageComponent.Image -> component.copy(url = uploadedUrl)
+                                is PageComponent.ProfileHeader -> component.copy(imageUrl = uploadedUrl)
+                                else -> component
+                            }
+                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                        state =
+                            state.copy(
+                                page = state.page.copy(components = newList),
+                                isUploading = false,
+                            )
                     }
-                    val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                    state = state.copy(
-                        page = state.page.copy(components = newList),
-                        isUploading = false
-                    )
                 }
             }
         }
-    }
 
     fun onEvent(event: WhiteLabelEvent) {
         when (event) {
@@ -105,9 +111,9 @@ fun WhiteLabelScreen(
                 onPageChange(event.newPage)
             }
             is WhiteLabelEvent.OnPublishClicked -> {
-                viewModel.savePage(state.page, true) { 
+                viewModel.savePage(state.page, true) {
                     viewModel.clearDraft(state.page.id)
-                    onBack() 
+                    onBack()
                 }
             }
             is WhiteLabelEvent.OnBackClicked -> onBack()
@@ -119,7 +125,7 @@ fun WhiteLabelScreen(
             is WhiteLabelEvent.OnPendingNewComponentChanged -> state = state.copy(pendingNewComponent = event.component)
             is WhiteLabelEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
             is WhiteLabelEvent.OnImageUploadStarted -> state = state.copy(isUploading = event.isUploading)
-            
+
             is WhiteLabelEvent.OnDeleteComponent -> {
                 val newList = state.page.components.toMutableList().apply { removeAt(event.index) }
                 onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
@@ -165,20 +171,20 @@ fun WhiteLabelScreen(
 
     AppTheme(themeConfig = state.page.theme) {
         WhiteLabelContent(
-            state = state, 
-            viewModel = viewModel, 
-            onEvent = ::onEvent, 
+            state = state,
+            viewModel = viewModel,
+            onEvent = ::onEvent,
             originalPage = pristinePage,
             displayCategories = effectiveCategories,
             onManageCategories = { showCategoryManagement = true },
             onPickImage = { imagePicker() },
-            onDiscardClicked = { showDiscardDialog = true }
+            onDiscardClicked = { showDiscardDialog = true },
         )
 
         if (showCategoryManagement) {
             CategoryManagementDialog(
                 viewModel = viewModel,
-                onDismiss = { showCategoryManagement = false }
+                onDismiss = { showCategoryManagement = false },
             )
         }
 
@@ -196,14 +202,14 @@ fun WhiteLabelScreen(
                             onEvent(WhiteLabelEvent.OnPageUpdated(pristinePage))
                             showDiscardDialog = false
                         },
-                        containerColor = MaterialTheme.colorScheme.error
+                        containerColor = MaterialTheme.colorScheme.error,
                     )
                 },
                 dismissButton = {
                     TextButton(onClick = { showDiscardDialog = false }) {
                         Text("Cancelar")
                     }
-                }
+                },
             )
         }
     }

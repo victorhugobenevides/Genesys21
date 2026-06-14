@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.util.shimmerBrush
@@ -35,20 +34,22 @@ fun GenesysImage(
     contentScale: ContentScale = ContentScale.Crop,
     shape: Shape? = null,
     placeholderColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-    showShimmer: Boolean = true
+    showShimmer: Boolean = true,
 ) {
     var isLoading by remember { mutableStateOf(true) }
-    
-    // Define a forma final: Circular ou Arredondada (baseada no DS)
-    val finalShape = when {
-        isCircular -> CircleShape
-        shape != null -> shape
-        else -> RoundedCornerShape(GenesysDimens.CornerRadiusSmall)
-    }
 
-    val imageModifier = modifier
-        .size(size)
-        .clip(finalShape)
+    // Define a forma final: Circular ou Arredondada (baseada no DS)
+    val finalShape =
+        when {
+            isCircular -> CircleShape
+            shape != null -> shape
+            else -> RoundedCornerShape(GenesysDimens.CornerRadiusSmall)
+        }
+
+    val imageModifier =
+        modifier
+            .size(size)
+            .clip(finalShape)
 
     Box(modifier = imageModifier) {
         if (url.isNotEmpty()) {
@@ -59,28 +60,30 @@ fun GenesysImage(
                 contentScale = contentScale,
                 onLoading = { isLoading = true },
                 onSuccess = { isLoading = false },
-                onError = { isLoading = false }
+                onError = { isLoading = false },
             )
-            
+
             if (isLoading && showShimmer) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(shimmerBrush())
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(shimmerBrush()),
                 )
             }
         } else {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(placeholderColor),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(placeholderColor),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.Image,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    modifier = Modifier.size(size * 0.5f)
+                    modifier = Modifier.size(size * 0.5f),
                 )
             }
         }

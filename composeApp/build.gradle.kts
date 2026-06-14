@@ -1,7 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-import java.net.InetAddress
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -20,11 +19,11 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
@@ -32,34 +31,37 @@ kotlin {
             export(projects.shared)
         }
     }
-    
+
     js {
         browser()
         binaries.executable()
     }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser {
             commonWebpackConfig {
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        add(project.file("src/webMain/resources").canonicalPath)
+                devServer =
+                    (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+                        static =
+                            (static ?: mutableListOf()).apply {
+                                add(project.file("src/webMain/resources").canonicalPath)
+                            }
+
+                        // Configuração de Proxy para desenvolvimento
+                        proxy =
+                            mutableListOf(
+                                KotlinWebpackConfig.DevServer.Proxy(
+                                    mutableListOf("/api", "/uploads", "/upload"),
+                                    "http://localhost:8080",
+                                ),
+                            )
                     }
-                    
-                    // Configuração de Proxy para desenvolvimento
-                    proxy = mutableListOf(
-                        KotlinWebpackConfig.DevServer.Proxy(
-                            mutableListOf("/api", "/uploads", "/upload"), 
-                            "http://localhost:8080"
-                        )
-                    )
-                }
             }
         }
         binaries.executable()
     }
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
