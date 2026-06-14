@@ -3,9 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
 import com.itbenevides.genesys21.domain.model.Page
@@ -19,7 +17,6 @@ import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import com.itbenevides.genesys21.ui.util.glassmorphic
 import com.itbenevides.genesys21.ui.util.pulse
 import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.koinInject
@@ -86,6 +83,31 @@ private fun PageViewerContent(
                 title = state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
+                    // BOTÃO CARRINHO: Sempre visível no topo direito
+                    BadgedBox(
+                        badge = {
+                            if (state.cartCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.offset(x = (-4).dp, y = 4.dp),
+                                ) {
+                                    Text(text = state.cartCount.toString())
+                                }
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .padding(end = 8.dp)
+                                .then(if (state.cartCount > 0) Modifier.pulse() else Modifier),
+                    ) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.ShoppingBag,
+                            contentDescription = GenesysStrings.ViewCart,
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
+                        )
+                    }
+
                     // BOTÃO MEUS PEDIDOS: Apenas se houver lista de produtos na página
                     if (state.hasProductList) {
                         GenesysIconButton(
@@ -106,47 +128,7 @@ private fun PageViewerContent(
             )
         },
         floatingActionButton = {
-            // BOTÃO CARRINHO PREMIUM: Flutuante com Glassmorphism e Badge de destaque
-            if (state.hasProductList || state.cartCount > 0) {
-                Box(
-                    modifier = Modifier.padding(bottom = 16.dp, end = 8.dp),
-                ) {
-                    BadgedBox(
-                        badge = {
-                            if (state.cartCount > 0) {
-                                Badge(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.offset(x = (-12).dp, y = 12.dp),
-                                ) {
-                                    Text(text = state.cartCount.toString())
-                                }
-                            }
-                        },
-                    ) {
-                        Surface(
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                            modifier =
-                                Modifier
-                                    .size(64.dp)
-                                    .glassmorphic(androidx.compose.foundation.shape.CircleShape)
-                                    .then(if (state.cartCount > 0) Modifier.pulse() else Modifier),
-                            shape = androidx.compose.foundation.shape.CircleShape,
-                            color = Color.Transparent,
-                            tonalElevation = 6.dp,
-                        ) {
-                            Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                                Icon(
-                                    imageVector = GenesysIcons.ShoppingBag,
-                                    contentDescription = GenesysStrings.ViewCart,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(28.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            // Removido do FAB, agora reside na TopBar
         },
     ) {
         GenesysColumn(
