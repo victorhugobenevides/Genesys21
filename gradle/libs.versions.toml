@@ -98,3 +98,4 @@ firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "perf"
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+jacoco = { id = "org.gradle.jacoco", version = "0.8.12" }

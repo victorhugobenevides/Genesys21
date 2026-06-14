@@ -80,3 +80,13 @@ Este arquivo contém a lista ordenada de tarefas para a implementação da Fase 
     - **Acceptance Criteria**:
         - [x] Shimmers active during component loading.
         - [x] Pulsing highlight on active reorder handle.
+
+## Wave 4: DevOps & Quality Hard-Gates (NEW)
+
+- [x] **T015: CircleCI Artifacts & Coverage Reporting**
+    - **GitHub Issue**: #91
+    - **Description**: Configure CircleCI to store test results, linting reports, and code coverage as build artifacts.
+    - **Acceptance Criteria**:
+        - [ ] JUnit XML results visible in CircleCI Tests tab.
+        - [ ] Coverage HTML reports accessible as artifacts.
+        - [ ] Linting (Ktlint/Detekt) reports preserved.
