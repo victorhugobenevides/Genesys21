@@ -1,14 +1,11 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
 import com.itbenevides.genesys21.domain.model.Page
@@ -17,17 +14,13 @@ import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
-import com.itbenevides.genesys21.ui.components.layout.GenesysPage
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.glassmorphic
+import com.itbenevides.genesys21.ui.util.pulse
 import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.koinInject
 
@@ -113,29 +106,45 @@ private fun PageViewerContent(
             )
         },
         floatingActionButton = {
-            // BOTÃO CARRINHO: Apenas se houver lista de produtos ou itens já no carrinho
+            // BOTÃO CARRINHO PREMIUM: Flutuante com Glassmorphism e Badge de destaque
             if (state.hasProductList || state.cartCount > 0) {
-                BadgedBox(
-                    badge = {
-                        if (state.cartCount > 0) {
-                            Badge(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError,
-                                modifier = Modifier.offset(x = (-8).dp, y = 8.dp),
-                            ) {
-                                GenesysText(text = state.cartCount.toString(), style = GenesysTextStyle.Label)
+                Box(
+                    modifier = Modifier.padding(bottom = 16.dp, end = 8.dp),
+                ) {
+                    BadgedBox(
+                        badge = {
+                            if (state.cartCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.offset(x = (-12).dp, y = 12.dp),
+                                ) {
+                                    Text(text = state.cartCount.toString())
+                                }
+                            }
+                        },
+                    ) {
+                        Surface(
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
+                            modifier =
+                                Modifier
+                                    .size(64.dp)
+                                    .glassmorphic(androidx.compose.foundation.shape.CircleShape)
+                                    .then(if (state.cartCount > 0) Modifier.pulse() else Modifier),
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = Color.Transparent,
+                            tonalElevation = 6.dp,
+                        ) {
+                            Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                Icon(
+                                    imageVector = GenesysIcons.ShoppingBag,
+                                    contentDescription = GenesysStrings.ViewCart,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp),
+                                )
                             }
                         }
-                    },
-                ) {
-                    ExtendedFloatingActionButton(
-                        onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        icon = { Icon(GenesysIcons.ShoppingBag, null) },
-                        text = { GenesysText(text = GenesysStrings.ViewCart, style = GenesysTextStyle.Body) },
-                    )
+                    }
                 }
             }
         },
