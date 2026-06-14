@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
+import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.util.staggeredEntry
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -261,13 +266,14 @@ fun PageComponentRenderer(
                                         horizontalArrangement = Arrangement.spacedBy(spacing),
                                         contentPadding = PaddingValues(horizontal = if(isMobile) 0.dp else 48.dp, vertical = 8.dp)
                                     ) {
-                                        items(productsToDisplay) { product ->
+                                        itemsIndexed(productsToDisplay) { index, product ->
                                             ProductCard(
                                                 product = product,
                                                 modifier = Modifier.width(horizontalItemWidth),
                                                 onClick = onProductClick,
                                                 onAddToCart = { router.viewModel.addToCart(product) },
-                                                isEditMode = isEditMode
+                                                isEditMode = isEditMode,
+                                                index = index
                                             )
                                         }
                                     }
@@ -298,15 +304,17 @@ fun PageComponentRenderer(
                                     }
                                 }
                             } else {
-                                productsToDisplay.chunked(maxColumns).forEach { rowProducts ->
+                                productsToDisplay.chunked(maxColumns).forEachIndexed { rowIndex, rowProducts ->
                                     GenesysRow(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                                        rowProducts.forEach { product ->
+                                        rowProducts.forEachIndexed { colIndex, product ->
+                                            val overallIndex = rowIndex * maxColumns + colIndex
                                             GenesysWeightBox(1f) {
                                                 ProductCard(
                                                     product = product,
                                                     onClick = onProductClick,
                                                     onAddToCart = { router.viewModel.addToCart(product) },
-                                                    isEditMode = isEditMode
+                                                    isEditMode = isEditMode,
+                                                    index = overallIndex
                                                 )
                                             }
                                         }
@@ -449,26 +457,52 @@ fun ProductCard(
     modifier: Modifier = Modifier,
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null,
-    isEditMode: Boolean = false
+    isEditMode: Boolean = false,
+    index: Int = 0
 ) {
     var isAdded by remember { mutableStateOf(false) }
+    var isHovered by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val backendUrl = remember { getBaseUrl() }
     
-    val scale by animateFloatAsState(
+    val interactionScale by animateFloatAsState(
+        targetValue = if (isHovered) 1.03f else 1f,
+        animationSpec = GenesysMotion.interactiveSpring
+    )
+
+    val successScale by animateFloatAsState(
         targetValue = if (isAdded) 1.15f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
     )
 
-    BoxWithConstraints(modifier = modifier) {
+    BoxWithConstraints(
+        modifier = modifier
+            .staggeredEntry(index)
+            .scale(interactionScale)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        when (event.type) {
+                            PointerEventType.Enter -> isHovered = true
+                            PointerEventType.Exit -> isHovered = false
+                        }
+                    }
+                }
+            }
+    ) {
         val isMobile = maxWidth < 180.dp
         
         GenesysCard(
             onClick = if (onClick != null) { { onClick.invoke(product) } } else null,
-            elevation = 0.dp, // Flat modern look
+            elevation = if (isHovered) 4.dp else 0.dp,
             shape = RoundedCornerShape(20.dp),
             backgroundColor = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp, 
+                color = if (isHovered) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) 
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+            )
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Box(
@@ -520,14 +554,14 @@ fun ProductCard(
                                 tonalElevation = 4.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(GenesysIcons.Edit, null, modifier = Modifier.size(if (isMobile) 12.dp else 16.dp))
+                                    Icon(GenesysIcons.Edit, null, modifier = Modifier.size(if (isMobile) 16.dp else 20.dp))
                                 }
                             }
                         }
                     } else if (onAddToCart != null && product.stock > 0 && product.price > 0) {
                         Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.BottomEnd) {
                             Surface(
-                                modifier = Modifier.size(if (isMobile) 32.dp else 44.dp).scale(scale),
+                                modifier = Modifier.size(if (isMobile) 32.dp else 44.dp).scale(successScale),
                                 shape = RoundedCornerShape(12.dp), // Botão quadrado-arredondado moderno
                                 color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
                                 contentColor = Color.White,

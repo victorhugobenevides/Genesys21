@@ -21,29 +21,29 @@ Este arquivo contém a lista ordenada de tarefas para a implementação da Fase 
 
 ## Wave 2: Screen Enhancements (Visual Identity)
 
-- [ ] **T007: Premium Login Screen Redesign**
+- [x] **T007: Premium Login Screen Redesign**
     - **GitHub Issue**: #83
     - **Dependencies**: T006
     - **Description**: Shifting radial gradient background + Frosted glass login card.
     - **Acceptance Criteria**:
-        - [ ] Shifting background gradient active on Login.
-        - [ ] Frosted input container implemented.
+        - [x] Shifting background gradient active on Login.
+        - [x] Frosted input container implemented.
 
-- [ ] **T008: Interactive Product Cards**
+- [x] **T008: Interactive Product Cards**
     - **GitHub Issue**: #84
     - **Dependencies**: T006
     - **Description**: Hover/Tap scaling + Add-to-Cart success morphing.
     - **Acceptance Criteria**:
-        - [ ] Spring-based scaling on interaction.
-        - [ ] Success icon morphing on add to cart.
+        - [x] Spring-based scaling on interaction.
+        - [x] Success icon morphing on add to cart.
 
-- [ ] **T009: Animated Category Filter Chips**
+- [x] **T009: Animated Category Filter Chips**
     - **GitHub Issue**: #85
     - **Dependencies**: T006
     - **Description**: Background color morphing and smooth list reflows.
     - **Acceptance Criteria**:
-        - [ ] Smooth color transitions on selection.
-        - [ ] Animated layout shifts using `animateContentSize`.
+        - [x] Smooth color transitions on selection.
+        - [x] Animated layout shifts using `animateContentSize`.
 
 ---
 

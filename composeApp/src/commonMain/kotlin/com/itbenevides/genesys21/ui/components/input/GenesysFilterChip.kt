@@ -1,12 +1,17 @@
 package com.itbenevides.genesys21.ui.components.input
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.theme.GenesysMotion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,11 +22,27 @@ fun GenesysFilterChip(
     modifier: Modifier = Modifier,
     badgeCount: Int = 0
 ) {
+    val containerColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        animationSpec = GenesysMotion.colorSpring,
+        label = "chipColor"
+    )
+    
+    val labelColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = GenesysMotion.colorSpring,
+        label = "labelColor"
+    )
+
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { 
-            Text(label) 
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            ) 
             if (badgeCount > 0) {
                 Surface(
                     color = if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primaryContainer,
@@ -38,16 +59,18 @@ fun GenesysFilterChip(
             }
         },
         shape = CircleShape,
-        modifier = modifier,
+        modifier = modifier.animateContentSize(),
         colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-            containerColor = Color.Transparent
+            selectedContainerColor = containerColor,
+            selectedLabelColor = labelColor,
+            containerColor = containerColor,
+            labelColor = labelColor
         ),
         border = FilterChipDefaults.filterChipBorder(
             enabled = true, 
             selected = selected, 
-            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            borderColor = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            selectedBorderColor = Color.Transparent
         )
     )
 }
