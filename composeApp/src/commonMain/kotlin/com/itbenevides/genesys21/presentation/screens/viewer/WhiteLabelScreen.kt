@@ -181,6 +181,17 @@ fun WhiteLabelScreen(
             onDiscardClicked = { showDiscardDialog = true },
         )
 
+        if (state.showThemeSelector) {
+            ThemeSelectorBottomSheet(
+                currentTheme = state.page.theme,
+                onThemeSelected = { newTheme ->
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(theme = newTheme)))
+                    state = state.copy(showThemeSelector = false)
+                },
+                onDismiss = { state = state.copy(showThemeSelector = false) },
+            )
+        }
+
         if (showCategoryManagement) {
             CategoryManagementDialog(
                 viewModel = viewModel,

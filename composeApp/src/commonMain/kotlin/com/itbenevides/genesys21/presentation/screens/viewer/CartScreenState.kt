@@ -9,7 +9,7 @@ data class CartScreenState(
     val cartItems: List<CartItem> = emptyList(),
     val total: Double = 0.0,
     val customerName: String = "",
-    val customerPhone: String = "", // ADICIONADO
+    val customerPhone: String = "",
     val isLoading: Boolean = false,
 ) {
     // ATUALIZADO: Checkout exige Nome e Telefone

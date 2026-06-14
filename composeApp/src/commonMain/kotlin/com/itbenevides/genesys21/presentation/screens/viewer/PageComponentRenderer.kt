@@ -641,7 +641,7 @@ fun ProductCard(
                         Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.BottomEnd) {
                             Surface(
                                 modifier = Modifier.size(if (isMobile) 32.dp else 44.dp).scale(successScale),
-                                shape = RoundedCornerShape(12.dp), // Botão quadrado-arredondado moderno
+                                shape = RoundedCornerShape(12.dp),
                                 color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
                                 contentColor = Color.White,
                                 shadowElevation = 8.dp,

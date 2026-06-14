@@ -10,7 +10,7 @@ import com.itbenevides.genesys21.domain.model.Product
 data class WhiteLabelState(
     val page: Page,
     val isLoading: Boolean = false,
-    val isUploading: Boolean = false, // ADICIONADO: Controle de upload de imagem
+    val isUploading: Boolean = false,
     val availableProducts: List<Product> = emptyList(),
     val allAvailableCategories: List<String> = emptyList(),
     val showCatalog: Boolean = false,

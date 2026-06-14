@@ -28,7 +28,7 @@ fun SplashScreen() {
         Icon(
             imageVector = GenesysIcons.Magic,
             contentDescription = null,
-            modifier = Modifier.size(GenesysSpacing.Huge.value * 2), // Tamanho proporcional aos tokens
+            modifier = Modifier.size(GenesysSpacing.Huge.value * 2),
             tint = MaterialTheme.colorScheme.primary,
         )
 
