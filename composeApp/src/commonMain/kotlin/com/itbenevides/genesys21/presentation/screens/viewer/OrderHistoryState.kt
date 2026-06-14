@@ -7,7 +7,7 @@ import com.itbenevides.genesys21.domain.model.Order
  */
 data class OrderHistoryState(
     val orders: List<Order> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
 )
 
 /**
@@ -15,5 +15,6 @@ data class OrderHistoryState(
  */
 sealed class OrderHistoryEvent {
     object OnBackClicked : OrderHistoryEvent()
+
     data class OnOrderClicked(val order: Order) : OrderHistoryEvent()
 }

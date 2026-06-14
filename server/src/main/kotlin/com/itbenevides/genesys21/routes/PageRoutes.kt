@@ -10,11 +10,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.pageRoutes(pageRepository: PageRepository) {
-    
     // Rotas Públicas - O prefixo /api já vem do Application.kt
     route("/public") {
         get("/pages/first") {
-            pageRepository.getPages("") 
+            pageRepository.getPages("")
                 .firstOrNull()?.let { call.respond(it) }
                 ?: call.respond(HttpStatusCode.NotFound, "Nenhuma página disponível")
         }
@@ -47,7 +46,7 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
                 val page = call.receive<Page>()
                 pageRepository.savePage(page, principal.name, isEditing = false)
                     .onSuccess { call.respond(HttpStatusCode.Created) }
-                    .onFailure { 
+                    .onFailure {
                         val msg = it.message ?: "Erro ao criar"
                         if (msg.contains("unique", true)) {
                             call.respond(HttpStatusCode.Conflict, "Este domínio já está sendo usado por outra página.")
@@ -62,7 +61,7 @@ fun Route.pageRoutes(pageRepository: PageRepository) {
                 val page = call.receive<Page>()
                 pageRepository.savePage(page, principal.name, isEditing = true)
                     .onSuccess { call.respond(HttpStatusCode.OK) }
-                    .onFailure { 
+                    .onFailure {
                         val msg = it.message ?: "Sem permissão ou erro interno"
                         if (msg.contains("negado", true)) {
                             call.respond(HttpStatusCode.Forbidden, msg)

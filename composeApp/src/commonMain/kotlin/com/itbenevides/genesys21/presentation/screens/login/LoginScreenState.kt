@@ -8,7 +8,7 @@ data class LoginState(
     val password: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String = "",
-    val canLogin: Boolean = false
+    val canLogin: Boolean = false,
 )
 
 /**
@@ -16,6 +16,8 @@ data class LoginState(
  */
 sealed class LoginEvent {
     data class OnEmailChanged(val email: String) : LoginEvent()
+
     data class OnPasswordChanged(val password: String) : LoginEvent()
+
     object OnLoginClicked : LoginEvent()
 }

@@ -20,28 +20,31 @@ fun GenesysBadge(
     label: String,
     color: Color,
     showDot: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textColor: Color? = null,
 ) {
+    val finalTextColor = textColor ?: color
     Surface(
         color = color.copy(alpha = 0.15f),
         shape = RoundedCornerShape(6.dp),
-        modifier = modifier
+        modifier = modifier,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             if (showDot) {
-                Box(Modifier.size(6.dp).background(color, CircleShape))
+                Box(Modifier.size(6.dp).background(finalTextColor, CircleShape))
                 Spacer(Modifier.width(6.dp))
             }
             Text(
                 label.uppercase(),
-                color = color,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
+                color = finalTextColor,
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                    ),
             )
         }
     }

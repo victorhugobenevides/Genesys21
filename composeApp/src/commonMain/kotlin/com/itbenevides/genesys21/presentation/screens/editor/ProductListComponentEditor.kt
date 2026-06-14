@@ -26,7 +26,7 @@ fun ProductListComponentEditor(
     allAvailableProducts: List<Product>,
     onEditProduct: (Product?) -> Unit,
     onProductsUpdated: (List<Product>) -> Unit,
-    onSaveLabel: (String, Boolean) -> Unit
+    onSaveLabel: (String, Boolean) -> Unit,
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var customLabel by remember { mutableStateOf(component.customLabel ?: "") }
@@ -39,11 +39,12 @@ fun ProductListComponentEditor(
 
         GenesysTabRow(
             selectedTabIndex = selectedTab,
-            tabs = listOf(
-                GenesysTabData(GenesysStrings.TabProductsInList, GenesysIcons.List, component.products.size),
-                GenesysTabData(GenesysStrings.TabProductsInCatalog, GenesysIcons.Inventory)
-            ),
-            onTabSelected = { selectedTab = it }
+            tabs =
+                listOf(
+                    GenesysTabData(GenesysStrings.TabProductsInList, GenesysIcons.List, component.products.size),
+                    GenesysTabData(GenesysStrings.TabProductsInCatalog, GenesysIcons.Inventory),
+                ),
+            onTabSelected = { selectedTab = it },
         )
 
         GenesysSpacer(GenesysSpacing.Medium)
@@ -53,17 +54,18 @@ fun ProductListComponentEditor(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             label = GenesysStrings.SearchPlaceholder,
-            icon = GenesysIcons.Search
+            icon = GenesysIcons.Search,
         )
 
         GenesysSpacer(GenesysSpacing.Medium)
 
         if (selectedTab == 0) {
             // ABA 1: Produtos Atuais
-            val filteredListProducts = component.products.filter { product ->
-                product.name.contains(searchQuery, ignoreCase = true) || 
-                (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
-            }
+            val filteredListProducts =
+                component.products.filter { product ->
+                    product.name.contains(searchQuery, ignoreCase = true) ||
+                        (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
+                }
 
             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
                 filteredListProducts.forEach { product ->
@@ -71,11 +73,11 @@ fun ProductListComponentEditor(
                     GenesysCard(modifier = Modifier.padding(bottom = 4.dp)) {
                         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
                             GenesysWeightBox(1f) { GenesysText(product.name) }
-                            
+
                             GenesysRow(fillWidth = false) {
                                 GenesysIconButton(
-                                    icon = GenesysIcons.ArrowUp, 
-                                    onClick = { 
+                                    icon = GenesysIcons.ArrowUp,
+                                    onClick = {
                                         if (index > 0) {
                                             val newList = component.products.toMutableList()
                                             val temp = newList[index]
@@ -83,11 +85,11 @@ fun ProductListComponentEditor(
                                             newList[index - 1] = temp
                                             onProductsUpdated(newList)
                                         }
-                                    }
+                                    },
                                 )
                                 GenesysIconButton(
-                                    icon = GenesysIcons.ArrowDown, 
-                                    onClick = { 
+                                    icon = GenesysIcons.ArrowDown,
+                                    onClick = {
                                         if (index < component.products.size - 1) {
                                             val newList = component.products.toMutableList()
                                             val temp = newList[index]
@@ -95,13 +97,13 @@ fun ProductListComponentEditor(
                                             newList[index + 1] = temp
                                             onProductsUpdated(newList)
                                         }
-                                    }
+                                    },
                                 )
                                 GenesysIconButton(icon = GenesysIcons.Edit, onClick = { onEditProduct(product) })
                                 GenesysIconButton(
-                                    icon = GenesysIcons.Remove, 
+                                    icon = GenesysIcons.Remove,
                                     tint = Color.Red.copy(alpha = 0.6f),
-                                    onClick = { onProductsUpdated(component.products.filter { it.id != product.id }) }
+                                    onClick = { onProductsUpdated(component.products.filter { it.id != product.id }) },
                                 )
                             }
                         }
@@ -112,18 +114,19 @@ fun ProductListComponentEditor(
                     text = GenesysStrings.AddNewProduct,
                     icon = GenesysIcons.Add,
                     onClick = { onEditProduct(null) },
-                    fillWidth = true
+                    fillWidth = true,
                 )
             }
         } else {
             // ABA 2: Catálogo Global
-            val catalogToDisplay = allAvailableProducts
-                .filter { p -> component.products.none { it.id == p.id } }
-                .filter { product -> 
-                    product.name.contains(searchQuery, ignoreCase = true) || 
-                    (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
-                }
-            
+            val catalogToDisplay =
+                allAvailableProducts
+                    .filter { p -> component.products.none { it.id == p.id } }
+                    .filter { product ->
+                        product.name.contains(searchQuery, ignoreCase = true) ||
+                            (product.categoryName?.contains(searchQuery, ignoreCase = true) == true)
+                    }
+
             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
                 if (catalogToDisplay.isEmpty()) {
                     GenesysText(GenesysStrings.NoProductsInCatalog, style = GenesysTextStyle.Label)
@@ -135,7 +138,7 @@ fun ProductListComponentEditor(
                                 GenesysLoadingButton(
                                     text = GenesysStrings.AddToThisList,
                                     icon = GenesysIcons.Add,
-                                    onClick = { onProductsUpdated(component.products + product) }
+                                    onClick = { onProductsUpdated(component.products + product) },
                                 )
                             }
                         }
@@ -153,21 +156,21 @@ fun ProductListComponentEditor(
             onValueChange = { customLabel = it },
             label = GenesysStrings.BlockNameLabel,
             placeholder = GenesysStrings.BlockNamePlaceholder,
-            icon = GenesysIcons.Edit
+            icon = GenesysIcons.Edit,
         )
-        
+
         GenesysSpacer(GenesysSpacing.Medium)
-        
+
         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
             GenesysText(GenesysStrings.HorizontalListLabel, weightValue = 1f)
             Switch(
                 checked = isHorizontal,
-                onCheckedChange = { isHorizontal = it }
+                onCheckedChange = { isHorizontal = it },
             )
         }
-        
+
         GenesysSpacer(GenesysSpacing.Medium)
-        
+
         GenesysLoadingButton(text = GenesysStrings.SaveLabel, fillWidth = true, onClick = {
             onSaveLabel(customLabel, isHorizontal)
         })

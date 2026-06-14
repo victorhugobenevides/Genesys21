@@ -66,7 +66,7 @@ object GenesysStrings {
     const val SelectBlockToEdit = "Selecione um bloco"
     const val SelectBlockToEditDesc = "Toque no ícone de lápis para editar."
     const val PhotosLimit = "/5"
-    
+
     const val TitleTextLabel = "Texto do Título"
     const val ContentTextLabel = "Conteúdo do Texto"
     const val Alignment = "Alinhamento"
@@ -121,7 +121,7 @@ object GenesysStrings {
     const val WhatsAppContactAction = "WhatsApp"
     const val NoHistoryTitle = "Nenhum pedido"
     const val NoHistoryDescription = "Você ainda não possui pedidos registrados."
-    
+
     const val StatusPending = "Pendentes"
     const val StatusProcessing = "Em curso"
     const val StatusCompleted = "Concluídos"

@@ -14,12 +14,13 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 @Composable
 fun GenesysColorCircle(
     color: Color,
-    size: Dp = GenesysDimens.IconLarge
+    size: Dp = GenesysDimens.IconLarge,
 ) {
     Box(
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(color)
+        modifier =
+            Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(color),
     )
 }

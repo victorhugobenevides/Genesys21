@@ -9,10 +9,10 @@ import androidx.compose.ui.graphics.Color
 @Composable
 fun GenesysDivider(
     modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+    color: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
 ) {
     HorizontalDivider(
         modifier = modifier,
-        color = color
+        color = color,
     )
 }

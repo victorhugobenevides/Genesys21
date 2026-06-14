@@ -1,9 +1,14 @@
 package com.itbenevides.genesys21
 
-import com.itbenevides.genesys21.navigation.Screen
 import com.itbenevides.BuildConfig
+import com.itbenevides.genesys21.navigation.Screen
 
-actual fun syncUrlWithScreen(screen: Screen, pageId: String?, productId: String?, title: String?) { }
+actual fun syncUrlWithScreen(
+    screen: Screen,
+    pageId: String?,
+    productId: String?,
+    title: String?,
+) { }
 
 actual fun getInitialUrlPath(): String? = null
 

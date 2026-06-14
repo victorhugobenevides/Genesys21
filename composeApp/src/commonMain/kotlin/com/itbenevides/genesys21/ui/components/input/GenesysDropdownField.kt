@@ -22,19 +22,23 @@ fun GenesysDropdownField(
     options: List<String>,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    placeholder: String? = null
+    placeholder: String? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val filteredOptions = remember(value, options) {
-        if (value.isEmpty()) options 
-        else options.filter { it.contains(value, ignoreCase = true) }
-    }
+    val filteredOptions =
+        remember(value, options) {
+            if (value.isEmpty()) {
+                options
+            } else {
+                options.filter { it.contains(value, ignoreCase = true) }
+            }
+        }
 
     Box(modifier = modifier.fillMaxWidth()) {
         GenesysTextField(
             value = value,
-            onValueChange = { 
+            onValueChange = {
                 onValueChange(it)
                 // Abre o menu apenas se houver algo digitado para sugerir
                 if (it.isNotEmpty()) expanded = true
@@ -46,22 +50,22 @@ fun GenesysDropdownField(
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                        contentDescription = "Ver opções"
+                        contentDescription = "Ver opções",
                     )
                 }
-            }
+            },
         )
 
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(0.9f)
+            modifier = Modifier.fillMaxWidth(0.9f),
         ) {
             if (filteredOptions.isEmpty() && value.isNotEmpty()) {
                 DropdownMenuItem(
                     text = { Text("Nenhuma categoria encontrada") },
                     onClick = { expanded = false },
-                    enabled = false
+                    enabled = false,
                 )
             } else {
                 filteredOptions.forEach { option ->
@@ -71,7 +75,7 @@ fun GenesysDropdownField(
                             // IMPORTANTE: Notifica o pai e fecha o menu
                             onValueChange(option)
                             expanded = false
-                        }
+                        },
                     )
                 }
             }

@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.ui.components.card
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -19,31 +18,37 @@ fun GenesysCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     elevation: Dp = 1.dp,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(24.dp),
     onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    border: androidx.compose.foundation.BorderStroke? = null,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    val cardModifier = modifier // O modifier externo já costuma ter fillMaxWidth se necessário
+    val finalBorder =
+        border ?: androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+        )
 
     if (onClick != null) {
         Surface(
-            modifier = cardModifier,
+            modifier = modifier,
             shape = shape,
             color = backgroundColor,
             tonalElevation = elevation,
-            onClick = onClick
+            onClick = onClick,
+            border = finalBorder,
         ) {
-            // CORREÇÃO UX: O Column interno deve preencher a largura do Surface
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp), content = content)
+            Column(modifier = Modifier.padding(16.dp), content = content)
         }
     } else {
         Surface(
-            modifier = cardModifier,
+            modifier = modifier,
             shape = shape,
             color = backgroundColor,
-            tonalElevation = elevation
+            tonalElevation = elevation,
+            border = finalBorder,
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp), content = content)
+            Column(modifier = Modifier.padding(16.dp), content = content)
         }
     }
 }

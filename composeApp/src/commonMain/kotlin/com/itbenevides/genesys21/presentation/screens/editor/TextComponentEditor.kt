@@ -1,11 +1,10 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
@@ -16,52 +15,52 @@ import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun TextComponentEditor(
     component: PageComponent.Text,
-    onSave: (PageComponent.Text) -> Unit
+    onSave: (PageComponent.Text) -> Unit,
 ) {
     var content by remember { mutableStateOf(component.content) }
     var alignment by remember { mutableStateOf(component.textAlign) }
     var fontSize by remember { mutableStateOf(component.fontSize.toFloat()) }
     var weight by remember { mutableStateOf(component.fontWeight) }
-    
+
     val primaryColor = MaterialTheme.colorScheme.primary
 
     // Cria uma versão temporária do componente para renderizar na pre-visualização real
-    val previewComponent = remember(content, alignment, fontSize, weight) {
-        component.copy(
-            content = content,
-            textAlign = alignment,
-            fontSize = fontSize.toInt(),
-            fontWeight = weight
-        )
-    }
+    val previewComponent =
+        remember(content, alignment, fontSize, weight) {
+            component.copy(
+                content = content,
+                textAlign = alignment,
+                fontSize = fontSize.toInt(),
+                fontWeight = weight,
+            )
+        }
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysSpacing.Small)
-        
+
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
             component = previewComponent,
-            isEditMode = false
+            isEditMode = false,
         )
 
         GenesysSpacer(GenesysSpacing.Large)
         GenesysTextField(
-            value = content, 
-            onValueChange = { content = it }, 
-            label = GenesysStrings.ContentTextLabel, 
-            singleLine = false, 
+            value = content,
+            onValueChange = { content = it },
+            label = GenesysStrings.ContentTextLabel,
+            singleLine = false,
             minLines = 3,
-            icon = GenesysIcons.Description
+            icon = GenesysIcons.Description,
         )
-        
+
         GenesysSpacer(GenesysSpacing.Medium)
-        
+
         GenesysRow(modifier = Modifier.fillMaxWidth()) {
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
@@ -70,19 +69,20 @@ fun TextComponentEditor(
                         listOf("LEFT", "CENTER", "RIGHT").forEach { align ->
                             val isSelected = alignment == align
                             GenesysIconButton(
-                                icon = when(align) {
-                                    "LEFT" -> GenesysIcons.AlignLeft
-                                    "RIGHT" -> GenesysIcons.AlignRight
-                                    else -> GenesysIcons.AlignCenter
-                                },
+                                icon =
+                                    when (align) {
+                                        "LEFT" -> GenesysIcons.AlignLeft
+                                        "RIGHT" -> GenesysIcons.AlignRight
+                                        else -> GenesysIcons.AlignCenter
+                                    },
                                 onClick = { alignment = align },
-                                tint = if (isSelected) primaryColor else Color.Unspecified
+                                tint = if (isSelected) primaryColor else Color.Unspecified,
                             )
                         }
                     }
                 }
             }
-            
+
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
                     GenesysText(text = GenesysStrings.FontStyle, style = GenesysTextStyle.Label)
@@ -90,7 +90,7 @@ fun TextComponentEditor(
                         GenesysIconButton(
                             icon = GenesysIcons.Bold,
                             onClick = { weight = if (weight == "BOLD") "NORMAL" else "BOLD" },
-                            tint = if (weight == "BOLD") primaryColor else Color.Unspecified
+                            tint = if (weight == "BOLD") primaryColor else Color.Unspecified,
                         )
                     }
                 }
@@ -99,19 +99,19 @@ fun TextComponentEditor(
 
         GenesysSpacer(GenesysSpacing.Medium)
         GenesysSlider(
-            value = fontSize, 
-            onValueChange = { fontSize = it }, 
-            label = GenesysStrings.FontSize, 
-            valueRange = 12f..24f
+            value = fontSize,
+            onValueChange = { fontSize = it },
+            label = GenesysStrings.FontSize,
+            valueRange = 12f..24f,
         )
 
         GenesysSpacer(GenesysSpacing.Large)
         GenesysLoadingButton(
-            text = GenesysStrings.SaveText, 
+            text = GenesysStrings.SaveText,
             fillWidth = true,
             onClick = {
                 onSave(previewComponent)
-            }
+            },
         )
     }
 }

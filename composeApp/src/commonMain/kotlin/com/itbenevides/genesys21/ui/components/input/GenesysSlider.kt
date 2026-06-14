@@ -18,28 +18,29 @@ fun GenesysSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     label: String,
-    valueRange: ClosedFloatingPointRange<Float> = 50f..500f, // CORREÇÃO: Tipo ajustado para ClosedFloatingPointRange
+    valueRange: ClosedFloatingPointRange<Float> = 50f..500f,
     modifier: Modifier = Modifier,
-    steps: Int = 0
+    steps: Int = 0,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         GenesysText(
             text = "$label: ${value.toInt()}px",
             style = GenesysTextStyle.Label,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         )
-        
+
         Slider(
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
             steps = steps,
             modifier = Modifier.fillMaxWidth(),
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary,
-                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         )
     }
 }

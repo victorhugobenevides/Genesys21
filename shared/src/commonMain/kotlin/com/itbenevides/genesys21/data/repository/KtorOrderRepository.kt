@@ -12,47 +12,60 @@ import kotlinx.coroutines.flow.flow
 
 class KtorOrderRepository(
     private val client: HttpClient,
-    private val baseUrl: String
+    private val baseUrl: String,
 ) : OrderRepository {
-
-    override fun getOrders(token: String): Flow<List<Order>> = flow {
-        try {
-            val response = client.get("$baseUrl/api/orders") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-            if (response.status.isSuccess()) {
-                emit(response.body())
-            } else {
+    override fun getOrders(token: String): Flow<List<Order>> =
+        flow {
+            try {
+                val response =
+                    client.get("$baseUrl/api/orders") {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                if (response.status.isSuccess()) {
+                    emit(response.body())
+                } else {
+                    emit(emptyList())
+                }
+            } catch (e: Exception) {
+                println("Orders: Erro ao buscar pedidos - ${e.message}")
                 emit(emptyList())
             }
-        } catch (e: Exception) {
-            println("Orders: Erro ao buscar pedidos - ${e.message}")
-            emit(emptyList())
         }
-    }
 
     override suspend fun createOrder(order: Order): Result<Unit> {
         return try {
-            val response = client.post("$baseUrl/api/public/orders") {
-                contentType(ContentType.Application.Json)
-                setBody(order)
+            val response =
+                client.post("$baseUrl/api/public/orders") {
+                    contentType(ContentType.Application.Json)
+                    setBody(order)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao criar pedido: ${response.status}"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao criar pedido: ${response.status}"))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun updateOrderStatus(token: String, orderId: String, status: OrderStatus): Result<Unit> {
+    override suspend fun updateOrderStatus(
+        token: String,
+        orderId: String,
+        status: OrderStatus,
+    ): Result<Unit> {
         return try {
-            val response = client.patch("$baseUrl/api/orders/$orderId/status") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-                contentType(ContentType.Application.Json)
-                setBody(status)
+            val response =
+                client.patch("$baseUrl/api/orders/$orderId/status") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(status)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao atualizar status: ${response.status}"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao atualizar status: ${response.status}"))
         } catch (e: Exception) {
             Result.failure(e)
         }

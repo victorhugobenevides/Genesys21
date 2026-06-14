@@ -1,26 +1,27 @@
 package com.itbenevides.genesys21.data.database
 
+import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
-import com.itbenevides.genesys21.data.database.DatabaseMigrator.runFixes
+import kotlinx.coroutines.Dispatchers
 
 object DatabaseFactory {
-    private const val DB_PATH = "data/genesys21.db"
-    
-    fun init() {
-        setupDatabaseDirectory()
-        
-        applySqliteOptimizations()
+    private var database: Database? = null
 
-        val dataSource = hikari()
-        Database.connect(dataSource)
-        
+    fun init(jdbcUrl: String = "jdbc:sqlite:data/genesys21.db") {
+        if (jdbcUrl.contains("data/")) {
+            setupDatabaseDirectory()
+            applySqliteOptimizations(jdbcUrl)
+        }
+
+        val dataSource = hikari(jdbcUrl)
+        database = Database.connect(dataSource)
+
         runMigrations()
     }
 
@@ -29,25 +30,27 @@ object DatabaseFactory {
         if (!dataFolder.exists()) dataFolder.mkdirs()
     }
 
-    private fun applySqliteOptimizations() {
+    private fun applySqliteOptimizations(jdbcUrl: String) {
         try {
-            if (File(DB_PATH).exists()) {
+            val path = jdbcUrl.removePrefix("jdbc:sqlite:")
+            if (File(path).exists()) {
                 Class.forName("org.sqlite.JDBC")
-                java.sql.DriverManager.getConnection("jdbc:sqlite:$DB_PATH").use { conn ->
+                java.sql.DriverManager.getConnection(jdbcUrl).use { conn ->
                     conn.createStatement().use { stmt ->
                         stmt.execute("PRAGMA journal_mode=WAL;")
                         stmt.execute("PRAGMA synchronous=NORMAL;")
                     }
                 }
             }
-        } catch (e: Exception) { }
+        } catch (e: Exception) {
+        }
     }
 
-    private fun hikari(): HikariDataSource {
+    private fun hikari(jdbcUrl: String): HikariDataSource {
         val config = HikariConfig()
         config.driverClassName = "org.sqlite.JDBC"
-        config.jdbcUrl = "jdbc:sqlite:$DB_PATH"
-        config.maximumPoolSize = 3 
+        config.jdbcUrl = jdbcUrl
+        config.maximumPoolSize = if (jdbcUrl.contains(":memory:")) 1 else 3
         config.isAutoCommit = true
         config.validate()
         return HikariDataSource(config)
@@ -62,19 +65,18 @@ object DatabaseFactory {
             @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
                 CategoriesTable,
-                PagesTable, 
+                PagesTable,
                 PageComponentsTable,
                 ProductsTable,
                 ProductImagesTable,
                 ComponentProductsTable,
-                CartsTable, 
+                CartsTable,
                 CartItemsTable,
                 OrdersTable,
-                OrderItemsTable
+                OrderItemsTable,
             )
         }
     }
 
-    suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
+    suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
 }

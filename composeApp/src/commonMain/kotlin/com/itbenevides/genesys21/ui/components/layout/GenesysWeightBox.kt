@@ -10,7 +10,10 @@ import androidx.compose.ui.Modifier
  * Utilitário para aplicar peso proporcional dentro de uma GenesysRow.
  */
 @Composable
-fun RowScope.GenesysWeightBox(weightValue: Float, content: @Composable () -> Unit) {
+fun RowScope.GenesysWeightBox(
+    weightValue: Float,
+    content: @Composable () -> Unit,
+) {
     Box(Modifier.weight(weightValue)) { content() }
 }
 
@@ -18,6 +21,9 @@ fun RowScope.GenesysWeightBox(weightValue: Float, content: @Composable () -> Uni
  * Utilitário para aplicar peso proporcional dentro de uma GenesysColumn.
  */
 @Composable
-fun ColumnScope.GenesysWeightBox(weightValue: Float, content: @Composable () -> Unit) {
+fun ColumnScope.GenesysWeightBox(
+    weightValue: Float,
+    content: @Composable () -> Unit,
+) {
     Box(Modifier.weight(weightValue)) { content() }
 }

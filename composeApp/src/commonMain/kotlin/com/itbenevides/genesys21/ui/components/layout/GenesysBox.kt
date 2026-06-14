@@ -13,11 +13,11 @@ import androidx.compose.ui.Modifier
 fun GenesysBox(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier,
         contentAlignment = contentAlignment,
-        content = content
+        content = content,
     )
 }

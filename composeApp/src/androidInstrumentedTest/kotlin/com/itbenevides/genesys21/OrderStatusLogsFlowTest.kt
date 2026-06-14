@@ -1,16 +1,19 @@
 package com.itbenevides.genesys21
 
 import android.content.Intent
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import com.itbenevides.genesys21.domain.model.*
-import com.itbenevides.genesys21.mocks.*
+import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.mocks.FakeOrderRepository
+import com.itbenevides.genesys21.mocks.TestKoinHelper
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
-import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -18,14 +21,14 @@ import org.junit.Test
 import org.koin.test.KoinTest
 import org.koin.test.get
 import org.koin.test.inject
+import kotlinx.coroutines.runBlocking
 
 class OrderStatusLogsFlowTest : KoinTest {
-
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
     private lateinit var scenario: ActivityScenario<MainActivity>
-    
+
     private val fakeOrder: FakeOrderRepository by inject()
 
     private val testOrderId = "order-logs-test-123"
@@ -33,17 +36,18 @@ class OrderStatusLogsFlowTest : KoinTest {
     @Before
     fun setup() {
         TestKoinHelper.startOrReloadKoin()
-        
-        val order = Order(
-            id = testOrderId,
-            userId = "owner",
-            customerId = "fake-session",
-            total = 150.0,
-            status = OrderStatus.PENDING,
-            items = emptyList(),
-            createdAt = System.currentTimeMillis()
-        )
-        
+
+        val order =
+            Order(
+                id = testOrderId,
+                userId = "owner",
+                customerId = "fake-session",
+                total = 150.0,
+                status = OrderStatus.PENDING,
+                items = emptyList(),
+                createdAt = System.currentTimeMillis(),
+            )
+
         runBlocking {
             fakeOrder.createOrder(order)
             // Atualiza status para criar logs

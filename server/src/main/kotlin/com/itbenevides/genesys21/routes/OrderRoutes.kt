@@ -12,17 +12,15 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.flow.first
 
 fun Route.orderRoutes(orderRepository: OrderRepository) {
-
     // 1. Rotas Públicas (Acesso sem Login)
     route("/public/orders") {
-        
         // POST: Criar novo pedido
         post {
             try {
                 val order = call.receive<Order>()
                 // LOG DE DEPURAÇÃO: Verifica se o telefone chegou ao servidor
                 println("SERVIDOR: Recebido pedido ${order.id}. Telefone Cliente: ${order.customerPhone}")
-                
+
                 orderRepository.createOrder(order)
                     .onSuccess { call.respond(HttpStatusCode.Created, order.id) }
                     .onFailure { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar pedido") }
@@ -53,7 +51,6 @@ fun Route.orderRoutes(orderRepository: OrderRepository) {
     // 2. Rotas Administrativas (Apenas Lojista Logado)
     authenticate("firebase") {
         route("/orders") {
-            
             // GET: Lista todos os pedidos do lojista autenticado
             get {
                 val principal = call.principal<UserIdPrincipal>()
@@ -61,7 +58,7 @@ fun Route.orderRoutes(orderRepository: OrderRepository) {
                     call.respond(HttpStatusCode.Unauthorized, "Usuário não autenticado")
                     return@get
                 }
-                
+
                 // Buscamos os pedidos usando o UID decodificado do Firebase
                 val orders = orderRepository.getOrders(principal.name).first()
                 call.respond(orders)
@@ -72,7 +69,7 @@ fun Route.orderRoutes(orderRepository: OrderRepository) {
                 val principal = call.principal<UserIdPrincipal>() ?: return@patch call.respond(HttpStatusCode.Unauthorized)
                 val orderId = call.parameters["orderId"] ?: ""
                 val status = call.receive<OrderStatus>()
-                
+
                 orderRepository.updateOrderStatus(principal.name, orderId, status)
                     .onSuccess { call.respond(HttpStatusCode.OK) }
                     .onFailure { call.respond(HttpStatusCode.Forbidden, it.message ?: "Acesso negado") }

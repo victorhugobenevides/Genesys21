@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import com.itbenevides.genesys21.domain.model.Page
-import kotlin.random.Random
 
 /**
  * UI State: Representa tudo o que a tela mostra.
@@ -11,7 +10,7 @@ data class PageEditorState(
     val title: String = "",
     val isEditing: Boolean = false,
     val isLoading: Boolean = false,
-    val canSave: Boolean = false
+    val canSave: Boolean = false,
 ) {
     companion object {
         fun initial(page: Page?): PageEditorState {
@@ -20,7 +19,7 @@ data class PageEditorState(
                 id = id,
                 title = page?.title ?: "",
                 isEditing = page != null,
-                canSave = page?.title?.isNotBlank() ?: false
+                canSave = page?.title?.isNotBlank() ?: false,
             )
         }
     }
@@ -31,6 +30,8 @@ data class PageEditorState(
  */
 sealed class PageEditorEvent {
     data class OnTitleChanged(val newTitle: String) : PageEditorEvent()
+
     object OnSaveClicked : PageEditorEvent()
+
     object OnBackClicked : PageEditorEvent()
 }

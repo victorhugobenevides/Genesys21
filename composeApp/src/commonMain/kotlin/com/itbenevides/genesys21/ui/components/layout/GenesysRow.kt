@@ -20,7 +20,7 @@ fun GenesysRow(
     useHorizontalScroll: Boolean = false,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     GenesysRowContent(
         modifier = modifier,
@@ -29,7 +29,7 @@ fun GenesysRow(
         useHorizontalScroll = useHorizontalScroll,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -44,11 +44,11 @@ internal fun GenesysRowContent(
     useHorizontalScroll: Boolean = false,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     BoxWithConstraints {
         var rowModifier: Modifier = modifier
-        
+
         if (fillWidth) {
             rowModifier = rowModifier.fillMaxWidth()
         } else {
@@ -69,7 +69,7 @@ internal fun GenesysRowContent(
             modifier = rowModifier,
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = verticalAlignment,
-            content = content
+            content = content,
         )
     }
 }
@@ -86,7 +86,7 @@ fun RowScope.GenesysRow(
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     weightValue: Float = 0f,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val weightModifier = if (weightValue > 0f) Modifier.weight(weightValue) else Modifier
     GenesysRowContent(
@@ -96,7 +96,7 @@ fun RowScope.GenesysRow(
         useHorizontalScroll = useHorizontalScroll,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -112,7 +112,7 @@ fun ColumnScope.GenesysRow(
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     weightValue: Float = 0f,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val weightModifier = if (weightValue > 0f) Modifier.weight(weightValue) else Modifier
     GenesysRowContent(
@@ -122,6 +122,6 @@ fun ColumnScope.GenesysRow(
         useHorizontalScroll = useHorizontalScroll,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
-        content = content
+        content = content,
     )
 }

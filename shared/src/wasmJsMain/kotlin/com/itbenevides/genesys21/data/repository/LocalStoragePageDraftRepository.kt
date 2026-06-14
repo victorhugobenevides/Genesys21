@@ -10,17 +10,24 @@ external val localStorage: Storage
 
 external interface Storage {
     val length: Int
+
     fun clear()
+
     fun getItem(key: String): String?
+
     fun key(index: Int): String?
+
     fun removeItem(key: String)
-    fun setItem(key: String, value: String)
+
+    fun setItem(
+        key: String,
+        value: String,
+    )
 }
 
 class LocalStoragePageDraftRepository(
-    private val json: Json
+    private val json: Json,
 ) : PageDraftRepository {
-
     private val PREFIX = "page_draft_"
 
     override fun saveDraft(page: Page) {

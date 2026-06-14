@@ -16,18 +16,19 @@ fun <T> GenesysLazyColumn(
     maxWidth: Dp? = null,
     usePadding: Boolean = true,
     spacing: GenesysSpacing = GenesysSpacing.Medium,
-    content: @Composable (T) -> Unit
+    content: @Composable (T) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        val columnModifier = modifier
-            .fillMaxHeight()
-            .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth())
-            .then(if (usePadding) Modifier.padding(horizontal = GenesysDimens.SpacingLarge) else Modifier)
-        
+        val columnModifier =
+            modifier
+                .fillMaxHeight()
+                .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth())
+                .then(if (usePadding) Modifier.padding(horizontal = GenesysDimens.SpacingLarge) else Modifier)
+
         LazyColumn(
             modifier = columnModifier,
             contentPadding = PaddingValues(vertical = GenesysDimens.SpacingMedium),
-            verticalArrangement = Arrangement.spacedBy(spacing.value)
+            verticalArrangement = Arrangement.spacedBy(spacing.value),
         ) {
             items(items) { item ->
                 content(item)

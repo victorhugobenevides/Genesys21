@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.asStateFlow
 private external fun jsGetItem(key: String): String?
 
 @JsFun("(key, value) => window.localStorage.setItem(key, value)")
-private external fun jsSetItem(key: String, value: String)
+private external fun jsSetItem(
+    key: String,
+    value: String,
+)
 
 class LocalStorageCustomerRepository : CustomerRepository {
     private val _customerName = MutableStateFlow("")

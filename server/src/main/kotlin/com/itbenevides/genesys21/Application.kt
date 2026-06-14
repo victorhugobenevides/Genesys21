@@ -27,10 +27,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
-import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
+import kotlinx.serialization.json.Json
 
 const val SERVER_PORT = 8080
 
@@ -41,15 +41,24 @@ fun main() {
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
-    
-    DatabaseFactory.init()
+
+    // CORREÇÃO: Usar banco em memória se estiver em ambiente de teste
+    val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
+    if (isTesting) {
+        DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared")
+    } else {
+        DatabaseFactory.init()
+    }
+
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
     val orderRepository = SqliteOrderRepository()
 
-    val uploadDir = File("/app/uploads").absoluteFile
+    // CORREÇÃO: Usar pasta de uploads relativa em ambiente local/teste
+    val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
+    val uploadDir = File(uploadPath).absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
-    
+
     install(StatusPages) {
         exception<Throwable> { call, cause ->
             logger.error("Erro Interno: ${cause.message}", cause)
@@ -60,13 +69,22 @@ fun Application.module() {
     // Otimização: Compressão Gzip agressiva para reduzir transferência de dados (JS/JSON)
     install(Compression) {
         gzip { priority = 1.0 }
-        deflate { priority = 10.0; minimumSize(1024) }
+        deflate {
+            priority = 10.0
+            minimumSize(1024)
+        }
     }
 
-    install(ContentNegotiation) { 
-        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }) 
+    install(ContentNegotiation) {
+        json(
+            Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+                encodeDefaults = true
+            },
+        )
     }
-    
+
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
@@ -115,12 +133,13 @@ fun Application.module() {
         get("/p/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = pageRepository.getPublicPage(id).getOrNull()
-            
+
             val title = page?.title ?: "Página não encontrada"
             val description = "Confira esta página incrível."
             val siteName = "Social Bio"
-            
-            val html = """
+
+            val html =
+                """
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -141,8 +160,8 @@ fun Application.module() {
                     Redirecionando para $title...
                 </body>
                 </html>
-            """.trimIndent()
-            
+                """.trimIndent()
+
             call.respondText(html, ContentType.Text.Html)
         }
 
@@ -153,7 +172,7 @@ fun Application.module() {
             cartRoutes(cartRepository)
             orderRoutes(orderRepository)
             categoryRoutes(pageRepository)
-            
+
             authenticate("firebase") {
                 post("/upload") {
                     val multipart = call.receiveMultipart()
@@ -184,8 +203,9 @@ fun Application.module() {
 private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
         val fileName = "firebase-adminsdk.json"
-        val stream = this::class.java.classLoader.getResourceAsStream(fileName)
-            ?: if (File(fileName).exists()) File(fileName).inputStream() else null
+        val stream =
+            this::class.java.classLoader.getResourceAsStream(fileName)
+                ?: if (File(fileName).exists()) File(fileName).inputStream() else null
         if (stream != null) {
             val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(stream)).build()
             if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)

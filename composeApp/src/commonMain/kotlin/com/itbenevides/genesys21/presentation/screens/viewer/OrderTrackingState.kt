@@ -8,7 +8,7 @@ import com.itbenevides.genesys21.domain.model.Order
 data class OrderTrackingState(
     val order: Order? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 /**
@@ -16,6 +16,8 @@ data class OrderTrackingState(
  */
 sealed class OrderTrackingEvent {
     data class OnTrackOrder(val orderId: String) : OrderTrackingEvent()
+
     object OnCopyOrderIdClicked : OrderTrackingEvent()
+
     object OnBackClicked : OrderTrackingEvent()
 }

@@ -1,7 +1,7 @@
 package com.itbenevides.genesys21.data.database
 
-import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.Table
 
 object CartsTable : Table("carts") {
     val userId = varchar("user_id", 100)

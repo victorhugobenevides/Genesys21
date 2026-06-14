@@ -18,25 +18,28 @@ import kotlin.time.Clock.System.now
  */
 class KtorPageRepository(
     private val client: HttpClient,
-    private val baseUrl: String = "http://localhost:8080"
+    private val baseUrl: String = "http://localhost:8080",
 ) : PageRepository {
-
     // Usando o nome totalmente qualificado para ajudar o compilador Wasm/K2
     private fun getTimestamp() = now().toEpochMilliseconds()
 
     override suspend fun getPages(token: String): List<Page> {
         val url = if (token.isBlank()) "$baseUrl/api/public/pages/first" else "$baseUrl/api/pages"
         return try {
-            val response = client.get(url) {
-                parameter("t", getTimestamp()) // Cache-busting
-                header(HttpHeaders.CacheControl, "no-cache")
-                if (token.isNotBlank()) {
-                    header(HttpHeaders.Authorization, "Bearer $token")
+            val response =
+                client.get(url) {
+                    parameter("t", getTimestamp()) // Cache-busting
+                    header(HttpHeaders.CacheControl, "no-cache")
+                    if (token.isNotBlank()) {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    }
                 }
-            }
             if (response.status.isSuccess()) {
-                if (token.isBlank()) listOf(response.body<Page>())
-                else response.body()
+                if (token.isBlank()) {
+                    listOf(response.body<Page>())
+                } else {
+                    response.body()
+                }
             } else {
                 emptyList()
             }
@@ -47,10 +50,11 @@ class KtorPageRepository(
 
     override suspend fun getPublicPage(id: String): Result<Page> {
         return try {
-            val response = client.get("$baseUrl/api/public/pages/$id") {
-                parameter("t", getTimestamp()) // Cache-busting
-                header(HttpHeaders.CacheControl, "no-cache")
-            }
+            val response =
+                client.get("$baseUrl/api/public/pages/$id") {
+                    parameter("t", getTimestamp()) // Cache-busting
+                    header(HttpHeaders.CacheControl, "no-cache")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -63,10 +67,11 @@ class KtorPageRepository(
 
     override suspend fun getPageByDomain(domain: String): Result<Page> {
         return try {
-            val response = client.get("$baseUrl/api/public/domain/$domain") {
-                parameter("t", getTimestamp())
-                header(HttpHeaders.CacheControl, "no-cache")
-            }
+            val response =
+                client.get("$baseUrl/api/public/domain/$domain") {
+                    parameter("t", getTimestamp())
+                    header(HttpHeaders.CacheControl, "no-cache")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -77,56 +82,81 @@ class KtorPageRepository(
         }
     }
 
-    override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
+    override suspend fun savePage(
+        page: Page,
+        token: String,
+        isEditing: Boolean,
+    ): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = if (isEditing) {
-                client.put("$baseUrl/api/pages") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                    contentType(ContentType.Application.Json)
-                    setBody(page)
+            val response =
+                if (isEditing) {
+                    client.put("$baseUrl/api/pages") {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                        contentType(ContentType.Application.Json)
+                        setBody(page)
+                    }
+                } else {
+                    client.post("$baseUrl/api/pages") {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                        contentType(ContentType.Application.Json)
+                        setBody(page)
+                    }
                 }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
             } else {
-                client.post("$baseUrl/api/pages") {
+                Result.failure(Exception("Erro ao salvar: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deletePage(
+        id: String,
+        token: String,
+    ): Result<Unit> {
+        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
+        return try {
+            val response =
+                client.delete("$baseUrl/api/pages/$id") {
                     header(HttpHeaders.Authorization, "Bearer $token")
-                    contentType(ContentType.Application.Json)
-                    setBody(page)
                 }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao excluir"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao salvar: ${response.status}"))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun deletePage(id: String, token: String): Result<Unit> {
+    override suspend fun uploadImage(
+        bytes: ByteArray,
+        fileName: String,
+        token: String,
+    ): Result<String> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = client.delete("$baseUrl/api/pages/$id") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao excluir"))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
-        if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
-        return try {
-            val response: String = client.submitFormWithBinaryData(
-                url = "$baseUrl/api/upload",
-                formData = formData {
-                    append("image", bytes, Headers.build {
-                        append(HttpHeaders.ContentType, "image/jpeg")
-                        append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
-                    })
-                }
-            ) {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }.body()
+            val response: String =
+                client.submitFormWithBinaryData(
+                    url = "$baseUrl/api/upload",
+                    formData =
+                        formData {
+                            append(
+                                "image",
+                                bytes,
+                                Headers.build {
+                                    append(HttpHeaders.ContentType, "image/jpeg")
+                                    append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                                },
+                            )
+                        },
+                ) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }.body()
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)
@@ -136,11 +166,12 @@ class KtorPageRepository(
     override suspend fun getAllProducts(token: String): Result<List<Product>> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = client.get("$baseUrl/api/products") {
-                parameter("t", getTimestamp())
-                header(HttpHeaders.CacheControl, "no-cache")
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response =
+                client.get("$baseUrl/api/products") {
+                    parameter("t", getTimestamp())
+                    header(HttpHeaders.CacheControl, "no-cache")
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -154,11 +185,12 @@ class KtorPageRepository(
     override suspend fun getCategories(token: String): Result<List<Category>> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = client.get("$baseUrl/api/categories") {
-                parameter("t", getTimestamp())
-                header(HttpHeaders.CacheControl, "no-cache")
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response =
+                client.get("$baseUrl/api/categories") {
+                    parameter("t", getTimestamp())
+                    header(HttpHeaders.CacheControl, "no-cache")
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -169,37 +201,51 @@ class KtorPageRepository(
         }
     }
 
-    override suspend fun saveCategory(category: Category, token: String): Result<Unit> {
+    override suspend fun saveCategory(
+        category: Category,
+        token: String,
+    ): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = if (category.id != null) {
-                client.put("$baseUrl/api/categories") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                    contentType(ContentType.Application.Json)
-                    setBody(category)
+            val response =
+                if (category.id != null) {
+                    client.put("$baseUrl/api/categories") {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                        contentType(ContentType.Application.Json)
+                        setBody(category)
+                    }
+                } else {
+                    client.post("$baseUrl/api/categories") {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                        contentType(ContentType.Application.Json)
+                        setBody(category)
+                    }
                 }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
             } else {
-                client.post("$baseUrl/api/categories") {
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                    contentType(ContentType.Application.Json)
-                    setBody(category)
-                }
+                Result.failure(Exception("Erro ao salvar categoria"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao salvar categoria"))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun deleteCategory(id: Int, token: String): Result<Unit> {
+    override suspend fun deleteCategory(
+        id: Int,
+        token: String,
+    ): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
-            val response = client.delete("$baseUrl/api/categories/$id") {
-                header(HttpHeaders.Authorization, "Bearer $token")
+            val response =
+                client.delete("$baseUrl/api/categories/$id") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao excluir categoria"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Erro ao excluir categoria"))
         } catch (e: Exception) {
             Result.failure(e)
         }
