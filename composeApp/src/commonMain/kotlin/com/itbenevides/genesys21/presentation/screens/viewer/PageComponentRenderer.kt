@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,11 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
@@ -452,7 +456,7 @@ fun ProductCard(
     val backendUrl = remember { getBaseUrl() }
     
     val scale by animateFloatAsState(
-        targetValue = if (isAdded) 1.2f else 1f,
+        targetValue = if (isAdded) 1.15f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
     )
 
@@ -461,11 +465,18 @@ fun ProductCard(
         
         GenesysCard(
             onClick = if (onClick != null) { { onClick.invoke(product) } } else null,
-            elevation = 1.dp
+            elevation = 0.dp, // Flat modern look
+            shape = RoundedCornerShape(20.dp),
+            backgroundColor = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
         ) {
-            GenesysColumn(usePadding = false) {
-                GenesysBox(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.9f) // Mais vertical para destaque
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center
                 ) {
                     val imageUrl = remember(product.imageUrls) {
@@ -473,12 +484,32 @@ fun ProductCard(
                         if (first.startsWith("/")) "$backendUrl$first" else first
                     }
                     
-                    GenesysImage(
-                        url = imageUrl,
-                        size = 200.dp,
-                        modifier = Modifier.fillMaxSize()
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
                     
+                    // Glass Badge para Categoria
+                    product.categoryName?.let { cat ->
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(8.dp),
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.8f),
+                            tonalElevation = 2.dp
+                        ) {
+                            Text(
+                                text = cat.uppercase(),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = Color.Black
+                            )
+                        }
+                    }
+
                     if (isEditMode) {
                         Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.TopEnd) {
                             Surface(
@@ -496,58 +527,68 @@ fun ProductCard(
                     } else if (onAddToCart != null && product.stock > 0 && product.price > 0) {
                         Box(Modifier.fillMaxSize().padding(if (isMobile) 4.dp else 8.dp), contentAlignment = Alignment.BottomEnd) {
                             Surface(
-                                modifier = Modifier.size(if (isMobile) 32.dp else 40.dp).scale(scale),
-                                shape = CircleShape,
+                                modifier = Modifier.size(if (isMobile) 32.dp else 44.dp).scale(scale),
+                                shape = RoundedCornerShape(12.dp), // Botão quadrado-arredondado moderno
                                 color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
                                 contentColor = Color.White,
-                                shadowElevation = 4.dp
+                                shadowElevation = 8.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    GenesysIconButton(
-                                        icon = if (isAdded) GenesysIcons.Check else GenesysIcons.Add,
+                                    IconButton(
                                         onClick = {
                                             if (!isAdded) {
                                                 isAdded = true
                                                 onAddToCart()
                                                 scope.launch { delay(800); isAdded = false }
                                             }
-                                        },
-                                        tint = Color.White
-                                    )
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isAdded) GenesysIcons.Check else GenesysIcons.Add,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(if (isMobile) 16.dp else 24.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
                 
-                GenesysColumn(modifier = Modifier.padding(if (isMobile) 8.dp else 12.dp), usePadding = false) {
-                    GenesysText(
+                Spacer(Modifier.height(12.dp))
+                
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
                         text = product.name, 
-                        fontWeight = GenesysFontWeight.Bold,
-                        style = if (isMobile) GenesysTextStyle.Label else GenesysTextStyle.Body,
-                        maxLines = 1,
+                        style = if (isMobile) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth()
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     if (product.price > 0) {
-                        GenesysSpacer(GenesysSpacing.Small)
+                        Spacer(Modifier.height(4.dp))
                         
-                        GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween, 
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             val priceFormatted = (product.price * 100.0).roundToLong() / 100.0
-                            GenesysText(
+                            Text(
                                 text = "${GenesysStrings.PricePrefix}$priceFormatted", 
-                                fontWeight = GenesysFontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                style = if (isMobile) GenesysTextStyle.Label else GenesysTextStyle.Body,
-                                weightValue = 1f
+                                style = if (isMobile) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.primary
                             )
                             
                             if (product.stock <= 0) {
                                 GenesysBadge(
                                     label = "ESGOTADO", 
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.scale(if (isMobile) 0.7f else 1f)
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                                    textColor = MaterialTheme.colorScheme.error
                                 )
                             }
                         }

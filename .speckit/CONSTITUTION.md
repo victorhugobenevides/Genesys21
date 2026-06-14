@@ -1,37 +1,36 @@
-# Project Constitution - Genesys21
+# Project Constitution: Genesys21
 
-## Vision
-Genesys21 is a high-performance, flexible e-commerce and "vitrine" builder designed to leverage the power of Kotlin Multiplatform. It aims to provide a seamless experience across Android, iOS, Web (via WasmJs), and Server-side (via Ktor), allowing small to medium businesses to manage their digital presence efficiently.
+## 1. Vision & Purpose
+Genesys21 is a premier **Kotlin Multiplatform (KMP)** vitrine builder and e-commerce engine. Our mission is to empower small and medium businesses with a high-performance digital presence that remains consistent across **Android, iOS, and Web (WasmJs)**, backed by a robust **Ktor** server infrastructure.
 
-## Core Values
-1. **Multiplatform Excellence**: Leverage shared code to maintain a single source of truth for business logic and data.
-2. **Design Consistency**: Utilize the Genesys Design System to ensure a premium and uniform UI/UX across all targets.
-3. **Quality & Stability**: Prioritize stability through automated testing and strict CI/CD pipelines.
-4. **Developer Experience**: Maintain clean architecture and strict workflow rules to facilitate collaboration and maintenance.
+## 2. Core Values
+*   **Multiplatform First**: All business logic, models, and data synchronization MUST reside in the `shared` module. Platform-specific code is the exception, not the rule.
+*   **Design Consistency**: We strictly adhere to the **Genesys Design System**. Every component must look and feel premium, regardless of the screen size or device.
+*   **Built-in Stability**: Reliability is non-negotiable. We favor compile-time safety and automated validation over manual testing.
+*   **Iterative Excellence**: We embrace the **Gitflow** workflow and **Spec-Driven Development** to ensure every change is intentional and documented.
 
-## Technology Stack
-- **Language**: Kotlin
-- **Frontend Framework**: Jetpack Compose Multiplatform (Android, iOS, WasmJs)
-- **Backend Framework**: Ktor (Server)
-- **Database**: SQLDelight / SQLite
-- **Networking**: Ktor Client
-- **Serialization**: Kotlinx Serialization (Polymorphic)
-- **Dependency Injection**: Koin
-- **Testing**: Kotlin Test, MockK, Appium, Playwright
+## 3. Engineering Excellence
+*   **Clean Architecture**: Separation of concerns is mandatory. Use `Domain` for logic, `Data` for persistence/networking, and `Presentation` for UI.
+*   **SOLID Principles**: Code must be extensible and maintainable. We prefer composition over inheritance.
+*   **Test-Driven Development (TDD)**: Critical paths and bug fixes MUST be covered by regression tests.
+*   **Polymorphism & Serialization**: Use strict `@SerialName` annotations for all `PageComponent` subclasses to ensure data integrity across the network.
 
-## Quality Standards
-- **Automated Testing**: Target 80% code coverage for shared logic.
-- **CI/CD Compliance**: All Pull Requests must pass full multi-target builds and tests.
-- **Static Analysis**: Zero "Error" level warnings in static analysis before merging.
-- **Gitflow**: Strict adherence to the Gitflow branching model. No direct commits to `main` or `develop`.
+## 4. Technology Stack
+*   **Languages**: Kotlin (100%)
+*   **UI Framework**: Jetpack Compose Multiplatform
+*   **Backend**: Ktor Server (Netty)
+*   **Persistence**: SQLDelight (Local) & Exposed (Server)
+*   **Serialization**: Kotlinx Serialization (JSON)
+*   **DI**: Koin
+*   **Media**: Coil 3 for Multiplatform Image Loading
 
-## Development Principles
-1. **SOLID Architecture**: Adherence to SOLID principles and Clean Architecture (Domain, Data, Presentation layers).
-2. **Test-Driven Development (TDD)**: Write tests for critical business logic and bug fixes.
-3. **Surgical Edits**: Prefer small, focused code changes over large, monolithic commits.
-4. **Buffer-Safe Operations**: Use IDE-safe tools for file modifications to prevent data loss.
+## 5. Quality Standards & Barriers
+*   **Zero-Direct-Commit Policy**: No direct pushes to `main` or `develop`.
+*   **CI/CD Hard-Gates**: Every Pull Request must pass builds for all targets and all unit tests in **CircleCI**.
+*   **Static Analysis**: No "ERROR" level inspections in Android Studio. Unused imports or parameters should be removed before review.
+*   **Code Coverage**: Aim for >80% coverage on the `shared` module and `ViewModel` logic.
 
-## Constraints
-- **Must Have**: Full support for WasmJs and Ktor-based backend synchronization.
-- **Must Not Have**: Platform-specific logic in the `commonMain` module unless unavoidable.
-- **Performance**: Mobile screens must load in under 2 seconds; Web bundle size must be optimized for fast delivery.
+## 6. Constraints & Guidelines
+*   **Performance**: Initial screen load < 2s. Lazy loading with stable keys for all lists.
+*   **Security**: Sensitive keys (Firebase, Google Services) MUST never be committed. Use CircleCI Environment Variables.
+*   **Expect/Actual**: Use `expect/actual` only when a shared API (like Coil or SQLDelight) is unavailable.
