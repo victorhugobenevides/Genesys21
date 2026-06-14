@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.ui.components.appbar
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -17,9 +18,17 @@ fun GenesysTopAppBar(
     title: String,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
-    containerColor: Color = Color.Transparent
+    containerColor: Color = Color.Transparent,
+    isTranslucent: Boolean = false
 ) {
+    val finalContainerColor = if (isTranslucent) {
+        MaterialTheme.colorScheme.background.copy(alpha = 0.8f)
+    } else {
+        containerColor
+    }
+
     CenterAlignedTopAppBar(
+        modifier = if (isTranslucent) Modifier.background(Color.Transparent) else Modifier,
         title = { 
             Text(
                 title, 
@@ -38,6 +47,9 @@ fun GenesysTopAppBar(
             }
         },
         actions = actions,
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = containerColor)
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = finalContainerColor,
+            scrolledContainerColor = finalContainerColor
+        )
     )
 }

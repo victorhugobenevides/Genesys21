@@ -1,0 +1,16 @@
+{
+  "overall": 92,
+  "completeness": 80,
+  "actionability": 95,
+  "feasibility": 100,
+  "threshold": 85,
+  "passed": true,
+  "issues": [
+    "Tasks are too large"
+  ],
+  "recommendations": [
+    "Add timeline with effort estimates",
+    "Break large tasks into 2-8 hour chunks with clear titles",
+    "Excellent task parallelization - estimated time savings significant"
+  ]
+}
