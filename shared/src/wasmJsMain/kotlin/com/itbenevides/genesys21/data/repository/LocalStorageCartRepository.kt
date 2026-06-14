@@ -17,7 +17,10 @@ import kotlinx.serialization.json.Json
 private external fun jsGetItem(key: String): String?
 
 @JsFun("(key, value) => window.localStorage.setItem(key, value)")
-private external fun jsSetItem(key: String, value: String)
+private external fun jsSetItem(
+    key: String,
+    value: String,
+)
 
 @JsFun("(key) => window.localStorage.removeItem(key)")
 private external fun jsRemoveItem(key: String)
@@ -26,9 +29,8 @@ class LocalStorageCartRepository(
     private val httpClient: HttpClient,
     private val baseUrl: String,
     private val json: Json,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : CartRepository {
-
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
 
@@ -56,10 +58,14 @@ class LocalStorageCartRepository(
 
         try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.get("$baseUrl/api/cart") {
-                if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
-                else header("X-Cart-Session-Id", getSessionId())
-            }
+            val response =
+                httpClient.get("$baseUrl/api/cart") {
+                    if (token != null) {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    } else {
+                        header("X-Cart-Session-Id", getSessionId())
+                    }
+                }
             if (response.status.isSuccess()) {
                 val serverItems: List<CartItem> = response.body()
                 if (serverItems.isNotEmpty()) {
@@ -96,7 +102,10 @@ class LocalStorageCartRepository(
         return syncWithServer()
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
+    override suspend fun updateQuantity(
+        productId: String,
+        quantity: Int,
+    ): Result<Unit> {
         if (quantity <= 0) return removeFromCart(productId)
         _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         saveToLocal()
@@ -112,15 +121,22 @@ class LocalStorageCartRepository(
     override suspend fun syncWithServer(): Result<Unit> {
         return try {
             val token = authRepository.getCurrentUserToken()
-            val response = httpClient.post("$baseUrl/api/cart") {
-                if (token != null) header(HttpHeaders.Authorization, "Bearer $token")
-                else header("X-Cart-Session-Id", getSessionId())
-                
-                contentType(ContentType.Application.Json)
-                setBody(_cartItems.value)
+            val response =
+                httpClient.post("$baseUrl/api/cart") {
+                    if (token != null) {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    } else {
+                        header("X-Cart-Session-Id", getSessionId())
+                    }
+
+                    contentType(ContentType.Application.Json)
+                    setBody(_cartItems.value)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Server error"))
             }
-            if (response.status.isSuccess()) Result.success(Unit)
-            else Result.failure(Exception("Server error"))
         } catch (e: Exception) {
             Result.failure(e)
         }

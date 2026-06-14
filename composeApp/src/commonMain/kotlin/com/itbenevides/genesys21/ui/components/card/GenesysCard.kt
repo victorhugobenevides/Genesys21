@@ -18,7 +18,7 @@ fun GenesysCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     elevation: Dp = 1.dp,
-    shape: Shape = RoundedCornerShape(24.dp), // Aumentado para um look mais moderno
+    shape: Shape = RoundedCornerShape(24.dp),
     onClick: (() -> Unit)? = null,
     border: androidx.compose.foundation.BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit,

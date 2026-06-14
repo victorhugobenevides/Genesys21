@@ -1,10 +1,13 @@
 package com.itbenevides.genesys21.presentation
 
-import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.model.CartItem
+import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
 
 class FakeCartRepository : CartRepository {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
@@ -61,7 +64,7 @@ class FakeCustomerRepository : CustomerRepository {
 }
 
 class FakeOrderRepository : com.itbenevides.genesys21.domain.repository.OrderRepository {
-    override fun getOrders(token: String) = kotlinx.coroutines.flow.flowOf(emptyList<Order>())
+    override fun getOrders(token: String) = flowOf(emptyList<Order>())
 
     override suspend fun createOrder(order: Order) = Result.success(Unit)
 

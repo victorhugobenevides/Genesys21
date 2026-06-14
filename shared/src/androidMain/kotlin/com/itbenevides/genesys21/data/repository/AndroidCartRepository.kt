@@ -28,7 +28,10 @@ class AndroidCartRepository : CartRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
+    override suspend fun updateQuantity(
+        productId: String,
+        quantity: Int,
+    ): Result<Unit> {
         if (quantity <= 0) return removeFromCart(productId)
         _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         return Result.success(Unit)
@@ -40,6 +43,8 @@ class AndroidCartRepository : CartRepository {
     }
 
     override suspend fun syncWithServer(): Result<Unit> = Result.success(Unit)
+
     override suspend fun loadInitialCart() {}
+
     override fun getSessionId(): String = "android_session"
 }

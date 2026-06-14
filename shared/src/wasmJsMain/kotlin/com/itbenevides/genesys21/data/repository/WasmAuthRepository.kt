@@ -5,7 +5,10 @@ import kotlin.js.Promise
 
 // Interop com as funções globais definidas no index.html
 @JsFun("(email, pass) => window.firebaseSignIn(email, pass)")
-external fun firebaseSignIn(email: String, pass: String): Promise<JsString>
+external fun firebaseSignIn(
+    email: String,
+    pass: String,
+): Promise<JsString>
 
 @JsFun("() => window.firebaseGetToken()")
 external fun firebaseGetToken(): Promise<JsString?>
@@ -14,8 +17,10 @@ external fun firebaseGetToken(): Promise<JsString?>
 external fun firebaseSignOut(): Promise<JsAny?>
 
 class WasmAuthRepository : AuthRepository {
-    
-    override suspend fun signIn(email: String, password: String): Result<String?> {
+    override suspend fun signIn(
+        email: String,
+        password: String,
+    ): Result<String?> {
         return try {
             val token = firebaseSignIn(email, password).await().toString()
             println("WASM: Login realizado com sucesso. Token obtido.")
@@ -41,7 +46,7 @@ class WasmAuthRepository : AuthRepository {
         try {
             firebaseSignOut().await()
             println("WASM: Logout realizado.")
-        } catch (e: Exception) { 
+        } catch (e: Exception) {
             println("WASM: Erro no logout.")
         }
     }
@@ -51,14 +56,14 @@ class WasmAuthRepository : AuthRepository {
 private suspend fun <T : JsAny?> Promise<T>.await(): T =
     suspendInternal { continuation ->
         this.then(
-            { value -> 
+            { value ->
                 continuation.resumeWith(Result.success(value))
-                null 
+                null
             },
-            { error -> 
+            { error ->
                 continuation.resumeWith(Result.failure(Exception("JS Error")))
-                null 
-            }
+                null
+            },
         )
     }
 

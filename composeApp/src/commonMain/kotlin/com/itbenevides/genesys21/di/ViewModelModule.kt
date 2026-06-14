@@ -17,7 +17,7 @@ val viewModelModule =
                 get(), get(), get(), get(), get(), get(), get(),
                 get(), get(), get(), get(), get(),
                 get(), get(), get(), get(),
-                get(), get(), get(), // ADICIONADO: Use cases de categoria
+                get(), get(), get(),
             )
         }
 

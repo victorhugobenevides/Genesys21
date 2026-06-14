@@ -52,7 +52,7 @@ private fun QuantityCircleButton(
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(GenesysDimens.IconHuge), // Usando token centralizado
+        modifier = Modifier.size(GenesysDimens.IconHuge),
         shape = CircleShape,
         color = if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         contentColor = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,

@@ -1,7 +1,9 @@
 package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.di.getAuthRepository
-import kotlin.test.*
+import kotlin.test.Ignore
+import kotlin.test.Test
+import kotlin.test.assertNotNull
 
 class AuthTest {
     @Test

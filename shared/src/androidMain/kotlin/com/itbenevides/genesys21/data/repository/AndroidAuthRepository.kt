@@ -7,7 +7,10 @@ import dev.gitlive.firebase.auth.auth
 class AndroidAuthRepository : AuthRepository {
     private val auth = Firebase.auth
 
-    override suspend fun signIn(email: String, password: String): Result<String?> {
+    override suspend fun signIn(
+        email: String,
+        password: String,
+    ): Result<String?> {
         return try {
             auth.signInWithEmailAndPassword(email, password)
             Result.success(getCurrentUserToken())

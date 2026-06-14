@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.util
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import kotlinx.browser.document
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.url.URL
@@ -11,6 +10,7 @@ import org.w3c.files.BlobPropertyBag
 import org.w3c.files.FileReader
 import kotlin.js.JsAny
 import kotlin.js.JsArray
+import kotlinx.browser.document
 
 @Composable
 actual fun rememberFileHandler(onResult: (String?) -> Unit): () -> Unit {

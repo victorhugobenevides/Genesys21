@@ -1,12 +1,16 @@
 package com.itbenevides.genesys21
 
 import android.content.Intent
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import com.itbenevides.genesys21.domain.model.*
-import com.itbenevides.genesys21.mocks.*
+import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.mocks.FakeOrderRepository
+import com.itbenevides.genesys21.mocks.TestKoinHelper
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel

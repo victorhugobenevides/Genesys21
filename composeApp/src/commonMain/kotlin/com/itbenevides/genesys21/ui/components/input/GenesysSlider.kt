@@ -18,7 +18,7 @@ fun GenesysSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     label: String,
-    valueRange: ClosedFloatingPointRange<Float> = 50f..500f, // CORREÇÃO: Tipo ajustado para ClosedFloatingPointRange
+    valueRange: ClosedFloatingPointRange<Float> = 50f..500f,
     modifier: Modifier = Modifier,
     steps: Int = 0,
 ) {

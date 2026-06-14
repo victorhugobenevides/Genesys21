@@ -1,6 +1,6 @@
 package com.itbenevides.genesys21
 
-class WasmPlatform: Platform {
+class WasmPlatform : Platform {
     override val name: String = "Web with Kotlin/Wasm"
 }
 

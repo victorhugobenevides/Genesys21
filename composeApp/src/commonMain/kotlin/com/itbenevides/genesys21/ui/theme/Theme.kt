@@ -160,9 +160,9 @@ private val LemonColorScheme =
 // 21. RADARANI (Baseado no Azul Vibrante da Imagem)
 private val RadaraniColorScheme =
     lightColorScheme(
-        primary = Color(0xFF2CB1FF), // Azul vibrante da imagem
+        primary = Color(0xFF2CB1FF),
         onPrimary = Color.White,
-        background = Color(0xFFF0F9FF), // Fundo azul bem clarinho
+        background = Color(0xFFF0F9FF),
         surface = Color.White,
         onSurface = Color(0xFF003366),
         surfaceVariant = Color(0xFFCCEEFF),

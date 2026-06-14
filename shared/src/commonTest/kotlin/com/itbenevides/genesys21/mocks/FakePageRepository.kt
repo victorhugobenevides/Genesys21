@@ -25,7 +25,11 @@ class FakePageRepository : PageRepository {
         return if (page != null) Result.success(page) else Result.failure(Exception("Not found"))
     }
 
-    override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
+    override suspend fun savePage(
+        page: Page,
+        token: String,
+        isEditing: Boolean,
+    ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro ao salvar"))
         val index = pages.indexOfFirst { it.id == page.id }
         if (index != -1) {
@@ -36,13 +40,20 @@ class FakePageRepository : PageRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun deletePage(id: String, token: String): Result<Unit> {
+    override suspend fun deletePage(
+        id: String,
+        token: String,
+    ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro ao deletar"))
         pages.removeAll { it.id == id }
         return Result.success(Unit)
     }
 
-    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
+    override suspend fun uploadImage(
+        bytes: ByteArray,
+        fileName: String,
+        token: String,
+    ): Result<String> {
         return Result.success("https://example.com/$fileName")
     }
 
@@ -54,12 +65,18 @@ class FakePageRepository : PageRepository {
         return Result.success(categories)
     }
 
-    override suspend fun saveCategory(category: Category, token: String): Result<Unit> {
+    override suspend fun saveCategory(
+        category: Category,
+        token: String,
+    ): Result<Unit> {
         categories.add(category)
         return Result.success(Unit)
     }
 
-    override suspend fun deleteCategory(id: Int, token: String): Result<Unit> {
+    override suspend fun deleteCategory(
+        id: Int,
+        token: String,
+    ): Result<Unit> {
         categories.removeAll { it.id == id }
         return Result.success(Unit)
     }

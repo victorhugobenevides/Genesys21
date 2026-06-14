@@ -20,7 +20,10 @@ class InMemoryCartRepository : CartRepository {
         return Result.success(Unit)
     }
 
-    override suspend fun updateQuantity(productId: String, quantity: Int): Result<Unit> {
+    override suspend fun updateQuantity(
+        productId: String,
+        quantity: Int,
+    ): Result<Unit> {
         // Implementation for update quantity
         return Result.success(Unit)
     }

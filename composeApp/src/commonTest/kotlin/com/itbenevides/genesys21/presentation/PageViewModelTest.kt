@@ -1,14 +1,38 @@
 package com.itbenevides.genesys21.presentation
 
 import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.usecase.*
+import com.itbenevides.genesys21.domain.usecase.DeleteCategoryUseCase
+import com.itbenevides.genesys21.domain.usecase.DeletePageUseCase
+import com.itbenevides.genesys21.domain.usecase.GetCategoriesUseCase
+import com.itbenevides.genesys21.domain.usecase.GetCustomerOrdersUseCase
+import com.itbenevides.genesys21.domain.usecase.GetFirstPublicPageUseCase
+import com.itbenevides.genesys21.domain.usecase.GetOrderByIdUseCase
+import com.itbenevides.genesys21.domain.usecase.GetOrdersUseCase
+import com.itbenevides.genesys21.domain.usecase.GetPageByDomainUseCase
+import com.itbenevides.genesys21.domain.usecase.GetPagesUseCase
+import com.itbenevides.genesys21.domain.usecase.GetPublicPageUseCase
+import com.itbenevides.genesys21.domain.usecase.SaveCategoryUseCase
+import com.itbenevides.genesys21.domain.usecase.SavePageUseCase
+import com.itbenevides.genesys21.domain.usecase.SubmitOrderUseCase
+import com.itbenevides.genesys21.domain.usecase.UpdateOrderStatusUseCase
+import com.itbenevides.genesys21.domain.usecase.UploadImageUseCase
 import com.itbenevides.genesys21.mocks.FakeAuthRepository
 import com.itbenevides.genesys21.mocks.FakePageDraftRepository
 import com.itbenevides.genesys21.mocks.FakePageRepository
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {
