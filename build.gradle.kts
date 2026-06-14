@@ -25,11 +25,12 @@ subprojects {
         }
     }
 
-    // Configuração básica de detekt
+    // Configuração de detekt usando arquivo customizado
     configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
         buildUponDefaultConfig = true
         allRules = false
         parallel = true
+        config.setFrom(files("${rootProject.projectDir}/.speckit/quality/detekt-config.yml"))
     }
 }
 
