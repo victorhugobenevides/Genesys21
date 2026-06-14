@@ -1,188 +1,61 @@
-# Project Specification: WhiteLabel Editor & Multiplatform Viewer
+# Project Specification: Genesys Premium Layout & Micro-Interactions (Phase 2)
 
-## Overview
-This document defines the requirements for the WhiteLabel module and the Genesys21 Layout Refinement (Phase 2). This module enables boutique owners to build dynamic pages ("vitrines") using a drag-and-drop-style component system. Phase 2 introduces high-fidelity glassmorphism, responsive reflows, and rich micro-interactions across Android, iOS, and WasmJs.
+## 1. Executive Summary
+This document defines the high-fidelity requirements for Phase 2 of the Genesys21 platform. The goal is to evolve the current functional layouts into a **Premium Design System** characterized by glassmorphism, fluid responsiveness, and dynamic micro-interactions. These improvements will target Android, iOS, and WasmJs to ensure a top-tier e-commerce experience.
 
-## Functional Requirements
+## 2. Design Tokens & Visual Principles
 
-### FR001: Component Variety
-**Description**: Support for Header, Text, Image, ProductList, ProfileHeader, SocialLinks, Button, Filter, and CategoryFilter.
-**Priority**: High
-**Testability**: Verify component classes exist and map correctly to renderers.
+### 2.1. Glassmorphism (Frosted Glass)
+*   **Surfaces**: Use semi-transparent backgrounds (`Color.White.copy(alpha = 0.7f)`) combined with subtle borders (`0.5.dp`, `Color.White.copy(alpha = 0.2f)`).
+*   **Shadows**: Prefer elevation-based tonal color shifts over heavy black shadows to maintain a "light" feel.
 
-### FR002: Strict Serialization
-**Description**: The system must handle unknown components gracefully using an Unknown data class fallback.
-**Priority**: High
-**Testability**: Test serialization/deserialization with unknown component tags.
+### 2.2. Motion & Micro-Interactions
+*   **Spring Physics**: All interactive scaling and color transitions MUST use `Spring.DampingRatioMediumBouncy` for a tactile feel.
+*   **Staggered Entry**: Lists of products or components should animate items in one by one (staggered) using a 50ms delay per index.
+*   **Feedback Loops**: Every primary action (Add to Cart, Save, Delete) MUST have an associated haptic-style visual animation (e.g., morphing icons or scale pulses).
 
-### FR003: Data Integrity
-**Description**: Every component modification must update the Page object in the WhiteLabelState immediately.
-**Priority**: High
-**Testability**: Assert UI state updates on component modifications.
+## 3. Functional Requirements (Refined)
 
-### FR004: Component Management
-**Description**: Add, remove, and reorder (Move Up/Down) components.
-**Priority**: High
-**Testability**: Test state mutation after add, delete, and move events.
+### 3.1. Premium Login Screen (FR009)
+*   **Animated Gradient**: The background must feature a continuous loop of shifting radial gradients using theme colors.
+*   **Frosted Input Card**: The login form must reside in a glassmorphic card with a breathing "Magic" icon (pulsing scale).
 
-### FR005: Live Preview
-**Description**: Real-time rendering of the page theme and layout as changes occur.
-**Priority**: High
-**Testability**: Verify theme changes propagate to Compose preview layouts.
+### 3.2. Dynamic Product Cards (FR010)
+*   **Interactive Scaling**: Cards must scale to `1.03x` on pointer hover or tap hold.
+*   **Success Morphing**: The "Add to Cart" button must morph into a green checkmark icon for 800ms upon successful addition.
+*   **Category Badge**: A translucent glass badge on the top-left of the image showing the category name.
 
-### FR006: Draft Lifecycle
-**Description**: Auto-save to PageDraftRepository on every change; manual Publish action; Discard Draft option.
-**Priority**: High
-**Testability**: Verify draft record persistence in local DB on each state change.
+### 3.3. Dashboard-Style Editor (FR015 - NEW)
+*   **Floating Dashboard (Desktop)**: On widths > 1000dp, the editor controls should appear as a "floating" glass card over the preview, rather than a fixed sidebar.
+*   **Active Highlighting**: The component being edited or dragged must pulse its border color and transparency.
+*   **Skeleton Shimmers**: Image and text blocks must show an animated grey shimmer (`shimmerBrush`) during loading states.
 
-### FR007: Specialized Editors
-**Description**: ProfileHeaderEditor, ProductListEditor, and ImageEditor with local upload support.
-**Priority**: High
-**Testability**: Verify each editor screen captures input and mutates parent components.
+### 3.4. Refined Cart & Checkout (FR012)
+*   **Stepper Dots**: Progress indicators that scale and fill color primary as the user moves from "Cart" to "Details" to "Payment".
+*   **List Fluidity**: Removing an item from the cart triggers a fade-out followed by a smooth upwards slide of subsequent items.
 
-### FR008: Responsive Layout
-**Description**: Single-column bottom-sheet editor on Mobile (<1000dp); split-pane (65%/35%) on Desktop (>1000dp).
-**Priority**: High
-**Testability**: Verify layout changes when local container width crosses 1000dp threshold.
+## 4. Non-Functional Requirements (Refined)
 
-### FR009: Premium Glassmorphic Login
-**Description**: The LoginScreen must feature a dynamic animated radial gradient background and a translucent input card container.
-**Priority**: High
-**Testability**: Assert card transparency styling and gradient animation loops exist.
+### 4.1. Rendering Integrity (NFR005)
+*   Maintain a steady 60 FPS for all animations.
+*   Use `Modifier.graphicsLayer` for scale and alpha animations to offload work to the GPU.
 
-### FR010: Interactive Product Cards
-**Description**: ProductCard components must scale up smoothly on pointer hover/tap, display dynamic stock status badges, and show spring-loaded Add to Cart confirmations.
-**Priority**: High
-**Testability**: Test card scale modifier value reaches 1.03f and button morphs to checkmark.
+### 4.2. Responsive Thresholds (NFR007 - NEW)
+*   **Mobile**: < 600dp (Full width, BottomSheets for editors).
+*   **Tablet**: 600dp - 1000dp (Grid adjustments, expanded cards).
+*   **Desktop**: > 1000dp (Floating Dashboard, split-pane preview).
 
-### FR011: Morphing Category Chips
-**Description**: Category filter chips must morph background colors and elevations with animated transition transitions.
-**Priority**: Medium
-**Testability**: Verify color state transitions from surface variant to primary container.
+## 5. User Stories (Expanded)
 
-### FR012: Dynamic Cart & Stepper UI
-**Description**: The CartScreen must feature a glassmorphic summary panel and step indicator animations.
-**Priority**: Medium
-**Testability**: Assert cart stepper dots scale on page steps and list deletions fade out.
+### US009: Premium Dashboard Feel
+*   **As a** Boutique Owner on Desktop,
+*   **I want to** see my changes in a large preview while my editor tools float elegantly to the side,
+*   **So that** I feel like I'm using a professional design tool.
+*   **Acceptance Criteria**:
+    - [ ] Editor panel has `Modifier.glassmorphic()` applied.
+    - [ ] Editor panel is centered vertically and offset from the right edge.
+    - [ ] Transition between Desktop floating and Mobile fixed layout is seamless.
 
-### FR013: Snapping Carousel Indicators
-**Description**: Image carousels on ProductDetailsScreen must use page-snapping behavior and show size-scaling active page indicator dots.
-**Priority**: Medium
-**Testability**: Verify Active Dot scale increases to 1.5x of base inactive dots.
-
-### FR014: Editor Skeleton & Handles
-**Description**: The WhiteLabelScreen reordering handles must pulse visually when held, and components must display skeleton layouts during load states.
-**Priority**: Medium
-**Testability**: Assert active reorder component border alpha oscillates.
-
-## Non-Functional Requirements
-
-### NFR001: Build Reliability
-**Description**: Shared code (commonMain) must compile for Android, iOS, and WasmJs without platform-specific leaks.
-**Metric**: Compilation success status
-**Target**: 100% compile pass across all 3 compilation targets.
-
-### NFR002: Rendering Performance
-**Description**: Use stable key values in LazyColumn and Modifier.animateItem for smooth reordering.
-**Metric**: Reordering animation frame rate
-**Target**: Maintain 60 FPS target on UI reorder thread.
-
-### NFR003: Type Safety
-**Description**: Expect/Actual functions must have identical signatures across platforms.
-**Metric**: Compilation link success
-**Target**: 100% check pass on link boundaries.
-
-### NFR004: Zero-Loss Drafts
-**Description**: Drafts must persist across process death (Android) or page refresh (WasmJs).
-**Metric**: Persistence query success
-**Target**: Recover 100% of uncommitted state after app termination.
-
-### NFR005: Micro-Interaction Frame Rate
-**Description**: All animated UI transitions must target 60 frames per second (FPS) rendering on test devices.
-**Metric**: Render frame latency
-**Target**: Frame draw time under 16ms.
-
-### NFR006: Layout Shift Mitigation
-**Description**: Component reflow must use pre-calculated space constraints to achieve a Cumulative Layout Shift (CLS) of 0.
-**Metric**: Cumulative Layout Shift
-**Target**: CLS score of 0.
-
-## User Stories
-
-### US001: Boutique Branding
-**As a** Boutique Owner  
-**I want to** personalize my page with a profile picture and bio  
-**So that** my brand identity is instantly recognizable.  
-**Acceptance Criteria**:
-- [x] Clicking the profile image opens the native image picker.
-- [ ] Image is uploaded to the server and a URL is returned.
-- [ ] Preview updates immediately without refreshing the entire screen.
-
-### US002: Fast Shopping Experience
-**As a** Customer  
-**I want to** browse a stable list of products  
-**So that** my scroll position when images load is preserved.  
-**Acceptance Criteria**:
-- [x] Items use stable keys for lazy list state restoration.
-- [ ] Category filters apply instantly to the ProductList.
-
-### US003: Premium Login Experience
-**As a** Store Customer seeking a modern login experience  
-**I want the** Login Screen to feature an animated gradient background and a glassmorphic input card  
-**So that** my first impression of the brand is premium.  
-**Acceptance Criteria**:
-- [ ] Login card has a border of 0.5.dp with opacity Color.White.copy(alpha = 0.2f) and frosted background.
-- [ ] Background displays a shifting radial gradient moving across primary and background theme colors.
-- [ ] Magic login icon has a breathing scale animation pulsing between 0.95f and 1.05f every 2.5s.
-
-### US004: Dynamic Product Card
-**As a** Store Customer browsing products in the vitrine  
-**I want the** Product Cards to scale smoothly on hover and feature dynamic tag badges  
-**So that** searching for products feels interactive and alive.  
-**Acceptance Criteria**:
-- [ ] Card scales up to 1.03f on cursor hover or tap hold using spring damping.
-- [ ] Esgotado badge scales in with slide-up fade-in transition when product stock is 0.
-- [ ] Add to Cart button morphs into a green checkmark check for 800ms when clicked.
-
-### US005: Category Filter Chips Transition
-**As a** Store Customer navigating product categories  
-**I want the** Category Chips to morph background colors and slide dynamically when selected  
-**So that** filtering feels instant and satisfying.  
-**Acceptance Criteria**:
-- [ ] Selected chip animate-color morphs background from surface variant to primary container color.
-- [ ] Selecting a chip slides the neighboring chips smoothly into their new positions.
-
-### US006: Cart & Stepper Animations
-**As a** Store Customer reviewing my cart  
-**I want the** Cart Screen to include a glassmorphic summary sidebar and animated page-transition steps  
-**So that** checking out is clear and engaging.  
-**Acceptance Criteria**:
-- [ ] Wide screen summary panel features frosted white layout with subtle drop shadow.
-- [ ] Cart stepper indicator dots scale up and fill color primary dynamically when the user advances steps.
-- [ ] Items removed from cart fade out while other items animate upwards.
-
-### US007: Product Detail Snap Carousel
-**As a** Store Customer checking product details  
-**I want the** Product Details Screen to offer a responsive split-pane desktop view and a smooth image-carousel with scaling indicator dots  
-**So that** I can inspect products with ease.  
-**Acceptance Criteria**:
-- [ ] Desktop layout shows 50% left-pane carousel and 50% right-pane info card.
-- [ ] Carousel uses HorizontalPager with snappy drag release page snap.
-- [ ] Page indicator dots scale their radius by 1.5x when active and dim inactive dots.
-
-### US008: Editor Skeleton & Pulsing Handles
-**As a** Boutique Owner designing my page  
-**I want the** WhiteLabel Editor to support skeleton loaders and pulsing reorder handles during drag operations  
-**So that** structuring my page is visually feedback-rich and effortless.  
-**Acceptance Criteria**:
-- [ ] Active dragging component displays a pulsing semi-transparent border highlighting its select state.
-- [ ] Pulse animation cycles alpha between 0.3f and 0.8f at 1.5s frequency.
-- [ ] Skeletons display grey animated shimmers for images/text blocks during server fetches or uploads.
-
-## Constraints
-- Shared code must compile for Android, iOS, and WasmJs.
-- Sensitive credentials must never be committed.
-
-## Success Metrics
-- 100% build pass on CircleCI for Android and WasmJs.
-- Recover 100% of uncommitted state after app termination.
+## 6. Success Metrics
+*   **UI Satisfaction**: Positive feedback on visual "polish" and haptic-style animations.
+*   **Performance**: Zero frame drops during staggered list entries on mid-range Android devices.
