@@ -42,12 +42,21 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
     
-    DatabaseFactory.init()
+    // CORREÇÃO: Usar banco em memória se estiver em ambiente de teste
+    val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
+    if (isTesting) {
+        DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared")
+    } else {
+        DatabaseFactory.init()
+    }
+
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
     val orderRepository = SqliteOrderRepository()
 
-    val uploadDir = File("/app/uploads").absoluteFile
+    // CORREÇÃO: Usar pasta de uploads relativa em ambiente local/teste
+    val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
+    val uploadDir = File(uploadPath).absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
     
     install(StatusPages) {
