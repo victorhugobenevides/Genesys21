@@ -45,6 +45,7 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.firebase.auth.kmp)
+            implementation(libs.firebase.crashlytics)
             implementation("dev.gitlive:firebase-analytics:2.1.0")
         }
 

@@ -8,7 +8,7 @@ import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
 import com.itbenevides.genesys21.domain.repository.PageDraftRepository
 import com.itbenevides.genesys21.domain.usecase.*
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.*
 import kotlin.random.Random
 import kotlin.time.Clock.System.now
 import kotlinx.coroutines.flow.*
@@ -95,7 +95,7 @@ class PageViewModel(
         e: Throwable,
     ) {
         _currentError.value = AppError(title, e.message ?: "Erro desconhecido", e.stackTraceToString())
-        AnalyticsManager.logEvent("app_error", mapOf("title" to title, "exception" to (e::class.simpleName ?: "unknown")))
+        AnalyticsManager.recordError(title, e)
     }
 
     // Cart
@@ -111,7 +111,7 @@ class PageViewModel(
         if (product.stock <= 0) return false
         viewModelScope.launch {
             cartRepository.addToCart(CartItem(product, 1))
-            AnalyticsManager.logEvent("add_to_cart", mapOf("item_id" to product.id, "item_name" to product.name))
+            AnalyticsManager.trackAddToCart(product.id, product.name, product.price)
         }
         return true
     }
@@ -199,7 +199,7 @@ class PageViewModel(
                 cartRepository.clearCart()
                 if (phone.isNotBlank()) saveCustomerPhone(phone)
 
-                AnalyticsManager.logEvent("purchase", mapOf("transaction_id" to orderId, "value" to cartTotal.value))
+                AnalyticsManager.trackPurchase(orderId, cartTotal.value)
                 onComplete(orderId)
             }.onFailure {
                 handleError("Falha ao submeter pedido", it)
