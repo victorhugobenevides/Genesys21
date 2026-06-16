@@ -382,6 +382,16 @@ class PageViewModel(
         pageDraftRepository.clearDraft(pageId)
     }
 
+    // Performance: Predictive Pre-fetching
+    fun prefetchProductDetails(product: Product) {
+        viewModelScope.launch {
+            // Log de telemetria para medir intenção de compra
+            AnalyticsManager.logEvent("prefetch_item", mapOf("item_id" to product.id))
+            // Aqui poderíamos carregar mais detalhes de uma API se necessário
+            // Por enquanto, apenas registramos a intenção
+        }
+    }
+
     // Auth
     suspend fun getCurrentUserToken(): String? = authRepository.getCurrentUserToken()
 

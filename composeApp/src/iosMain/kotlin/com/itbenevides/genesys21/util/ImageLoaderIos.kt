@@ -11,3 +11,5 @@ import okio.Path
 actual fun getDiskCachePath(context: PlatformContext): Path {
     return FileSystem.SYSTEM_TEMPORARY_DIRECTORY
 }
+
+actual fun getFileSystem(): FileSystem? = FileSystem.SYSTEM
