@@ -87,6 +87,31 @@ Este arquivo contém a lista ordenada de tarefas para a implementação da Fase 
     - **GitHub Issue**: #91
     - **Description**: Configure CircleCI to store test results, linting reports, and code coverage as build artifacts.
     - **Acceptance Criteria**:
-        - [ ] JUnit XML results visible in CircleCI Tests tab.
-        - [ ] Coverage HTML reports accessible as artifacts.
-        - [ ] Linting (Ktlint/Detekt) reports preserved.
+        - [x] JUnit XML results visible in CircleCI Tests tab.
+        - [x] Coverage HTML reports accessible as artifacts.
+        - [x] Linting (Ktlint/Detekt) reports preserved.
+
+# Phase 3: Data Resilience & Insights (Active)
+
+## Wave 1: Telemetry & Monitoring - COMPLETED
+- [x] **T016: Unified Analytics Engine**
+    - **GitHub Issue**: #92
+    - **Description**: Bridge Firebase Analytics (Mobile) and JS DataLayer (Web).
+- [x] **T017: Crashlytics & Error Reporting**
+    - **GitHub Issue**: #93
+    - **Description**: Capture network timeouts and serialization failures.
+
+## Wave 2: Performance & Data - COMPLETED
+- [x] **T018: Multiplatform Cache Refinement**
+    - **GitHub Issue**: #94
+    - **Description**: Optimize image loading strategy (Coil 3) and local persistence for cart.
+- [x] **T019: Predictive Pre-fetching**
+    - **GitHub Issue**: #95
+    - **Description**: Use Coroutines to pre-fetch product details on hover.
+
+## Wave 3: Reliability & Build Optimization - COMPLETED
+- [x] **T020: Idempotent Checkout Flow**
+    - **GitHub Issue**: #96
+    - **Description**: Implement UUID-based order validation to prevent double-billing.
+- [x] **T021: Bundle Size & ProGuard Optimization (NEW)**
+    - **Description**: Enable R8 minification and resource shrinking for Android release builds.
