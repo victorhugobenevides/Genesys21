@@ -7,6 +7,7 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import com.itbenevides.genesys21.di.initKoin
 import com.itbenevides.genesys21.di.viewModelModule
+import com.itbenevides.genesys21.util.newImageLoader
 import org.w3c.dom.HTMLElement
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -42,13 +43,7 @@ fun startComposeApp() {
             }
 
         ComposeViewport(container) {
-            setSingletonImageLoaderFactory { context ->
-                ImageLoader.Builder(context)
-                    .components {
-                        add(KtorNetworkFetcherFactory())
-                    }
-                    .build()
-            }
+            setSingletonImageLoaderFactory { context -> newImageLoader(context) }
             App()
         }
 

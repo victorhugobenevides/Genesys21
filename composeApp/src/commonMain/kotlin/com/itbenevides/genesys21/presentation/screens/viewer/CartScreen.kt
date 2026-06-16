@@ -30,7 +30,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.glassmorphic
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.*
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToLong
 
@@ -81,6 +81,7 @@ fun CartScreen(
             is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
             is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone)
             is CartScreenEvent.OnCheckoutClicked -> {
+                AnalyticsManager.trackInitiateCheckout(state.total)
                 viewModel.submitOrder(page, state.customerPhone) { orderId ->
                     onOrderSubmitted(orderId)
                 }

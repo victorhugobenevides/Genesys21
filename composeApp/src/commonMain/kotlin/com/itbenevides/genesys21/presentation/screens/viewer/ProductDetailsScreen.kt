@@ -32,7 +32,7 @@ import com.itbenevides.genesys21.ui.components.text.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.glassmorphic
-import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.*
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
@@ -51,7 +51,7 @@ fun ProductDetailsScreen(
     var state by remember { mutableStateOf(ProductDetailsState(product = product)) }
 
     LaunchedEffect(product.id) {
-        AnalyticsManager.logEvent("view_item", mapOf("item_id" to product.id, "item_name" to product.name, "price" to product.price))
+        AnalyticsManager.trackViewProduct(product.id, product.name, product.price)
     }
 
     val onEvent: (ProductDetailsEvent) -> Unit = { event ->

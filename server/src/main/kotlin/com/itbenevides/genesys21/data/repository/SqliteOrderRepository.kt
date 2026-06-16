@@ -60,6 +60,12 @@ class SqliteOrderRepository : OrderRepository {
     override suspend fun createOrder(order: Order): Result<Unit> =
         try {
             dbQuery {
+                // IDEMPOTÊNCIA (Fase 3): Verificar se o pedido já existe
+                val existing = OrdersTable.selectAll().where { OrdersTable.id eq order.id }.count()
+                if (existing > 0) {
+                    return@dbQuery Result.success(Unit) // Já processado
+                }
+
                 // 1. Inserir cabeçalho do pedido
                 OrdersTable.insert {
                     it[id] = order.id

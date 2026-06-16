@@ -15,4 +15,12 @@ actual val AnalyticsManager: Analytics =
         override fun trackPageView(pageName: String) {
             // No-op no servidor por enquanto
         }
+
+        override fun recordError(
+            title: String,
+            throwable: Throwable?,
+            extraParams: Map<String, String>,
+        ) {
+            // No-op no servidor por enquanto
+        }
     }

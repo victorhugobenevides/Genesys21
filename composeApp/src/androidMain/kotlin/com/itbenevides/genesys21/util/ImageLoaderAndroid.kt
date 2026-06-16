@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.util
 
 import android.content.Context
 import coil3.PlatformContext
+import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
 
@@ -14,3 +15,5 @@ actual fun getDiskCachePath(context: PlatformContext): Path {
     val androidContext = context as Context
     return androidContext.cacheDir.absolutePath.toPath()
 }
+
+actual fun getFileSystem(): FileSystem? = FileSystem.SYSTEM

@@ -303,6 +303,7 @@ fun PageComponentRenderer(
                                                 modifier = Modifier.width(horizontalItemWidth),
                                                 onClick = onProductClick,
                                                 onAddToCart = { router.viewModel.addToCart(product) },
+                                                onHover = { router.viewModel.prefetchProductDetails(it) },
                                                 isEditMode = isEditMode,
                                                 index = index,
                                             )
@@ -356,6 +357,7 @@ fun PageComponentRenderer(
                                                     product = product,
                                                     onClick = onProductClick,
                                                     onAddToCart = { router.viewModel.addToCart(product) },
+                                                    onHover = { router.viewModel.prefetchProductDetails(it) },
                                                     isEditMode = isEditMode,
                                                     index = overallIndex,
                                                 )
@@ -522,6 +524,7 @@ fun ProductCard(
     modifier: Modifier = Modifier,
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null,
+    onHover: ((Product) -> Unit)? = null,
     isEditMode: Boolean = false,
     index: Int = 0,
 ) {
@@ -550,7 +553,10 @@ fun ProductCard(
                         while (true) {
                             val event = awaitPointerEvent()
                             when (event.type) {
-                                PointerEventType.Enter -> isHovered = true
+                                PointerEventType.Enter -> {
+                                    isHovered = true
+                                    onHover?.invoke(product)
+                                }
                                 PointerEventType.Exit -> isHovered = false
                             }
                         }

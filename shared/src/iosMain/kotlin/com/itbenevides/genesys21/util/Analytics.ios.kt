@@ -30,4 +30,19 @@ actual val AnalyticsManager: Analytics =
                 ),
             )
         }
+
+        override fun recordError(
+            title: String,
+            throwable: Throwable?,
+            extraParams: Map<String, String>,
+        ) {
+            // FIRCrashlytics não está mapeado no cinterop atual, enviando como evento
+            val errorParams =
+                mutableMapOf<String, Any>(
+                    "error_title" to title,
+                    "error_message" to (throwable?.message ?: "Unknown"),
+                )
+            errorParams.putAll(extraParams)
+            logEvent("app_error", errorParams)
+        }
     }

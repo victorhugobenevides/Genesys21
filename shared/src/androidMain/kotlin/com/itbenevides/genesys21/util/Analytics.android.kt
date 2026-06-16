@@ -35,4 +35,19 @@ actual val AnalyticsManager: Analytics =
             bundle.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "ComposeActivity")
             firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
         }
+
+        override fun recordError(
+            title: String,
+            throwable: Throwable?,
+            extraParams: Map<String, String>,
+        ) {
+            val crashlytics = com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance()
+            crashlytics.setCustomKey("error_title", title)
+            extraParams.forEach { (k, v) -> crashlytics.setCustomKey(k, v) }
+            if (throwable != null) {
+                crashlytics.recordException(throwable)
+            } else {
+                crashlytics.log("Non-fatal error: $title")
+            }
+        }
     }

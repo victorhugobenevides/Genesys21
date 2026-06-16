@@ -12,6 +12,13 @@ private external fun jsLogEvent(
 @JsFun("(pageName) => { if (window.gtag) window.gtag('event', 'page_view', { page_title: pageName, page_location: window.location.href, page_path: window.location.pathname }); }")
 private external fun jsTrackPageView(pageName: String)
 
+@JsFun("(title, message, extra) => { if (window.console) window.console.error('Analytics Error:', title, message, extra); if (window.gtag) window.gtag('event', 'exception', { 'description': title + ': ' + message, 'fatal': false }); }")
+private external fun jsRecordError(
+    title: String,
+    message: String,
+    extra: JsAny?,
+)
+
 @JsFun("() => ({})")
 private external fun createJsObject(): JsAny
 
@@ -77,6 +84,20 @@ actual val AnalyticsManager: Analytics =
         override fun trackPageView(pageName: String) {
             try {
                 jsTrackPageView(pageName)
+            } catch (e: Exception) {
+                // Silencioso
+            }
+        }
+
+        override fun recordError(
+            title: String,
+            throwable: Throwable?,
+            extraParams: Map<String, String>,
+        ) {
+            try {
+                val message = throwable?.message ?: "No message"
+                val extra = if (extraParams.isNotEmpty()) extraParams.mapValues { it.value as Any }.toJsObject() else null
+                jsRecordError(title, message, extra)
             } catch (e: Exception) {
                 // Silencioso
             }
