@@ -7,6 +7,7 @@ import com.itbenevides.genesys21.di.getHostname
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.getInitialUrlPath
+import com.itbenevides.genesys21.getUrlParams
 import com.itbenevides.genesys21.navigateBack
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.syncUrlWithScreen
@@ -136,6 +137,13 @@ class Router(val viewModel: PageViewModel) {
         navigationJob =
             navigationScope.launch {
                 val urlPath = getInitialUrlPath() ?: "/"
+                val params = getUrlParams()
+
+                // T026: Rastreamento de UTMs
+                if (params.containsKey("utm_source")) {
+                    AnalyticsManager.logEvent("traffic_source", params.mapValues { it.value as Any })
+                }
+
                 val currentDomain = getHostname().lowercase().removePrefix("www.")
                 val token = viewModel.getCurrentUserToken()
                 val isLoggedIn = token != null

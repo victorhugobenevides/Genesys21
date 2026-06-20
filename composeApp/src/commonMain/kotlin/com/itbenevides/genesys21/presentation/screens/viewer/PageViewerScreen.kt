@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
@@ -19,6 +20,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.pulse
 import com.itbenevides.genesys21.util.AnalyticsManager
+import com.itbenevides.genesys21.util.ShareManagerInstance
 import org.koin.compose.koinInject
 
 @Composable
@@ -60,6 +62,15 @@ fun PageViewerScreen(
                 AnalyticsManager.logEvent("open_order_history")
                 router.navigateTo(Route.CustomerOrderHistory(state.page))
             }
+            is PageViewerScreenEvent.OnShareClicked -> {
+                val url = "${getWebBaseUrl()}/p/${state.page.id}"
+                AnalyticsManager.logEvent("share_page", mapOf("page_id" to state.page.id))
+                ShareManagerInstance.shareLink(
+                    title = state.page.title,
+                    text = "Confira esta vitrine incrível!",
+                    url = url,
+                )
+            }
             is PageViewerScreenEvent.OnOpenAdminSettingsClicked -> router.navigateTo(Route.PageList)
             is PageViewerScreenEvent.OnBackClicked -> onBack()
         }
@@ -89,6 +100,13 @@ private fun PageViewerContent(
                 title = state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
+                    // T024: Botão de Compartilhamento Nativo
+                    GenesysIconButton(
+                        icon = GenesysIcons.Share,
+                        contentDescription = "Compartilhar",
+                        onClick = { onEvent(PageViewerScreenEvent.OnShareClicked) },
+                    )
+
                     // BOTÃO CARRINHO: Sempre visível no topo direito
                     BadgedBox(
                         badge = {

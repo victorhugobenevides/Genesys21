@@ -9,7 +9,6 @@ import com.itbenevides.genesys21.domain.repository.CustomerRepository
 import com.itbenevides.genesys21.domain.repository.PageDraftRepository
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.util.*
-import kotlin.random.Random
 import kotlin.time.Clock.System.now
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

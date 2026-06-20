@@ -12,6 +12,8 @@ actual fun syncUrlWithScreen(
 
 actual fun getInitialUrlPath(): String? = null
 
+actual fun getUrlParams(): Map<String, String> = emptyMap()
+
 actual fun getWebBaseUrl(): String = BuildConfig.WEB_BASE_URL
 
 actual fun onUrlChange(callback: () -> Unit) { }

@@ -11,6 +11,8 @@ actual fun syncUrlWithScreen(
 
 actual fun getInitialUrlPath(): String? = null
 
+actual fun getUrlParams(): Map<String, String> = emptyMap()
+
 actual fun getWebBaseUrl(): String = "http://localhost"
 
 actual fun onUrlChange(callback: () -> Unit) { }

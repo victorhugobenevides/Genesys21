@@ -4,9 +4,9 @@ import android.content.Context
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import io.ktor.client.*
+import java.util.UUID
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.UUID
 
 class AndroidCartRepository(
     private val context: Context,

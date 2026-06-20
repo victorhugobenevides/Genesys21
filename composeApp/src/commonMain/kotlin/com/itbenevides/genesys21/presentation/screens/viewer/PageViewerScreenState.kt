@@ -32,5 +32,7 @@ sealed class PageViewerScreenEvent {
 
     object OnOpenAdminSettingsClicked : PageViewerScreenEvent()
 
+    object OnShareClicked : PageViewerScreenEvent()
+
     object OnBackClicked : PageViewerScreenEvent()
 }
