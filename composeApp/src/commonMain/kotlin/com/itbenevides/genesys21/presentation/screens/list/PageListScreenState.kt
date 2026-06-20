@@ -8,6 +8,7 @@ enum class PageTemplateType {
     PROFESSIONAL_VITRINE,
     BIO_PROFILE,
     BLOG_POST,
+    PRO_DESIGN,
     EMPTY,
 }
 

@@ -89,6 +89,7 @@ fun PageListScreen(
                         PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
+                        PageTemplateType.PRO_DESIGN -> Page.proDesignTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
                     }
 
@@ -578,6 +579,10 @@ private fun CreatePageDialog(
                 GenesysLoadingButton(text = "Criar Post de Blog", onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.List)
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysLoadingButton(text = "Criar Vitrine Design PRO 💎", onClick = {
+                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PRO_DESIGN))
+                }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Magic, containerColor = MaterialTheme.colorScheme.tertiary)
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysLoadingButton(
                     text = "Importar Arquivo .benevides",

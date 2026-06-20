@@ -140,6 +140,7 @@ fun WhiteLabelScreen(
             is WhiteLabelEvent.OnShowCatalogChanged -> state = state.copy(showCatalog = event.show)
             is WhiteLabelEvent.OnShowThemeSelectorChanged -> state = state.copy(showThemeSelector = event.show)
             is WhiteLabelEvent.OnShowPageSettingsChanged -> state = state.copy(showPageSettings = event.show)
+            is WhiteLabelEvent.OnShowThemeLabChanged -> state = state.copy(showThemeLab = event.show)
             is WhiteLabelEvent.OnEditingComponentIndexChanged -> state = state.copy(editingComponentIndex = event.index)
             is WhiteLabelEvent.OnPendingNewComponentChanged -> state = state.copy(pendingNewComponent = event.component)
             is WhiteLabelEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
@@ -222,6 +223,17 @@ fun WhiteLabelScreen(
             )
         }
 
+        if (state.showThemeLab) {
+            ThemeLabDialog(
+                initialConfig = state.page.customTheme,
+                onSave = { newConfig ->
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(customTheme = newConfig)))
+                    onEvent(WhiteLabelEvent.OnShowThemeLabChanged(false))
+                },
+                onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(false)) },
+            )
+        }
+
         if (showDiscardDialog) {
             GenesysConfirmDialog(
                 onDismissRequest = { showDiscardDialog = false },
@@ -271,6 +283,12 @@ private fun WhiteLabelContent(
                         icon = GenesysIcons.Palette,
                         contentDescription = GenesysStrings.EditorThemes,
                         onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) },
+                    )
+
+                    GenesysIconButton(
+                        icon = GenesysIcons.Magic,
+                        contentDescription = "Theme Lab",
+                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true)) },
                     )
 
                     if (state.page != originalPage) {

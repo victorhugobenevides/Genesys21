@@ -4,8 +4,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
+import com.itbenevides.genesys21.domain.model.TypographySet
+
+// Helper para converter Hex para Color
+private fun String?.toColor(fallback: Color): Color {
+    if (this == null) return fallback
+    return try {
+        val hex = this.removePrefix("#")
+        val longColor = hex.toLong(16)
+        if (hex.length == 6) {
+            Color(longColor or 0xFF000000)
+        } else {
+            Color(longColor)
+        }
+    } catch (e: Exception) {
+        fallback
+    }
+}
 
 // 1. ROYAL (Navy & Gold)
 private val RoyalColorScheme =
@@ -225,9 +244,10 @@ private val LuxuryGoldColorScheme =
 @Composable
 fun AppTheme(
     themeConfig: PageThemeConfig = PageThemeConfig.ROYAL,
+    customTheme: CustomThemeConfig? = null,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme =
+    val baseColorScheme =
         when (themeConfig) {
             PageThemeConfig.ROYAL -> RoyalColorScheme
             PageThemeConfig.OCEAN -> OceanColorScheme
@@ -255,9 +275,31 @@ fun AppTheme(
             PageThemeConfig.DEFAULT -> RoyalColorScheme
         }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content,
-    )
+    val colorScheme =
+        if (customTheme != null) {
+            baseColorScheme.copy(
+                primary = customTheme.primaryColor.toColor(baseColorScheme.primary),
+                onPrimary = customTheme.onPrimaryColor.toColor(baseColorScheme.onPrimary),
+                secondary = customTheme.secondaryColor.toColor(baseColorScheme.secondary),
+                background = customTheme.backgroundColor.toColor(baseColorScheme.background),
+                surface = customTheme.surfaceColor.toColor(baseColorScheme.surface),
+                onSurface = customTheme.onSurfaceColor.toColor(baseColorScheme.onSurface),
+            )
+        } else {
+            baseColorScheme
+        }
+
+    CompositionLocalProvider(
+        LocalGenesysThemeConfig provides
+            GenesysThemeConfig(
+                cornerRadius = customTheme?.cornerRadius ?: 16,
+                glassIntensity = customTheme?.glassIntensity ?: 0.1f,
+            ),
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT),
+            content = content,
+        )
+    }
 }

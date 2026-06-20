@@ -12,17 +12,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.theme.LocalGenesysThemeConfig
 
 @Composable
 fun GenesysCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     elevation: Dp = 1.dp,
-    shape: Shape = RoundedCornerShape(24.dp),
+    shape: Shape? = null,
     onClick: (() -> Unit)? = null,
     border: androidx.compose.foundation.BorderStroke? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val config = LocalGenesysThemeConfig.current
+    val finalShape = shape ?: RoundedCornerShape(config.cornerRadius.dp)
+
     val finalBorder =
         border ?: androidx.compose.foundation.BorderStroke(
             width = 1.dp,
@@ -32,7 +36,7 @@ fun GenesysCard(
     if (onClick != null) {
         Surface(
             modifier = modifier,
-            shape = shape,
+            shape = finalShape,
             color = backgroundColor,
             tonalElevation = elevation,
             onClick = onClick,
@@ -43,7 +47,7 @@ fun GenesysCard(
     } else {
         Surface(
             modifier = modifier,
-            shape = shape,
+            shape = finalShape,
             color = backgroundColor,
             tonalElevation = elevation,
             border = finalBorder,

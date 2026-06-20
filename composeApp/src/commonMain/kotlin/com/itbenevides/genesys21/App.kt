@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.navigation.Route
@@ -42,6 +43,7 @@ fun App() {
     val trackedOrder by router.viewModel.trackedOrder.collectAsState()
 
     var currentActivePageTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
+    var currentActiveCustomTheme by remember { mutableStateOf<CustomThemeConfig?>(null) }
 
     LaunchedEffect(Unit) {
         router.handleDeepLink()
@@ -50,9 +52,18 @@ fun App() {
 
     LaunchedEffect(currentRoute) {
         when (currentRoute) {
-            is Route.PublicViewer -> currentActivePageTheme = currentRoute.page.theme
-            is Route.WhiteLabel -> currentActivePageTheme = currentRoute.page.theme
-            is Route.Splash, is Route.Login, is Route.PageList -> currentActivePageTheme = null
+            is Route.PublicViewer -> {
+                currentActivePageTheme = currentRoute.page.theme
+                currentActiveCustomTheme = currentRoute.page.customTheme
+            }
+            is Route.WhiteLabel -> {
+                currentActivePageTheme = currentRoute.page.theme
+                currentActiveCustomTheme = currentRoute.page.customTheme
+            }
+            is Route.Splash, is Route.Login, is Route.PageList -> {
+                currentActivePageTheme = null
+                currentActiveCustomTheme = null
+            }
             else -> { }
         }
     }
@@ -65,7 +76,15 @@ fun App() {
             }
         }
 
-    AppTheme(themeConfig = themeToApply) {
+    val customThemeToApply =
+        remember(currentRoute, currentActiveCustomTheme) {
+            when (currentRoute) {
+                is Route.OrderTracking -> null // Por enquanto pedidos não salvam custom colors
+                else -> currentActiveCustomTheme
+            }
+        }
+
+    AppTheme(themeConfig = themeToApply, customTheme = customThemeToApply) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = androidx.compose.material3.MaterialTheme.colorScheme.background,
