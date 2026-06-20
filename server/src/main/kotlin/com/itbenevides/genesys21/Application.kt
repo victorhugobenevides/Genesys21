@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.repository.SqliteCartRepository
 import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.data.repository.SqlitePageRepository
+import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.routes.cartRoutes
 import com.itbenevides.genesys21.routes.categoryRoutes
 import com.itbenevides.genesys21.routes.orderRoutes
@@ -135,8 +136,28 @@ fun Application.module() {
             val page = pageRepository.getPublicPage(id).getOrNull()
 
             val title = page?.title ?: "Página não encontrada"
-            val description = "Confira esta página incrível."
             val siteName = "Social Bio"
+
+            // T022: Extração dinâmica de Bio e Imagem
+            val description =
+                page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.bio
+                    ?: page?.components?.filterIsInstance<PageComponent.Text>()?.firstOrNull()?.content
+                    ?: "Confira esta vitrine incrível na Genesys21."
+
+            val rawImage =
+                page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.imageUrl
+                    ?: page?.components?.filterIsInstance<PageComponent.Image>()?.firstOrNull()?.url
+                    ?: ""
+
+            // Resolve URL absoluta para imagem
+            val ogImage =
+                if (rawImage.startsWith("/uploads/")) {
+                    val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
+                    val scheme = if (host.contains("localhost")) "http" else "https"
+                    "$scheme://$host$rawImage"
+                } else {
+                    rawImage
+                }
 
             val html =
                 """
@@ -145,13 +166,23 @@ fun Application.module() {
                 <head>
                     <meta charset="UTF-8">
                     <title>$title</title>
+                    <meta name="description" content="$description">
+
+                    <!-- Open Graph / Facebook -->
+                    <meta property="og:type" content="website">
+                    <meta property="og:url" content="${call.request.uri}">
                     <meta property="og:title" content="$title">
                     <meta property="og:description" content="$description">
+                    <meta property="og:image" content="$ogImage">
                     <meta property="og:site_name" content="$siteName">
-                    <meta property="og:type" content="website">
+
+                    <!-- Twitter -->
                     <meta name="twitter:card" content="summary_large_image">
+                    <meta name="twitter:url" content="${call.request.uri}">
                     <meta name="twitter:title" content="$title">
                     <meta name="twitter:description" content="$description">
+                    <meta name="twitter:image" content="$ogImage">
+
                     <script>
                         window.location.replace("/?pageId=$id");
                     </script>
@@ -163,6 +194,26 @@ fun Application.module() {
                 """.trimIndent()
 
             call.respondText(html, ContentType.Text.Html)
+        }
+
+        // T023: Sitemap Automático
+        get("/sitemap.xml") {
+            val ids = pageRepository.getAllPublicPageIds().getOrDefault(emptyList())
+            val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
+            val scheme = if (host.contains("localhost")) "http" else "https"
+            val baseUrl = "$scheme://$host"
+
+            val sitemap =
+                buildString {
+                    append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+                    append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
+                    append("  <url><loc>$baseUrl/</loc><priority>1.0</priority></url>\n")
+                    ids.forEach { id ->
+                        append("  <url><loc>$baseUrl/p/$id</loc><priority>0.8</priority></url>\n")
+                    }
+                    append("</urlset>")
+                }
+            call.respondText(sitemap, ContentType.Text.Xml)
         }
 
         get("/") { call.respondText("API Online") }

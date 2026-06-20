@@ -27,5 +27,5 @@ enum class PageThemeConfig {
     RADARANI,
     CLEAN,
     MODERN,
-    DEFAULT
+    DEFAULT,
 }

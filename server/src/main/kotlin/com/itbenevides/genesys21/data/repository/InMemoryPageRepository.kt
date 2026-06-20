@@ -102,4 +102,8 @@ class InMemoryPageRepository : PageRepository {
         categoriesDB.remove(id)
         return Result.success(Unit)
     }
+
+    override suspend fun getAllPublicPageIds(): Result<List<String>> {
+        return Result.success(pagesDB.keys().toList())
+    }
 }

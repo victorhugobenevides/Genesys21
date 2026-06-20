@@ -1,23 +1,22 @@
-# Project Specification: Phase 3 - Data Resilience & Insights
+# Project Specification: Phase 4 - Social & SEO (Growth Wave)
 
 ## 1. Executive Summary
-Phase 3 focuses on stabilizing the core business flow (Checkout) and gaining deep visibility into user behavior. We will implement robust error handling for network operations, optimize image loading performance, and integrate a comprehensive analytics strategy across KMP targets.
+Phase 4 focuses on turning Genesys21 pages into viral marketing tools. By optimizing how links appear on social media and making it easy for customers to share pages natively, we aim to increase organic traffic and improve merchant visibility on search engines.
 
-## 2. Deep Analytics (FR301)
-*   **Unified Logger**: Abstract analytics interface in `shared` to dispatch events to Firebase (Android/iOS) and Custom JS (Web).
-*   **Funnel Tracking**: Mandatory tracking for `view_product` -> `add_to_cart` -> `initiate_checkout` -> `purchase_complete`.
-*   **Error Monitoring**: Capture network timeouts and serialization failures as non-fatal exceptions in Crashlytics.
+## 2. Dynamic SEO & Rich Previews (FR401)
+*   **Dynamic OpenGraph**: The server must fetch the Page's title, first image, and bio to populate `og:title`, `og:image`, and `og:description` meta tags.
+*   **Wasm SEO Passthrough**: Ensure that web crawlers (Googlebot) see the static metadata served by Ktor before the Wasm app hydrates.
+*   **Automated Sitemap**: Implement a `/sitemap.xml` route on the server that lists all active public page IDs.
 
-## 3. Performance Optimization (FR302)
-*   **Image Caching**: Fine-tune Coil 3 memory/disk caching policies for WasmJs to prevent repeated downloads.
-*   **Lazy Loading 2.0**: Implement "Predictive Loading" for product details when a user hovers over a product card on Desktop.
-*   **Bundle Size**: Reduce Wasm artifact size by optimizing transitive dependencies and ProGuard rules.
+## 3. Native Social Integration (FR402)
+*   **Multiplatform Share API**: Implement a "Share" button in the Viewer top bar that uses `UIActivityViewController` (iOS), `Intent.ACTION_SEND` (Android), and `navigator.share` (Web).
+*   **WhatsApp Contextual Messaging**: When a customer clicks "Contact" from a product card, the WhatsApp message should pre-fill with: *"Olá! Vi o produto [Nome] na sua vitrine e gostaria de mais informações."*
+*   **Favicon Branding**: If a merchant has a `ProfileHeader` image, use that image (scaled) as the browser's dynamic favicon.
 
-## 4. Checkout Resilience (FR303)
-*   **Idempotent Orders**: Ensure client-side retry logic doesn't create duplicate orders on the server.
-*   **Offline Support**: Store pending cart actions locally using SQLDelight and sync when the connection is restored.
-*   **Input Masking**: Premium phone and credit card masks with real-time validation feedback.
+## 4. Discovery & Analytics (FR403)
+*   **Referrer Tracking**: Log the source of traffic (e.g., `utm_source=instagram`) in our new unified Analytics engine.
+*   **Viral Index**: Measure how many times the "Share" button is clicked vs. completed purchases.
 
 ## 5. Success Metrics
-*   **Checkout Conversion**: Increase completion rate by 15% through better UX feedback.
-*   **Load Time**: 90th percentile of main vitrine load < 1.5s on 4G connections.
+*   **Social CTR**: Increase click-through rate of shared links by 40% using rich previews.
+*   **Organic Discovery**: Have at least 20% of new traffic originating from search engines within 3 months.

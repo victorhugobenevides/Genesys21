@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.di.getBaseUrl
@@ -41,12 +42,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProductDetailsScreen(
     product: Product,
+    whatsapp: String? = null,
     onBack: () -> Unit,
     onNavigateToCart: () -> Unit,
 ) {
     val viewModel: PageViewModel = koinViewModel()
     val scope = rememberCoroutineScope()
     val backendUrl = remember { getBaseUrl() }
+    val uriHandler = LocalUriHandler.current
 
     var state by remember { mutableStateOf(ProductDetailsState(product = product)) }
 
@@ -66,6 +69,15 @@ fun ProductDetailsScreen(
                         state = state.copy(error = GenesysStrings.OutOfStockMessage)
                     }
                     state = state.copy(isAddingToCart = false)
+                }
+            }
+            is ProductDetailsEvent.OnContactSellerClicked -> {
+                whatsapp?.let { number ->
+                    val cleanNumber = number.filter { it.isDigit() }
+                    val message = "Olá! Vi o produto ${product.name} na sua vitrine e gostaria de mais informações."
+                    val url = "https://wa.me/$cleanNumber?text=${message.replace(" ", "%20")}"
+                    AnalyticsManager.logEvent("contact_seller", mapOf("product_id" to product.id))
+                    uriHandler.openUri(url)
                 }
             }
             is ProductDetailsEvent.OnDismissSuccessDialog -> state = state.copy(showSuccessDialog = false)
@@ -306,6 +318,15 @@ private fun ProductInfoSection(
         enabled = state.product.stock > 0,
         icon = GenesysIcons.ShoppingBag,
         fillWidth = true,
+    )
+
+    GenesysSpacer(GenesysSpacing.Medium)
+
+    GenesysTextButton(
+        text = "Falar com o Vendedor",
+        onClick = { onEvent(ProductDetailsEvent.OnContactSellerClicked) },
+        modifier = Modifier.fillMaxWidth(),
+        icon = GenesysIcons.WhatsApp,
     )
 }
 
