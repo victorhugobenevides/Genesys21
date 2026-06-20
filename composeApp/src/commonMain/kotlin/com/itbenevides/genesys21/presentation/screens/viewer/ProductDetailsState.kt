@@ -26,5 +26,7 @@ sealed class ProductDetailsEvent {
 
     object OnContactSellerClicked : ProductDetailsEvent()
 
+    object OnShareProductClicked : ProductDetailsEvent()
+
     object OnBackClicked : ProductDetailsEvent()
 }
