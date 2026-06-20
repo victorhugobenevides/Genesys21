@@ -2,12 +2,12 @@ package com.itbenevides.genesys21.util
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import kotlinx.browser.document
 import org.khronos.webgl.ArrayBuffer
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.HTMLInputElement
 import org.w3c.files.FileReader
+import kotlinx.browser.document
 
 @Composable
 actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
@@ -16,7 +16,7 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
             val input = document.createElement("input") as HTMLInputElement
             input.type = "file"
             input.accept = "image/*"
-            
+
             input.onchange = {
                 val files = input.files
                 if (files != null && files.length > 0) {
@@ -37,7 +37,7 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
                     onResult(null)
                 }
             }
-            
+
             input.click()
         }
     }

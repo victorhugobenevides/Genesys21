@@ -1,14 +1,14 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
-import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.domain.model.Page
 
 enum class PageTemplateType {
     PROFESSIONAL_VITRINE,
     BIO_PROFILE,
     BLOG_POST,
-    EMPTY
+    EMPTY,
 }
 
 /**
@@ -26,7 +26,7 @@ data class PageListState(
     val showGlobalSettings: Boolean = false,
     val showRenameDialog: Boolean = false,
     val pageToRename: Page? = null,
-    val newPageTitle: String = ""
+    val newPageTitle: String = "",
 )
 
 /**
@@ -34,27 +34,40 @@ data class PageListState(
  */
 sealed class PageListEvent {
     data class OnTabSelected(val index: Int) : PageListEvent()
+
     data class OnSearchQueryChanged(val query: String) : PageListEvent()
+
     data class OnStatusFilterSelected(val status: OrderStatus?) : PageListEvent()
+
     object OnCreatePageClicked : PageListEvent()
+
     data class OnNewPageTitleChanged(val title: String) : PageListEvent()
-    
+
     data class OnConfirmCreatePage(val templateType: PageTemplateType) : PageListEvent()
-    
+
     object OnDismissCreateDialog : PageListEvent()
+
     object OnGlobalSettingsClicked : PageListEvent()
+
     object OnDismissGlobalSettings : PageListEvent()
+
     data class OnConfirmGlobalSettings(val domain: String, val whatsapp: String) : PageListEvent()
-    
+
     data class OnRenamePageClicked(val page: Page) : PageListEvent()
+
     object OnDismissRenameDialog : PageListEvent()
+
     data class OnConfirmRenamePage(val newTitle: String) : PageListEvent()
 
     data class OnDeletePageClicked(val pageId: String) : PageListEvent()
+
     data class OnUpdateOrderStatus(val orderId: String, val newStatus: OrderStatus) : PageListEvent()
+
     object OnLogoutClicked : PageListEvent()
-    
+
     data class OnExportPageClicked(val page: Page) : PageListEvent()
+
     object OnExportAllClicked : PageListEvent()
+
     data class OnImportPageClicked(val json: String) : PageListEvent()
 }

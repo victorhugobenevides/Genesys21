@@ -19,26 +19,28 @@ fun <T> GenesysLazyColumnIndexed(
     spacing: GenesysSpacing = GenesysSpacing.Medium,
     usePadding: Boolean = true,
     key: ((Int, T) -> Any)? = null,
-    itemModifier: @Composable LazyItemScope.(Int, T) -> Modifier = { _, _ -> Modifier },
-    content: @Composable (Int, T) -> Unit
+    itemModifier: LazyItemScope.(Int, T) -> Modifier = { _, _ -> Modifier },
+    content: @Composable (Int, T) -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         val columnModifier = if (maxWidth != null) modifier.widthIn(max = maxWidth) else modifier.fillMaxWidth()
-      
+
+        // Responsividade: Reduz padding em telas estreitas (mobile)
         val horizontalPadding = if (this.maxWidth < 600.dp) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
-      
+
         LazyColumn(
             modifier = columnModifier.fillMaxHeight(),
-            contentPadding = if (usePadding) {
-                PaddingValues(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingMedium)
-            } else {
-                PaddingValues(0.dp)
-            },
-            verticalArrangement = Arrangement.spacedBy(if (usePadding) spacing.value else 0.dp)
+            contentPadding =
+                if (usePadding) {
+                    PaddingValues(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingMedium)
+                } else {
+                    PaddingValues(0.dp)
+                },
+            verticalArrangement = Arrangement.spacedBy(if (usePadding) spacing.value else 0.dp),
         ) {
             itemsIndexed(
                 items = items,
-                key = key
+                key = key,
             ) { index, item ->
                 Box(modifier = itemModifier(index, item)) {
                     content(index, item)

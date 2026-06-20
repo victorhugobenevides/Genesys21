@@ -15,55 +15,56 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     jvm()
-    
+
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    
+
     js {
         browser()
     }
-    
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
     }
-    
+
     sourceSets {
         commonMain.dependencies {
             implementation(libs.ktor.clientCore)
             implementation(libs.ktor.clientContentNegotiation)
             implementation(libs.ktor.clientSerialization)
             implementation(libs.koin.core)
-            // Usamos api para que os módulos que dependem de :shared (como :composeApp) 
+            // Usamos api para que os módulos que dependem de :shared (como :composeApp)
             // também tenham acesso ao kotlinx-datetime sem precisar declará-lo novamente,
             // evitando assim conflitos de vinculação IR no Wasm.
             api(libs.kotlinx.datetime)
         }
 
         androidMain.dependencies {
-            implementation(libs.koin.android)
             implementation(libs.firebase.auth.kmp)
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.koin.android)
             implementation("dev.gitlive:firebase-analytics:2.1.0")
         }
-        
+
         val iosMain by getting {
             dependencies {
                 implementation(libs.firebase.auth.kmp)
                 implementation("dev.gitlive:firebase-analytics:2.1.0")
             }
         }
-        
+
         jsMain.dependencies {
             implementation(libs.firebase.auth.kmp)
-            implementation("dev.gitlive:firebase-analytics:2.1.0") 
+            implementation("dev.gitlive:firebase-analytics:2.1.0")
         }
 
         wasmJsMain.dependencies {
         }
-        
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")

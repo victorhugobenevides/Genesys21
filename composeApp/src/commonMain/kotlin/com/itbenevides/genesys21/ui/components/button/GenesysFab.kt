@@ -13,14 +13,14 @@ fun GenesysFab(
     icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
+    contentDescription: String? = null,
 ) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = CircleShape
+        shape = CircleShape,
     ) {
         Icon(icon, contentDescription)
     }

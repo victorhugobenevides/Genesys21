@@ -33,21 +33,22 @@ fun GenesysOutlinedTextField(
     isPasswordToggleEnabled: Boolean = false,
     isError: Boolean = false,
     errorMessage: String? = null,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
-    
+
     // Sincronização de estado crucial para evitar crashes de cursor no Wasm
-    var textFieldValueState by remember { 
-        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) 
+    var textFieldValueState by remember {
+        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
     }
 
     LaunchedEffect(value) {
         if (value != textFieldValueState.text) {
-            textFieldValueState = textFieldValueState.copy(
-                text = value,
-                selection = TextRange(value.length)
-            )
+            textFieldValueState =
+                textFieldValueState.copy(
+                    text = value,
+                    selection = TextRange(value.length),
+                )
         }
     }
 
@@ -63,38 +64,44 @@ fun GenesysOutlinedTextField(
         modifier = modifier.fillMaxWidth(),
         isError = isError,
         singleLine = singleLine,
-        supportingText = if (isError && errorMessage != null) {
-            {
-                Text(
-                    text = errorMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-        } else null,
-        visualTransformation = if (isPasswordToggleEnabled && !isPasswordVisible) {
-            PasswordVisualTransformation()
-        } else {
-            VisualTransformation.None
-        },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = keyboardType,
-            imeAction = if (isPasswordToggleEnabled) ImeAction.Done else imeAction
-        ),
+        supportingText =
+            if (isError && errorMessage != null) {
+                {
+                    Text(
+                        text = errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            } else {
+                null
+            },
+        visualTransformation =
+            if (isPasswordToggleEnabled && !isPasswordVisible) {
+                PasswordVisualTransformation()
+            } else {
+                VisualTransformation.None
+            },
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = if (isPasswordToggleEnabled) ImeAction.Done else imeAction,
+            ),
         keyboardActions = keyboardActions,
         trailingIcon = {
             if (isPasswordToggleEnabled) {
                 IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
                     Icon(
                         imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (isPasswordVisible) "Ocultar senha" else "Mostrar senha"
+                        contentDescription = if (isPasswordVisible) "Ocultar senha" else "Mostrar senha",
                     )
                 }
             }
         },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            errorBorderColor = MaterialTheme.colorScheme.error
-        )
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                errorBorderColor = MaterialTheme.colorScheme.error,
+            ),
     )
 }

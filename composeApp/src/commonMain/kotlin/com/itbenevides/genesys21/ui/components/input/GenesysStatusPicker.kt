@@ -15,7 +15,7 @@ import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 @Composable
 fun GenesysStatusPicker(
     currentStatus: OrderStatus,
-    onStatusSelected: (OrderStatus) -> Unit
+    onStatusSelected: (OrderStatus) -> Unit,
 ) {
     var showStatusMenu by remember { mutableStateOf(false) }
 
@@ -23,50 +23,50 @@ fun GenesysStatusPicker(
         Surface(
             onClick = { showStatusMenu = true },
             shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         ) {
             GenesysRow(fillWidth = false, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                 GenesysStatusBadge(currentStatus)
                 Icon(
-                    imageVector = GenesysIcons.ExpandMore, 
-                    contentDescription = "Mudar status", 
+                    imageVector = GenesysIcons.ExpandMore,
+                    contentDescription = "Mudar status",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.padding(start = 4.dp),
                 )
             }
         }
-        
+
         DropdownMenu(
             expanded = showStatusMenu,
-            onDismissRequest = { showStatusMenu = false }
+            onDismissRequest = { showStatusMenu = false },
         ) {
             DropdownMenuItem(
                 text = { Text("Pendente") },
                 onClick = {
                     onStatusSelected(OrderStatus.PENDING)
                     showStatusMenu = false
-                }
+                },
             )
             DropdownMenuItem(
                 text = { Text("Processando") },
                 onClick = {
                     onStatusSelected(OrderStatus.PROCESSING)
                     showStatusMenu = false
-                }
+                },
             )
             DropdownMenuItem(
                 text = { Text("Concluído") },
                 onClick = {
                     onStatusSelected(OrderStatus.COMPLETED)
                     showStatusMenu = false
-                }
+                },
             )
             DropdownMenuItem(
                 text = { Text("Cancelado", color = Color.Red) },
                 onClick = {
                     onStatusSelected(OrderStatus.CANCELLED)
                     showStatusMenu = false
-                }
+                },
             )
         }
     }

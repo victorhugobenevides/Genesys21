@@ -10,6 +10,9 @@ actual fun rememberFileHandler(onResult: (String?) -> Unit): () -> Unit {
     }
 }
 
-actual fun downloadFile(content: String, fileName: String) {
+actual fun downloadFile(
+    content: String,
+    fileName: String,
+) {
     // Implementação stub para iOS
 }

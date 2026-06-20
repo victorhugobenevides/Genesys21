@@ -10,7 +10,7 @@ object PagesTable : Table("pages") {
     val customDomain = varchar("custom_domain", 255).nullable().uniqueIndex() // ÍNDICE: Unicidade e busca instantânea
     val whatsapp = varchar("whatsapp", 50).nullable()
     val theme = varchar("theme", 50).default("ROYAL")
-    
+
     override val primaryKey = PrimaryKey(id)
 }
 

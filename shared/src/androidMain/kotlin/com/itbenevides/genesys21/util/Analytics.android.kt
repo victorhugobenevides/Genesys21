@@ -8,27 +8,46 @@ import com.google.firebase.ktx.Firebase
 /**
  * Implementação do Analytics para Android usando Firebase Nativo.
  */
-actual val AnalyticsManager: Analytics = object : Analytics {
-    private val firebaseAnalytics: FirebaseAnalytics = Firebase.analytics
+actual val AnalyticsManager: Analytics =
+    object : Analytics {
+        private val firebaseAnalytics: FirebaseAnalytics = Firebase.analytics
 
-    override fun logEvent(name: String, params: Map<String, Any>) {
-        val bundle = Bundle()
-        params.forEach { (key, value) ->
-            when (value) {
-                is String -> bundle.putString(key, value)
-                is Int -> bundle.putInt(key, value)
-                is Long -> bundle.putLong(key, value)
-                is Double -> bundle.putDouble(key, value)
-                is Boolean -> bundle.putBoolean(key, value)
+        override fun logEvent(
+            name: String,
+            params: Map<String, Any>,
+        ) {
+            val bundle = Bundle()
+            params.forEach { (key, value) ->
+                when (value) {
+                    is String -> bundle.putString(key, value)
+                    is Int -> bundle.putInt(key, value)
+                    is Long -> bundle.putLong(key, value)
+                    is Double -> bundle.putDouble(key, value)
+                    is Boolean -> bundle.putBoolean(key, value)
+                }
+            }
+            firebaseAnalytics.logEvent(name, bundle)
+        }
+
+        override fun trackPageView(pageName: String) {
+            val bundle = Bundle()
+            bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, pageName)
+            bundle.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "ComposeActivity")
+            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
+        }
+
+        override fun recordError(
+            title: String,
+            throwable: Throwable?,
+            extraParams: Map<String, String>,
+        ) {
+            val crashlytics = com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance()
+            crashlytics.setCustomKey("error_title", title)
+            extraParams.forEach { (k, v) -> crashlytics.setCustomKey(k, v) }
+            if (throwable != null) {
+                crashlytics.recordException(throwable)
+            } else {
+                crashlytics.log("Non-fatal error: $title")
             }
         }
-        firebaseAnalytics.logEvent(name, bundle)
     }
-
-    override fun trackPageView(pageName: String) {
-        val bundle = Bundle()
-        bundle.putString(FirebaseAnalytics.Param.SCREEN_NAME, pageName)
-        bundle.putString(FirebaseAnalytics.Param.SCREEN_CLASS, "ComposeActivity")
-        firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, bundle)
-    }
-}

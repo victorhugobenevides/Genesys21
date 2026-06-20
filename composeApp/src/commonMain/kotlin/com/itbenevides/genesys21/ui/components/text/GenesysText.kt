@@ -11,7 +11,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
 
 /**
  * Estilos de texto semânticos para a Presentation.
@@ -21,7 +20,7 @@ enum class GenesysTextStyle {
     Title,
     Body,
     Label,
-    Error
+    Error,
 }
 
 /**
@@ -30,7 +29,7 @@ enum class GenesysTextStyle {
 enum class GenesysFontWeight {
     Normal,
     Bold,
-    ExtraBold
+    ExtraBold,
 }
 
 /**
@@ -40,7 +39,7 @@ enum class GenesysTextAlign {
     Start,
     Center,
     End,
-    Justify
+    Justify,
 }
 
 /**
@@ -56,7 +55,7 @@ fun GenesysText(
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     GenesysTextContent(
         text = text,
@@ -67,7 +66,7 @@ fun GenesysText(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -84,30 +83,33 @@ internal fun GenesysTextContent(
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val textStyle = when (style) {
-        GenesysTextStyle.Headline -> MaterialTheme.typography.headlineLarge
-        GenesysTextStyle.Title -> MaterialTheme.typography.titleLarge
-        GenesysTextStyle.Body -> MaterialTheme.typography.bodyLarge
-        GenesysTextStyle.Label -> MaterialTheme.typography.labelSmall
-        GenesysTextStyle.Error -> MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.error)
-    }
+    val textStyle =
+        when (style) {
+            GenesysTextStyle.Headline -> MaterialTheme.typography.headlineLarge
+            GenesysTextStyle.Title -> MaterialTheme.typography.titleLarge
+            GenesysTextStyle.Body -> MaterialTheme.typography.bodyLarge
+            GenesysTextStyle.Label -> MaterialTheme.typography.labelSmall
+            GenesysTextStyle.Error -> MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.error)
+        }
 
-    val composeFontWeight = when (fontWeight) {
-        GenesysFontWeight.Normal -> FontWeight.Normal
-        GenesysFontWeight.Bold -> FontWeight.Bold
-        GenesysFontWeight.ExtraBold -> FontWeight.ExtraBold
-        null -> textStyle.fontWeight
-    }
+    val composeFontWeight =
+        when (fontWeight) {
+            GenesysFontWeight.Normal -> FontWeight.Normal
+            GenesysFontWeight.Bold -> FontWeight.Bold
+            GenesysFontWeight.ExtraBold -> FontWeight.ExtraBold
+            null -> textStyle.fontWeight
+        }
 
-    val composeTextAlign = when (textAlign) {
-        GenesysTextAlign.Start -> TextAlign.Start
-        GenesysTextAlign.Center -> TextAlign.Center
-        GenesysTextAlign.End -> TextAlign.End
-        GenesysTextAlign.Justify -> TextAlign.Justify
-        null -> null
-    }
+    val composeTextAlign =
+        when (textAlign) {
+            GenesysTextAlign.Start -> TextAlign.Start
+            GenesysTextAlign.Center -> TextAlign.Center
+            GenesysTextAlign.End -> TextAlign.End
+            GenesysTextAlign.Justify -> TextAlign.Justify
+            null -> null
+        }
 
     Text(
         text = text,
@@ -118,7 +120,7 @@ internal fun GenesysTextContent(
         fontWeight = composeFontWeight,
         fontSize = fontSize,
         maxLines = maxLines,
-        overflow = overflow
+        overflow = overflow,
     )
 }
 
@@ -136,7 +138,7 @@ fun RowScope.GenesysText(
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
     weightValue: Float = 0f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val finalModifier = if (weightValue > 0f) Modifier.weight(weightValue).then(modifier) else modifier
     GenesysTextContent(
@@ -148,7 +150,7 @@ fun RowScope.GenesysText(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow,
-        modifier = finalModifier
+        modifier = finalModifier,
     )
 }
 
@@ -166,7 +168,7 @@ fun ColumnScope.GenesysText(
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
     weightValue: Float = 0f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val finalModifier = if (weightValue > 0f) Modifier.weight(weightValue).then(modifier) else modifier
     GenesysTextContent(
@@ -178,6 +180,6 @@ fun ColumnScope.GenesysText(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow,
-        modifier = finalModifier
+        modifier = finalModifier,
     )
 }

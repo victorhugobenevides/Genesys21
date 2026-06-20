@@ -21,5 +21,6 @@ class AndroidCustomerRepository : CustomerRepository {
     }
 
     override suspend fun loadData() {}
+
     override suspend fun loadName() {}
 }

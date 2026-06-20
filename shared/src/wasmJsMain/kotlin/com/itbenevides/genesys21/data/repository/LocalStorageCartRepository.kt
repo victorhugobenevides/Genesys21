@@ -10,15 +10,20 @@ import kotlinx.serialization.json.Json
 private external fun jsGetItem(key: String): String?
 
 @JsFun("(key, value) => window.localStorage.setItem(key, value)")
-private external fun jsSetItem(key: String, value: String)
+private external fun jsSetItem(
+    key: String,
+    value: String,
+)
+
+@JsFun("(key) => window.localStorage.removeItem(key)")
+private external fun jsRemoveItem(key: String)
 
 class LocalStorageCartRepository(
     httpClient: HttpClient,
     baseUrl: String,
     json: Json,
-    authRepository: AuthRepository
+    authRepository: AuthRepository,
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
-
     private val CART_STORAGE_KEY = "genesys21_cart"
     private val SESSION_STORAGE_KEY = "genesys21_session_id"
     private var cachedSessionId: String? = null
@@ -54,5 +59,10 @@ class LocalStorageCartRepository(
 
     override suspend fun loadSessionId(): String? {
         return jsGetItem(SESSION_STORAGE_KEY)
+    }
+
+    override suspend fun clearCart(): Result<Unit> {
+        jsRemoveItem(CART_STORAGE_KEY)
+        return super.clearCart()
     }
 }

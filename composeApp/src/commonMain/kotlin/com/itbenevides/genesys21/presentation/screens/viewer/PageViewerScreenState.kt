@@ -13,7 +13,7 @@ data class PageViewerScreenState(
     val isLoggedIn: Boolean = false,
     val cartCount: Int = 0,
     val isLoading: Boolean = false,
-    val allStoreCategories: List<String> = emptyList() // ADICIONADO: Lista global do lojista
+    val allStoreCategories: List<String> = emptyList(),
 ) {
     val hasProductList: Boolean = page.components.any { it is PageComponent.ProductList }
 }
@@ -23,9 +23,14 @@ data class PageViewerScreenState(
  */
 sealed class PageViewerScreenEvent {
     data class OnFilterQueryChanged(val query: String) : PageViewerScreenEvent()
+
     data class OnProductClicked(val product: Product) : PageViewerScreenEvent()
+
     object OnOpenCartClicked : PageViewerScreenEvent()
+
     object OnOpenHistoryClicked : PageViewerScreenEvent()
+
     object OnOpenAdminSettingsClicked : PageViewerScreenEvent()
+
     object OnBackClicked : PageViewerScreenEvent()
 }

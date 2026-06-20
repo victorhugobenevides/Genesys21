@@ -1,0 +1,31 @@
+---
+description: Run linting and static analysis (SpecKit Quality Guardrail)
+allowed-tools: Read(**/*), Write(**/*), Bash(gradlew:*)
+---
+
+# Lint - Code Quality Guardrail
+
+Você está executando a verificação de lint e análise estática do projeto.
+
+## Objetivo
+Garantir que o código siga os padrões definidos na `CONSTITUTION.md`, removendo imports não utilizados, corrigindo formatação e evitando wildcards.
+
+## Tarefas
+
+1.  **Executar Verificação**
+    - Rodar `./gradlew ktlintCheck` para identificar problemas.
+    - Se houver falhas, rodar `./gradlew ktlintFormat` para corrigir automaticamente o que for possível.
+
+2.  **Análise de Imports**
+    - Verificar especificamente por "Unused import directive".
+    - Verificar por "Wildcard import".
+
+3.  **Relatório**
+    - Se houver problemas que não puderam ser corrigidos automaticamente, listar os arquivos e as linhas para o desenvolvedor.
+
+4.  **Integração no Workflow**
+    - Documentar que esta verificação é obrigatória antes de cada commit/PR.
+
+## Comandos Úteis
+- `/lint`: Executa o check e sugere o format se houver erros.
+- `/lint fix`: Executa o format diretamente.

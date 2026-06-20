@@ -8,10 +8,11 @@ import com.preat.peekaboo.image.picker.rememberImagePickerLauncher
 @Composable
 actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
     val scope = rememberCoroutineScope()
-    val launcher = rememberImagePickerLauncher(
-        selectionMode = SelectionMode.Single,
-        scope = scope,
-        onResult = { it.firstOrNull()?.let(onResult) }
-    )
+    val launcher =
+        rememberImagePickerLauncher(
+            selectionMode = SelectionMode.Single,
+            scope = scope,
+            onResult = { it.firstOrNull()?.let(onResult) },
+        )
     return { launcher.launch() }
 }

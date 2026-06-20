@@ -19,35 +19,46 @@ class FakePageRepository : PageRepository {
     override suspend fun getPublicPage(id: String): Result<Page> {
         if (shouldReturnError) return Result.failure(Exception("Erro"))
         val page = pages.find { it.id == id }
-        return if (page != null) Result.success(page) else Result.failure(Exception("Não encontrado"))
+        return if (page != null) Result.success(page) else Result.failure(Exception("Not found"))
     }
 
     override suspend fun getPageByDomain(domain: String): Result<Page> {
         if (shouldReturnError) return Result.failure(Exception("Erro"))
         val page = pages.find { it.customDomain == domain }
-        return if (page != null) Result.success(page) else Result.failure(Exception("Não encontrado"))
+        return if (page != null) Result.success(page) else Result.failure(Exception("Not found"))
     }
 
-    override suspend fun savePage(page: Page, token: String, isEditing: Boolean): Result<Unit> {
+    override suspend fun savePage(
+        page: Page,
+        token: String,
+        isEditing: Boolean,
+    ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro ao salvar"))
+        val index = pages.indexOfFirst { it.id == page.id }
         if (isEditing) {
-            val index = pages.indexOfFirst { it.id == page.id }
             if (index != -1) pages[index] = page else return Result.failure(Exception("Não encontrado"))
         } else {
-            pages.add(page)
+            if (index != -1) pages[index] = page else pages.add(page)
         }
         return Result.success(Unit)
     }
 
-    override suspend fun deletePage(id: String, token: String): Result<Unit> {
+    override suspend fun deletePage(
+        id: String,
+        token: String,
+    ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro ao deletar"))
-        val removed = pages.removeAll { it.id == id }
-        return if (removed) Result.success(Unit) else Result.failure(Exception("Não encontrado"))
+        pages.removeAll { it.id == id }
+        return Result.success(Unit)
     }
 
-    override suspend fun uploadImage(bytes: ByteArray, fileName: String, token: String): Result<String> {
+    override suspend fun uploadImage(
+        bytes: ByteArray,
+        fileName: String,
+        token: String,
+    ): Result<String> {
         if (shouldReturnError) return Result.failure(Exception("Erro upload"))
-        return Result.success("http://mock/$fileName")
+        return Result.success("https://example.com/$fileName")
     }
 
     override suspend fun getAllProducts(token: String): Result<List<Product>> {
@@ -60,13 +71,19 @@ class FakePageRepository : PageRepository {
         return Result.success(categories)
     }
 
-    override suspend fun saveCategory(category: Category, token: String): Result<Unit> {
+    override suspend fun saveCategory(
+        category: Category,
+        token: String,
+    ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro salvar categoria"))
         categories.add(category)
         return Result.success(Unit)
     }
 
-    override suspend fun deleteCategory(id: Int, token: String): Result<Unit> {
+    override suspend fun deleteCategory(
+        id: Int,
+        token: String,
+    ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro deletar categoria"))
         categories.removeAll { it.id == id }
         return Result.success(Unit)

@@ -29,6 +29,8 @@ exposed = "0.59.0"
 sqlite-jdbc = "3.49.0.0"
 thumbnailator = "0.4.20"
 kotlinx-datetime = "0.8.0"
+ktlint = "12.1.2"
+detekt = "1.23.8"
 
 [libraries]
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
@@ -94,3 +96,6 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }
 firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "perf" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+jacoco = { id = "org.gradle.jacoco", version = "0.8.12" }

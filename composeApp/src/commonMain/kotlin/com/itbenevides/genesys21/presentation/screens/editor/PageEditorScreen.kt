@@ -18,9 +18,9 @@ import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable
 fun PageEditorScreen(
-    viewModel: PageViewModel, 
-    page: Page?, 
-    onBack: () -> Unit
+    viewModel: PageViewModel,
+    page: Page?,
+    onBack: () -> Unit,
 ) {
     var state by remember { mutableStateOf(PageEditorState.initial(page)) }
     val isGlobalLoading by viewModel.isLoading.collectAsState()
@@ -30,10 +30,11 @@ fun PageEditorScreen(
     val onEvent: (PageEditorEvent) -> Unit = { event ->
         when (event) {
             is PageEditorEvent.OnTitleChanged -> {
-                state = state.copy(
-                    title = event.newTitle,
-                    canSave = event.newTitle.isNotBlank()
-                )
+                state =
+                    state.copy(
+                        title = event.newTitle,
+                        canSave = event.newTitle.isNotBlank(),
+                    )
             }
             is PageEditorEvent.OnSaveClicked -> {
                 val newPage = (page ?: Page(state.id, state.title.trim())).copy(title = state.title.trim())
@@ -49,49 +50,49 @@ fun PageEditorScreen(
 @Composable
 private fun PageEditorContent(
     state: PageEditorState,
-    onEvent: (PageEditorEvent) -> Unit
+    onEvent: (PageEditorEvent) -> Unit,
 ) {
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
                 title = if (state.isEditing) GenesysStrings.EditPageTitle else GenesysStrings.NewPageTitle,
-                onBack = { onEvent(PageEditorEvent.OnBackClicked) }
+                onBack = { onEvent(PageEditorEvent.OnBackClicked) },
             )
-        }
+        },
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             GenesysColumn(
                 maxWidth = GenesysDimens.EditorMaxWidth,
                 horizontalAlignment = GenesysAlignment.Center,
-                useScroll = true
+                useScroll = true,
             ) {
                 GenesysCard {
                     GenesysColumn(usePadding = false) {
                         GenesysText(
-                            text = GenesysStrings.EditPageTitle, 
-                            style = GenesysTextStyle.Title
+                            text = GenesysStrings.EditPageTitle,
+                            style = GenesysTextStyle.Title,
                         )
                         GenesysSpacer(GenesysSpacing.Medium)
-                        
+
                         GenesysTextField(
-                            value = state.title, 
-                            onValueChange = { newValue -> onEvent(PageEditorEvent.OnTitleChanged(newValue)) }, 
+                            value = state.title,
+                            onValueChange = { newValue -> onEvent(PageEditorEvent.OnTitleChanged(newValue)) },
                             label = GenesysStrings.PageTitleLabel,
-                            placeholder = GenesysStrings.PageTitlePlaceholder
+                            placeholder = GenesysStrings.PageTitlePlaceholder,
                         )
                     }
                 }
-                
+
                 GenesysSpacer(GenesysSpacing.Large)
-                
+
                 GenesysLoadingButton(
                     onClick = { onEvent(PageEditorEvent.OnSaveClicked) },
                     text = GenesysStrings.SavePageButton,
                     isLoading = state.isLoading,
                     enabled = state.canSave,
-                    fillWidth = true
+                    fillWidth = true,
                 )
-                
+
                 GenesysSpacer(GenesysSpacing.Huge)
             }
         }

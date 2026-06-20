@@ -1,16 +1,12 @@
 package com.itbenevides.genesys21.ui.components.button
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -24,26 +20,26 @@ fun GenesysTextButton(
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
     enabled: Boolean = true,
-    color: Color = MaterialTheme.colorScheme.primary
+    color: Color = MaterialTheme.colorScheme.primary,
 ) {
     TextButton(
         onClick = onClick,
         modifier = modifier,
-        enabled = enabled && !isLoading
+        enabled = enabled && !isLoading,
     ) {
         AnimatedContent(targetState = isLoading, label = "TextButtonLoading") { loading ->
             if (loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,
-                    color = color
+                    color = color,
                 )
             } else {
                 Text(
                     text = text,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
-                    color = if (enabled) color else color.copy(alpha = 0.38f)
+                    color = if (enabled) color else color.copy(alpha = 0.38f),
                 )
             }
         }

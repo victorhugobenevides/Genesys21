@@ -13,7 +13,7 @@ fun GenesysDialog(
     title: String,
     confirmButton: @Composable () -> Unit,
     dismissButton: @Composable (() -> Unit)? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -21,6 +21,6 @@ fun GenesysDialog(
         text = content,
         confirmButton = confirmButton,
         dismissButton = dismissButton,
-        shape = RoundedCornerShape(GenesysDimens.CornerRadiusHuge)
+        shape = RoundedCornerShape(GenesysDimens.CornerRadiusHuge),
     )
 }

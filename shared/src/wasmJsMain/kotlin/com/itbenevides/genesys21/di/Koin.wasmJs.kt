@@ -9,8 +9,9 @@ import com.itbenevides.genesys21.domain.repository.PageDraftRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-actual fun platformModule(): Module = module {
-    single<CartRepository> { LocalStorageCartRepository(get(), getBaseUrl(), get(), get()) }
-    single<CustomerRepository> { LocalStorageCustomerRepository() }
-    single<PageDraftRepository> { LocalStoragePageDraftRepository(get()) }
-}
+actual fun platformModule(): Module =
+    module {
+        single<CartRepository> { LocalStorageCartRepository(get(), getBaseUrl(), get(), get()) }
+        single<CustomerRepository> { LocalStorageCustomerRepository() }
+        single<PageDraftRepository> { LocalStoragePageDraftRepository(get()) }
+    }

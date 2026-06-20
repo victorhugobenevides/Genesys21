@@ -1,41 +1,75 @@
 package com.itbenevides.genesys21.domain.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import kotlinx.serialization.SerialName
-import com.itbenevides.genesys21.domain.model.Product
-import com.itbenevides.genesys21.domain.model.PageThemeConfig
+
+@Serializable
+data class Product(
+    val id: String,
+    val name: String,
+    val price: Double,
+    val imageUrls: List<String> = emptyList(),
+    val description: String = "",
+    val categoryId: Int? = null,
+    val categoryName: String? = null,
+    val stock: Int = 0,
+) {
+    val imageUrl: String get() = imageUrls.firstOrNull() ?: ""
+}
+
+@Serializable
+enum class PageThemeConfig {
+    ROYAL,
+    OCEAN,
+    FOREST,
+    CANDY,
+    SUNSET,
+    BERRY,
+    MINIMAL,
+    VINTAGE,
+    NORDIC,
+    COFFEE,
+    SOFT_LAVENDER,
+    SKY_BLUE,
+    MINT_GREEN,
+    PEACH,
+    LEMON,
+    DARK_MODE,
+    MIDNIGHT,
+    NEON,
+    DEEP_SPACE,
+    LUXURY_GOLD,
+    RADARANI,
+    DEFAULT,
+    CLEAN, // From main
+    MODERN, // From main
+}
 
 @Serializable
 sealed class PageComponent {
-    @Transient
-    open val customLabel: String? = null
-    @Transient
-    open val isFilterable: Boolean = false
-    
-    @Transient
-    open val destinationPageId: String? = null
-    @Transient
-    open val destinationUrl: String? = null
+    abstract val customLabel: String?
+    abstract val isFilterable: Boolean
+
+    // Campos de Redirecionamento Comuns
+    abstract val destinationUrl: String?
+    abstract val destinationPageId: String?
 
     @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Text")
     data class Text(
         val content: String,
-        val style: String = "BODY", // TITLE, SUBTITLE, BODY, CAPTION
-        val textAlign: String = "START", // START, CENTER, END
-        val usePrimaryColor: Boolean = false,
-        val isUppercase: Boolean = false,
-        val fontWeight: String = "NORMAL",
         val fontSize: Int = 16,
+        val textAlign: String = "START",
+        val fontWeight: String = "NORMAL",
+        val isUppercase: Boolean = false,
+        val usePrimaryColor: Boolean = false,
         @Transient
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -51,10 +85,8 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -66,14 +98,13 @@ sealed class PageComponent {
         val size: Int = 200,
         val isCircular: Boolean = false,
         val isFullWidth: Boolean = false,
+        val isRounded: Boolean = false,
         @Transient
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -86,10 +117,51 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductList")
+    data class ProductList(
+        val products: List<Product> = emptyList(),
+        val title: String = "Lista de Produtos",
+        val isHorizontal: Boolean = false,
+        override val customLabel: String? = null,
+        override val isFilterable: Boolean = true,
+        override val destinationUrl: String? = null,
+        override val destinationPageId: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Filter")
+    data class Filter(
+        val placeholder: String = "O que você procura hoje?",
+        override val customLabel: String? = null,
+        override val isFilterable: Boolean = false,
+        override val destinationUrl: String? = null,
+        override val destinationPageId: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryComponent")
+    data class CategoryComponent(
+        val categoryName: String,
+        val title: String? = null,
+        val layout: String = "GRID",
+        override val customLabel: String? = null,
+        override val isFilterable: Boolean = false,
+        override val destinationUrl: String? = null,
+        override val destinationPageId: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
+    data class CategoryFilter(
+        override val customLabel: String? = null,
+        override val isFilterable: Boolean = false,
+        override val destinationUrl: String? = null,
+        override val destinationPageId: String? = null,
     ) : PageComponent()
 
     @Serializable
@@ -104,10 +176,8 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -121,10 +191,8 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -137,10 +205,8 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
+        override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
     ) : PageComponent()
 
     @Serializable
@@ -151,10 +217,8 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
+        override val destinationUrl: String? = null,
     ) : PageComponent()
 
     @Serializable
@@ -165,53 +229,8 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
-    ) : PageComponent()
-
-    @Serializable
-    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryComponent")
-    data class CategoryComponent(
-        val categoryName: String,
-        val title: String? = null,
-        val layout: String = "GRID", // GRID, HORIZONTAL
-        @Transient
-        override val customLabel: String? = null,
-        @Transient
-        override val isFilterable: Boolean = false,
-        @Transient
-        override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
-    ) : PageComponent()
-
-    @Serializable
-    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CategoryFilter")
-    data class CategoryFilter(
-        @Transient
-        override val customLabel: String? = null,
-        @Transient
-        override val isFilterable: Boolean = false,
-        @Transient
-        override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
-    ) : PageComponent()
-
-    @Serializable
-    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Filter")
-    data class Filter(
-        val placeholder: String = "Buscar...",
-        @Transient
-        override val customLabel: String? = null,
-        @Transient
-        override val isFilterable: Boolean = false,
-        @Transient
-        override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
+        override val destinationUrl: String? = null,
     ) : PageComponent()
 
     @Serializable
@@ -223,27 +242,11 @@ sealed class PageComponent {
         override val customLabel: String? = null,
         @Transient
         override val isFilterable: Boolean = false,
-        @Transient
         override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
+        override val destinationUrl: String? = null,
     ) : PageComponent()
 
-    @Serializable
-    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductList")
-    data class ProductList(
-        val products: List<Product> = emptyList(),
-        val title: String = "Lista de Produtos",
-        val isHorizontal: Boolean = false,
-        @Transient
-        override val customLabel: String? = null,
-        @Transient
-        override val isFilterable: Boolean = false,
-        @Transient
-        override val destinationPageId: String? = null,
-        @Transient
-        override val destinationUrl: String? = null
-    ) : PageComponent()
+    companion object
 }
 
 @Serializable
@@ -254,104 +257,171 @@ data class Page(
     val customDomain: String? = null,
     val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
-    val theme: PageThemeConfig = PageThemeConfig.ROYAL
+    val theme: PageThemeConfig = PageThemeConfig.ROYAL,
 ) {
     companion object {
-        fun defaultTemplate(id: String, title: String): Page = createDefaultPageTemplate(id, title)
-        fun profileTemplate(id: String, title: String): Page = com.itbenevides.genesys21.domain.model.profileTemplate(id, title)
-        fun blogPostTemplate(id: String, title: String): Page = com.itbenevides.genesys21.domain.model.blogPostTemplate(id, title)
-    }
-}
+        fun defaultTemplate(
+            id: String,
+            title: String,
+        ): Page {
+            val oldSchoolCategories =
+                listOf("Vintage Denim", "Retro Graphic Tees", "Old School Jackets", "90s Accessories", "Classic Sneakers")
+            val demoProducts =
+                (1..30).map { i ->
+                    val category = oldSchoolCategories[i % oldSchoolCategories.size]
+                    Product(
+                        id = "vint_$i",
+                        name =
+                            when (category) {
+                                "Vintage Denim" -> listOf("Calça Jeans 501", "Shorts Acid Wash", "Jaqueta Jeans Oversized").random() + " #$i"
+                                "Retro Graphic Tees" -> listOf("T-Shirt Flamingo", "Camiseta Arcade 80s", "Baby Look Neon").random() + " #$i"
+                                "Old School Jackets" -> listOf("Windbreaker Turquesa", "Bomber Varsity", "Corta Vento Color Block").random() + " #$i"
+                                "90s Accessories" -> listOf("Boné Snapback", "Óculos Tartaruga", "Pochete Retro").random() + " #$i"
+                                else -> "Tênis cano alto Vintage" + " #$i"
+                            },
+                        price = (49..399).random().toDouble() + 0.90,
+                        categoryName = category,
+                        stock = (5..50).random(),
+                        imageUrls = listOf("https://picsum.photos/seed/vint$i/500/500"),
+                    )
+                }
 
-fun createDefaultPageTemplate(id: String, title: String): Page {
-    val oldSchoolCategories = listOf("Vintage Denim", "Retro Graphic Tees", "Old School Jackets", "90s Accessories", "Classic Sneakers")
-    val demoProducts = (1..30).map { i ->
-        val category = oldSchoolCategories[i % oldSchoolCategories.size]
-        Product(
-            id = "vint_$i",
-            name = when(category) {
-                "Vintage Denim" -> listOf("Calça Jeans 501", "Shorts Acid Wash", "Jaqueta Jeans Oversized").random() + " #$i"
-                "Retro Graphic Tees" -> listOf("T-Shirt Flamingo", "Camiseta Arcade 80s", "Baby Look Neon").random() + " #$i"
-                "Old School Jackets" -> listOf("Windbreaker Turquesa", "Bomber Varsity", "Corta Vento Color Block").random() + " #$i"
-                "90s Accessories" -> listOf("Boné Snapback", "Óculos Tartaruga", "Pochete Retro").random() + " #$i"
-                else -> "Tênis cano alto Vintage" + " #$i"
-            },
-            price = (49..399).random().toDouble() + 0.90,
-            categoryName = category,
-            stock = (5..50).random(),
-            imageUrls = listOf("https://picsum.photos/seed/vint$i/500/500")
-        )
-    }
+            return Page(
+                id = id,
+                title = if (title.isBlank()) "Sua Vitrine" else title,
+                theme = PageThemeConfig.OCEAN,
+                components =
+                    listOf(
+                        PageComponent.Header(
+                            title = if (title.isBlank()) "Bem-vindo" else title,
+                            textAlign = "CENTER",
+                            fontSize = 36,
+                        ),
+                        PageComponent.Image(
+                            url = "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200",
+                            isFullWidth = true,
+                        ),
+                        PageComponent.Filter(),
+                        PageComponent.CategoryFilter(),
+                        PageComponent.ProductList(
+                            products = demoProducts.take(8),
+                            isHorizontal = true,
+                            customLabel = "Destaques",
+                        ),
+                        PageComponent.ProductList(
+                            products = demoProducts.drop(8),
+                            isHorizontal = false,
+                            customLabel = "Todos os Produtos",
+                        ),
+                    ),
+            )
+        }
 
-    return Page(
-        id = id,
-        title = title,
-        whatsapp = "5500000000000",
-        theme = PageThemeConfig.ROYAL,
-        components = listOf(
-            PageComponent.Text(content = title, style = "TITLE", textAlign = "CENTER"),
-            PageComponent.Text(content = "Estilo Atemporal para Almas Vintage", style = "SUBTITLE", textAlign = "CENTER"),
-            dividerTemplate(),
-            PageComponent.Text(content = "Curadoria exclusiva de peças que contam histórias. Do denim clássico aos acessórios que marcaram gerações.", style = "BODY", textAlign = "CENTER"),
-            dividerTemplate(),
-            PageComponent.Text(content = "Explorar por Categoria", style = "TITLE", textAlign = "START"),
-            PageComponent.CategoryComponent(categoryName = "Retro Graphic Tees", title = "Camisetas de Época", layout = "HORIZONTAL"),
-            PageComponent.CategoryComponent(categoryName = "Vintage Denim", title = "O Melhor do Jeans", layout = "HORIZONTAL"),
-            dividerTemplate(),
-            PageComponent.Text(content = "Nossas Peças em Destaque", style = "TITLE", textAlign = "START"),
-            PageComponent.ProductList(products = demoProducts.take(15), title = "Recém Chegados"),
-            dividerTemplate(),
-            PageComponent.Button(text = "Falar com Consultor no WhatsApp", url = "https://wa.me/5500000000000"),
-            PageComponent.Text(content = "Entregamos em todo o Brasil com embalagens sustentáveis.", style = "CAPTION", textAlign = "CENTER")
-        )
-    )
-}
+        fun profileTemplate(
+            id: String,
+            title: String,
+        ): Page {
+            return Page(
+                id = id,
+                title = if (title.isBlank()) "Meu Perfil" else title,
+                theme = PageThemeConfig.RADARANI,
+                components =
+                    listOf(
+                        PageComponent.ProfileHeader(
+                            imageUrl = "https://picsum.photos/seed/profile/300/300",
+                            name = if (title.isBlank()) "Seu Nome Aqui" else title,
+                            bio = "Desenvolvedor & Criador de Conteúdo. Bem-vindo aos meus links oficiais!",
+                        ),
+                        PageComponent.SocialLinks(
+                            instagram = "https://instagram.com",
+                            whatsapp = "https://wa.me/5500000000000",
+                            youtube = "https://youtube.com",
+                            email = "seuemail@exemplo.com",
+                        ),
+                        PageComponent.Header(title = "Conteúdo Exclusivo", fontSize = 22, textAlign = "CENTER"),
+                        PageComponent.Button(text = "📚 Meu Curso Online", url = "https://exemplo.com/curso"),
+                        PageComponent.Button(text = "🎙️ Podcast Semanal", url = "https://exemplo.com/podcast"),
+                        PageComponent.Button(text = "🛍️ Minha Loja", url = "https://exemplo.com/loja"),
+                        PageComponent.Header(title = "Últimas do Instagram", fontSize = 18, textAlign = "CENTER"),
+                        PageComponent.ProductList(
+                            products =
+                                (1..4).map { i ->
+                                    Product(
+                                        id = "post_$i",
+                                        name = "Post #$i",
+                                        price = 0.0,
+                                        imageUrls = listOf("https://picsum.photos/seed/insta$i/400/400"),
+                                    )
+                                },
+                            isHorizontal = true,
+                            customLabel = "Instagram Feed",
+                        ),
+                    ),
+            )
+        }
 
-fun profileTemplate(id: String, title: String): Page {
-    return Page(
-        id = id,
-        title = title,
-        theme = PageThemeConfig.CLEAN,
-        components = listOf(
-            PageComponent.ProfileHeader(
-                imageUrl = "https://picsum.photos/seed/profile/400/400",
-                name = title,
-                bio = "Especialista em Curadoria Digital & Design"
-            ),
-            PageComponent.SocialLinks(
-                instagram = "https://instagram.com",
-                whatsapp = "https://wa.me/5500000000000"
-            ),
-            PageComponent.Button(text = "Meu Portfólio", url = "#"),
-            PageComponent.Button(text = "Agendar Mentoria", url = "#"),
-            PageComponent.Button(text = "LinkedIn", url = "#", isPrimary = false)
-        )
-    )
-}
+        fun blogPostTemplate(
+            id: String,
+            title: String,
+        ): Page {
+            return Page(
+                id = id,
+                title = if (title.isBlank()) "Meu Artigo" else title,
+                theme = PageThemeConfig.MINIMAL,
+                components =
+                    listOf(
+                        PageComponent.Header(
+                            title = if (title.isBlank()) "Título do Post no Estilo Blog" else title,
+                            textAlign = "LEFT",
+                            fontSize = 32,
+                        ),
+                        PageComponent.ProfileHeader(
+                            imageUrl = "https://picsum.photos/seed/author/150/150",
+                            name = "Por Autor Nome",
+                            bio = "Publicado em 30 de Janeiro, 2025 • 5 min de leitura",
+                            imageSize = 40,
+                            isCircular = true,
+                        ),
+                        PageComponent.Image(
+                            url = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200",
+                            isFullWidth = true,
+                            isRounded = true,
+                        ),
+                        PageComponent.Text(
+                            content = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                            fontSize = 18,
+                            fontWeight = "NORMAL",
+                        ),
+                        PageComponent.Header(title = "Subtítulo Importante", fontSize = 24),
+                        PageComponent.Text(
+                            content = "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                            fontSize = 18,
+                        ),
+                        PageComponent.Image(
+                            url = "https://images.unsplash.com/photo-1432821596592-e2c18b78144f?q=80&w=800",
+                            isFullWidth = false,
+                            size = 300,
+                        ),
+                        PageComponent.Text(
+                            content = "Conclusão do pensamento do blog. Espero que este conteúdo tenha sido útil para você!",
+                            fontSize = 18,
+                            fontWeight = "BOLD",
+                        ),
+                        PageComponent.DividerTemplate(),
+                        PageComponent.SocialLinks(
+                            instagram = "https://instagram.com",
+                            whatsapp = "https://wa.me/5500000000000",
+                        ),
+                        PageComponent.Button(text = "💬 Comentar no WhatsApp", url = "https://wa.me/5500000000000"),
+                    ),
+            )
+        }
 
-fun blogPostTemplate(id: String, title: String): Page {
-    return Page(
-        id = id,
-        title = title,
-        theme = PageThemeConfig.MODERN,
-        components = listOf(
-            PageComponent.Image(url = "https://picsum.photos/seed/blog/800/400", aspectRatio = 2f, isFullWidth = true),
-            PageComponent.Header(title = title, textAlign = "START"),
-            PageComponent.Text(content = "Publicado em 20 de Março, 2024", style = "CAPTION", textAlign = "START"),
+        private fun PageComponent.Companion.DividerTemplate() =
             PageComponent.Text(
-                content = "A tecnologia está mudando a forma como interagimos com o mundo. " +
-                        "Neste artigo, exploramos as tendências para o futuro do desenvolvimento multiplatforma...",
-                style = "BODY",
-                textAlign = "START"
-            ),
-            PageComponent.Button(text = "Ler mais artigos", url = "#", isPrimary = false),
-            PageComponent.Button(text = "💬 Comentar no WhatsApp", url = "https://wa.me/5500000000000")
-        )
-    )
+                content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
+                textAlign = "CENTER",
+                usePrimaryColor = true,
+            )
+    }
 }
-
-private fun dividerTemplate() = PageComponent.Text(
-    content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯",
-    textAlign = "CENTER",
-    usePrimaryColor = true
-)

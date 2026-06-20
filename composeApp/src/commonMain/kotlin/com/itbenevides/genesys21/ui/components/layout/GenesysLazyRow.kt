@@ -16,12 +16,12 @@ fun <T> GenesysLazyRow(
     items: List<T>,
     modifier: Modifier = Modifier,
     spacing: GenesysSpacing = GenesysSpacing.Medium,
-    content: @Composable (T) -> Unit
+    content: @Composable (T) -> Unit,
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(spacing.value),
-        contentPadding = PaddingValues(vertical = GenesysDimens.SpacingSmall)
+        contentPadding = PaddingValues(vertical = GenesysDimens.SpacingSmall),
     ) {
         items(items) { item ->
             content(item)

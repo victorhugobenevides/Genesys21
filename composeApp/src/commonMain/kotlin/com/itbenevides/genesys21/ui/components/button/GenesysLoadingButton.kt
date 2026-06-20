@@ -23,21 +23,21 @@ fun GenesysLoadingButton(
     icon: ImageVector? = null,
     containerColor: Color = MaterialTheme.colorScheme.primary,
     shape: Shape = RoundedCornerShape(12.dp),
-    fillWidth: Boolean = false
+    fillWidth: Boolean = false,
 ) {
     Button(
         onClick = onClick,
         modifier = if (fillWidth) modifier.fillMaxWidth() else modifier,
         enabled = enabled && !isLoading,
         shape = shape,
-        colors = ButtonDefaults.buttonColors(containerColor = containerColor)
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
     ) {
         AnimatedContent(targetState = isLoading, label = "LoadingButtonAnimation") { loading ->
             if (loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {

@@ -1,12 +1,7 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -17,39 +12,35 @@ import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.layout.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.layout.GenesysColumn
-import com.itbenevides.genesys21.ui.components.layout.GenesysPage
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.layout.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.layout.*
 import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.pulse
 import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.koinInject
 
 @Composable
 fun PageViewerScreen(
-    page: Page, 
+    page: Page,
     onBack: () -> Unit,
-    onProductClick: (Product) -> Unit
+    onProductClick: (Product) -> Unit,
 ) {
     val router: Router = koinInject()
     val cartCount by router.viewModel.cartCount.collectAsState()
     val storeCategories by router.viewModel.allAvailableCategories.collectAsState()
     val allProducts by router.viewModel.allAvailableProducts.collectAsState()
-    
-    val state = remember(page, cartCount, storeCategories) { 
-        PageViewerScreenState(
-            page = page,
-            cartCount = cartCount,
-            allStoreCategories = storeCategories
-        ) 
-    }
-    
+
+    val state =
+        remember(page, cartCount, storeCategories) {
+            PageViewerScreenState(
+                page = page,
+                cartCount = cartCount,
+                allStoreCategories = storeCategories,
+            )
+        }
+
     var isLoggedIn by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -77,9 +68,9 @@ fun PageViewerScreen(
     AppTheme(themeConfig = state.page.theme) {
         ThemeScrollbarEffectWrapper()
         PageViewerContent(
-            state = state.copy(isLoggedIn = isLoggedIn), 
+            state = state.copy(isLoggedIn = isLoggedIn),
             allProducts = allProducts,
-            onEvent = onEvent
+            onEvent = onEvent,
         )
     }
 }
@@ -88,73 +79,74 @@ fun PageViewerScreen(
 private fun PageViewerContent(
     state: PageViewerScreenState,
     allProducts: List<Product>,
-    onEvent: (PageViewerScreenEvent) -> Unit
+    onEvent: (PageViewerScreenEvent) -> Unit,
 ) {
     var currentFilterQuery by remember { mutableStateOf("") }
 
     GenesysPage(
         topBar = {
-             GenesysTopAppBar(
+            GenesysTopAppBar(
                 title = state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
+                    // BOTÃO CARRINHO: Sempre visível no topo direito
+                    BadgedBox(
+                        badge = {
+                            if (state.cartCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.offset(x = (-4).dp, y = 4.dp),
+                                ) {
+                                    Text(text = state.cartCount.toString())
+                                }
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .padding(end = 8.dp)
+                                .then(if (state.cartCount > 0) Modifier.pulse() else Modifier),
+                    ) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.ShoppingBag,
+                            contentDescription = GenesysStrings.ViewCart,
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
+                        )
+                    }
+
                     // BOTÃO MEUS PEDIDOS: Apenas se houver lista de produtos na página
                     if (state.hasProductList) {
                         GenesysIconButton(
-                            icon = GenesysIcons.List, 
+                            icon = GenesysIcons.List,
                             contentDescription = GenesysStrings.OrderHistoryTitle,
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) }
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
                         )
                     }
 
                     if (state.isLoggedIn) {
                         GenesysIconButton(
-                            icon = GenesysIcons.Settings, 
+                            icon = GenesysIcons.Settings,
                             contentDescription = GenesysStrings.AdminTitle,
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenAdminSettingsClicked) }
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenAdminSettingsClicked) },
                         )
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
-            // BOTÃO CARRINHO: Apenas se houver lista de produtos ou itens já no carrinho
-            if (state.hasProductList || state.cartCount > 0) {
-                BadgedBox(
-                    badge = {
-                        if (state.cartCount > 0) {
-                            Badge(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError,
-                                modifier = Modifier.offset(x = (-8).dp, y = 8.dp)
-                            ) {
-                                GenesysText(text = state.cartCount.toString(), style = GenesysTextStyle.Label)
-                            }
-                        }
-                    }
-                ) {
-                    ExtendedFloatingActionButton(
-                        onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                        icon = { Icon(GenesysIcons.ShoppingBag, null) },
-                        text = { GenesysText(text = GenesysStrings.ViewCart, style = GenesysTextStyle.Body) }
-                    )
-                }
-            }
-        }
+            // Removido do FAB, agora reside na TopBar
+        },
     ) {
         GenesysColumn(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = GenesysAlignment.Center,
-            usePadding = false
+            usePadding = false,
         ) {
             GenesysColumn(
                 maxWidth = GenesysDimens.ViewerMaxWidth,
                 usePadding = true,
                 useScroll = true,
-                weightValue = 1f
+                weightValue = 1f,
             ) {
                 state.page.components.forEach { component ->
                     PageComponentRenderer(
@@ -163,10 +155,10 @@ private fun PageViewerContent(
                         filterQuery = currentFilterQuery,
                         onFilterQueryChange = { currentFilterQuery = it },
                         allAvailableCategories = state.allStoreCategories,
-                        allProducts = allProducts
+                        allProducts = allProducts,
                     )
                 }
-                
+
                 GenesysSpacer(GenesysSpacing.Huge)
             }
         }

@@ -18,19 +18,20 @@ fun GenesysAvatar(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-    iconTint: Color = MaterialTheme.colorScheme.primary
+    iconTint: Color = MaterialTheme.colorScheme.primary,
 ) {
     Box(
-        modifier = modifier
-            .size(GenesysDimens.IconHuge)
-            .background(backgroundColor, CircleShape),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(GenesysDimens.IconHuge)
+                .background(backgroundColor, CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.size(GenesysDimens.IconLarge)
+            modifier = Modifier.size(GenesysDimens.IconLarge),
         )
     }
 }

@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
 
 /**
@@ -11,7 +10,7 @@ import com.itbenevides.genesys21.domain.model.Product
 data class WhiteLabelState(
     val page: Page,
     val isLoading: Boolean = false,
-    val isUploading: Boolean = false, // ADICIONADO: Controle de upload de imagem
+    val isUploading: Boolean = false,
     val availableProducts: List<Product> = emptyList(),
     val allAvailableCategories: List<String> = emptyList(),
     val showCatalog: Boolean = false,
@@ -20,7 +19,7 @@ data class WhiteLabelState(
     val editingComponentIndex: Int? = null,
     val pendingNewComponent: PageComponent? = null,
     val filterQuery: String = "",
-    val userPages: List<Page> = emptyList()
+    val userPages: List<Page> = emptyList(),
 )
 
 /**
@@ -28,24 +27,35 @@ data class WhiteLabelState(
  */
 sealed class WhiteLabelEvent {
     data class OnPageUpdated(val newPage: Page) : WhiteLabelEvent()
+
     object OnPublishClicked : WhiteLabelEvent()
+
     object OnBackClicked : WhiteLabelEvent()
+
     data class OnEditProductClicked(val product: Product?, val componentIndex: Int?) : WhiteLabelEvent()
-    
+
     // UI Toggles
     data class OnShowCatalogChanged(val show: Boolean) : WhiteLabelEvent()
+
     data class OnShowThemeSelectorChanged(val show: Boolean) : WhiteLabelEvent()
+
     data class OnShowPageSettingsChanged(val show: Boolean) : WhiteLabelEvent()
+
     data class OnEditingComponentIndexChanged(val index: Int?) : WhiteLabelEvent()
+
     data class OnPendingNewComponentChanged(val component: PageComponent?) : WhiteLabelEvent()
+
     data class OnFilterQueryChanged(val query: String) : WhiteLabelEvent()
-    
+
     // Upload de Imagem
     data class OnImageUploadStarted(val isUploading: Boolean) : WhiteLabelEvent()
-    
+
     // Ações de Componentes
     data class OnDeleteComponent(val index: Int) : WhiteLabelEvent()
+
     data class OnDuplicateComponent(val index: Int) : WhiteLabelEvent()
+
     data class OnMoveComponentUp(val index: Int) : WhiteLabelEvent()
+
     data class OnMoveComponentDown(val index: Int) : WhiteLabelEvent()
 }
