@@ -1,43 +1,43 @@
-# Implementation Plan: Phase 4 - Social & SEO
+# Implementation Plan: Phase 5 - Advanced Customization & Pro Themes
 
 ## Architecture Overview
-Most changes will occur in the `server` (metadata rendering) and `composeApp` (Native Share implementation). The `shared` module will host the `ShareManager` interface.
+We will refactor the `AppTheme` to accept a `CustomThemeConfig` model that overrides the base `PageThemeConfig`. The `shared` domain will be updated to include these new styling tokens.
 
 ## Task Breakdown
 
-### Wave 1: SEO Hardening (Server-side)
-**T022: Dynamic Metadata Engine**
-- **Dependencies**: None | **Est**: 4h
-- **Description**: Update Ktor `/p/{id}` route to parse page components and inject real images and bios into HTML template.
-
-**T023: Sitemap & Search Discovery**
-- **Dependencies**: T022 | **Est**: 2h
-- **Description**: Create `/sitemap.xml` endpoint for automated indexing.
-
-### Wave 2: Social Kit (Client-side)
-**T024: Native Share Integration**
+### Wave 1: Design System Overrides
+**T027: Custom Color Palette Support**
 - **Dependencies**: None | **Est**: 5h
-- **Description**: Create `expect/actual` `ShareManager` for Android, iOS, and Web. Add Share icon to `PageViewerScreen` top bar.
+- **Description**: Add `customColors` to `Page` model. Update `AppTheme` to use these colors when provided.
 
-**T025: Contextual WhatsApp Feedback**
-- **Dependencies**: None | **Est**: 2h
-- **Description**: Update WhatsApp link generators to include product-specific context strings.
+**T028: Multiplatform Typography Engine**
+- **Dependencies**: None | **Est**: 4h
+- **Description**: Integrate custom fonts using Compose Multiplatform resources and provide selection presets.
 
-### Wave 3: Advanced Branding
-**T026: Dynamic Favicon & UTM Tracking**
-- **Dependencies**: T024 | **Est**: 3h
-- **Description**: Inject favicon links via JS Interop and capture `utm_` parameters in Analytics.
+### Wave 2: Advanced Stylers
+**T029: Glass & Shape Controller**
+- **Dependencies**: T027 | **Est**: 3h
+- **Description**: Implement global settings for corner radius and glassmorphism intensity.
+
+**T030: Real-time Editor Preview**
+- **Dependencies**: T029 | **Est**: 6h
+- **Description**: Refactor `WhiteLabelScreen` to observe a reactive `StyleState` for instant visual feedback.
+
+### Wave 3: Pro Templates
+**T031: Pro Template Gallery**
+- **Dependencies**: T030 | **Est**: 4h
+- **Description**: Implement 5 high-converting professional layouts using the new customization features.
 
 ---\n
 ## Execution waves
 
-### Wave 1 (SEO - 6h)
-- T022, T023
+### Wave 1 (Tokens - 9h)
+- T027, T028
 
-### Wave 2 (Social - 7h)
-- T024, T025
+### Wave 2 (Controls - 9h)
+- T029, T030
 
-### Wave 3 (Branding - 3h)
-- T026
+### Wave 3 (Templates - 4h)
+- T031
 
-**Total Estimated Time**: 16 hours
+**Total Estimated Time**: 22 hours
