@@ -11,7 +11,7 @@ import org.koin.dsl.module
 actual fun platformModule() =
     module {
         single<AuthRepository> { IosAuthRepository() }
-        single<CartRepository> { InMemoryCartRepository() }
+        single<CartRepository> { InMemoryCartRepository(get(), getBaseUrl(), get(), get()) }
         single<CustomerRepository> { InMemoryCustomerRepository() }
     }
 

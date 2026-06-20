@@ -3,133 +3,53 @@ package com.itbenevides.genesys21.data.repository
 import android.content.Context
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
-import com.itbenevides.genesys21.domain.repository.CartRepository
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.UUID
 
 class AndroidCartRepository(
     private val context: Context,
-    private val httpClient: HttpClient,
-    private val baseUrl: String,
-    private val json: Json,
-    private val authRepository: AuthRepository,
-) : CartRepository {
-    private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
-    override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
-
+    httpClient: HttpClient,
+    baseUrl: String,
+    json: Json,
+    authRepository: AuthRepository,
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
     private val prefs = context.getSharedPreferences("genesys21_cart_prefs", Context.MODE_PRIVATE)
     private val CART_STORAGE_KEY = "genesys21_cart"
     private val SESSION_STORAGE_KEY = "genesys21_session_id"
+    private var cachedSessionId: String? = null
 
     override fun getSessionId(): String {
+        cachedSessionId?.let { return it }
         var id = prefs.getString(SESSION_STORAGE_KEY, null)
         if (id == null) {
-            id = "sess_android_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+            id = "sess_android_" + UUID.randomUUID().toString()
             prefs.edit().putString(SESSION_STORAGE_KEY, id).apply()
         }
+        cachedSessionId = id
         return id
     }
 
-    override suspend fun loadInitialCart() {
-        val cached = prefs.getString(CART_STORAGE_KEY, null)
-        if (cached != null) {
-            try {
-                _cartItems.value = json.decodeFromString(cached)
-            } catch (e: Exception) {
-                _cartItems.value = emptyList()
-            }
-        }
-
-        try {
-            val token = authRepository.getCurrentUserToken()
-            val response =
-                httpClient.get("$baseUrl/api/cart") {
-                    if (token != null) {
-                        header(HttpHeaders.Authorization, "Bearer $token")
-                    } else {
-                        header("X-Cart-Session-Id", getSessionId())
-                    }
-                }
-            if (response.status.isSuccess()) {
-                val serverItems: List<CartItem> = response.body()
-                if (serverItems.isNotEmpty()) {
-                    _cartItems.value = serverItems
-                    saveToLocal()
-                }
-            }
-        } catch (e: Exception) {
-            // Silencioso: usa o cache local
-        }
+    override suspend fun saveToLocal(items: List<CartItem>) {
+        prefs.edit().putString(CART_STORAGE_KEY, json.encodeToString(items)).apply()
     }
 
-    private fun saveToLocal() {
-        prefs.edit().putString(CART_STORAGE_KEY, json.encodeToString(_cartItems.value)).apply()
-    }
-
-    override suspend fun addToCart(item: CartItem): Result<Unit> {
-        val current = _cartItems.value.toMutableList()
-        val existing = current.find { it.product.id == item.product.id }
-        if (existing != null) {
-            val idx = current.indexOf(existing)
-            current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
-        } else {
-            current.add(item)
-        }
-        _cartItems.value = current
-        saveToLocal()
-        return syncWithServer()
-    }
-
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filter { it.product.id != productId }
-        saveToLocal()
-        return syncWithServer()
-    }
-
-    override suspend fun updateQuantity(
-        productId: String,
-        quantity: Int,
-    ): Result<Unit> {
-        if (quantity <= 0) return removeFromCart(productId)
-        _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
-        saveToLocal()
-        return syncWithServer()
-    }
-
-    override suspend fun clearCart(): Result<Unit> {
-        _cartItems.value = emptyList()
-        prefs.edit().remove(CART_STORAGE_KEY).apply()
-        return syncWithServer()
-    }
-
-    override suspend fun syncWithServer(): Result<Unit> {
+    override suspend fun loadFromLocal(): List<CartItem> {
+        val cached = prefs.getString(CART_STORAGE_KEY, null) ?: return emptyList()
         return try {
-            val token = authRepository.getCurrentUserToken()
-            val response =
-                httpClient.post("$baseUrl/api/cart") {
-                    if (token != null) {
-                        header(HttpHeaders.Authorization, "Bearer $token")
-                    } else {
-                        header("X-Cart-Session-Id", getSessionId())
-                    }
-
-                    contentType(ContentType.Application.Json)
-                    setBody(_cartItems.value)
-                }
-            if (response.status.isSuccess()) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Server error"))
-            }
+            json.decodeFromString(cached)
         } catch (e: Exception) {
-            Result.failure(e)
+            emptyList()
         }
+    }
+
+    override suspend fun saveSessionId(id: String) {
+        prefs.edit().putString(SESSION_STORAGE_KEY, id).apply()
+        cachedSessionId = id
+    }
+
+    override suspend fun loadSessionId(): String? {
+        return prefs.getString(SESSION_STORAGE_KEY, null)
     }
 }

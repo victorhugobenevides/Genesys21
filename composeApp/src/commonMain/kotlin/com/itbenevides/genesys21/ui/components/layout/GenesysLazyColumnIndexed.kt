@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.ui.components.layout
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +19,7 @@ fun <T> GenesysLazyColumnIndexed(
     spacing: GenesysSpacing = GenesysSpacing.Medium,
     usePadding: Boolean = true,
     key: ((Int, T) -> Any)? = null,
-    itemModifier: ((Int, T) -> Modifier)? = null,
+    itemModifier: LazyItemScope.(Int, T) -> Modifier = { _, _ -> Modifier },
     content: @Composable (Int, T) -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -41,8 +42,7 @@ fun <T> GenesysLazyColumnIndexed(
                 items = items,
                 key = key,
             ) { index, item ->
-                val baseModifier = itemModifier?.invoke(index, item) ?: Modifier
-                Box(modifier = baseModifier) {
+                Box(modifier = itemModifier(index, item)) {
                     content(index, item)
                 }
             }

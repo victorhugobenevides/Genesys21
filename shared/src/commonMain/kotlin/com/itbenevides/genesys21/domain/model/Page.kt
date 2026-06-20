@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.domain.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @Serializable
 data class Product(
@@ -41,6 +42,8 @@ enum class PageThemeConfig {
     LUXURY_GOLD,
     RADARANI,
     DEFAULT,
+    CLEAN, // From main
+    MODERN, // From main
 }
 
 @Serializable
@@ -57,11 +60,13 @@ sealed class PageComponent {
     data class Text(
         val content: String,
         val fontSize: Int = 16,
-        val textAlign: String = "LEFT",
+        val textAlign: String = "START",
         val fontWeight: String = "NORMAL",
         val isUppercase: Boolean = false,
         val usePrimaryColor: Boolean = false,
+        @Transient
         override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
@@ -71,12 +76,14 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Header")
     data class Header(
         val title: String,
-        val fontSize: Int = 28,
-        val textAlign: String = "LEFT",
-        val fontWeight: String = "EXTRA_BOLD",
         val isUppercase: Boolean = false,
-        val usePrimaryColor: Boolean = true,
+        val fontWeight: String = "BOLD",
+        val textAlign: String = "START",
+        val usePrimaryColor: Boolean = false,
+        val fontSize: Int = 24,
+        @Transient
         override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
@@ -86,12 +93,15 @@ sealed class PageComponent {
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Image")
     data class Image(
         val url: String,
-        val string: String = "",
+        val caption: String? = null,
+        val aspectRatio: Float = 1f,
         val size: Int = 200,
-        val isFullWidth: Boolean = true,
-        val isRounded: Boolean = true,
         val isCircular: Boolean = false,
+        val isFullWidth: Boolean = false,
+        val isRounded: Boolean = false,
+        @Transient
         override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
@@ -102,8 +112,10 @@ sealed class PageComponent {
     data class Button(
         val text: String,
         val url: String,
-        val iconName: String? = null,
+        val isPrimary: Boolean = true,
+        @Transient
         override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
@@ -112,7 +124,8 @@ sealed class PageComponent {
     @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductList")
     data class ProductList(
-        val products: List<Product>,
+        val products: List<Product> = emptyList(),
+        val title: String = "Lista de Produtos",
         val isHorizontal: Boolean = false,
         override val customLabel: String? = null,
         override val isFilterable: Boolean = true,
@@ -154,12 +167,14 @@ sealed class PageComponent {
     @Serializable
     @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProfileHeader")
     data class ProfileHeader(
-        val imageUrl: String = "",
-        val name: String = "",
+        val imageUrl: String,
+        val name: String,
         val bio: String = "",
         val imageSize: Int = 120,
         val isCircular: Boolean = true,
-        override val customLabel: String? = "Perfil",
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
@@ -172,21 +187,66 @@ sealed class PageComponent {
         val whatsapp: String? = null,
         val youtube: String? = null,
         val email: String? = null,
-        val website: String? = null,
-        override val customLabel: String? = "Redes Sociais",
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
     ) : PageComponent()
 
     @Serializable
-    @SerialName("unknown")
-    data class Unknown(
-        override val customLabel: String? = "Componente Antigo",
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ProductGrid")
+    data class ProductGrid(
+        val productIds: List<String>,
+        val columns: Int = 2,
+        val showPrice: Boolean = true,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
         override val isFilterable: Boolean = false,
         override val destinationUrl: String? = null,
         override val destinationPageId: String? = null,
     ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.CartComponent")
+    data class CartComponent(
+        val title: String = "Carrinho",
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.OrderTrackingComponent")
+    data class OrderTrackingComponent(
+        val title: String = "Acompanhar Pedido",
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.FeaturedProductsComponent")
+    data class FeaturedProductsComponent(
+        val productIds: List<String>,
+        val title: String = "Destaques",
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    companion object
 }
 
 @Serializable
@@ -238,7 +298,7 @@ data class Page(
                             fontSize = 36,
                         ),
                         PageComponent.Image(
-                            url = "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80\u0026w=1200",
+                            url = "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200",
                             isFullWidth = true,
                         ),
                         PageComponent.Filter(),
@@ -270,7 +330,7 @@ data class Page(
                         PageComponent.ProfileHeader(
                             imageUrl = "https://picsum.photos/seed/profile/300/300",
                             name = if (title.isBlank()) "Seu Nome Aqui" else title,
-                            bio = "Desenvolvedor \u0026 Criador de Conteúdo. Bem-vindo aos meus links oficiais!",
+                            bio = "Desenvolvedor & Criador de Conteúdo. Bem-vindo aos meus links oficiais!",
                         ),
                         PageComponent.SocialLinks(
                             instagram = "https://instagram.com",
@@ -323,7 +383,7 @@ data class Page(
                             isCircular = true,
                         ),
                         PageComponent.Image(
-                            url = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80\u0026w=1200",
+                            url = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200",
                             isFullWidth = true,
                             isRounded = true,
                         ),
@@ -338,7 +398,7 @@ data class Page(
                             fontSize = 18,
                         ),
                         PageComponent.Image(
-                            url = "https://images.unsplash.com/photo-1432821596592-e2c18b78144f?q=80\u0026w=800",
+                            url = "https://images.unsplash.com/photo-1432821596592-e2c18b78144f?q=80&w=800",
                             isFullWidth = false,
                             size = 300,
                         ),

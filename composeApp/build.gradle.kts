@@ -109,7 +109,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             // Alterado de 1.10.1 para 1.9.0 para garantir a resolução do artefato
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
         }
     }
 }
@@ -145,5 +145,4 @@ dependencies {
     debugImplementation(compose.uiTooling)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.auth.ktx)
 }

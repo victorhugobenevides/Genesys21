@@ -61,4 +61,6 @@ server/src/main/resources/*.json
 /composeApp/google-services.json
 /deploy/
 genesys21-32035-firebase-adminsdk.json
-/.ollamassist/
+
+# Local Assistant / Ollama
+.ollamassist/

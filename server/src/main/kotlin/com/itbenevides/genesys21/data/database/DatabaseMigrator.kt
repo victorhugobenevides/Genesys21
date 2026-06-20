@@ -20,8 +20,14 @@ object DatabaseMigrator {
         try {
             // SQLite exige nomes de índices únicos em todo o banco de dados.
             // Se um índice de uma tabela antiga (_old) ainda existir, ele impedirá a criação do novo.
-            val residualIndices = listOf("page_components_page_id", "pages_custom_domain_unique")
-
+            val residualIndices =
+                listOf(
+                    "page_components_page_id",
+                    "pages_custom_domain_unique",
+                    "pages_owner_id",
+                    "categories_owner_id",
+                    "products_owner_id",
+                )
             residualIndices.forEach { indexName ->
                 val tblName =
                     exec("SELECT tbl_name FROM sqlite_master WHERE type='index' AND name='$indexName'") { rs ->
@@ -78,7 +84,7 @@ object DatabaseMigrator {
         // Insere apenas as colunas atômicas que permaneceram na tabela Pages
         exec(
             """
-            INSERT INTO pages (id, title, owner_id, theme, custom_domain, whatsapp) 
+            INSERT INTO pages (id, title, owner_id, theme, custom_domain, whatsapp)
             SELECT id, title, owner_id, theme, custom_domain, whatsapp FROM pages_old
             """.trimIndent(),
         )

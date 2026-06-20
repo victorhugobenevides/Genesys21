@@ -68,13 +68,44 @@ Open the `iosApp` directory in Xcode.
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html) and [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform).
 
-## 🛠️ GitFlow
+# 🛠️ GitFlow Policy
 
-- **Branch strategy:** `main` (production), `develop` (integration), `feature/*`, `release/*`, `hotfix/*`.
-- **Starting a feature:** `git checkout -b feature/<ticket-id>-short-description develop`
-- **Creating a release:** `git checkout -b release/<version> develop` then PR to `main`.
-- **Hotfix:** `git checkout -b hotfix/<ticket-id> main` then PR to `main` and `develop`.
-- **Pull request template:** already added (`.github/pull_request_template.md`).
-- **Issue templates:** `feature_request.md` and `bug_report.md` in `.github/ISSUE_TEMPLATE`.
+> **Branch strategy:** `main` (production), `develop` (integration), `feature/*`, `release/*`, `hotfix/*`.
 
-Refer to the `scripts/gitflow_init.sh` for automation.
+![CI Status](https://github.com/victorhugobenevides/Genesys21/actions/workflows/ci.yml/badge.svg)
+![CodeQL](https://github.com/victorhugobenevides/Genesys21/security/analysis?query=codeql)
+
+```mermaid
+flowchart LR
+    A[main] -->|release/*| B[release/vX.Y.Z]
+    A -->|hotfix/*| C[hotfix/ID-fix]
+    B -->|merge| A
+    C -->|merge| A & D[develop]
+    D -->|feature/*| E[feature/ID‑desc]
+    E -->|PR to develop| D
+    D -->|release/*| B
+```
+
+### Como começar
+1. **Feature branch**
+   ```bash
+   git checkout -b feature/<ticket-id>-<short-desc> develop
+   ```
+2. **Pull Request**
+   - Abra PR apontando para `develop`.
+   - Use o template de PR padrão (`.github/pull_request_template.md`).
+3. **Release**
+   ```bash
+   git checkout -b release/<version> develop
+   ```
+   - Abra PR para `main`.
+   - O CI executa lint, testes, CodeQL e cobertura.
+4. **Hotfix**
+   ```bash
+   git checkout -b hotfix/<ticket-id>-<desc> main
+   ```
+   - Abra PR para `main` e, após merge, também para `develop`.
+
+### Scripts de apoio
+- `scripts/gitflow_init.sh` automatiza a criação de branches e PRs.
+- Consulte a política de proteção de branches em `.github/branch_protection.json`.

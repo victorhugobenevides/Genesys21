@@ -1,45 +1,37 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.CartItem
-import com.itbenevides.genesys21.domain.repository.CartRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.itbenevides.genesys21.domain.repository.AuthRepository
+import io.ktor.client.*
+import kotlinx.serialization.json.Json
 
-class InMemoryCartRepository : CartRepository {
-    private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
-    override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
+// Forced sync to resolve disk desync
+class InMemoryCartRepository(
+    httpClient: HttpClient,
+    baseUrl: String,
+    json: Json,
+    authRepository: AuthRepository,
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
+    private var session: String? = null
 
-    override suspend fun addToCart(item: CartItem): Result<Unit> {
-        _cartItems.value = _cartItems.value + item
-        return Result.success(Unit)
+    override fun getSessionId(): String {
+        if (session == null) session = "sess_mem_" + (1..8).map { (0..9).random() }.joinToString("")
+        return session!!
     }
 
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filterNot { it.product.id == productId }
-        return Result.success(Unit)
+    override suspend fun saveToLocal(items: List<CartItem>) {
+        // Just in memory
     }
 
-    override suspend fun updateQuantity(
-        productId: String,
-        quantity: Int,
-    ): Result<Unit> {
-        // Implementation for update quantity
-        return Result.success(Unit)
+    override suspend fun loadFromLocal(): List<CartItem> {
+        return emptyList()
     }
 
-    override suspend fun clearCart(): Result<Unit> {
-        _cartItems.value = emptyList()
-        return Result.success(Unit)
+    override suspend fun saveSessionId(id: String) {
+        session = id
     }
 
-    override suspend fun syncWithServer(): Result<Unit> {
-        return Result.success(Unit)
+    override suspend fun loadSessionId(): String? {
+        return session
     }
-
-    override suspend fun loadInitialCart() {
-        // No-op
-    }
-
-    override fun getSessionId(): String = "test-session"
 }

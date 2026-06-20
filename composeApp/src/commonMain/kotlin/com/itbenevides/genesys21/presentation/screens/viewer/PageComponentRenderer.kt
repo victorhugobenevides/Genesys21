@@ -1,11 +1,14 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -46,10 +49,10 @@ import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.staggeredEntry
 import com.itbenevides.genesys21.util.AnalyticsManager
-import org.koin.compose.koinInject
-import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import kotlin.math.roundToLong
 
 @Composable
 fun PageComponentRenderer(
@@ -58,6 +61,7 @@ fun PageComponentRenderer(
     filterQuery: String = "",
     onFilterQueryChange: (String) -> Unit = {},
     allAvailableCategories: List<String> = emptyList(),
+    allProducts: List<Product> = emptyList(),
     isEditMode: Boolean = false,
     onEditClick: (() -> Unit)? = null,
 ) {
@@ -103,8 +107,38 @@ fun PageComponentRenderer(
                         }
                     }
                 }
+                is PageComponent.ProductGrid -> {
+                    val gridProducts = allProducts.filter { it.id in component.productIds }
+                    if (isCategoryFilterActive) {
+                        gridProducts.any { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
+                    } else {
+                        gridProducts.any {
+                            it.name.contains(filterQuery, ignoreCase = true) ||
+                                (it.categoryName?.contains(filterQuery, ignoreCase = true) == true)
+                        }
+                    }
+                }
+                is PageComponent.FeaturedProductsComponent -> {
+                    val featProducts = allProducts.filter { it.id in component.productIds }
+                    if (isCategoryFilterActive) {
+                        featProducts.any { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
+                    } else {
+                        featProducts.any {
+                            it.name.contains(filterQuery, ignoreCase = true) ||
+                                (it.categoryName?.equals(filterQuery, ignoreCase = true) == true)
+                        }
+                    }
+                }
+                is PageComponent.CategoryComponent -> {
+                    if (isCategoryFilterActive) {
+                        component.categoryName.equals(filterQuery, ignoreCase = true)
+                    } else {
+                        val catProducts = allProducts.filter { it.categoryName == component.categoryName }
+                        catProducts.any { it.name.contains(filterQuery, ignoreCase = true) }
+                    }
+                }
                 is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
-                is PageComponent.Text -> !isCategoryFilterActive && (component as? PageComponent.Text)?.content?.contains(filterQuery, ignoreCase = true) == true
+                is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
                 is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
                 else -> true
             }
@@ -112,7 +146,7 @@ fun PageComponentRenderer(
 
     if (!shouldShow && component !is PageComponent.Filter && component !is PageComponent.CategoryFilter) return
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().animateContentSize()) {
         when (component) {
             is PageComponent.ProfileHeader -> {
                 val displayUrl =
@@ -228,17 +262,43 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.CategoryComponent -> {
-                // Implementação básica para evitar falha de renderização, pode ser expandida depois
-                GenesysColumn(usePadding = true) {
-                    component.title?.let {
-                        GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                        GenesysSpacer(GenesysSpacing.Small)
+                val productsToDisplay =
+                    remember(component.categoryName, allProducts) {
+                        allProducts.filter { it.categoryName == component.categoryName }
                     }
-                    GenesysLoadingButton(
-                        text = "Ver Categoria: ${component.categoryName}",
-                        onClick = { onFilterQueryChange(component.categoryName) },
-                        fillWidth = true,
-                    )
+                if (productsToDisplay.isNotEmpty()) {
+                    GenesysColumn(usePadding = true) {
+                        component.title?.let {
+                            GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                            GenesysSpacer(GenesysSpacing.Medium)
+                        }
+                        if (component.layout == "HORIZONTAL") {
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(vertical = 8.dp),
+                            ) {
+                                items(productsToDisplay) { product ->
+                                    ProductCard(
+                                        product = product,
+                                        modifier = Modifier.width(180.dp),
+                                        onClick = onProductClick,
+                                        onAddToCart = { router.viewModel.addToCart(product) },
+                                        onHover = { router.viewModel.prefetchProductDetails(it) },
+                                        isEditMode = isEditMode,
+                                    )
+                                }
+                            }
+                        } else {
+                            ProductGridLayout(
+                                products = productsToDisplay,
+                                columns = 2,
+                                onProductClick = onProductClick,
+                                onAddToCart = { router.viewModel.addToCart(it) },
+                                onHover = { router.viewModel.prefetchProductDetails(it) },
+                                isEditMode = isEditMode,
+                            )
+                        }
+                    }
                 }
             }
             is PageComponent.Filter -> {
@@ -374,6 +434,88 @@ fun PageComponentRenderer(
                     }
                 }
             }
+            is PageComponent.ProductGrid -> {
+                val productsToDisplay =
+                    remember(component.productIds, allProducts) {
+                        allProducts.filter { it.id in component.productIds }
+                    }
+                if (productsToDisplay.isNotEmpty()) {
+                    ProductGridLayout(
+                        products = productsToDisplay,
+                        columns = component.columns,
+                        showPrice = component.showPrice,
+                        onProductClick = onProductClick,
+                        onAddToCart = { router.viewModel.addToCart(it) },
+                        onHover = { router.viewModel.prefetchProductDetails(it) },
+                        isEditMode = isEditMode,
+                    )
+                }
+            }
+            is PageComponent.FeaturedProductsComponent -> {
+                val productsToDisplay =
+                    remember(component.productIds, allProducts) {
+                        allProducts.filter { it.id in component.productIds }
+                    }
+                if (productsToDisplay.isNotEmpty()) {
+                    GenesysColumn(usePadding = true) {
+                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp),
+                        ) {
+                            items(productsToDisplay) { product ->
+                                ProductCard(
+                                    product = product,
+                                    modifier = Modifier.width(200.dp),
+                                    onClick = onProductClick,
+                                    onAddToCart = { router.viewModel.addToCart(product) },
+                                    onHover = { router.viewModel.prefetchProductDetails(it) },
+                                    isEditMode = isEditMode,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            is PageComponent.CartComponent -> {
+                GenesysCard(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    onClick = {
+                        if (!isEditMode) {
+                            val page = router.viewModel.pages.value.find { it.id == component.destinationPageId } ?: router.viewModel.pages.value.first()
+                            router.navigateTo(Route.Cart(page))
+                        }
+                    },
+                ) {
+                    GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(GenesysIcons.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Icon(GenesysIcons.ArrowRight, null)
+                    }
+                }
+            }
+            is PageComponent.OrderTrackingComponent -> {
+                GenesysCard(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    onClick = {
+                        if (!isEditMode) {
+                            val page = router.viewModel.pages.value.firstOrNull()
+                            if (page != null) router.navigateTo(Route.CustomerOrderHistory(page))
+                        }
+                    },
+                ) {
+                    GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(GenesysIcons.List, null, tint = MaterialTheme.colorScheme.primary)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        Spacer(Modifier.weight(1f))
+                        Icon(GenesysIcons.ArrowRight, null)
+                    }
+                }
+            }
             is PageComponent.Header -> {
                 GenesysText(
                     text =
@@ -456,7 +598,6 @@ fun PageComponentRenderer(
                     }
                 }
             }
-            else -> {}
         }
 
         if (isEditMode) {
@@ -480,6 +621,40 @@ fun PageComponentRenderer(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProductGridLayout(
+    products: List<Product>,
+    columns: Int,
+    showPrice: Boolean = true,
+    onProductClick: ((Product) -> Unit)? = null,
+    onAddToCart: ((Product) -> Unit)? = null,
+    onHover: ((Product) -> Unit)? = null,
+    isEditMode: Boolean = false,
+) {
+    GenesysColumn(usePadding = true) {
+        products.chunked(columns).forEach { rowProducts ->
+            GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                rowProducts.forEach { product ->
+                    GenesysWeightBox(1f) {
+                        ProductCard(
+                            product = product,
+                            showPrice = showPrice,
+                            onClick = onProductClick,
+                            onAddToCart = { onAddToCart?.invoke(product) },
+                            onHover = onHover,
+                            isEditMode = isEditMode,
+                        )
+                    }
+                }
+                if (rowProducts.size < columns) {
+                    repeat(columns - rowProducts.size) { GenesysWeightSpacer(1f) }
+                }
+            }
+            GenesysSpacer(GenesysSpacing.Medium)
         }
     }
 }
@@ -522,6 +697,7 @@ private fun SocialLinkItem(
 fun ProductCard(
     product: Product,
     modifier: Modifier = Modifier,
+    showPrice: Boolean = true,
     onClick: ((Product) -> Unit)? = null,
     onAddToCart: (() -> Unit)? = null,
     onHover: ((Product) -> Unit)? = null,
@@ -690,14 +866,10 @@ fun ProductCard(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
 
-                    if (product.price > 0) {
-                        Spacer(Modifier.height(4.dp))
+                    if (product.price > 0 && showPrice) {
+                        GenesysSpacer(GenesysSpacing.Small)
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
+                        GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             val priceFormatted = (product.price * 100.0).roundToLong() / 100.0
                             Text(
                                 text = "${GenesysStrings.PricePrefix}$priceFormatted",

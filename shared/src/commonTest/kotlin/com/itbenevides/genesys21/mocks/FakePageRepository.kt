@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.domain.repository.PageRepository
 class FakePageRepository : PageRepository {
     private val pages = mutableListOf<Page>()
     private val categories = mutableListOf<Category>()
+    private val products = mutableListOf<Product>()
     var shouldReturnError = false
 
     override suspend fun getPages(token: String): List<Page> {
@@ -16,11 +17,13 @@ class FakePageRepository : PageRepository {
     }
 
     override suspend fun getPublicPage(id: String): Result<Page> {
+        if (shouldReturnError) return Result.failure(Exception("Erro"))
         val page = pages.find { it.id == id }
         return if (page != null) Result.success(page) else Result.failure(Exception("Not found"))
     }
 
     override suspend fun getPageByDomain(domain: String): Result<Page> {
+        if (shouldReturnError) return Result.failure(Exception("Erro"))
         val page = pages.find { it.customDomain == domain }
         return if (page != null) Result.success(page) else Result.failure(Exception("Not found"))
     }
@@ -32,10 +35,10 @@ class FakePageRepository : PageRepository {
     ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro ao salvar"))
         val index = pages.indexOfFirst { it.id == page.id }
-        if (index != -1) {
-            pages[index] = page
+        if (isEditing) {
+            if (index != -1) pages[index] = page else return Result.failure(Exception("Não encontrado"))
         } else {
-            pages.add(page)
+            if (index != -1) pages[index] = page else pages.add(page)
         }
         return Result.success(Unit)
     }
@@ -54,14 +57,17 @@ class FakePageRepository : PageRepository {
         fileName: String,
         token: String,
     ): Result<String> {
+        if (shouldReturnError) return Result.failure(Exception("Erro upload"))
         return Result.success("https://example.com/$fileName")
     }
 
     override suspend fun getAllProducts(token: String): Result<List<Product>> {
-        return Result.success(emptyList())
+        if (shouldReturnError) return Result.failure(Exception("Erro produtos"))
+        return Result.success(products)
     }
 
     override suspend fun getCategories(token: String): Result<List<Category>> {
+        if (shouldReturnError) return Result.failure(Exception("Erro categorias"))
         return Result.success(categories)
     }
 
@@ -69,6 +75,7 @@ class FakePageRepository : PageRepository {
         category: Category,
         token: String,
     ): Result<Unit> {
+        if (shouldReturnError) return Result.failure(Exception("Erro salvar categoria"))
         categories.add(category)
         return Result.success(Unit)
     }
@@ -77,6 +84,7 @@ class FakePageRepository : PageRepository {
         id: Int,
         token: String,
     ): Result<Unit> {
+        if (shouldReturnError) return Result.failure(Exception("Erro deletar categoria"))
         categories.removeAll { it.id == id }
         return Result.success(Unit)
     }

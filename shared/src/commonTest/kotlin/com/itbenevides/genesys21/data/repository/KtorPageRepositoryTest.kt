@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Page
 import io.ktor.client.*
-import io.ktor.client.engine.*
 import io.ktor.client.engine.mock.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*

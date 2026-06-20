@@ -30,6 +30,7 @@ fun PageViewerScreen(
     val router: Router = koinInject()
     val cartCount by router.viewModel.cartCount.collectAsState()
     val storeCategories by router.viewModel.allAvailableCategories.collectAsState()
+    val allProducts by router.viewModel.allAvailableProducts.collectAsState()
 
     val state =
         remember(page, cartCount, storeCategories) {
@@ -66,13 +67,18 @@ fun PageViewerScreen(
 
     AppTheme(themeConfig = state.page.theme) {
         ThemeScrollbarEffectWrapper()
-        PageViewerContent(state.copy(isLoggedIn = isLoggedIn), onEvent)
+        PageViewerContent(
+            state = state.copy(isLoggedIn = isLoggedIn),
+            allProducts = allProducts,
+            onEvent = onEvent,
+        )
     }
 }
 
 @Composable
 private fun PageViewerContent(
     state: PageViewerScreenState,
+    allProducts: List<Product>,
     onEvent: (PageViewerScreenEvent) -> Unit,
 ) {
     var currentFilterQuery by remember { mutableStateOf("") }
@@ -138,7 +144,7 @@ private fun PageViewerContent(
         ) {
             GenesysColumn(
                 maxWidth = GenesysDimens.ViewerMaxWidth,
-                usePadding = false,
+                usePadding = true,
                 useScroll = true,
                 weightValue = 1f,
             ) {
@@ -149,6 +155,7 @@ private fun PageViewerContent(
                         filterQuery = currentFilterQuery,
                         onFilterQueryChange = { currentFilterQuery = it },
                         allAvailableCategories = state.allStoreCategories,
+                        allProducts = allProducts,
                     )
                 }
 
