@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.BrandingEffects
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
@@ -190,6 +191,7 @@ fun WhiteLabelScreen(
     val allProducts by viewModel.allAvailableProducts.collectAsState()
 
     AppTheme(themeConfig = state.page.theme) {
+        BrandingEffects(page = state.page)
         WhiteLabelContent(
             state = state,
             viewModel = viewModel,

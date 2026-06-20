@@ -5,7 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.ThemeScrollbarEffectWrapper
+import com.itbenevides.genesys21.BrandingEffects
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.getWebBaseUrl
@@ -77,7 +77,7 @@ fun PageViewerScreen(
     }
 
     AppTheme(themeConfig = state.page.theme) {
-        ThemeScrollbarEffectWrapper()
+        BrandingEffects(page = state.page)
         PageViewerContent(
             state = state.copy(isLoggedIn = isLoggedIn),
             allProducts = allProducts,
