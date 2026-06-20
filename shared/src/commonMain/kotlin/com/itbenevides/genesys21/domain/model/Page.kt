@@ -5,48 +5,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 @Serializable
-data class Product(
-    val id: String,
-    val name: String,
-    val price: Double,
-    val imageUrls: List<String> = emptyList(),
-    val description: String = "",
-    val categoryId: Int? = null,
-    val categoryName: String? = null,
-    val stock: Int = 0,
-) {
-    val imageUrl: String get() = imageUrls.firstOrNull() ?: ""
-}
-
-@Serializable
-enum class PageThemeConfig {
-    ROYAL,
-    OCEAN,
-    FOREST,
-    CANDY,
-    SUNSET,
-    BERRY,
-    MINIMAL,
-    VINTAGE,
-    NORDIC,
-    COFFEE,
-    SOFT_LAVENDER,
-    SKY_BLUE,
-    MINT_GREEN,
-    PEACH,
-    LEMON,
-    DARK_MODE,
-    MIDNIGHT,
-    NEON,
-    DEEP_SPACE,
-    LUXURY_GOLD,
-    RADARANI,
-    DEFAULT,
-    CLEAN, // From main
-    MODERN, // From main
-}
-
-@Serializable
 sealed class PageComponent {
     abstract val customLabel: String?
     abstract val isFilterable: Boolean

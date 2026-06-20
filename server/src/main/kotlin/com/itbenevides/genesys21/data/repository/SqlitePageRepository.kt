@@ -229,6 +229,16 @@ class SqlitePageRepository : PageRepository {
             Result.failure(e)
         }
 
+    override suspend fun getAllPublicPageIds(): Result<List<String>> =
+        try {
+            dbQuery {
+                val ids = PagesTable.select(PagesTable.id).map { it[PagesTable.id] }
+                Result.success(ids)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     private fun saveProductsForComponent(
         componentId: Int,
         products: List<Product>,
