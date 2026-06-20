@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.badge.GenesysStockBadge
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProductDetailsScreen(
     product: Product,
+    pageId: String? = null,
     whatsapp: String? = null,
     onBack: () -> Unit,
     onNavigateToCart: () -> Unit,
@@ -80,6 +82,19 @@ fun ProductDetailsScreen(
                     uriHandler.openUri(url)
                 }
             }
+            is ProductDetailsEvent.OnShareProductClicked -> {
+                val url = if (pageId != null) {
+                    "${getWebBaseUrl()}/p/$pageId/product/${product.id}"
+                } else {
+                    "${getWebBaseUrl()}/p/${product.id}"
+                }
+                AnalyticsManager.logEvent("share_product", mapOf("product_id" to product.id))
+                ShareManagerInstance.shareLink(
+                    title = product.name,
+                    text = "Olha que produto incrível: ${product.name}",
+                    url = url
+                )
+            }
             is ProductDetailsEvent.OnDismissSuccessDialog -> state = state.copy(showSuccessDialog = false)
             is ProductDetailsEvent.OnViewCartClicked -> {
                 state = state.copy(showSuccessDialog = false)
@@ -115,6 +130,13 @@ private fun ProductDetailsContent(
             GenesysTopAppBar(
                 title = GenesysStrings.Details,
                 onBack = { onEvent(ProductDetailsEvent.OnBackClicked) },
+                actions = {
+                    GenesysIconButton(
+                        icon = GenesysIcons.Share,
+                        contentDescription = "Compartilhar Produto",
+                        onClick = { onEvent(ProductDetailsEvent.OnShareProductClicked) }
+                    )
+                }
             )
         },
     ) {

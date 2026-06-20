@@ -127,6 +127,7 @@ fun App() {
                         is Route.ProductDetails ->
                             ProductDetailsScreen(
                                 product = route.product,
+                                pageId = ((route.fromRoute as? Route.PublicViewer)?.page ?: (route.fromRoute as? Route.WhiteLabel)?.page)?.id,
                                 whatsapp = ((route.fromRoute as? Route.PublicViewer)?.page ?: (route.fromRoute as? Route.WhiteLabel)?.page)?.whatsapp,
                                 onBack = { router.goBack() },
                                 onNavigateToCart = {
