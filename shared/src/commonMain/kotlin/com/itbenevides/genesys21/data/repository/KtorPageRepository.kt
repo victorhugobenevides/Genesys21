@@ -250,4 +250,20 @@ class KtorPageRepository(
             Result.failure(e)
         }
     }
+
+    override suspend fun getAllPublicPageIds(): Result<List<String>> {
+        return try {
+            val response =
+                client.get("$baseUrl/api/public/sitemap/ids") {
+                    parameter("t", getTimestamp())
+                }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Falha ao buscar IDs"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

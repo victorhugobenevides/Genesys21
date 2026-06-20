@@ -13,14 +13,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.BrandingEffects
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
+import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.button.GenesysFab
 import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
@@ -191,6 +191,7 @@ fun WhiteLabelScreen(
     val allProducts by viewModel.allAvailableProducts.collectAsState()
 
     AppTheme(themeConfig = state.page.theme) {
+        BrandingEffects(page = state.page)
         WhiteLabelContent(
             state = state,
             viewModel = viewModel,
@@ -330,7 +331,8 @@ private fun WhiteLabelContent(
                                     items = state.page.components,
                                     maxWidth = GenesysDimens.ViewerMaxWidth,
                                     usePadding = true,
-                                    spacing = GenesysSpacing.Medium, // Reduzido para celulares
+                                    // Reduzido para celulares
+                                    spacing = GenesysSpacing.Medium,
                                     key = { _, component -> component.hashCode() },
                                 ) { index, component ->
                                     val isEditing = state.editingComponentIndex == index
@@ -416,7 +418,8 @@ private fun ComponentWrapperUI(
                         Modifier
                     },
                 )
-                .padding(2.dp) // Reduzido para mobile
+                // Reduzido para mobile
+                .padding(2.dp)
                 .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
     ) {
         PageComponentRenderer(
@@ -525,7 +528,7 @@ private fun ComponentEditorUI(
                     onSave = { updated ->
                         val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                     },
                 )
             }
@@ -535,7 +538,7 @@ private fun ComponentEditorUI(
                     onSave = { updated ->
                         val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                     },
                 )
             }
@@ -548,7 +551,7 @@ private fun ComponentEditorUI(
                     onSave = { updated ->
                         val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) // FECHA O BOTTOM SHEET
+                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
                     },
                 )
             }
@@ -587,7 +590,6 @@ private fun ComponentEditorUI(
             is PageComponent.Button -> {
                 ButtonComponentEditor(
                     component = component,
-                    userPages = state.userPages,
                     onSave = { updated ->
                         val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))

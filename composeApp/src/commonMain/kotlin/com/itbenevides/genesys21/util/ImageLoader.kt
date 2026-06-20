@@ -24,20 +24,21 @@ expect fun getFileSystem(): FileSystem?
  * Factory for creating a optimized ImageLoader for KMP.
  */
 fun newImageLoader(context: PlatformContext): ImageLoader {
-    val builder = ImageLoader.Builder(context)
-        .components {
-            add(KtorNetworkFetcherFactory())
-        }
-        .memoryCache {
-            MemoryCache.Builder()
-                .maxSizePercent(context, 0.25)
-                .strongReferencesEnabled(true)
-                .build()
-        }
-        .diskCachePolicy(CachePolicy.ENABLED)
-        .networkCachePolicy(CachePolicy.ENABLED)
-        .memoryCachePolicy(CachePolicy.ENABLED)
-        .crossfade(true)
+    val builder =
+        ImageLoader.Builder(context)
+            .components {
+                add(KtorNetworkFetcherFactory())
+            }
+            .memoryCache {
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.25)
+                    .strongReferencesEnabled(true)
+                    .build()
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .networkCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .crossfade(true)
 
     getFileSystem()?.let { fs ->
         builder.diskCache {

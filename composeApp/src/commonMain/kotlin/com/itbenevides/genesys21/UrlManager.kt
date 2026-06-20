@@ -11,6 +11,8 @@ expect fun syncUrlWithScreen(
 
 expect fun getInitialUrlPath(): String?
 
+expect fun getUrlParams(): Map<String, String>
+
 expect fun getWebBaseUrl(): String
 
 expect fun onUrlChange(callback: () -> Unit)

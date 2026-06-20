@@ -42,4 +42,6 @@ interface PageRepository {
         id: Int,
         token: String,
     ): Result<Unit>
+
+    suspend fun getAllPublicPageIds(): Result<List<String>>
 }

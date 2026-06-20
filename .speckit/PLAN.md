@@ -1,45 +1,43 @@
-# Implementation Plan: Phase 3 - Data Resilience & Insights
+# Implementation Plan: Phase 4 - Social & SEO
 
 ## Architecture Overview
-We will leverage the `shared` module for 90% of Phase 3 logic. Performance monitoring will be integrated into the `Ktor` client level using interceptors.
+Most changes will occur in the `server` (metadata rendering) and `composeApp` (Native Share implementation). The `shared` module will host the `ShareManager` interface.
 
 ## Task Breakdown
 
-### Wave 1: Telemetry & Monitoring (Parallel)
-**T016: Unified Analytics Engine**
+### Wave 1: SEO Hardening (Server-side)
+**T022: Dynamic Metadata Engine**
 - **Dependencies**: None | **Est**: 4h
-- **Description**: Bridge Firebase Analytics (Mobile) and JS DataLayer (Web) under a single `AnalyticsProvider` in `shared`.
+- **Description**: Update Ktor `/p/{id}` route to parse page components and inject real images and bios into HTML template.
 
-**T017: Crashlytics & Error Reporting**
-- **Dependencies**: None | **Est**: 3h
-- **Description**: Integrate breadcrumbs for navigation and automated logging of polymorphic decoding errors.
+**T023: Sitemap & Search Discovery**
+- **Dependencies**: T022 | **Est**: 2h
+- **Description**: Create `/sitemap.xml` endpoint for automated indexing.
 
-### Wave 2: Performance & Data (Parallel)
-**T018: Multiplatform Cache Refinement**
-- **Dependencies**: T016 | **Est**: 5h
-- **Description**: Optimize image loading strategy and local persistence for the shopping cart.
+### Wave 2: Social Kit (Client-side)
+**T024: Native Share Integration**
+- **Dependencies**: None | **Est**: 5h
+- **Description**: Create `expect/actual` `ShareManager` for Android, iOS, and Web. Add Share icon to `PageViewerScreen` top bar.
 
-**T019: Predictive Pre-fetching**
-- **Dependencies**: T018 | **Est**: 4h
-- **Description**: Use Coroutines to pre-fetch product details and images on hover/long-press.
+**T025: Contextual WhatsApp Feedback**
+- **Dependencies**: None | **Est**: 2h
+- **Description**: Update WhatsApp link generators to include product-specific context strings.
 
-### Wave 3: Checkout Hardening
-**T020: Idempotent Checkout Flow**
-- **Dependencies**: T016 | **Est**: 6h
-- **Description**: Implement UUID-based order validation to prevent double-billing and handle network drops gracefully.
+### Wave 3: Advanced Branding
+**T026: Dynamic Favicon & UTM Tracking**
+- **Dependencies**: T024 | **Est**: 3h
+- **Description**: Inject favicon links via JS Interop and capture `utm_` parameters in Analytics.
 
 ---\n
 ## Execution waves
 
-### Wave 1 (Monitoring - 4h)
-- T016, T017
+### Wave 1 (SEO - 6h)
+- T022, T023
 
-### Wave 2 (Performance - 5h)
-- T018, T019
+### Wave 2 (Social - 7h)
+- T024, T025
 
-### Wave 3 (Reliability - 6h)
-- T020
+### Wave 3 (Branding - 3h)
+- T026
 
-**Sequential Time**: 22 hours
-**Parallel Time**: ~10 hours
-**Time Savings**: 54%
+**Total Estimated Time**: 16 hours

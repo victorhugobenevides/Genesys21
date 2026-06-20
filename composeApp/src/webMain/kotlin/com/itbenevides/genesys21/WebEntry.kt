@@ -2,9 +2,7 @@ package com.itbenevides.genesys21
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
-import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
-import coil3.network.ktor3.KtorNetworkFetcherFactory
 import com.itbenevides.genesys21.di.initKoin
 import com.itbenevides.genesys21.di.viewModelModule
 import com.itbenevides.genesys21.util.newImageLoader

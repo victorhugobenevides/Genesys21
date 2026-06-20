@@ -11,5 +11,5 @@ data class Product(
     val description: String = "",
     val categoryId: Int? = null,
     val categoryName: String? = null,
-    val stock: Int = 0
+    val stock: Int = 0,
 )
