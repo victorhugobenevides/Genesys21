@@ -13,18 +13,22 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import com.itbenevides.genesys21.ui.theme.GenesysGlass
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.theme.LocalGenesysThemeConfig
 
 /**
  * Applies a frosted glass effect with a subtle border.
  */
 fun Modifier.glassmorphic(
     shape: Shape,
-    alpha: Float = GenesysGlass.defaultAlpha,
+    alpha: Float? = null,
     borderAlpha: Float = GenesysGlass.borderAlpha,
 ): Modifier =
     this.composed {
+        val config = LocalGenesysThemeConfig.current
+        val finalAlpha = alpha ?: config.glassIntensity
+
         this
-            .background(Color.White.copy(alpha = alpha), shape)
+            .background(Color.White.copy(alpha = finalAlpha), shape)
             .border(
                 width = GenesysGlass.borderThickness,
                 color = Color.White.copy(alpha = borderAlpha),

@@ -216,6 +216,7 @@ data class Page(
     val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
     val theme: PageThemeConfig = PageThemeConfig.ROYAL,
+    val customTheme: CustomThemeConfig? = null,
 ) {
     companion object {
         fun defaultTemplate(
@@ -371,6 +372,41 @@ data class Page(
                             whatsapp = "https://wa.me/5500000000000",
                         ),
                         PageComponent.Button(text = "💬 Comentar no WhatsApp", url = "https://wa.me/5500000000000"),
+                    ),
+            )
+        }
+
+        fun proDesignTemplate(
+            id: String,
+            title: String,
+        ): Page {
+            return Page(
+                id = id,
+                title = if (title.isBlank()) "Design Pro" else title,
+                theme = PageThemeConfig.MODERN,
+                customTheme =
+                    CustomThemeConfig(
+                        primaryColor = "#FF5722",
+                        backgroundColor = "#F5F5F5",
+                        cornerRadius = 8,
+                        glassIntensity = 0.2f,
+                        typographySet = TypographySet.MODERN_SANS,
+                    ),
+                components =
+                    listOf(
+                        PageComponent.ProfileHeader(
+                            imageUrl = "https://picsum.photos/seed/pro/400/400",
+                            name = title,
+                            bio = "Elegância e Performance em cada detalhe.",
+                            isCircular = false,
+                        ),
+                        PageComponent.Header(title = "Produtos Premium", fontSize = 28),
+                        PageComponent.ProductList(
+                            // Preenchido pelo lojista
+                            products = emptyList(),
+                            isHorizontal = true,
+                        ),
+                        PageComponent.SocialLinks(instagram = "https://instagram.com"),
                     ),
             )
         }

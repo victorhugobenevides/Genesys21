@@ -11,14 +11,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Category
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.feedback.GenesysDialog
-import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.*
-import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 
 @Composable
 fun CategoryManagementDialog(
@@ -63,7 +63,7 @@ fun CategoryManagementDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     key(editingCategory?.id) {
-                        com.itbenevides.genesys21.ui.components.input.GenesysTextField(
+                        GenesysTextField(
                             value = if (editingCategory != null) editingCategory!!.name else newCategoryName,
                             onValueChange = {
                                 if (editingCategory != null) {
@@ -100,8 +100,7 @@ fun CategoryManagementDialog(
 
             GenesysSpacer(GenesysSpacing.Large)
 
-            // CORREÇÃO: Usando chamada direta para evitar erro de receptor implícito
-            com.itbenevides.genesys21.ui.components.text.GenesysText(
+            GenesysText(
                 text = "Categorias Salvas",
                 style = GenesysTextStyle.Label,
                 fontWeight = GenesysFontWeight.Bold,
@@ -114,7 +113,7 @@ fun CategoryManagementDialog(
 
             if (categories.isEmpty()) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
-                    com.itbenevides.genesys21.ui.components.text.GenesysText(
+                    GenesysText(
                         text = "Nenhuma categoria cadastrada.",
                         style = GenesysTextStyle.Label,
                     )
@@ -135,11 +134,11 @@ fun CategoryManagementDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                // CORREÇÃO: Usando a versão de extensão correta do RowScope
+                                // CORREÇÃO: Usando a versão de extensão correta
                                 val isEditingThis = editingCategory?.id == category.id
-                                com.itbenevides.genesys21.ui.components.text.GenesysText(
+                                GenesysRowText(
                                     text = category.name,
-                                    modifier = Modifier.weight(1f),
+                                    weightValue = 1f,
                                     fontWeight = if (isEditingThis) GenesysFontWeight.Bold else GenesysFontWeight.Normal,
                                 )
 

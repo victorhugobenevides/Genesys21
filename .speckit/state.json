@@ -1,28 +1,24 @@
 {
-  "version": "4.0",
-  "current_phase": "VALIDATE",
-  "completion_percentage": 100,
+  "version": "5.0",
+  "current_phase": "CONSTITUTE",
+  "completion_percentage": 0,
   "milestones": {
     "CONSTITUTE": {
-      "status": "COMPLETED",
+      "status": "IN_PROGRESS",
       "date": "2025-01-31"
     },
     "SPECIFY": {
-      "status": "COMPLETED",
-      "date": "2025-01-31"
+      "status": "NOT_STARTED"
     },
     "PLAN": {
-      "status": "COMPLETED",
-      "date": "2025-01-31"
+      "status": "NOT_STARTED"
     },
     "IMPLEMENT": {
-      "status": "COMPLETED",
-      "date": "2025-01-31"
+      "status": "NOT_STARTED"
     },
     "VALIDATE": {
-      "status": "COMPLETED",
-      "date": "2025-01-31"
+      "status": "NOT_STARTED"
     }
   },
-  "active_branch": "feature/social-seo-growth"
+  "active_branch": "feature/advanced-customization-themes"
 }

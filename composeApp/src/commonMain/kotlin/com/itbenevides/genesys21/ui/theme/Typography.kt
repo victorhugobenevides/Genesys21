@@ -5,17 +5,25 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.itbenevides.genesys21.domain.model.TypographySet
 
-// iOS-like Typography (Approximating San Francisco)
-val AppTypography =
-    Typography(
+fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
+    val fontFamily =
+        when (set) {
+            TypographySet.DEFAULT, TypographySet.MODERN_SANS -> FontFamily.SansSerif
+            TypographySet.CLASSIC_SERIF -> FontFamily.Serif
+            TypographySet.MINIMAL_MONO -> FontFamily.Monospace
+            TypographySet.PLAYFUL_ROUNDED -> FontFamily.SansSerif // Em breve: Cópia arredondada
+        }
+
+    return Typography(
         headlineLarge =
             TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
                 lineHeight = 41.sp,
                 letterSpacing = (0.37).sp,
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
         headlineMedium =
             TextStyle(
@@ -23,7 +31,7 @@ val AppTypography =
                 fontSize = 28.sp,
                 lineHeight = 34.sp,
                 letterSpacing = (0.36).sp,
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
         titleLarge =
             TextStyle(
@@ -31,7 +39,7 @@ val AppTypography =
                 fontSize = 22.sp,
                 lineHeight = 28.sp,
                 letterSpacing = (0.35).sp,
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
         titleMedium =
             TextStyle(
@@ -39,7 +47,7 @@ val AppTypography =
                 fontSize = 17.sp,
                 lineHeight = 22.sp,
                 letterSpacing = ((-0.41).sp),
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
         bodyLarge =
             TextStyle(
@@ -47,7 +55,7 @@ val AppTypography =
                 fontSize = 17.sp,
                 lineHeight = 22.sp,
                 letterSpacing = ((-0.41).sp),
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
         bodyMedium =
             TextStyle(
@@ -55,7 +63,7 @@ val AppTypography =
                 fontSize = 15.sp,
                 lineHeight = 20.sp,
                 letterSpacing = ((-0.24).sp),
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
         labelSmall =
             TextStyle(
@@ -63,6 +71,10 @@ val AppTypography =
                 fontSize = 11.sp,
                 lineHeight = 13.sp,
                 letterSpacing = (0.06).sp,
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = fontFamily,
             ),
     )
+}
+
+// iOS-like Typography (Approximating San Francisco)
+val AppTypography = getTypography(TypographySet.DEFAULT)
