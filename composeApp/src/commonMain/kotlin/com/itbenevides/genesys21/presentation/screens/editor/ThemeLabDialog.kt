@@ -17,17 +17,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.TypographySet
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.button.GenesysTextButton
-import com.itbenevides.genesys21.ui.components.feedback.GenesysBottomSheet
-import com.itbenevides.genesys21.ui.components.input.GenesysDropdownField
-import com.itbenevides.genesys21.ui.components.input.GenesysSlider
-import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
-import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
+import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
+import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysSlider
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable

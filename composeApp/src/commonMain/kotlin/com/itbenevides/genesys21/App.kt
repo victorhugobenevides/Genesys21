@@ -140,8 +140,8 @@ fun App() {
                         is Route.PublicViewer ->
                             PageViewerScreen(
                                 page = route.page,
-                                onBack = { router.goBack() },
-                                onProductClick = { router.navigateTo(Route.ProductDetails(it, route)) },
+                                router = router,
+                                onOpenDashboard = { router.navigateTo(Route.Login) },
                             )
                         is Route.ProductDetails ->
                             ProductDetailsScreen(

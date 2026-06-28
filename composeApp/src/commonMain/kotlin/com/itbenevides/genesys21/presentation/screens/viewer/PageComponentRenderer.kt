@@ -34,16 +34,16 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.ui.components.badge.GenesysBadge
-import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.image.GenesysImage
-import com.itbenevides.genesys21.ui.components.input.GenesysFilterChip
-import com.itbenevides.genesys21.ui.components.input.GenesysSearchBar
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.*
-import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
+import com.itbenevides.genesys21.ui.components.molecules.input.GenesysSearchBar
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -424,7 +424,10 @@ fun PageComponentRenderer(
                                             }
                                         }
                                         if (rowProducts.size < maxColumns) {
-                                            repeat(maxColumns - rowProducts.size) { GenesysWeightSpacer(1f) }
+                                            val rowScope = this
+                                            repeat(maxColumns - rowProducts.size) {
+                                                rowScope.GenesysWeightSpacer(1f)
+                                            }
                                         }
                                     }
                                     GenesysSpacer(if (isMobile) GenesysSpacing.Small else GenesysSpacing.Medium)
@@ -491,8 +494,7 @@ fun PageComponentRenderer(
                     GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary)
                         GenesysSpacer(GenesysSpacing.Medium)
-                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                        Spacer(Modifier.weight(1f))
+                        GenesysRowText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, weightValue = 1f)
                         Icon(GenesysIcons.ArrowRight, null)
                     }
                 }
@@ -510,8 +512,7 @@ fun PageComponentRenderer(
                     GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.List, null, tint = MaterialTheme.colorScheme.primary)
                         GenesysSpacer(GenesysSpacing.Medium)
-                        GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                        Spacer(Modifier.weight(1f))
+                        GenesysRowText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, weightValue = 1f)
                         Icon(GenesysIcons.ArrowRight, null)
                     }
                 }
@@ -636,26 +637,27 @@ private fun ProductGridLayout(
     isEditMode: Boolean = false,
 ) {
     GenesysColumn(usePadding = true) {
-        products.chunked(columns).forEach { rowProducts ->
-            GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                rowProducts.forEach { product ->
-                    GenesysWeightBox(1f) {
-                        ProductCard(
-                            product = product,
-                            showPrice = showPrice,
-                            onClick = onProductClick,
-                            onAddToCart = { onAddToCart?.invoke(product) },
-                            onHover = onHover,
-                            isEditMode = isEditMode,
-                        )
+                products.chunked(columns).forEach { rowProducts ->
+                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        val rowScope = this
+                        rowProducts.forEach { product ->
+                            GenesysWeightBox(1f) {
+                                ProductCard(
+                                    product = product,
+                                    showPrice = showPrice,
+                                    onClick = onProductClick,
+                                    onAddToCart = { onAddToCart?.invoke(product) },
+                                    onHover = onHover,
+                                    isEditMode = isEditMode,
+                                )
+                            }
+                        }
+                        if (rowProducts.size < columns) {
+                            repeat(columns - rowProducts.size) { rowScope.GenesysWeightSpacer(1f) }
+                        }
                     }
+                    GenesysSpacer(GenesysSpacing.Medium)
                 }
-                if (rowProducts.size < columns) {
-                    repeat(columns - rowProducts.size) { GenesysWeightSpacer(1f) }
-                }
-            }
-            GenesysSpacer(GenesysSpacing.Medium)
-        }
     }
 }
 

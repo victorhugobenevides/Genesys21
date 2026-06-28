@@ -20,16 +20,19 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
-import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.button.GenesysFab
-import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.feedback.*
-import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.*
-import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysFab
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.atoms.indicators.*
+import com.itbenevides.genesys21.ui.components.molecules.feedback.*
+import com.itbenevides.genesys21.ui.components.organisms.feedback.*
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -732,7 +735,7 @@ private fun ComponentCatalogUI(
                             }
                         }
                     }
-                    if (rowItems.size < 2) Spacer(Modifier.weight(1f))
+                    if (rowItems.size < 2) Spacer(Modifier.weight(weight = 1f))
                 }
                 GenesysSpacer(GenesysSpacing.Small)
             }

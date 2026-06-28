@@ -6,13 +6,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 

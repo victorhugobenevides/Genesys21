@@ -4,13 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.itbenevides.genesys21.ui.components.feedback.GenesysLoadingIndicator
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.GenesysFontWeight
-import com.itbenevides.genesys21.ui.components.text.GenesysText
-import com.itbenevides.genesys21.ui.components.text.GenesysTextAlign
-import com.itbenevides.genesys21.ui.components.text.GenesysTextStyle
-import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysLoadingIndicator
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextAlign
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 /**
