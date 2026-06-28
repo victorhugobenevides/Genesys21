@@ -21,18 +21,18 @@ import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStockBadge
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
-import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysConfirmDialog
+import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStockBadge
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
-import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
-import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysPagerIndicator
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysPagerIndicator
+import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysConfirmDialog
+import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.glassmorphic
 import com.itbenevides.genesys21.util.*
@@ -84,16 +84,17 @@ fun ProductDetailsScreen(
                 }
             }
             is ProductDetailsEvent.OnShareProductClicked -> {
-                val url = if (pageId != null) {
-                    "${getWebBaseUrl()}/p/$pageId/product/${product.id}"
-                } else {
-                    "${getWebBaseUrl()}/p/${product.id}"
-                }
+                val url =
+                    if (pageId != null) {
+                        "${getWebBaseUrl()}/p/$pageId/product/${product.id}"
+                    } else {
+                        "${getWebBaseUrl()}/p/${product.id}"
+                    }
                 AnalyticsManager.logEvent("share_product", mapOf("product_id" to product.id))
                 ShareManagerInstance.shareLink(
                     title = product.name,
                     text = "Olha que produto incrível: ${product.name}",
-                    url = url
+                    url = url,
                 )
             }
             is ProductDetailsEvent.OnDismissSuccessDialog -> state = state.copy(showSuccessDialog = false)
@@ -135,9 +136,9 @@ private fun ProductDetailsContent(
                     GenesysIconButton(
                         icon = GenesysIcons.Share,
                         contentDescription = "Compartilhar Produto",
-                        onClick = { onEvent(ProductDetailsEvent.OnShareProductClicked) }
+                        onClick = { onEvent(ProductDetailsEvent.OnShareProductClicked) },
                     )
-                }
+                },
             )
         },
     ) {

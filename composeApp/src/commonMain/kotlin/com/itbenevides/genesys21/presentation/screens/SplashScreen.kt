@@ -6,11 +6,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysLoadingIndicator
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextAlign
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
-import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 /**

@@ -6,22 +6,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.BrandingEffects
 import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
-import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
-import com.itbenevides.genesys21.ui.util.pulse
 import com.itbenevides.genesys21.util.AnalyticsManager
 import com.itbenevides.genesys21.util.ShareManagerInstance
-import org.koin.compose.koinInject
 
 @Composable
 fun PageViewerScreen(
@@ -44,7 +40,7 @@ fun PageViewerScreen(
                 ShareManagerInstance.shareLink(
                     title = state.page.title,
                     text = "Confira minha vitrine: ${state.page.title}",
-                    url = url
+                    url = url,
                 )
             }
             is PageViewerScreenEvent.OnOpenAdminSettingsClicked -> onOpenDashboard()

@@ -1,7 +1,5 @@
 package com.itbenevides.genesys21.ui.components.molecules.input
 
-import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -14,6 +12,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 
 /**
  * GenesysSearchBar estabilizada para WasmJs.

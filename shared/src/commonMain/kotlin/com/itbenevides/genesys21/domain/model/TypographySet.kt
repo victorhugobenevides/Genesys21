@@ -8,5 +8,5 @@ enum class TypographySet {
     MODERN_SANS,
     CLASSIC_SERIF,
     MINIMAL_MONO,
-    PLAYFUL_ROUNDED
+    PLAYFUL_ROUNDED,
 }

@@ -4,13 +4,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CustomThemeConfig(
-    val primaryColor: String? = null, // Hex string
+    /** Hex string */
+    val primaryColor: String? = null,
     val onPrimaryColor: String? = null,
     val secondaryColor: String? = null,
     val backgroundColor: String? = null,
     val surfaceColor: String? = null,
     val onSurfaceColor: String? = null,
-    val cornerRadius: Int = 16, // Default radius in dp
-    val glassIntensity: Float = 0.1f, // Transparency for glassmorphism
+    /** Default radius in dp */
+    val cornerRadius: Int = 16,
+    /** Transparency for glassmorphism */
+    val glassIntensity: Float = 0.1f,
     val typographySet: TypographySet = TypographySet.DEFAULT,
 )

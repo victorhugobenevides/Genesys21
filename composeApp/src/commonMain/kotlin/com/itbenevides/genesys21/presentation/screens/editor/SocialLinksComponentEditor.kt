@@ -2,12 +2,12 @@ package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.runtime.*
 import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 
 @Composable
 fun SocialLinksComponentEditor(

@@ -34,16 +34,16 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
+import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
-import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysSearchBar
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
-import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -637,27 +637,27 @@ private fun ProductGridLayout(
     isEditMode: Boolean = false,
 ) {
     GenesysColumn(usePadding = true) {
-                products.chunked(columns).forEach { rowProducts ->
-                    GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        val rowScope = this
-                        rowProducts.forEach { product ->
-                            GenesysWeightBox(1f) {
-                                ProductCard(
-                                    product = product,
-                                    showPrice = showPrice,
-                                    onClick = onProductClick,
-                                    onAddToCart = { onAddToCart?.invoke(product) },
-                                    onHover = onHover,
-                                    isEditMode = isEditMode,
-                                )
-                            }
-                        }
-                        if (rowProducts.size < columns) {
-                            repeat(columns - rowProducts.size) { rowScope.GenesysWeightSpacer(1f) }
-                        }
+        products.chunked(columns).forEach { rowProducts ->
+            GenesysRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                val rowScope = this
+                rowProducts.forEach { product ->
+                    GenesysWeightBox(1f) {
+                        ProductCard(
+                            product = product,
+                            showPrice = showPrice,
+                            onClick = onProductClick,
+                            onAddToCart = { onAddToCart?.invoke(product) },
+                            onHover = onHover,
+                            isEditMode = isEditMode,
+                        )
                     }
-                    GenesysSpacer(GenesysSpacing.Medium)
                 }
+                if (rowProducts.size < columns) {
+                    repeat(columns - rowProducts.size) { rowScope.GenesysWeightSpacer(1f) }
+                }
+            }
+            GenesysSpacer(GenesysSpacing.Medium)
+        }
     }
 }
 

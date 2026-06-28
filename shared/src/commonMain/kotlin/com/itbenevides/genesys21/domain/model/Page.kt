@@ -402,7 +402,8 @@ data class Page(
                         ),
                         PageComponent.Header(title = "Produtos Premium", fontSize = 28),
                         PageComponent.ProductList(
-                            products = emptyList(), // Preenchido pelo lojista
+                            // Preenchido pelo lojista
+                            products = emptyList(),
                             isHorizontal = true,
                         ),
                         PageComponent.SocialLinks(instagram = "https://instagram.com"),

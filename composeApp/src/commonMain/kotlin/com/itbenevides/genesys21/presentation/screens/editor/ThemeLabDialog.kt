@@ -1,34 +1,23 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.TypographySet
-import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
-import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
-import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysSlider
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
-import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
+import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
 
 @Composable
 fun ThemeLabDialog(
@@ -55,7 +44,7 @@ fun ThemeLabDialog(
                 onValueChange = { primary = it },
                 label = "Cor Primária (Hex)",
                 placeholder = "#14213D",
-                icon = GenesysIcons.Palette
+                icon = GenesysIcons.Palette,
             )
 
             GenesysSpacer(GenesysSpacing.Medium)
@@ -65,7 +54,7 @@ fun ThemeLabDialog(
                 onValueChange = { background = it },
                 label = "Cor de Fundo (Hex)",
                 placeholder = "#FFFFFF",
-                icon = GenesysIcons.Web
+                icon = GenesysIcons.Web,
             )
 
             GenesysSpacer(GenesysSpacing.Large)
@@ -82,7 +71,7 @@ fun ThemeLabDialog(
                 },
                 label = "Conjunto de Fontes",
                 options = TypographySet.entries.map { it.name },
-                icon = GenesysIcons.Edit
+                icon = GenesysIcons.Edit,
             )
 
             GenesysSpacer(GenesysSpacing.Large)
@@ -95,14 +84,14 @@ fun ThemeLabDialog(
                 value = cornerRadius,
                 onValueChange = { cornerRadius = it },
                 label = "Arredondamento: ${cornerRadius.toInt()}dp",
-                valueRange = 0f..40f
+                valueRange = 0f..40f,
             )
 
             GenesysSlider(
                 value = glassIntensity,
                 onValueChange = { glassIntensity = it },
                 label = "Intensidade Glass: ${(glassIntensity * 100).toInt()}%",
-                valueRange = 0.05f..0.5f
+                valueRange = 0.05f..0.5f,
             )
 
             GenesysSpacer(GenesysSpacing.Huge)
@@ -116,11 +105,11 @@ fun ThemeLabDialog(
                             backgroundColor = background.ifBlank { null },
                             cornerRadius = cornerRadius.toInt(),
                             glassIntensity = glassIntensity,
-                            typographySet = typography
-                        )
+                            typographySet = typography,
+                        ),
                     )
                 },
-                fillWidth = true
+                fillWidth = true,
             )
 
             GenesysSpacer(GenesysSpacing.Medium)
@@ -135,7 +124,7 @@ fun ThemeLabDialog(
                     typography = TypographySet.DEFAULT
                 },
                 modifier = Modifier.fillMaxWidth(),
-                color = Color.Gray
+                color = Color.Gray,
             )
         }
     }

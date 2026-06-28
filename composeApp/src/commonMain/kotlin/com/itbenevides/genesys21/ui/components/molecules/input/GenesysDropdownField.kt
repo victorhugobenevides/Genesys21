@@ -1,7 +1,5 @@
 package com.itbenevides.genesys21.ui.components.molecules.input
 
-import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -11,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 
 /**
  * Componente Dropdown do Design System otimizado para WasmJs.
