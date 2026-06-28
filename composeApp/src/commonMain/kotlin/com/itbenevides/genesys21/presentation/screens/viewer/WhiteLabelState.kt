@@ -16,6 +16,7 @@ data class WhiteLabelState(
     val showCatalog: Boolean = false,
     val showThemeSelector: Boolean = false,
     val showPageSettings: Boolean = false,
+    val showThemeLab: Boolean = false,
     val editingComponentIndex: Int? = null,
     val pendingNewComponent: PageComponent? = null,
     val filterQuery: String = "",
@@ -40,6 +41,8 @@ sealed class WhiteLabelEvent {
     data class OnShowThemeSelectorChanged(val show: Boolean) : WhiteLabelEvent()
 
     data class OnShowPageSettingsChanged(val show: Boolean) : WhiteLabelEvent()
+
+    data class OnShowThemeLabChanged(val show: Boolean) : WhiteLabelEvent()
 
     data class OnEditingComponentIndexChanged(val index: Int?) : WhiteLabelEvent()
 

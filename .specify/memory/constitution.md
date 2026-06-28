@@ -14,8 +14,14 @@ The project follows Clean Architecture principles:
 - **Data**: Repository implementations (Ktor for remote, SQLDelight/InMemory for local).
 - **Presentation**: Compose Multiplatform UI components and ViewModels (MVI-lite pattern).
 
-### IV. Design System First
-UI development must prioritize the use of the `com.itbenevides.genesys21.ui.components` library. New components must be generalized and added to the design system before being used in specific screens.
+### IV. Atomic Design System
+O desenvolvimento de UI deve priorizar o uso da biblioteca `com.itbenevides.genesys21.ui.components`, organizada segundo a metodologia de Atomic Design:
+- **Atoms**: Componentes básicos e indivisíveis (Buttons, Text, Inputs, Primitives de Layout).
+- **Molecules**: Combinações funcionais de átomos (Cards, LoadingButton, SearchBar).
+- **Organisms**: Seções complexas e independentes (TopAppBar, Dialogs, BottomSheets).
+- **Templates**: Estruturas de alto nível que definem o layout das páginas (GenesysPage).
+
+Novos componentes devem ser criados seguindo esta hierarquia e documentados com `@Preview`. Componentes nativos ou de terceiros devem ser "envelopados" em componentes Genesys para garantir resiliência.
 
 ### V. Industrial Resilience
 Components (especially inputs like `GenesysTextField`) must be built to handle platform-specific bugs (e.g., Samsung keyboard buffer issues in WasmJS) using internal state guarding and integrity buffers.

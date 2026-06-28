@@ -80,4 +80,8 @@ class FakePageRepository : PageRepository {
         categories.removeAll { it.id == id }
         return Result.success(Unit)
     }
+
+    override suspend fun getAllPublicPageIds(): Result<List<String>> {
+        return Result.success(pages.map { it.id })
+    }
 }

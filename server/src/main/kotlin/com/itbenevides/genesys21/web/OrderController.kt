@@ -1,10 +1,9 @@
 package com.itbenevides.genesys21.web
 
-import com.itbenevides.genesys21.data.model.Order
 import com.itbenevides.genesys21.data.model.OrderStatus
 import com.itbenevides.genesys21.data.repository.InMemoryOrderRepository
-import io.ktor.server.application.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -52,11 +51,12 @@ fun Application.orderRoutes() {
                 return@patch call.respond(HttpStatusCode.Forbidden, "Only operators can change status")
             }
             val statusParam = call.request.queryParameters["status"] ?: return@patch call.respond(HttpStatusCode.BadRequest, "Missing status query param")
-            val newStatus = try {
-                OrderStatus.valueOf(statusParam.uppercase())
-            } catch (e: IllegalArgumentException) {
-                return@patch call.respond(HttpStatusCode.BadRequest, "Invalid status value")
-            }
+            val newStatus =
+                try {
+                    OrderStatus.valueOf(statusParam.uppercase())
+                } catch (e: IllegalArgumentException) {
+                    return@patch call.respond(HttpStatusCode.BadRequest, "Invalid status value")
+                }
             // protect repository mutation
             val updated = mutex.withLock { repository.updateStatus(id, newStatus) }
             if (updated) {

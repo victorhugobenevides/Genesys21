@@ -23,7 +23,10 @@ class InMemoryOrderRepository {
     }
 
     /** Updates the status of an existing order. */
-    fun updateStatus(id: String, newStatus: OrderStatus): Boolean {
+    fun updateStatus(
+        id: String,
+        newStatus: OrderStatus,
+    ): Boolean {
         val order = orders[id] ?: return false
         order.updateStatus(newStatus)
         return true

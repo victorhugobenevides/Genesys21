@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,16 +19,19 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
-import com.itbenevides.genesys21.ui.components.appbar.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.button.GenesysFab
-import com.itbenevides.genesys21.ui.components.button.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.feedback.*
-import com.itbenevides.genesys21.ui.components.input.GenesysTextField
-import com.itbenevides.genesys21.ui.components.layout.*
-import com.itbenevides.genesys21.ui.components.text.*
-import com.itbenevides.genesys21.ui.components.theme.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysFab
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.indicators.*
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.molecules.feedback.*
+import com.itbenevides.genesys21.ui.components.organisms.feedback.*
+import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -140,6 +142,7 @@ fun WhiteLabelScreen(
             is WhiteLabelEvent.OnShowCatalogChanged -> state = state.copy(showCatalog = event.show)
             is WhiteLabelEvent.OnShowThemeSelectorChanged -> state = state.copy(showThemeSelector = event.show)
             is WhiteLabelEvent.OnShowPageSettingsChanged -> state = state.copy(showPageSettings = event.show)
+            is WhiteLabelEvent.OnShowThemeLabChanged -> state = state.copy(showThemeLab = event.show)
             is WhiteLabelEvent.OnEditingComponentIndexChanged -> state = state.copy(editingComponentIndex = event.index)
             is WhiteLabelEvent.OnPendingNewComponentChanged -> state = state.copy(pendingNewComponent = event.component)
             is WhiteLabelEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
@@ -222,6 +225,17 @@ fun WhiteLabelScreen(
             )
         }
 
+        if (state.showThemeLab) {
+            ThemeLabDialog(
+                initialConfig = state.page.customTheme,
+                onSave = { newConfig ->
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(customTheme = newConfig)))
+                    onEvent(WhiteLabelEvent.OnShowThemeLabChanged(false))
+                },
+                onDismiss = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(false)) },
+            )
+        }
+
         if (showDiscardDialog) {
             GenesysConfirmDialog(
                 onDismissRequest = { showDiscardDialog = false },
@@ -271,6 +285,12 @@ private fun WhiteLabelContent(
                         icon = GenesysIcons.Palette,
                         contentDescription = GenesysStrings.EditorThemes,
                         onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) },
+                    )
+
+                    GenesysIconButton(
+                        icon = GenesysIcons.Magic,
+                        contentDescription = "Theme Lab",
+                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true)) },
                     )
 
                     if (state.page != originalPage) {
@@ -714,7 +734,7 @@ private fun ComponentCatalogUI(
                             }
                         }
                     }
-                    if (rowItems.size < 2) Spacer(Modifier.weight(1f))
+                    if (rowItems.size < 2) Spacer(Modifier.weight(weight = 1f))
                 }
                 GenesysSpacer(GenesysSpacing.Small)
             }
