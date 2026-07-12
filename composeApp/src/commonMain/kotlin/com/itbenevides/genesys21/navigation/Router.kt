@@ -85,6 +85,9 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Cart -> "Meu Carrinho"
                 is Route.OrderTracking -> "Rastreio de Pedido"
                 is Route.CustomerOrderHistory -> "Meus Pedidos"
+                is Route.DesignSystemShowcase -> "Design System Showcase"
+                is Route.EditorShowcase -> "Editor Showcase"
+                is Route.TemplateShowcase -> "Catálogo de Templates"
             }
         AnalyticsManager.trackPageView(pageName)
     }
@@ -110,6 +113,9 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Cart -> Triple(null, null, "Meu Carrinho")
                 is Route.Login -> Triple(null, null, "Entrar - Genesys21")
                 is Route.PageList -> Triple(null, null, "Administração")
+                is Route.DesignSystemShowcase -> Triple(null, null, "Design System Showcase")
+                is Route.EditorShowcase -> Triple(null, null, "Editor Showcase")
+                is Route.TemplateShowcase -> Triple(null, null, "Catálogo de Templates")
                 else -> Triple(null, null, "Genesys21")
             }
 
@@ -126,6 +132,9 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Cart -> Screen.Cart
                 is Route.OrderTracking -> Screen.OrderTracking
                 is Route.CustomerOrderHistory -> Screen.OrderHistory
+                Route.DesignSystemShowcase -> Screen.DesignSystemShowcase
+                Route.EditorShowcase -> Screen.EditorShowcase
+                Route.TemplateShowcase -> Screen.TemplateShowcase
             }
 
         // CORREÇÃO: Garante que o título nunca seja nulo ao sincronizar com o navegador
@@ -194,6 +203,9 @@ class Router(val viewModel: PageViewModel) {
                         urlPath.startsWith("/list") -> if (isLoggedIn) Route.PageList else Route.Login
                         urlPath.startsWith("/cart") -> Route.Cart(null)
                         urlPath.startsWith("/history") -> Route.CustomerOrderHistory(null)
+                        urlPath.startsWith("/about") || urlPath.startsWith("/showcase") -> Route.DesignSystemShowcase
+                        urlPath.startsWith("/editor-showcase") -> Route.EditorShowcase
+                        urlPath.startsWith("/templates") -> Route.TemplateShowcase
                         else -> {
                             if (isLoggedIn) {
                                 Route.PageList

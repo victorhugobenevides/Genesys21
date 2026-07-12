@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.ui.components.molecules.button
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,14 +21,14 @@ fun GenesysLoadingButton(
     enabled: Boolean = true,
     icon: ImageVector? = null,
     containerColor: Color = MaterialTheme.colorScheme.primary,
-    shape: Shape = RoundedCornerShape(12.dp),
+    shape: Shape? = null,
     fillWidth: Boolean = false,
 ) {
     Button(
         onClick = onClick,
         modifier = if (fillWidth) modifier.fillMaxWidth() else modifier,
         enabled = enabled && !isLoading,
-        shape = shape,
+        shape = shape ?: MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(containerColor = containerColor),
     ) {
         AnimatedContent(targetState = isLoading, label = "LoadingButtonAnimation") { loading ->

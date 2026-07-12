@@ -95,7 +95,7 @@ fun CartScreen(
 }
 
 @Composable
-private fun CartContent(
+fun CartContent(
     state: CartScreenState,
     backendUrl: String,
     onEvent: (CartScreenEvent) -> Unit,

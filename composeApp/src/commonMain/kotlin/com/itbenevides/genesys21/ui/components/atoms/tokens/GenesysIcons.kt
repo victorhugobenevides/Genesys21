@@ -48,6 +48,8 @@ object GenesysIcons {
     val Share = Icons.Default.Share
     val Image = Icons.Default.Image
     val GridView = Icons.Default.GridView
+    val Favorite = Icons.Default.Favorite
+    val ShoppingCart = Icons.Default.ShoppingCart
 
     // Ícones de Navegação
     val ArrowLeft = Icons.AutoMirrored.Filled.ArrowBack

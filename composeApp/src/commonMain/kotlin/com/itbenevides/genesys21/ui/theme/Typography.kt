@@ -13,7 +13,15 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
             TypographySet.DEFAULT, TypographySet.MODERN_SANS -> FontFamily.SansSerif
             TypographySet.CLASSIC_SERIF -> FontFamily.Serif
             TypographySet.MINIMAL_MONO -> FontFamily.Monospace
-            TypographySet.PLAYFUL_ROUNDED -> FontFamily.SansSerif // Em breve: Cópia arredondada
+            TypographySet.PLAYFUL_ROUNDED -> FontFamily.SansSerif
+        }
+
+    val baseLetterSpacing =
+        when (set) {
+            TypographySet.MODERN_SANS -> -0.02
+            TypographySet.CLASSIC_SERIF -> 0.0
+            TypographySet.MINIMAL_MONO -> 0.02
+            else -> 0.0
         }
 
     return Typography(
@@ -22,7 +30,7 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
                 lineHeight = 41.sp,
-                letterSpacing = (0.37).sp,
+                letterSpacing = (0.37 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
         headlineMedium =
@@ -30,7 +38,7 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 28.sp,
                 lineHeight = 34.sp,
-                letterSpacing = (0.36).sp,
+                letterSpacing = (0.36 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
         titleLarge =
@@ -38,7 +46,7 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 22.sp,
                 lineHeight = 28.sp,
-                letterSpacing = (0.35).sp,
+                letterSpacing = (0.35 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
         titleMedium =
@@ -46,15 +54,15 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 17.sp,
                 lineHeight = 22.sp,
-                letterSpacing = ((-0.41).sp),
+                letterSpacing = (-0.41 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
         bodyLarge =
             TextStyle(
                 fontWeight = FontWeight.Normal,
                 fontSize = 17.sp,
-                lineHeight = 22.sp,
-                letterSpacing = ((-0.41).sp),
+                lineHeight = 24.sp,
+                letterSpacing = (-0.41 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
         bodyMedium =
@@ -62,7 +70,7 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
                 fontWeight = FontWeight.Normal,
                 fontSize = 15.sp,
                 lineHeight = 20.sp,
-                letterSpacing = ((-0.24).sp),
+                letterSpacing = (-0.24 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
         labelSmall =
@@ -70,7 +78,7 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp,
                 lineHeight = 13.sp,
-                letterSpacing = (0.06).sp,
+                letterSpacing = (0.06 + baseLetterSpacing).sp,
                 fontFamily = fontFamily,
             ),
     )

@@ -3,11 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -193,7 +189,7 @@ fun WhiteLabelScreen(
 
     val allProducts by viewModel.allAvailableProducts.collectAsState()
 
-    AppTheme(themeConfig = state.page.theme) {
+    AppTheme(themeConfig = state.page.theme, customTheme = state.page.customTheme) {
         BrandingEffects(page = state.page)
         WhiteLabelContent(
             state = state,
@@ -486,156 +482,6 @@ private fun ComponentWrapperUI(
                         modifier = if (isMobile) Modifier.size(32.dp) else Modifier,
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ComponentEditorUI(
-    state: WhiteLabelState,
-    viewModel: PageViewModel,
-    index: Int,
-    onEvent: (WhiteLabelEvent) -> Unit,
-    isEmbedded: Boolean = false,
-    originalPage: Page,
-    onManageCategories: () -> Unit,
-    onPickImage: () -> Unit,
-) {
-    val component = state.page.components.getOrNull(index) ?: return
-    val scrollState = rememberScrollState()
-
-    GenesysColumn(
-        usePadding = false,
-        modifier = Modifier.then(if (isEmbedded) Modifier.verticalScroll(scrollState) else Modifier),
-    ) {
-        if (isEmbedded) {
-            GenesysRow(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                GenesysWeightBox(1f) {
-                    GenesysText(
-                        text = GenesysStrings.BlockSettings,
-                        style = GenesysTextStyle.Title,
-                        fontWeight = GenesysFontWeight.Bold,
-                    )
-                }
-
-                GenesysIconButton(
-                    icon = Icons.Default.Close,
-                    onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
-                )
-            }
-            GenesysSpacer(GenesysSpacing.Medium)
-        }
-
-        var customLabel by remember(component) { mutableStateOf(component.customLabel ?: "") }
-
-        GenesysTextField(
-            value = customLabel,
-            onValueChange = { customLabel = it },
-            label = GenesysStrings.BlockNameLabel,
-            placeholder = GenesysStrings.BlockNamePlaceholder,
-            icon = GenesysIcons.Edit,
-        )
-
-        GenesysSpacer(GenesysSpacing.Large)
-        GenesysDivider()
-        GenesysSpacer(GenesysSpacing.Large)
-
-        when (component) {
-            is PageComponent.Header -> {
-                HeaderComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            is PageComponent.Text -> {
-                TextComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            is PageComponent.Image -> {
-                ImageComponentEditor(
-                    component = component,
-                    userPages = state.userPages,
-                    isUploading = state.isUploading,
-                    onPickImage = onPickImage,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            is PageComponent.ProfileHeader -> {
-                ProfileHeaderComponentEditor(
-                    component = component,
-                    onPickImage = onPickImage,
-                    isUploading = state.isUploading,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            is PageComponent.ProductList -> {
-                ProductListComponentEditor(
-                    component = component,
-                    allAvailableProducts = state.availableProducts,
-                    onEditProduct = { product ->
-                        onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
-                    },
-                    onProductsUpdated = { newProducts ->
-                        val updatedComponent = component.copy(products = newProducts)
-                        val newList = state.page.components.toMutableList().apply { set(index, updatedComponent) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                    onSaveLabel = { newLabel, isHorizontal ->
-                        val updated = component.copy(customLabel = newLabel.ifBlank { null }, isHorizontal = isHorizontal)
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            is PageComponent.Button -> {
-                ButtonComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            is PageComponent.SocialLinks -> {
-                SocialLinksComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated.copy(customLabel = customLabel.ifBlank { null })) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                )
-            }
-            else -> {
-                // Outros componentes sem editor específico
-                GenesysLoadingButton(
-                    text = "Confirmar Nome do Bloco",
-                    onClick = {
-                        onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
-                    },
-                    fillWidth = true,
-                )
             }
         }
     }

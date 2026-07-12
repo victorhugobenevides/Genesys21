@@ -28,7 +28,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 import kotlinx.serialization.json.Json
@@ -240,7 +243,21 @@ fun Application.module() {
                     }
                     if (fileBytes != null) {
                         val file = File(uploadDir, fileName)
-                        file.writeBytes(fileBytes!!)
+
+                        try {
+                            // Otimização: Redimensionar e comprimir imagem (max 1200px)
+                            val outputStream = ByteArrayOutputStream()
+                            Thumbnails.of(ByteArrayInputStream(fileBytes))
+                                .size(1200, 1200)
+                                .outputFormat("jpg") // WebP seria melhor mas requer bibliotecas nativas extras
+                                .outputQuality(0.8)
+                                .toOutputStream(outputStream)
+                            file.writeBytes(outputStream.toByteArray())
+                        } catch (e: Exception) {
+                            // Se falhar a compressão (ex: formato não suportado), salva o original
+                            file.writeBytes(fileBytes!!)
+                        }
+
                         call.respondText("/uploads/$fileName")
                     } else {
                         call.respond(HttpStatusCode.BadRequest)
