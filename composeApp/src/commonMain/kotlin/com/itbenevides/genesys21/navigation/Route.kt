@@ -29,4 +29,6 @@ sealed class Route {
     object DesignSystemShowcase : Route()
 
     object EditorShowcase : Route()
+
+    object TemplateShowcase : Route()
 }

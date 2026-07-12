@@ -23,6 +23,8 @@ kotlin {
                 implementation(compose.material3)
                 implementation(compose.ui)
                 implementation(compose.materialIconsExtended)
+                implementation(libs.mockk)
+                implementation(libs.androidx.lifecycle.viewmodelCompose)
             }
         }
         val commonTest by getting {

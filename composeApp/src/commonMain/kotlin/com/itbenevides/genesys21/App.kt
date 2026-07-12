@@ -26,6 +26,7 @@ import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.screens.SplashScreen
 import com.itbenevides.genesys21.presentation.screens.editor.DesignSystemShowcaseScreen
 import com.itbenevides.genesys21.presentation.screens.editor.EditorShowcaseScreen
+import com.itbenevides.genesys21.presentation.screens.editor.TemplateShowcaseScreen
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
@@ -218,11 +219,17 @@ fun App() {
                         is Route.DesignSystemShowcase -> {
                             DesignSystemShowcaseScreen(
                                 onBack = { router.goBack() },
-                                onOpenEditorShowcase = { router.navigateTo(Route.EditorShowcase) }
+                                onOpenEditorShowcase = { router.navigateTo(Route.EditorShowcase) },
+                                onOpenTemplateShowcase = { router.navigateTo(Route.TemplateShowcase) }
                             )
                         }
                         is Route.EditorShowcase -> {
                             EditorShowcaseScreen(
+                                onBack = { router.goBack() }
+                            )
+                        }
+                        is Route.TemplateShowcase -> {
+                            TemplateShowcaseScreen(
                                 onBack = { router.goBack() }
                             )
                         }

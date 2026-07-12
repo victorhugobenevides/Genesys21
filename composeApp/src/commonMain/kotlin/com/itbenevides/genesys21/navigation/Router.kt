@@ -87,6 +87,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.CustomerOrderHistory -> "Meus Pedidos"
                 is Route.DesignSystemShowcase -> "Design System Showcase"
                 is Route.EditorShowcase -> "Editor Showcase"
+                is Route.TemplateShowcase -> "Catálogo de Templates"
             }
         AnalyticsManager.trackPageView(pageName)
     }
@@ -114,6 +115,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.PageList -> Triple(null, null, "Administração")
                 is Route.DesignSystemShowcase -> Triple(null, null, "Design System Showcase")
                 is Route.EditorShowcase -> Triple(null, null, "Editor Showcase")
+                is Route.TemplateShowcase -> Triple(null, null, "Catálogo de Templates")
                 else -> Triple(null, null, "Genesys21")
             }
 
@@ -132,6 +134,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.CustomerOrderHistory -> Screen.OrderHistory
                 Route.DesignSystemShowcase -> Screen.DesignSystemShowcase
                 Route.EditorShowcase -> Screen.EditorShowcase
+                Route.TemplateShowcase -> Screen.TemplateShowcase
             }
 
         // CORREÇÃO: Garante que o título nunca seja nulo ao sincronizar com o navegador
@@ -202,6 +205,7 @@ class Router(val viewModel: PageViewModel) {
                         urlPath.startsWith("/history") -> Route.CustomerOrderHistory(null)
                         urlPath.startsWith("/about") || urlPath.startsWith("/showcase") -> Route.DesignSystemShowcase
                         urlPath.startsWith("/editor-showcase") -> Route.EditorShowcase
+                        urlPath.startsWith("/templates") -> Route.TemplateShowcase
                         else -> {
                             if (isLoggedIn) {
                                 Route.PageList

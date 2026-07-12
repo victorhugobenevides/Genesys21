@@ -42,6 +42,7 @@ import com.itbenevides.genesys21.util.toColor
 fun DesignSystemShowcaseScreen(
     onBack: () -> Unit,
     onOpenEditorShowcase: () -> Unit,
+    onOpenTemplateShowcase: () -> Unit,
 ) {
     var isDarkMode by remember { mutableStateOf(false) }
     val sampleProduct = remember {
@@ -63,6 +64,8 @@ fun DesignSystemShowcaseScreen(
                     onBack = onBack,
                     actions = {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
+                            GenesysLoadingButton(text = "Templates", onClick = onOpenTemplateShowcase)
+                            Spacer(Modifier.width(8.dp))
                             GenesysLoadingButton(text = "Editor UI", onClick = onOpenEditorShowcase)
                             Spacer(Modifier.width(16.dp))
                             Text("Dark Mode", style = MaterialTheme.typography.labelMedium)
@@ -81,11 +84,15 @@ fun DesignSystemShowcaseScreen(
             ) {
                 Spacer(Modifier.height(24.dp))
                 GenesysText(
-                    text = "Welcome to the Genesys21 Component Catalog. Here you can find 100% of our atomic building blocks.",
+                    text = "Welcome to the Genesys21 Component Catalog. Explore Atoms, Molecules, Organisms and full Page Templates.",
                     style = GenesysTextStyle.Body,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(32.dp))
+
+                ShowcaseSection("Templates", "Starting points for your store.") {
+                    GenesysLoadingButton(text = "View All Templates", onClick = onOpenTemplateShowcase, fillWidth = true)
+                }
 
                 // --- ATOMS ---
                 ShowcaseSection("Typography", "Semantic text styles across the system.") {

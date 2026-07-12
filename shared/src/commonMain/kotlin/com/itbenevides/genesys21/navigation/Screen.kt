@@ -14,4 +14,5 @@ enum class Screen {
     OrderHistory,
     DesignSystemShowcase,
     EditorShowcase,
+    TemplateShowcase,
 }

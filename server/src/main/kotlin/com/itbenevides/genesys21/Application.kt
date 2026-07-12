@@ -28,14 +28,13 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 import kotlinx.serialization.json.Json
-
-import net.coobird.thumbnailator.Thumbnails
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 
 const val SERVER_PORT = 8080
 
