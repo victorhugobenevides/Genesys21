@@ -27,26 +27,42 @@ fun Color.toHex(): String {
     val r = (red * 255).toInt().toString(16).padStart(2, '0')
     val g = (green * 255).toInt().toString(16).padStart(2, '0')
     val b = (blue * 255).toInt().toString(16).padStart(2, '0')
-    return "#${r}${g}${b}".uppercase()
+    return "#${r}${g}$b".uppercase()
 }
 
 /**
  * Lista de cores predefinidas para sugestão rápida.
  */
-val GenesysBrandPresets = listOf(
-    "#14213D", // Royal Navy
-    "#FCA311", // Gold
-    "#00ADB5", // Ocean Teal
-    "#283618", // Forest Green
-    "#D81159", // Candy Pink
-    "#E76F51", // Sunset Orange
-    "#6A0572", // Berry Purple
-    "#000000", // Black
-    "#FFFFFF", // White
-    "#2CB1FF", // Radarani Blue
-    "#FF5722", // Pro Orange
-    "#4CAF50", // Success Green
-    "#F44336", // Error Red
-    "#9C27B0", // Purple
-    "#3F51B5"  // Indigo
-)
+val GenesysBrandPresets =
+    listOf(
+        // Royal Navy
+        "#14213D",
+        // Gold
+        "#FCA311",
+        // Ocean Teal
+        "#00ADB5",
+        // Forest Green
+        "#283618",
+        // Candy Pink
+        "#D81159",
+        // Sunset Orange
+        "#E76F51",
+        // Berry Purple
+        "#6A0572",
+        // Black
+        "#000000",
+        // White
+        "#FFFFFF",
+        // Radarani Blue
+        "#2CB1FF",
+        // Pro Orange
+        "#FF5722",
+        // Success Green
+        "#4CAF50",
+        // Error Red
+        "#F44336",
+        // Purple
+        "#9C27B0",
+        // Indigo
+        "#3F51B5",
+    )

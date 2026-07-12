@@ -7,10 +7,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -34,7 +30,6 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
@@ -279,7 +274,7 @@ fun PageComponentRenderer(
                             isEditMode = isEditMode,
                             onProductClick = onProductClick,
                             onAddToCart = { router.viewModel.addToCart(it) },
-                            onHover = { router.viewModel.prefetchProductDetails(it) }
+                            onHover = { router.viewModel.prefetchProductDetails(it) },
                         )
                     }
                 }
@@ -315,7 +310,7 @@ fun PageComponentRenderer(
                     isEditMode = isEditMode,
                     onProductClick = onProductClick,
                     onAddToCart = { router.viewModel.addToCart(it) },
-                    onHover = { router.viewModel.prefetchProductDetails(it) }
+                    onHover = { router.viewModel.prefetchProductDetails(it) },
                 )
             }
             is PageComponent.ProductGrid -> {
@@ -329,7 +324,7 @@ fun PageComponentRenderer(
                         isEditMode = isEditMode,
                         onProductClick = onProductClick,
                         onAddToCart = { router.viewModel.addToCart(it) },
-                        onHover = { router.viewModel.prefetchProductDetails(it) }
+                        onHover = { router.viewModel.prefetchProductDetails(it) },
                     )
                 }
             }
@@ -348,7 +343,7 @@ fun PageComponentRenderer(
                             isEditMode = isEditMode,
                             onProductClick = onProductClick,
                             onAddToCart = { router.viewModel.addToCart(it) },
-                            onHover = { router.viewModel.prefetchProductDetails(it) }
+                            onHover = { router.viewModel.prefetchProductDetails(it) },
                         )
                     }
                 }

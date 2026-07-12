@@ -16,12 +16,13 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
             TypographySet.PLAYFUL_ROUNDED -> FontFamily.SansSerif
         }
 
-    val baseLetterSpacing = when (set) {
-        TypographySet.MODERN_SANS -> -0.02
-        TypographySet.CLASSIC_SERIF -> 0.0
-        TypographySet.MINIMAL_MONO -> 0.02
-        else -> 0.0
-    }
+    val baseLetterSpacing =
+        when (set) {
+            TypographySet.MODERN_SANS -> -0.02
+            TypographySet.CLASSIC_SERIF -> 0.0
+            TypographySet.MINIMAL_MONO -> 0.02
+            else -> 0.0
+        }
 
     return Typography(
         headlineLarge =

@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.ui.components.organisms.product
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -40,17 +39,19 @@ fun GenesysProductList(
         val isMobile = maxWidth < 600.dp
         val scope = rememberCoroutineScope()
 
-        val maxColumns = when {
-            maxWidth > 900.dp -> 4
-            maxWidth > 600.dp -> 3
-            else -> 2
-        }
+        val maxColumns =
+            when {
+                maxWidth > 900.dp -> 4
+                maxWidth > 600.dp -> 3
+                else -> 2
+            }
 
-        val horizontalItemWidth = when {
-            maxWidth > 900.dp -> 220.dp
-            maxWidth > 600.dp -> 180.dp
-            else -> 150.dp
-        }
+        val horizontalItemWidth =
+            when {
+                maxWidth > 900.dp -> 220.dp
+                maxWidth > 600.dp -> 180.dp
+                else -> 150.dp
+            }
 
         val spacing = if (isMobile) 8.dp else 16.dp
 

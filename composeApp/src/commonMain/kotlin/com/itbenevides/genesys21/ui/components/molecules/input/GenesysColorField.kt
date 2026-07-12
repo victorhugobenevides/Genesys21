@@ -38,64 +38,70 @@ fun GenesysColorField(
             icon = GenesysIcons.Palette,
             trailingIcon = {
                 Box(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(value.toColor())
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                            shape = CircleShape,
-                        )
-                        .clickable { showPalette = !showPalette }
+                    modifier =
+                        Modifier
+                            .padding(end = 8.dp)
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(value.toColor())
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                shape = CircleShape,
+                            )
+                            .clickable { showPalette = !showPalette },
                 )
-            }
+            },
         )
 
         if (showPalette) {
             Surface(
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                border = androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
+                border =
+                    androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Paleta de Sugestões",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         GenesysBrandPresets.forEach { preset ->
                             Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(preset.toColor())
-                                    .border(
-                                        width = if (value.equals(preset, ignoreCase = true)) 3.dp else 1.dp,
-                                        color = if (value.equals(preset, ignoreCase = true))
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            Color.White.copy(alpha = 0.5f),
-                                        shape = CircleShape
-                                    )
-                                    .clickable {
-                                        onValueChange(preset)
-                                        showPalette = false
-                                    }
+                                modifier =
+                                    Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(preset.toColor())
+                                        .border(
+                                            width = if (value.equals(preset, ignoreCase = true)) 3.dp else 1.dp,
+                                            color =
+                                                if (value.equals(preset, ignoreCase = true)) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    Color.White.copy(alpha = 0.5f)
+                                                },
+                                            shape = CircleShape,
+                                        )
+                                        .clickable {
+                                            onValueChange(preset)
+                                            showPalette = false
+                                        },
                             )
                         }
                     }

@@ -13,7 +13,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Product
-import com.itbenevides.genesys21.presentation.screens.viewer.ProductCard
 import com.itbenevides.genesys21.ui.components.atoms.buttons.*
 import com.itbenevides.genesys21.ui.components.atoms.images.*
 import com.itbenevides.genesys21.ui.components.atoms.indicators.*
@@ -47,23 +46,25 @@ fun DesignSystemShowcaseScreen(
     var isDarkMode by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    val tabs = listOf(
-        GenesysTabData("Atoms", GenesysIcons.Numbers),
-        GenesysTabData("Molecules", GenesysIcons.Category),
-        GenesysTabData("Organisms", GenesysIcons.GridView),
-        GenesysTabData("Tools", GenesysIcons.Settings)
-    )
-
-    val sampleProduct = remember {
-        Product(
-            id = "showcase_1",
-            name = "SmartWatch Genesys Pro",
-            price = 899.90,
-            imageUrls = listOf("https://images.unsplash.com/photo-1544117518-30dd5f2f309e?q=80&w=800"),
-            description = "High-performance smartwatch with health tracking and elegant design.",
-            stock = 15
+    val tabs =
+        listOf(
+            GenesysTabData("Atoms", GenesysIcons.Numbers),
+            GenesysTabData("Molecules", GenesysIcons.Category),
+            GenesysTabData("Organisms", GenesysIcons.GridView),
+            GenesysTabData("Tools", GenesysIcons.Settings),
         )
-    }
+
+    val sampleProduct =
+        remember {
+            Product(
+                id = "showcase_1",
+                name = "SmartWatch Genesys Pro",
+                price = 899.90,
+                imageUrls = listOf("https://images.unsplash.com/photo-1544117518-30dd5f2f309e?q=80&w=800"),
+                description = "High-performance smartwatch with health tracking and elegant design.",
+                stock = 15,
+            )
+        }
 
     AppTheme(themeConfig = if (isDarkMode) com.itbenevides.genesys21.domain.model.PageThemeConfig.DARK_MODE else com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL) {
         GenesysPage(
@@ -78,21 +79,22 @@ fun DesignSystemShowcaseScreen(
                                 Spacer(Modifier.width(8.dp))
                                 Switch(checked = isDarkMode, onCheckedChange = { isDarkMode = it })
                             }
-                        }
+                        },
                     )
                     GenesysTabRow(
                         selectedTabIndex = selectedTab,
                         tabs = tabs,
-                        onTabSelected = { selectedTab = it }
+                        onTabSelected = { selectedTab = it },
                     )
                 }
-            }
+            },
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp),
             ) {
                 when (selectedTab) {
                     0 -> AtomsShowcase(sampleProduct)
@@ -107,7 +109,7 @@ fun DesignSystemShowcaseScreen(
                     style = GenesysTextStyle.Label,
                     textAlign = GenesysTextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.outline,
                 )
                 Spacer(Modifier.height(64.dp))
             }
@@ -143,7 +145,7 @@ private fun AtomsShowcase(sampleProduct: Product) {
             GenesysAvatar(icon = GenesysIcons.Person)
             GenesysImage(
                 url = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800",
-                size = 120.dp
+                size = 120.dp,
             )
             Box(Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
         }
@@ -205,7 +207,7 @@ private fun MoleculesShowcase(sampleProduct: Product) {
             GenesysPagerIndicator(count = 5, currentPage = 2)
         }
         Spacer(Modifier.height(16.dp))
-         GenesysCard(modifier = Modifier.fillMaxWidth(), elevation = 2.dp) {
+        GenesysCard(modifier = Modifier.fillMaxWidth(), elevation = 2.dp) {
             GenesysSectionHeader(title = "Store Settings", subtitle = "Manage your global preferences here.")
             Spacer(Modifier.height(16.dp))
             GenesysText(text = "Use the Genesys Card to group related information and actions.", style = GenesysTextStyle.Body)
@@ -218,19 +220,20 @@ private fun OrganismsShowcase(sampleProduct: Product) {
     ShowcaseSection("Product Collections", "Complex components managing multiple product molecules.") {
         GenesysSectionHeader(title = "Grid Layout", subtitle = "Responsive grid of product cards.")
         GenesysProductList(
-            products = listOf(
-                sampleProduct,
-                sampleProduct.copy(id = "s2", name = "Product B", price = 150.0),
-                sampleProduct.copy(id = "s3", name = "Product C", price = 250.0),
-                sampleProduct.copy(id = "s4", name = "Product D", price = 350.0),
-            ),
-            isHorizontal = false
+            products =
+                listOf(
+                    sampleProduct,
+                    sampleProduct.copy(id = "s2", name = "Product B", price = 150.0),
+                    sampleProduct.copy(id = "s3", name = "Product C", price = 250.0),
+                    sampleProduct.copy(id = "s4", name = "Product D", price = 350.0),
+                ),
+            isHorizontal = false,
         )
         Spacer(Modifier.height(16.dp))
         GenesysSectionHeader(title = "Horizontal Layout", subtitle = "Scrollable carousel for highlights.")
         GenesysProductList(
             products = (1..5).map { sampleProduct.copy(id = "h$it", name = "Highlight $it") },
-            isHorizontal = true
+            isHorizontal = true,
         )
     }
 
@@ -243,7 +246,7 @@ private fun OrganismsShowcase(sampleProduct: Product) {
             description = "Try adjusting your search filters to find what you are looking for.",
             action = {
                 GenesysLoadingButton(text = "Clear Filters", onClick = {})
-            }
+            },
         )
     }
 }
@@ -251,7 +254,7 @@ private fun OrganismsShowcase(sampleProduct: Product) {
 @Composable
 private fun ToolsShowcase(
     onOpenEditorShowcase: () -> Unit,
-    onOpenTemplateShowcase: () -> Unit
+    onOpenTemplateShowcase: () -> Unit,
 ) {
     ShowcaseSection("Developer & Merchant Tools", "Screens for documentation and template management.") {
         GenesysCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenTemplateShowcase) {
@@ -284,21 +287,21 @@ private fun ToolsShowcase(
 private fun ShowcaseSection(
     title: String,
     subtitle: String? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = Modifier.padding(vertical = 24.dp)) {
         Text(
             text = title.uppercase(),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp),
         )
         subtitle?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
             )
         }
         content()

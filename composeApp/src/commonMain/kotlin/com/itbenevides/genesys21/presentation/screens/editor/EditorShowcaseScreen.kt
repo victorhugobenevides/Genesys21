@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,35 +20,37 @@ import org.koin.compose.koinInject
 
 @Composable
 fun EditorShowcaseScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // We use koinInject directly as usual.
     val viewModel: PageViewModel = koinInject()
     val samplePage = remember { Page.defaultTemplate("showcase", "Editor Showcase") }
 
-    val componentsToTest = remember {
-        listOf(
-            PageComponent.Header(title = "Example Header"),
-            PageComponent.Text(content = "Sample text content for testing layouts."),
-            PageComponent.Image(url = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=400"),
-            PageComponent.Button(text = "Action Button", url = "#")
-        )
-    }
+    val componentsToTest =
+        remember {
+            listOf(
+                PageComponent.Header(title = "Example Header"),
+                PageComponent.Text(content = "Sample text content for testing layouts."),
+                PageComponent.Image(url = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=400"),
+                PageComponent.Button(text = "Action Button", url = "#"),
+            )
+        }
 
     AppTheme {
         GenesysPage(
             topBar = {
                 GenesysTopAppBar(
                     title = "Editor Components",
-                    onBack = onBack
+                    onBack = onBack,
                 )
-            }
+            },
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 24.dp),
             ) {
                 componentsToTest.forEach { component ->
                     ComparisonCard(component, viewModel, samplePage)
@@ -64,22 +65,22 @@ fun EditorShowcaseScreen(
 private fun ComparisonCard(
     component: PageComponent,
     viewModel: PageViewModel,
-    page: Page
+    page: Page,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = component::class.simpleName ?: "Component",
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Left: Editor
                 Column(Modifier.weight(1f)) {
@@ -87,10 +88,11 @@ private fun ComparisonCard(
                     Spacer(Modifier.height(8.dp))
 
                     // We must ensure the component list is NOT empty so index 0 works
-                    val mockState = WhiteLabelState(
-                        page = page.copy(components = listOf(component)),
-                        editingComponentIndex = 0
-                    )
+                    val mockState =
+                        WhiteLabelState(
+                            page = page.copy(components = listOf(component)),
+                            editingComponentIndex = 0,
+                        )
 
                     Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
                         com.itbenevides.genesys21.presentation.screens.viewer.ComponentEditorUI(
@@ -101,7 +103,7 @@ private fun ComparisonCard(
                             isEmbedded = true,
                             originalPage = page,
                             onManageCategories = {},
-                            onPickImage = {}
+                            onPickImage = {},
                         )
                     }
                 }
@@ -114,7 +116,7 @@ private fun ComparisonCard(
                     Spacer(Modifier.height(8.dp))
                     PageComponentRenderer(
                         component = component,
-                        isEditMode = false
+                        isEditMode = false,
                     )
                 }
             }

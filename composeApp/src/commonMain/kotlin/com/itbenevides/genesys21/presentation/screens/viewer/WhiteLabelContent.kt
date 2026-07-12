@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -291,11 +290,12 @@ fun ComponentEditorUI(
     onManageCategories: () -> Unit,
     onPickImage: () -> Unit,
 ) {
-    val component = state.page.components.getOrNull(index) ?: run {
-        // Fallback for when index is out of bounds or component list is empty
-        if (isEmbedded) Text("Component not found at index $index")
-        return
-    }
+    val component =
+        state.page.components.getOrNull(index) ?: run {
+            // Fallback for when index is out of bounds or component list is empty
+            if (isEmbedded) Text("Component not found at index $index")
+            return
+        }
     val scrollState = rememberScrollState()
 
     @Composable
