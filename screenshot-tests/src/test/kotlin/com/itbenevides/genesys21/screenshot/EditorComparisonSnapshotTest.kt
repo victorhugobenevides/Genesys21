@@ -5,10 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
-import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
-import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import org.junit.Rule
 import org.junit.Test
 

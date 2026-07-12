@@ -16,14 +16,15 @@ class ResponsivenessSnapshotTest {
     @get:Rule
     val paparazzi = createGenesysPaparazzi(deviceConfig = DeviceConfig.PIXEL_5)
 
-    private val sampleProduct = Product(
-        id = "1",
-        name = "SmartWatch Genesys Pro",
-        price = 899.90,
-        imageUrls = listOf("https://images.unsplash.com/photo-1544117518-30dd5f2f309e?q=80&w=800"),
-        description = "High-performance smartwatch with health tracking and elegant design.",
-        stock = 15
-    )
+    private val sampleProduct =
+        Product(
+            id = "1",
+            name = "SmartWatch Genesys Pro",
+            price = 899.90,
+            imageUrls = listOf("https://images.unsplash.com/photo-1544117518-30dd5f2f309e?q=80&w=800"),
+            description = "High-performance smartwatch with health tracking and elegant design.",
+            stock = 15,
+        )
 
     private val samplePage = Page(id = "test", title = "My Store")
 
@@ -34,7 +35,7 @@ class ResponsivenessSnapshotTest {
             ProductDetailsContent(
                 state = ProductDetailsState(product = sampleProduct),
                 backendUrl = "",
-                onEvent = {}
+                onEvent = {},
             )
         }
     }
@@ -47,7 +48,7 @@ class ResponsivenessSnapshotTest {
             ProductDetailsContent(
                 state = ProductDetailsState(product = sampleProduct),
                 backendUrl = "",
-                onEvent = {}
+                onEvent = {},
             )
         }
     }
@@ -59,7 +60,7 @@ class ResponsivenessSnapshotTest {
             CartContent(
                 state = CartScreenState(total = 899.90),
                 backendUrl = "",
-                onEvent = {}
+                onEvent = {},
             )
         }
     }
@@ -71,7 +72,7 @@ class ResponsivenessSnapshotTest {
             CartContent(
                 state = CartScreenState(total = 899.90),
                 backendUrl = "",
-                onEvent = {}
+                onEvent = {},
             )
         }
     }

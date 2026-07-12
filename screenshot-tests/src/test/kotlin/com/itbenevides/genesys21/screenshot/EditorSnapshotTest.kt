@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.screenshot
 
 import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
-import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.TypographySet
 import com.itbenevides.genesys21.presentation.screens.editor.ThemeLabDialog
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
@@ -18,14 +17,15 @@ class EditorSnapshotTest {
     fun testThemeLabDialog() {
         paparazzi.genesysSnapshot {
             ThemeLabDialog(
-                initialConfig = CustomThemeConfig(
-                    primaryColor = "#2CB1FF",
-                    cornerRadius = 24,
-                    glassIntensity = 0.3f,
-                    typographySet = TypographySet.MODERN_SANS
-                ),
+                initialConfig =
+                    CustomThemeConfig(
+                        primaryColor = "#2CB1FF",
+                        cornerRadius = 24,
+                        glassIntensity = 0.3f,
+                        typographySet = TypographySet.MODERN_SANS,
+                    ),
                 onSave = {},
-                onDismiss = {}
+                onDismiss = {},
             )
         }
     }
