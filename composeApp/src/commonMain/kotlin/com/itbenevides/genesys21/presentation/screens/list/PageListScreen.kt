@@ -54,6 +54,7 @@ fun PageListScreen(
     onEditPage: (Page) -> Unit,
     onViewPage: (Page) -> Unit,
     onLogout: () -> Unit,
+    onShowcase: () -> Unit,
 ) {
     val pages by viewModel.pages.collectAsState()
     val orders by viewModel.orders.collectAsState()
@@ -180,6 +181,7 @@ fun PageListScreen(
             val message = "Olá $name, estou entrando em contato sobre o seu pedido #$orderId na Genesys21."
             uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
         },
+        onShowcase = onShowcase,
     )
 }
 
@@ -192,6 +194,7 @@ private fun PageListContent(
     onImport: () -> Unit,
     onExportAll: () -> Unit,
     onContactCustomer: (String, String, String) -> Unit,
+    onShowcase: () -> Unit,
 ) {
     GenesysPage(
         topBar = {
@@ -200,6 +203,7 @@ private fun PageListContent(
                     title = GenesysStrings.AdminTitle,
                     onBack = null,
                     actions = {
+                        GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
                         GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)
                         GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)
                         GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })

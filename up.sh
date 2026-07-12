@@ -19,6 +19,9 @@ rm -f yarn.lock
 echo "🔄 Atualizando Yarn Lock..."
 ./gradlew :kotlinUpgradeYarnLock --no-daemon
 
+echo "📸 Verificando Integridade Visual (Screenshot Tests)..."
+./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
+
 echo "🚀 Build do projeto (Server e WasmJS)..."
 ./gradlew :server:installDist :composeApp:wasmJsBrowserDevelopmentExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
 
@@ -31,7 +34,7 @@ mkdir -p deploy/server deploy/web
 SERVER_INSTALL_DIR=$(find server/build/install -maxdepth 1 -mindepth 1 -type d | head -n 1)
 if [ -n "$SERVER_INSTALL_DIR" ]; then
     cp -R "$SERVER_INSTALL_DIR"/. deploy/server/
-    
+
     FIREBASE_JSON=$(find . -name "genesys21-32035-firebase-adminsdk-*.json" | head -n 1)
     if [ -n "$FIREBASE_JSON" ]; then
         echo "🔑 Copiando credenciais Firebase: $FIREBASE_JSON"

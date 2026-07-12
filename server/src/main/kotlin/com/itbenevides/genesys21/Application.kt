@@ -33,6 +33,10 @@ import java.io.File
 import java.util.*
 import kotlinx.serialization.json.Json
 
+import net.coobird.thumbnailator.Thumbnails
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+
 const val SERVER_PORT = 8080
 
 fun main() {
@@ -240,7 +244,21 @@ fun Application.module() {
                     }
                     if (fileBytes != null) {
                         val file = File(uploadDir, fileName)
-                        file.writeBytes(fileBytes!!)
+
+                        try {
+                            // Otimização: Redimensionar e comprimir imagem (max 1200px)
+                            val outputStream = ByteArrayOutputStream()
+                            Thumbnails.of(ByteArrayInputStream(fileBytes))
+                                .size(1200, 1200)
+                                .outputFormat("jpg") // WebP seria melhor mas requer bibliotecas nativas extras
+                                .outputQuality(0.8)
+                                .toOutputStream(outputStream)
+                            file.writeBytes(outputStream.toByteArray())
+                        } catch (e: Exception) {
+                            // Se falhar a compressão (ex: formato não suportado), salva o original
+                            file.writeBytes(fileBytes!!)
+                        }
+
                         call.respondText("/uploads/$fileName")
                     } else {
                         call.respond(HttpStatusCode.BadRequest)

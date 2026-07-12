@@ -1,29 +1,25 @@
 package com.itbenevides.genesys21.ui.theme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.luminance
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.TypographySet
+import com.itbenevides.genesys21.util.toColor
 
-// Helper para converter Hex para Color
-private fun String?.toColor(fallback: Color): Color {
-    if (this == null) return fallback
-    return try {
-        val hex = this.removePrefix("#")
-        val longColor = hex.toLong(16)
-        if (hex.length == 6) {
-            Color(longColor or 0xFF000000)
-        } else {
-            Color(longColor)
-        }
-    } catch (e: Exception) {
-        fallback
-    }
+// Helper removido - usando com.itbenevides.genesys21.util.toColor
+
+@Composable
+private fun getContentColor(backgroundColor: Color): Color {
+    return if (backgroundColor.luminance() > 0.5f) Color.Black else Color.White
 }
 
 // 1. ROYAL (Navy & Gold)
@@ -277,28 +273,45 @@ fun AppTheme(
 
     val colorScheme =
         if (customTheme != null) {
+            val customBg = customTheme.backgroundColor.toColor(baseColorScheme.background)
+            val customSurface = customTheme.surfaceColor.toColor(baseColorScheme.surface)
+            val customPrimary = customTheme.primaryColor.toColor(baseColorScheme.primary)
+
             baseColorScheme.copy(
-                primary = customTheme.primaryColor.toColor(baseColorScheme.primary),
-                onPrimary = customTheme.onPrimaryColor.toColor(baseColorScheme.onPrimary),
+                primary = customPrimary,
+                onPrimary = customTheme.onPrimaryColor.toColor(getContentColor(customPrimary)),
                 secondary = customTheme.secondaryColor.toColor(baseColorScheme.secondary),
-                background = customTheme.backgroundColor.toColor(baseColorScheme.background),
-                surface = customTheme.surfaceColor.toColor(baseColorScheme.surface),
-                onSurface = customTheme.onSurfaceColor.toColor(baseColorScheme.onSurface),
+                onSecondary = customTheme.onPrimaryColor.toColor(getContentColor(customPrimary)),
+                background = customBg,
+                surface = customSurface,
+                onSurface = customTheme.onSurfaceColor.toColor(getContentColor(customSurface)),
+                onBackground = customTheme.onSurfaceColor.toColor(getContentColor(customBg)),
+                surfaceVariant = customSurface.copy(alpha = 0.7f),
             )
         } else {
             baseColorScheme
         }
 
+    val radius = customTheme?.cornerRadius ?: 16
+    val shapes =
+        Shapes(
+            small = RoundedCornerShape(radius.dp / 4),
+            medium = RoundedCornerShape(radius.dp / 2),
+            large = RoundedCornerShape(radius.dp),
+            extraLarge = RoundedCornerShape(radius.dp * 1.5f),
+        )
+
     CompositionLocalProvider(
         LocalGenesysThemeConfig provides
             GenesysThemeConfig(
-                cornerRadius = customTheme?.cornerRadius ?: 16,
+                cornerRadius = radius,
                 glassIntensity = customTheme?.glassIntensity ?: 0.1f,
             ),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT),
+            shapes = shapes,
             content = content,
         )
     }

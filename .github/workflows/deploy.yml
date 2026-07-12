@@ -28,6 +28,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Verify Visual Integrity (Screenshot Tests)
+        run: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
+
       - name: Decode Firebase Secrets
         run: |
           echo '${{ secrets.GOOGLE_SERVICES_JSON_ANDROID }}' > composeApp/google-services.json
@@ -37,15 +40,15 @@ jobs:
 
       - name: Build Project
         run: |
-          ./gradlew :server:installDist :composeApp:wasmJsBrowserDevelopmentExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
-          
+          ./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
+
       - name: Prepare Deploy Folder
         run: |
           mkdir -p deploy/server deploy/web
           cp -R server/build/install/server/. deploy/server/
           cp firebase-adminsdk.json deploy/server/bin/
-          find composeApp/build/dist/wasmJs/developmentExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
-          
+          find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+
           # Gerar ponte Firebase
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -75,6 +78,10 @@ jobs:
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
               <title>Genesys21</title>
+
+              <!-- Otimização: Preload do binário Wasm -->
+              <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
+
               <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
               <script>
                   window.dataLayer = window.dataLayer || [];
@@ -117,7 +124,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
-            
+
             # Gerar Nginx de Produção com suporte a ambos os domínios
             cat <<EOF > nginx.prod.conf
             user  nginx;
@@ -127,7 +134,14 @@ jobs:
                 include /etc/nginx/mime.types;
                 types { application/wasm wasm; }
                 default_type application/octet-stream;
-                client_max_body_size 20M;
+                client_max_body_size 50M;
+
+                # Otimizações de Performance
+                gzip on;
+                gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
+                gzip_proxied any;
+                gzip_comp_level 6;
+                gzip_min_length 1000;
 
                 # REDIRECT HTTP -> HTTPS
                 server {
@@ -141,13 +155,24 @@ jobs:
                 server {
                     listen 443 ssl;
                     server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
-                    
+
                     # Usamos o caminho do certificado principal (Expandido)
                     ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
                     ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
 
+                    # SSL Hardening
+                    ssl_protocols TLSv1.2 TLSv1.3;
+                    ssl_prefer_server_ciphers on;
+                    ssl_session_cache shared:SSL:10m;
+
                     root /usr/share/nginx/html;
                     index index.html;
+
+                    # Cache de Assets Estáticos
+                    location ~* \.(js|css|wasm|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|otf)$ {
+                        expires 30d;
+                        add_header Cache-Control "public, no-transform";
+                    }
 
                     location ^~ /api/ {
                         proxy_pass http://server:8080;
@@ -158,6 +183,8 @@ jobs:
 
                     location /uploads/ {
                         alias /usr/share/nginx/html/uploads/;
+                        expires 7d;
+                        add_header Cache-Control "public";
                         try_files \$uri @backend_fallback;
                     }
 
@@ -165,6 +192,7 @@ jobs:
 
                     location / {
                         try_files \$uri \$uri/ /index.html;
+                        add_header Cache-Control "no-store, no-cache, must-revalidate";
                     }
                 }
             }
@@ -206,7 +234,7 @@ jobs:
               genesys-network:
                 driver: bridge
             EOF
-            
+
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f

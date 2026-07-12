@@ -24,6 +24,8 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.screens.SplashScreen
+import com.itbenevides.genesys21.presentation.screens.editor.DesignSystemShowcaseScreen
+import com.itbenevides.genesys21.presentation.screens.editor.EditorShowcaseScreen
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
@@ -118,6 +120,7 @@ fun App() {
                                     router.viewModel.signOut()
                                     router.navigateTo(Route.Login)
                                 },
+                                onShowcase = { router.navigateTo(Route.DesignSystemShowcase) }
                             )
                         is Route.PageEditor ->
                             PageEditorScreen(
@@ -210,6 +213,17 @@ fun App() {
                                     }
                                 },
                                 onBack = { router.goBack() },
+                            )
+                        }
+                        is Route.DesignSystemShowcase -> {
+                            DesignSystemShowcaseScreen(
+                                onBack = { router.goBack() },
+                                onOpenEditorShowcase = { router.navigateTo(Route.EditorShowcase) }
+                            )
+                        }
+                        is Route.EditorShowcase -> {
+                            EditorShowcaseScreen(
+                                onBack = { router.goBack() }
                             )
                         }
                     }

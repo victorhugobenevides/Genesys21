@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,8 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,8 +103,7 @@ fun WhiteLabelContent(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .padding(top = if (isWideScreen) 0.dp else 0.dp),
-                        // Ajustado pela TopBar translúcida
+                                .padding(top = 0.dp),
                         contentAlignment = Alignment.TopCenter,
                     ) {
                         GenesysColumn(
@@ -282,7 +281,7 @@ private fun ComponentWrapperUI(
 }
 
 @Composable
-private fun ComponentEditorUI(
+fun ComponentEditorUI(
     state: WhiteLabelState,
     viewModel: PageViewModel,
     index: Int,
@@ -292,7 +291,11 @@ private fun ComponentEditorUI(
     onManageCategories: () -> Unit,
     onPickImage: () -> Unit,
 ) {
-    val component = state.page.components.getOrNull(index) ?: return
+    val component = state.page.components.getOrNull(index) ?: run {
+        // Fallback for when index is out of bounds or component list is empty
+        if (isEmbedded) Text("Component not found at index $index")
+        return
+    }
     val scrollState = rememberScrollState()
 
     @Composable
@@ -467,7 +470,16 @@ private fun ComponentEditorUI(
                         },
                     )
                 }
-                else -> { }
+                else -> {
+                    // Outros componentes sem editor específico
+                    GenesysLoadingButton(
+                        text = "Confirmar Nome do Bloco",
+                        onClick = {
+                            onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null))
+                        },
+                        fillWidth = true,
+                    )
+                }
             }
 
             GenesysSpacer(GenesysSpacing.Huge)

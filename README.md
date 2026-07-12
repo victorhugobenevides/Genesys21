@@ -1,79 +1,115 @@
-# Genesys21 - Kotlin Multiplatform Project
+# 🧬 Genesys21
 
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, and Server (Ktor).
+[![CI Status](https://github.com/victorhugobenevides/Genesys21/actions/workflows/ci.yml/badge.svg)](https://github.com/victorhugobenevides/Genesys21/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/victorhugobenevides/Genesys21/security/analysis?query=codeql)](https://github.com/victorhugobenevides/Genesys21/security/code-scanning)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3.21-blue.svg?logo=kotlin)](http://kotlinlang.org)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.10.0-blue)](https://github.com/JetBrains/compose-multiplatform)
+[![Ktor](https://img.shields.io/badge/Ktor-3.5.0-orange?logo=ktor)](https://ktor.io)
 
-## 🚀 Getting Started
-
-### 1. Firebase Configuration (Mandatory)
-
-This project uses Firebase. You need to add the configuration files to the following locations (they are ignored by Git):
-
-- **Android:** `composeApp/google-services.json`
-- **iOS:** `iosApp/iosApp/GoogleService-Info.plist` (and add it to the project in Xcode)
-- **Server:** `server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json`
-
-### 2. CI/CD Configuration (GitHub Actions)
-
-To make the CI pipeline work, you must add the following **Secrets** to your GitHub repository (`Settings > Secrets and variables > Actions`):
-
-| Secret Name | Description |
-| :--- | :--- |
-| `GOOGLE_SERVICES_JSON_ANDROID` | Content of `composeApp/google-services.json` |
-| `FIREBASE_ADMIN_JSON` | Content of the server's service account JSON |
-| `GOOGLE_SERVICES_PLIST_IOS` | Content of `iosApp/iosApp/GoogleService-Info.plist` |
+**Genesys21** is a high-performance, White-Label engine built with **Kotlin Multiplatform**. It allows merchants to create, customize, and publish professional sales vitrines and landing pages across Android, iOS, and Web using a single shared codebase.
 
 ---
 
-## 🐳 Running with Docker
+## ✨ Key Features
 
-You can run both the Server and Web applications using Docker Compose:
-
-```shell
-docker-compose up --build -d
-```
-
-- **Backend (Ktor):** http://localhost:8080
-- **Frontend (Web/JS):** http://localhost:8081
+- 🛠️ **Real-time WhiteLabel Editor**: Live preview engine to customize themes, components, and products.
+- 🎨 **Dynamic Theme Engine**: Advanced styling with Glassmorphism, custom palettes, and curated typography.
+- 📱 **Multi-platform Support**: Native Android & iOS apps, plus a high-performance Web (Wasm/JS) frontend.
+- 📦 **Order Management**: Complete flow from product catalog to order tracking and customer notification via WhatsApp.
+- ☁️ **Server-Driven Metadata**: Dynamic SEO and social preview generation for shared links.
+- 🔒 **Security First**: Integrated Firebase Auth, CodeQL scanning, and robust CI/CD pipelines.
 
 ---
 
-## 📱 Development Build and Run
+## 🛠️ Tech Stack
 
-### Android
-```shell
-./gradlew :composeApp:assembleDebug
-```
-
-### Server (Ktor)
-```shell
-./gradlew :server:run
-```
-
-### Web
-- **Wasm:** `./gradlew :composeApp:wasmJsBrowserDevelopmentRun`
-- **JS:** `./gradlew :composeApp:jsBrowserDevelopmentRun`
-
-### iOS
-Open the `iosApp` directory in Xcode. 
-**Note:** Before running, ensure you have added the Firebase SDK via Swift Package Manager (SPM) in Xcode.
+- **Core**: [Kotlin Multiplatform (KMP)](https://kotlinlang.org/docs/multiplatform.html)
+- **UI**: [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) (Shared UI for Android, iOS, Web)
+- **Dependency Injection**: [Koin](https://insert-koin.io/)
+- **Networking**: [Ktor Client](https://ktor.io/docs/client.html)
+- **Database**: SQLDelight & Exposed (Server)
+- **Backend**: [Ktor Server](https://ktor.io/docs/server-overview.html)
+- **Images**: [Coil3](https://coil-kt.github.io/coil/)
+- **Infrastructure**: Docker, Nginx, GitHub Actions
+- **Backend Services**: Firebase (Auth, Analytics, Crashlytics, Performance)
 
 ---
 
 ## 📂 Project Structure
 
-- [/composeApp](./composeApp/src): Shared UI code for all targets.
-- [/iosApp](./iosApp/iosApp): iOS specific SwiftUI entry point.
-- [/server](./server/src/main/kotlin): Ktor server application.
-- [/shared](./shared/src): Shared business logic and platform abstractions.
+```bash
+├── composeApp/      # Shared UI code (Compose Multiplatform)
+│   ├── commonMain   # Main shared UI and navigation logic
+│   ├── androidMain  # Android-specific UI/Lifecycle
+│   └── wasmJsMain   # Web-specific (Wasm) logic
+├── iosApp/          # iOS SwiftUI wrapper and entry point
+├── shared/          # Shared Business Logic (Domain, Data, Repositories)
+├── server/          # Ktor Backend (REST API, Database, SEO)
+└── scripts/         # Dev automation scripts
+```
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html) and [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform).
+---
 
-# 🛠️ GitFlow Policy
+## 🚀 Getting Started
 
-> **Branch strategy:** `main` (production), `develop` (integration), `feature/*`, `release/*`, `hotfix/*`.
+### Prerequisites
+- **JDK 17+**
+- **Android Studio Ladybug+** (or IntelliJ IDEA)
+- **Xcode 15+** (for iOS development)
+- **Docker** (optional, for backend deployment)
 
-![CI Status](https://github.com/victorhugobenevides/Genesys21/actions/workflows/ci.yml/badge.svg)
-![CodeQL](https://github.com/victorhugobenevides/Genesys21/security/analysis?query=codeql)
+### 1. Firebase Configuration (Mandatory)
+Genesys21 requires Firebase to function. Add your `google-services.json` and `GoogleService-Info.plist` files:
+
+- **Android:** `composeApp/google-services.json`
+- **iOS:** `iosApp/iosApp/GoogleService-Info.plist`
+- **Server:** `server/src/main/resources/firebase-adminsdk.json`
+
+### 2. Environment Setup
+Create a `local.properties` in the root:
+```properties
+sdk.dir=/path/to/android/sdk
+WEB_BASE_URL=http://localhost:8081
+```
+
+---
+
+## 📱 Development Guide
+
+### Run Android App
+```shell
+./gradlew :composeApp:installDebug
+```
+
+### Run Server (Ktor)
+```shell
+./gradlew :server:run
+```
+
+### Run Web (Wasm/JS)
+```shell
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+```
+
+### Run iOS
+Open `iosApp/iosApp.xcworkspace` in Xcode and run the `iosApp` scheme.
+
+---
+
+## 🐳 Docker Deployment
+
+Deploy the entire stack (Nginx, Ktor, Web) with a single command:
+```shell
+docker-compose up --build -d
+```
+- **Backend API**: `http://localhost:8080`
+- **Frontend Web**: `http://localhost:8081`
+
+---
+
+## 🛡️ GitFlow & Contribution
+
+This project follows a strict **GitFlow** policy to ensure stability.
 
 ```mermaid
 flowchart LR
@@ -86,26 +122,15 @@ flowchart LR
     D -->|release/*| B
 ```
 
-### Como começar
-1. **Feature branch**
-   ```bash
-   git checkout -b feature/<ticket-id>-<short-desc> develop
-   ```
-2. **Pull Request**
-   - Abra PR apontando para `develop`.
-   - Use o template de PR padrão (`.github/pull_request_template.md`).
-3. **Release**
-   ```bash
-   git checkout -b release/<version> develop
-   ```
-   - Abra PR para `main`.
-   - O CI executa lint, testes, CodeQL e cobertura.
-4. **Hotfix**
-   ```bash
-   git checkout -b hotfix/<ticket-id>-<desc> main
-   ```
-   - Abra PR para `main` e, após merge, também para `develop`.
+1. **Feature**: Create from `develop`, PR back to `develop`.
+2. **Release**: Create from `develop`, PR to `main`.
+3. **Hotfix**: Create from `main`, PR to `main` and `develop`.
 
-### Scripts de apoio
-- `scripts/gitflow_init.sh` automatiza a criação de branches e PRs.
-- Consulte a política de proteção de branches em `.github/branch_protection.json`.
+For more details, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+---
+
+## 📄 License
+
+Copyright © 2024 It Benevides. All rights reserved.
+Developed by [Victor Hugo Benevides](https://github.com/victorhugobenevides).

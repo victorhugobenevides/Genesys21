@@ -24,5 +24,9 @@ sealed class Route {
 
     data class OrderTracking(val orderId: String) : Route()
 
-    data class CustomerOrderHistory(val page: Page?) : Route() // ALTERADO de object para data class
+    data class CustomerOrderHistory(val page: Page?) : Route()
+
+    object DesignSystemShowcase : Route()
+
+    object EditorShowcase : Route()
 }

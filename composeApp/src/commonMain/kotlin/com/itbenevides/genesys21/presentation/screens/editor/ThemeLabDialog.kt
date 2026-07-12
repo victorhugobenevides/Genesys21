@@ -16,6 +16,7 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeigh
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.input.GenesysColorField
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
 
@@ -26,7 +27,11 @@ fun ThemeLabDialog(
     onDismiss: () -> Unit,
 ) {
     var primary by remember { mutableStateOf(initialConfig?.primaryColor ?: "") }
+    var onPrimary by remember { mutableStateOf(initialConfig?.onPrimaryColor ?: "") }
+    var secondary by remember { mutableStateOf(initialConfig?.secondaryColor ?: "") }
     var background by remember { mutableStateOf(initialConfig?.backgroundColor ?: "") }
+    var surface by remember { mutableStateOf(initialConfig?.surfaceColor ?: "") }
+    var onSurface by remember { mutableStateOf(initialConfig?.onSurfaceColor ?: "") }
     var cornerRadius by remember { mutableStateOf(initialConfig?.cornerRadius?.toFloat() ?: 16f) }
     var glassIntensity by remember { mutableStateOf(initialConfig?.glassIntensity ?: 0.1f) }
     var typography by remember { mutableStateOf(initialConfig?.typographySet ?: TypographySet.DEFAULT) }
@@ -39,22 +44,50 @@ fun ThemeLabDialog(
             GenesysText(text = "Cores da Marca", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
             GenesysSpacer(GenesysSpacing.Small)
 
-            GenesysTextField(
+            GenesysColorField(
                 value = primary,
                 onValueChange = { primary = it },
-                label = "Cor Primária (Hex)",
-                placeholder = "#14213D",
-                icon = GenesysIcons.Palette,
+                label = "Primária",
             )
 
             GenesysSpacer(GenesysSpacing.Medium)
 
-            GenesysTextField(
+            GenesysColorField(
+                value = onPrimary,
+                onValueChange = { onPrimary = it },
+                label = "Texto sobre Primária",
+            )
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysColorField(
+                value = secondary,
+                onValueChange = { secondary = it },
+                label = "Secundária",
+            )
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysColorField(
                 value = background,
                 onValueChange = { background = it },
-                label = "Cor de Fundo (Hex)",
-                placeholder = "#FFFFFF",
-                icon = GenesysIcons.Web,
+                label = "Fundo",
+            )
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysColorField(
+                value = surface,
+                onValueChange = { surface = it },
+                label = "Superfície/Cards",
+            )
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysColorField(
+                value = onSurface,
+                onValueChange = { onSurface = it },
+                label = "Texto sobre Fundo",
             )
 
             GenesysSpacer(GenesysSpacing.Large)
@@ -102,7 +135,11 @@ fun ThemeLabDialog(
                     onSave(
                         CustomThemeConfig(
                             primaryColor = primary.ifBlank { null },
+                            onPrimaryColor = onPrimary.ifBlank { null },
+                            secondaryColor = secondary.ifBlank { null },
                             backgroundColor = background.ifBlank { null },
+                            surfaceColor = surface.ifBlank { null },
+                            onSurfaceColor = onSurface.ifBlank { null },
                             cornerRadius = cornerRadius.toInt(),
                             glassIntensity = glassIntensity,
                             typographySet = typography,
@@ -118,7 +155,11 @@ fun ThemeLabDialog(
                 text = "Resetar para Padrão",
                 onClick = {
                     primary = ""
+                    onPrimary = ""
+                    secondary = ""
                     background = ""
+                    surface = ""
+                    onSurface = ""
                     cornerRadius = 16f
                     glassIntensity = 0.1f
                     typography = TypographySet.DEFAULT

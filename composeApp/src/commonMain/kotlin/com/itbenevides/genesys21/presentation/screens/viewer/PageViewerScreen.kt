@@ -28,6 +28,10 @@ fun PageViewerScreen(
     var state by remember { mutableStateOf(PageViewerScreenState(page)) }
     var currentFilterQuery by remember { mutableStateOf("") }
 
+    LaunchedEffect(page) {
+        state = state.copy(page = page)
+    }
+
     val onEvent: (PageViewerScreenEvent) -> Unit = { event ->
         when (event) {
             is PageViewerScreenEvent.OnBackClicked -> router.goBack()
@@ -54,13 +58,13 @@ fun PageViewerScreen(
 
     BrandingEffects(state.page)
 
-    AppTheme(themeConfig = state.page.theme) {
+    AppTheme(themeConfig = state.page.theme, customTheme = state.page.customTheme) {
         PageViewerContent(state, currentFilterQuery, onEvent)
     }
 }
 
 @Composable
-private fun PageViewerContent(
+fun PageViewerContent(
     state: PageViewerScreenState,
     currentFilterQuery: String,
     onEvent: (PageViewerScreenEvent) -> Unit,

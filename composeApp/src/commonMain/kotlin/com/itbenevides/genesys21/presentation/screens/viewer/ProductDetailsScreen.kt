@@ -114,7 +114,7 @@ fun ProductDetailsScreen(
 }
 
 @Composable
-private fun ProductDetailsContent(
+fun ProductDetailsContent(
     state: ProductDetailsState,
     backendUrl: String,
     onEvent: (ProductDetailsEvent) -> Unit,

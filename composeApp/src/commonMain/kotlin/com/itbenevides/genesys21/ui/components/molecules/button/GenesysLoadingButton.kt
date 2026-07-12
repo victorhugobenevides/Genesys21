@@ -22,14 +22,14 @@ fun GenesysLoadingButton(
     enabled: Boolean = true,
     icon: ImageVector? = null,
     containerColor: Color = MaterialTheme.colorScheme.primary,
-    shape: Shape = RoundedCornerShape(12.dp),
+    shape: Shape? = null,
     fillWidth: Boolean = false,
 ) {
     Button(
         onClick = onClick,
         modifier = if (fillWidth) modifier.fillMaxWidth() else modifier,
         enabled = enabled && !isLoading,
-        shape = shape,
+        shape = shape ?: MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(containerColor = containerColor),
     ) {
         AnimatedContent(targetState = isLoading, label = "LoadingButtonAnimation") { loading ->
