@@ -83,19 +83,41 @@ class FakeBookingRepository : BookingRepository {
     private var merchantAvailability: MerchantAvailability? = null
 
     override suspend fun getServices(): List<BookingService> = servicesList
+
     override suspend fun getServiceById(id: String): BookingService? = servicesList.find { it.id == id }
+
     override suspend fun saveService(service: BookingService) {
         servicesList.add(service)
     }
+
     override suspend fun deleteService(id: String) {
         servicesList.removeAll { it.id == id }
     }
+
     override suspend fun getAvailability(merchantId: String): MerchantAvailability? = merchantAvailability
+
     override suspend fun saveAvailability(availability: MerchantAvailability) {
         this.merchantAvailability = availability
     }
-    override suspend fun getAppointments(serviceId: String, date: LocalDate): List<Appointment> = appointmentsList
+
+    override suspend fun getAppointments(
+        serviceId: String?,
+        merchantId: String?,
+        date: LocalDate,
+    ): List<Appointment> = appointmentsList
+
     override suspend fun createAppointment(appointment: Appointment) {
         appointmentsList.add(appointment)
+    }
+
+    override suspend fun updateAppointment(appointment: Appointment) {
+        val index = appointmentsList.indexOfFirst { it.id == appointment.id }
+        if (index != -1) {
+            appointmentsList[index] = appointment
+        }
+    }
+
+    override suspend fun getAppointmentsByPhone(phone: String): List<Appointment> {
+        return appointmentsList.filter { it.customerPhone == phone }
     }
 }

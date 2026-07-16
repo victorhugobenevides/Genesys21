@@ -12,6 +12,7 @@ import com.itbenevides.genesys21.util.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import kotlin.time.Clock.System.now
 
 data class AppError(
     val title: String,
@@ -76,7 +77,7 @@ class PageViewModel(
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(value = false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _currentError = MutableStateFlow<AppError?>(null)
@@ -215,7 +216,7 @@ class PageViewModel(
                         items = cart.value,
                         total = cartTotal.value,
                         status = OrderStatus.PENDING,
-                        createdAt = kotlin.time.Clock.System.now().toEpochMilliseconds(),
+                        createdAt = now().toEpochMilliseconds(),
                     )
                 submitOrderUseCase(order).onSuccess { _ ->
                     cartRepository.clearCart()
@@ -458,7 +459,7 @@ class PageViewModel(
     suspend fun getAvailableSlots(
         merchantId: String,
         service: BookingService,
-        date: LocalDate
+        date: LocalDate,
     ): List<String> {
         val mid = merchantId.ifBlank { "admin" }
         val avail = getAvailabilityUseCase(mid)
@@ -476,17 +477,19 @@ class PageViewModel(
 
         val availableSlots = mutableListOf<String>()
         val durationMs = service.durationMinutes * 60 * 1000L
-        val nowMs = kotlin.time.Clock.System.now().toEpochMilliseconds()
+        val nowMs = now().toEpochMilliseconds()
 
         dayConfig.slots.forEach { range ->
             try {
                 val startParts = range.startTime.split(":")
                 val endParts = range.endTime.split(":")
 
-                var currentMs = LocalDateTime(date, LocalTime(startParts[0].toInt(), startParts[1].toInt()))
-                    .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-                val endMs = LocalDateTime(date, LocalTime(endParts[0].toInt(), endParts[1].toInt()))
-                    .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                var currentMs =
+                    LocalDateTime(date, LocalTime(startParts[0].toInt(), startParts[1].toInt()))
+                        .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                val endMs =
+                    LocalDateTime(date, LocalTime(endParts[0].toInt(), endParts[1].toInt()))
+                        .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
 
                 while (currentMs + durationMs <= endMs) {
                     val slotStart = currentMs
@@ -498,14 +501,15 @@ class PageViewModel(
                         continue
                     }
 
-                    val hasOverlap = existing.any { appt ->
-                        val apptStart = appt.startTime.toEpochMilliseconds()
-                        val apptEnd = appt.endTime.toEpochMilliseconds()
+                    val hasOverlap =
+                        existing.any { appt ->
+                            val apptStart = appt.startTime.toEpochMilliseconds()
+                            val apptEnd = appt.endTime.toEpochMilliseconds()
 
-                        (slotStart in apptStart..<apptEnd) ||
-                        (slotEnd > apptStart && slotEnd <= apptEnd) ||
-                        (slotStart <= apptStart && slotEnd >= apptEnd)
-                    }
+                            (slotStart in apptStart..<apptEnd) ||
+                                (slotEnd > apptStart && slotEnd <= apptEnd) ||
+                                (slotStart <= apptStart && slotEnd >= apptEnd)
+                        }
 
                     if (!hasOverlap) {
                         val time = Instant.fromEpochMilliseconds(currentMs).toLocalDateTime(TimeZone.currentSystemDefault()).time
@@ -524,7 +528,10 @@ class PageViewModel(
         return availableSlots
     }
 
-    fun loadAppointments(date: LocalDate, merchantId: String = "admin") {
+    fun loadAppointments(
+        date: LocalDate,
+        merchantId: String = "admin",
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -541,19 +548,20 @@ class PageViewModel(
     fun createAppointment(
         merchantId: String,
         appointment: Appointment,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 // Validation before creating
                 val mid = merchantId.ifBlank { "admin" }
-                val isValid = validateBookingSlotUseCase(
-                    merchantId = mid,
-                    serviceId = appointment.serviceId,
-                    startTime = appointment.startTime,
-                    endTime = appointment.endTime
-                ).getOrDefault(false)
+                val isValid =
+                    validateBookingSlotUseCase(
+                        merchantId = mid,
+                        serviceId = appointment.serviceId,
+                        startTime = appointment.startTime,
+                        endTime = appointment.endTime,
+                    ).getOrDefault(false)
 
                 if (isValid) {
                     createAppointmentUseCase(appointment).onSuccess { _ ->
@@ -578,7 +586,7 @@ class PageViewModel(
             try {
                 updateAppointmentUseCase(appointment).onSuccess { _ ->
                     // Reload appointments to reflect changes
-                    val today = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    val today = now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                     loadAppointments(today, appointment.merchantId)
                 }.onFailure {
                     handleError("Erro ao atualizar agendamento", it)
@@ -593,9 +601,9 @@ class PageViewModel(
 
     val allAvailableProducts: StateFlow<List<Product>> =
         pages.map { pageList ->
-            pageList.flatMap { page ->
+            pageList.asSequence().flatMap { page ->
                 page.components.filterIsInstance<PageComponent.ProductList>().flatMap { it.products }
-            }.distinctBy { it.id }
+            }.distinctBy { it.id }.toList()
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val allAvailableCategories: StateFlow<List<String>> =
