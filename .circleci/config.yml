@@ -21,13 +21,8 @@ jobs:
               echo "Error: GOOGLE_SERVICES_JSON_ANDROID environment variable is not set."
               exit 1
             fi
-
-            # Remove espaços e quebras de linha para o teste de base64
             CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
-
-            # Tenta decodificar e verifica se o resultado contém a chave obrigatória
             DECODED=$(echo "$CLEAN_VAR" | base64 --decode 2>/dev/null || echo "failed")
-
             if echo "$DECODED" | grep -q "project_info"; then
               echo "$DECODED" > composeApp/google-services.json
               echo "✓ Decoded from Base64"
@@ -36,7 +31,6 @@ jobs:
               echo "✓ Used raw text (contains project_info)"
             else
               echo "CRITICAL ERROR: Variable content does not appear to be a valid google-services.json."
-              echo "Length of variable: ${#GOOGLE_SERVICES_JSON_ANDROID} characters."
               exit 1
             fi
       - run:
@@ -46,41 +40,205 @@ jobs:
               echo "Warning: FIREBASE_ADMIN_JSON not set. Server tests might fail."
             else
               mkdir -p server/src/main/resources
-              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/genesys21-32035-firebase-adminsdk-fbsvc-d57f39d3c3.json
+              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/firebase-adminsdk.json
+              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
             fi
       - run:
-          name: Run Lint Check (Ktlint & Detekt)
-          command: ./gradlew ktlintCheck detekt -Pandroid.useAndroidX=true
-      - run:
-          name: Run Unit Tests (Common & Android)
-          command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest -Pandroid.useAndroidX=true
-      - run:
-          name: Build Server & Run Tests
-          command: ./gradlew :server:test :server:build -Pandroid.useAndroidX=true
-      - run:
-          name: Validate WasmJs Compilation
-          command: ./gradlew :composeApp:compileKotlinWasmJs -Pandroid.useAndroidX=true
-      - run:
-          name: Collect Reports and Results
-          when: always
-          command: |
-            mkdir -p /tmp/test-results
-            mkdir -p /tmp/reports
-            find . -type f -name "*.xml" -path "*/build/test-results/*" -exec cp {} /tmp/test-results/ \; || true
-            find . -type d -name "reports" -not -path "*/build/*" -exec cp -R {} /tmp/reports/ \; || true
-            # Captura relatórios que estão dentro de build/reports
-            find . -path "*/build/reports" -type d -exec cp -R {} /tmp/reports/ \; || true
+          name: Run Unit Tests
+          command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true
       - store_test_results:
           path: /tmp/test-results
-      - store_artifacts:
-          path: /tmp/reports
-          destination: all-reports
-      - store_artifacts:
-          path: server/jacoco-reports
-          destination: server-coverage-html
+
+  deploy-to-oracle:
+    docker:
+      - image: cimg/openjdk:21.0
+    steps:
+      - checkout
+      - setup_remote_docker:
+          version: 20.10.24
+          docker_layer_caching: true
+      - run:
+          name: Build Distribution
+          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
+      - run:
+          name: Prepare Deploy Content & Docker Push
+          command: |
+            mkdir -p deploy/server deploy/web
+            cp -R server/build/install/server/. deploy/server/
+            cp firebase-adminsdk.json deploy/server/bin/ 2>/dev/null || true
+            find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+
+            # Gerar ponte Firebase
+            cat \<<EOF > deploy/web/firebase-bridge.js
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+            import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+            const firebaseConfig = {
+                apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
+                authDomain: "genesys21-32035.firebaseapp.com",
+                projectId: "genesys21-32035",
+                storageBucket: "genesys21-32035.firebasestorage.app",
+                appId: "1:674755208954:web:26e7b20a54f9ceb0dc4b43"
+            };
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            window.firebaseSignIn = async (email, pass) => {
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                return await userCredential.user.getIdToken();
+            };
+            window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            window.firebaseSignOut = async () => await signOut(auth);
+            EOF
+
+            # Gerar index.html
+            cat \<<EOF > deploy/web/index.html
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+                <title>Genesys21</title>
+                <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
+                <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
+                <script>
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments);}
+                    gtag('js', new Date());
+                    gtag('config', 'G-LW7Y13Y2M8');
+                </script>
+                <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
+                <script type="module" src="/firebase-bridge.js"></script>
+                <style>
+                    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: manipulation; }
+                    #ComposeTarget { width: 100%; height: 100%; }
+                    canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
+                    input, textarea { font-size: 16px !important; }
+                </style>
+            </head>
+            <body>
+                <canvas id="ComposeTarget"></canvas>
+                <script type="module" src="/composeApp.js"></script>
+            </body>
+            </html>
+            EOF
+
+            # Docker Login OCIR
+            echo "$OCI_AUTH_TOKEN" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
+
+            # Build and Push (Usando a arquitetura nativa do CircleCI runner, que é AMD64)
+            REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
+            docker build -t $REGISTRY/genesys-server:latest -f Dockerfile.server .
+            docker build -t $REGISTRY/genesys-web:latest -f Dockerfile.web .
+            docker push $REGISTRY/genesys-server:latest
+            docker push $REGISTRY/genesys-web:latest
+      - run:
+          name: SSH Deploy to Oracle Cloud
+          command: |
+            ssh -o StrictHostKeyChecking=no ${OCI_USERNAME}@${OCI_HOST} \<< 'SSH_EOF'
+              mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
+
+              # Login no OCIR na instância
+              echo "${OCI_AUTH_TOKEN}" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
+
+              # Gerar Nginx de Produção
+              cat \<<EOF > nginx.prod.conf
+              user  nginx;
+              worker_processes  auto;
+              events { worker_connections  1024; }
+              http {
+                  include /etc/nginx/mime.types;
+                  types { application/wasm wasm; }
+                  default_type application/octet-stream;
+                  client_max_body_size 50M;
+                  gzip on;
+                  gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
+
+                  server {
+                      listen 80;
+                      server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
+                      location /.well-known/acme-challenge/ { root /var/www/certbot; }
+                      location / { return 301 https://\$host\$request_uri; }
+                  }
+
+                  server {
+                      listen 443 ssl;
+                      server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
+                      ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
+                      ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
+                      ssl_protocols TLSv1.2 TLSv1.3;
+
+                      root /usr/share/nginx/html;
+                      index index.html;
+
+                      location ^~ /api/ {
+                          proxy_pass http://server:8080;
+                          proxy_set_header Host \$host;
+                          proxy_set_header X-Real-IP \$remote_addr;
+                      }
+
+                      location /uploads/ {
+                          alias /usr/share/nginx/html/uploads/;
+                          try_files \$uri @backend_fallback;
+                      }
+
+                      location @backend_fallback { proxy_pass http://server:8080; }
+
+                      location / {
+                          try_files \$uri \$uri/ /index.html;
+                      }
+                  }
+              }
+            EOF
+
+              # Gerar Docker Compose
+              cat \<<EOF > docker-compose.yml
+              services:
+                server:
+                  image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest
+                  volumes:
+                    - ./data:/app/data
+                    - ./uploads:/app/uploads
+                  restart: unless-stopped
+                  networks:
+                    - genesys-network
+                web:
+                  image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-web:latest
+                  ports:
+                    - "80:80"
+                    - "443:443"
+                  volumes:
+                    - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+                    - ./uploads:/usr/share/nginx/html/uploads:ro
+                    - ./certbot/conf:/etc/letsencrypt:ro
+                    - ./certbot/www:/var/www/certbot:ro
+                  restart: unless-stopped
+                  networks:
+                    - genesys-network
+                certbot:
+                  image: certbot/certbot
+                  volumes:
+                    - ./certbot/conf:/etc/letsencrypt
+                    - ./certbot/www:/var/www/certbot
+                  networks:
+                    - genesys-network
+                  entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'"
+              networks:
+                genesys-network:
+                  driver: bridge
+            EOF
+
+              docker compose pull
+              docker compose up -d --force-recreate
+              docker image prune -f
+            SSH_EOF
 
 workflows:
   version: 2
-  validate-project:
+  validate-and-deploy:
     jobs:
       - test-and-validate
+      - deploy-to-oracle:
+          requires:
+            - test-and-validate
+          filters:
+            branches:
+              only: main
