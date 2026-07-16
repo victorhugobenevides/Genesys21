@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.Table
 
 object ProductsTable : Table("products") {
     val id = varchar("id", 50)
-    val ownerId = varchar("owner_id", 100).index()
+    val ownerId = varchar("owner_id", 100).index("idx_products_owner_id")
     val name = varchar("name", 255)
     val price = double("price")
     val description = text("description").nullable()

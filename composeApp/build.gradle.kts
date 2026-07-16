@@ -71,6 +71,7 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.materialIconsExtended)
+            implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             api(projects.shared)
@@ -82,7 +83,7 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
-            // Removido implementation(libs.kotlinx.datetime) para evitar duplicidade IR
+            implementation(libs.kotlinx.datetime)
         }
 
         androidMain.dependencies {

@@ -61,7 +61,7 @@ fun LoginScreen(
                         state = state.copy(isLoading = false)
                         onLoginSuccess()
                     },
-                    onFailure = {
+                    onError = {
                         state = state.copy(isLoading = false, errorMessage = it)
                     },
                 )

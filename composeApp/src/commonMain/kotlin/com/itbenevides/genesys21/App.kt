@@ -24,18 +24,10 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.screens.SplashScreen
-import com.itbenevides.genesys21.presentation.screens.editor.DesignSystemShowcaseScreen
-import com.itbenevides.genesys21.presentation.screens.editor.EditorShowcaseScreen
-import com.itbenevides.genesys21.presentation.screens.editor.PageEditorScreen
-import com.itbenevides.genesys21.presentation.screens.editor.TemplateShowcaseScreen
+import com.itbenevides.genesys21.presentation.screens.editor.*
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.CartScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.CustomerOrderHistoryScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.OrderTrackingScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.ProductDetailsScreen
-import com.itbenevides.genesys21.presentation.screens.viewer.WhiteLabelScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import org.koin.compose.koinInject
 
@@ -60,6 +52,10 @@ fun App() {
                 currentActiveCustomTheme = currentRoute.page.customTheme
             }
             is Route.WhiteLabel -> {
+                currentActivePageTheme = currentRoute.page.theme
+                currentActiveCustomTheme = currentRoute.page.customTheme
+            }
+            is Route.ServiceBooking -> {
                 currentActivePageTheme = currentRoute.page.theme
                 currentActiveCustomTheme = currentRoute.page.customTheme
             }
@@ -139,6 +135,9 @@ fun App() {
                                 onEditProduct = { product, componentIndex ->
                                     router.navigateTo(Route.ProductEditor(editingPage, product, componentIndex))
                                 },
+                                onEditService = { service, componentIndex ->
+                                    router.navigateTo(Route.ServiceEditor(editingPage, service, componentIndex))
+                                }
                             )
                         }
                         is Route.PublicViewer ->
@@ -146,6 +145,70 @@ fun App() {
                                 page = route.page,
                                 router = router,
                                 onOpenDashboard = { router.navigateTo(Route.Login) },
+                            )
+                        is Route.ServiceBooking ->
+                            ServiceBookingScreen(
+                                service = route.service,
+                                page = route.page,
+                                router = router,
+                                viewModel = router.viewModel,
+                            )
+                        is Route.ServiceEditor ->
+                            ServiceEditorScreen(
+                                viewModel = router.viewModel,
+                                service = route.service,
+                                onSave = { updatedService ->
+                                    router.viewModel.saveBookingService(updatedService) {
+                                        val page = route.page
+                                        if (page != null) {
+                                            val updatedComponents = page.components.toMutableList()
+                                            val index = route.componentIndex ?: 0
+                                            val comp = updatedComponents.getOrNull(index) as? PageComponent.ServiceList
+                                            if (comp != null) {
+                                                val updatedServices = comp.services.toMutableList()
+                                                val sIndex = updatedServices.indexOfFirst { it.id == updatedService.id }
+                                                if (sIndex != -1) {
+                                                    updatedServices[sIndex] = updatedService
+                                                } else {
+                                                    updatedServices.add(0, updatedService)
+                                                }
+
+                                                updatedComponents[index] = comp.copy(services = updatedServices)
+                                                val updatedPage = page.copy(components = updatedComponents)
+                                                router.viewModel.saveDraft(updatedPage)
+                                                router.goBack()
+                                            } else {
+                                                router.goBack()
+                                            }
+                                        } else {
+                                            router.goBack()
+                                        }
+                                    }
+                                },
+                                onBack = { router.goBack() },
+                            )
+                        is Route.ServiceSelection ->
+                            ServiceSelectionScreen(
+                                viewModel = router.viewModel,
+                                selectedIds = route.selectedIds,
+                                onConfirm = { selectedIds ->
+                                    // Fetch objects for the selected IDs and update component
+                                    val allServices = router.viewModel.services.value
+                                    val selectedServices = allServices.filter { it.id in selectedIds }
+
+                                    val updatedComponents = route.page.components.toMutableList()
+                                    val comp = updatedComponents.getOrNull(route.componentIndex) as? PageComponent.ServiceList
+                                    if (comp != null) {
+                                        updatedComponents[route.componentIndex] = comp.copy(services = selectedServices)
+                                        val updatedPage = route.page.copy(components = updatedComponents)
+                                        router.viewModel.saveDraft(updatedPage)
+                                        router.goBack()
+                                    }
+                                },
+                                onBack = { router.goBack() },
+                                onAddNewService = {
+                                    router.navigateTo(Route.ServiceEditor(route.page, null, route.componentIndex))
+                                }
                             )
                         is Route.ProductDetails ->
                             ProductDetailsScreen(
@@ -181,10 +244,9 @@ fun App() {
                                 },
                             )
                         is Route.ProductEditor -> {
-                            // CORREÇÃO: Usa a lista global de nomes para o dropdown
                             val categoriesNames by router.viewModel.allAvailableCategories.collectAsState()
 
-                            com.itbenevides.genesys21.presentation.screens.editor.ProductEditorScreen(
+                            ProductEditorScreen(
                                 viewModel = router.viewModel,
                                 page = route.page,
                                 product = route.product,
@@ -204,13 +266,8 @@ fun App() {
 
                                         updatedComponents[index] = comp.copy(products = updatedProducts)
                                         val updatedPage = route.page.copy(components = updatedComponents)
-
-                                        // IMPORTANTE: Atualiza o rascunho local antes de voltar
                                         router.viewModel.saveDraft(updatedPage)
-
                                         router.goBack()
-                                        // Não usamos navigateTo WhiteLabel aqui para evitar loops de estado,
-                                        // o goBack + saveDraft cuidam de tudo.
                                     }
                                 },
                                 onBack = { router.goBack() },

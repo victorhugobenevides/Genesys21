@@ -15,4 +15,5 @@ enum class Screen {
     DesignSystemShowcase,
     EditorShowcase,
     TemplateShowcase,
+    ServiceBooking,
 }

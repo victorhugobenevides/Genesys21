@@ -12,14 +12,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.domain.model.BookingService
+import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
 import com.itbenevides.genesys21.ui.components.atoms.buttons.*
+import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysCalendarDay
+import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysTimeChip
 import com.itbenevides.genesys21.ui.components.atoms.images.*
 import com.itbenevides.genesys21.ui.components.atoms.indicators.*
 import com.itbenevides.genesys21.ui.components.atoms.inputs.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
+import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysTimePicker
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -28,6 +36,7 @@ import com.itbenevides.genesys21.ui.components.molecules.layout.GenesysSectionHe
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysPagerIndicator
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabData
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabRow
+import com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
@@ -35,6 +44,8 @@ import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.util.GenesysBrandPresets
 import com.itbenevides.genesys21.util.toColor
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -43,14 +54,16 @@ fun DesignSystemShowcaseScreen(
     onOpenEditorShowcase: () -> Unit,
     onOpenTemplateShowcase: () -> Unit,
 ) {
-    var isDarkMode by remember { mutableStateOf(false) }
+    var currentTheme by remember { mutableStateOf(PageThemeConfig.ROYAL) }
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showThemeMenu by remember { mutableStateOf(false) }
 
     val tabs =
         listOf(
             GenesysTabData("Atoms", GenesysIcons.Numbers),
             GenesysTabData("Molecules", GenesysIcons.Category),
             GenesysTabData("Organisms", GenesysIcons.GridView),
+            GenesysTabData("Booking", GenesysIcons.Web),
             GenesysTabData("Tools", GenesysIcons.Settings),
         )
 
@@ -66,7 +79,29 @@ fun DesignSystemShowcaseScreen(
             )
         }
 
-    AppTheme(themeConfig = if (isDarkMode) com.itbenevides.genesys21.domain.model.PageThemeConfig.DARK_MODE else com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL) {
+    val sampleServices =
+        remember {
+            listOf(
+                BookingService(
+                    id = "s1",
+                    name = "Consultoria de Design",
+                    description = "Uma hora de análise detalhada do seu projeto de design system.",
+                    price = 250.0,
+                    durationMinutes = 60,
+                    imageUrls = listOf("https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?q=80&w=800"),
+                ),
+                BookingService(
+                    id = "s2",
+                    name = "Workshop de KMP",
+                    description = "Aprenda a criar apps multiplataforma com as melhores práticas.",
+                    price = 450.0,
+                    durationMinutes = 120,
+                    imageUrls = listOf("https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=800"),
+                ),
+            )
+        }
+
+    AppTheme(themeConfig = currentTheme) {
         GenesysPage(
             topBar = {
                 Column {
@@ -74,10 +109,27 @@ fun DesignSystemShowcaseScreen(
                         title = "Genesys Design System",
                         onBack = onBack,
                         actions = {
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 8.dp)) {
-                                Text("Dark Mode", style = MaterialTheme.typography.labelMedium)
-                                Spacer(Modifier.width(8.dp))
-                                Switch(checked = isDarkMode, onCheckedChange = { isDarkMode = it })
+                            Box {
+                                GenesysTextButton(
+                                    text = "Tema: ${currentTheme.name}",
+                                    onClick = { showThemeMenu = true },
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                                DropdownMenu(
+                                    expanded = showThemeMenu,
+                                    onDismissRequest = { showThemeMenu = false },
+                                    modifier = Modifier.heightIn(max = 400.dp)
+                                ) {
+                                    PageThemeConfig.entries.forEach { theme ->
+                                        DropdownMenuItem(
+                                            text = { Text(theme.name) },
+                                            onClick = {
+                                                currentTheme = theme
+                                                showThemeMenu = false
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         },
                     )
@@ -97,10 +149,11 @@ fun DesignSystemShowcaseScreen(
                         .padding(horizontal = 24.dp),
             ) {
                 when (selectedTab) {
-                    0 -> AtomsShowcase(sampleProduct)
-                    1 -> MoleculesShowcase(sampleProduct)
-                    2 -> OrganismsShowcase(sampleProduct)
-                    3 -> ToolsShowcase(onOpenEditorShowcase, onOpenTemplateShowcase)
+                    0 -> AtomsShowcase()
+                    1 -> MoleculesShowcase()
+                    2 -> OrganismsShowcase(sampleProduct, sampleServices)
+                    3 -> BookingShowcase()
+                    4 -> ToolsShowcase(onOpenEditorShowcase, onOpenTemplateShowcase)
                 }
 
                 Spacer(Modifier.height(64.dp))
@@ -119,7 +172,7 @@ fun DesignSystemShowcaseScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AtomsShowcase(sampleProduct: Product) {
+private fun AtomsShowcase() {
     ShowcaseSection("Typography", "Semantic text styles across the system.") {
         GenesysText(text = "Headline Large (34sp)", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysText(text = "Title Medium (22sp)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
@@ -147,7 +200,12 @@ private fun AtomsShowcase(sampleProduct: Product) {
                 url = "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800",
                 size = 120.dp,
             )
-            Box(Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+            )
         }
     }
 
@@ -173,12 +231,30 @@ private fun AtomsShowcase(sampleProduct: Product) {
         }
         Spacer(Modifier.height(16.dp))
         var sliderVal by remember { mutableStateOf(20f) }
-        GenesysSlider(value = sliderVal, onValueChange = { sliderVal = it }, label = "Corner Radius: ${sliderVal.toInt()}dp", valueRange = 0f..40f)
+        GenesysSlider(
+            value = sliderVal,
+            onValueChange = { sliderVal = it },
+            label = "Corner Radius: ${sliderVal.toInt()}dp",
+            valueRange = 0f..40f,
+        )
+    }
+
+    ShowcaseSection("Calendar Atoms", "Building blocks for the Booking System.") {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            GenesysCalendarDay(day = 15, isSelected = true, isToday = false, isEnabled = true, onClick = {})
+            GenesysCalendarDay(day = 20, isSelected = false, isToday = true, isEnabled = true, onClick = {})
+            GenesysCalendarDay(day = 25, isSelected = false, isToday = false, isEnabled = false, onClick = {})
+        }
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            GenesysTimeChip(time = "09:00", isSelected = true, onClick = {})
+            GenesysTimeChip(time = "10:30", isSelected = false, onClick = {})
+        }
     }
 }
 
 @Composable
-private fun MoleculesShowcase(sampleProduct: Product) {
+private fun MoleculesShowcase() {
     ShowcaseSection("Buttons", "High-level interactive buttons.") {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             GenesysLoadingButton(text = "Submit Order", onClick = {}, icon = GenesysIcons.Check)
@@ -213,10 +289,23 @@ private fun MoleculesShowcase(sampleProduct: Product) {
             GenesysText(text = "Use the Genesys Card to group related information and actions.", style = GenesysTextStyle.Body)
         }
     }
+
+    ShowcaseSection("Calendar Molecules", "Date and time selection components.") {
+        GenesysDatePicker(
+            selectedDate = remember { kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date },
+            onDateSelected = {},
+        )
+        Spacer(Modifier.height(24.dp))
+        GenesysTimePicker(
+            availableSlots = listOf("08:00", "09:30", "11:00", "14:00", "16:30"),
+            selectedSlot = "11:00",
+            onSlotSelected = {},
+        )
+    }
 }
 
 @Composable
-private fun OrganismsShowcase(sampleProduct: Product) {
+private fun OrganismsShowcase(sampleProduct: Product, sampleServices: List<BookingService>) {
     ShowcaseSection("Product Collections", "Complex components managing multiple product molecules.") {
         GenesysSectionHeader(title = "Grid Layout", subtitle = "Responsive grid of product cards.")
         GenesysProductList(
@@ -237,6 +326,13 @@ private fun OrganismsShowcase(sampleProduct: Product) {
         )
     }
 
+    ShowcaseSection("Booking Collections", "Services and scheduling components.") {
+        PageComponentRenderer(
+            component = PageComponent.ServiceList(title = "Nossos Serviços Especiais"),
+            allServices = sampleServices,
+        )
+    }
+
     ShowcaseSection("Business Flows & Feedback", "Complex business logic components.") {
         GenesysTrackingTimeline(currentStatus = com.itbenevides.genesys21.domain.model.OrderStatus.PROCESSING)
         Spacer(Modifier.height(32.dp))
@@ -247,6 +343,18 @@ private fun OrganismsShowcase(sampleProduct: Product) {
             action = {
                 GenesysLoadingButton(text = "Clear Filters", onClick = {})
             },
+        )
+    }
+}
+
+@Composable
+private fun BookingShowcase() {
+    ShowcaseSection("Booking Engine", "The core scheduling logic for services.") {
+        GenesysBookingEngine(
+            selectedDateTime = null,
+            availableSlots = listOf("08:00", "10:00", "14:00", "16:00"),
+            onDateSelected = {},
+            onDateTimeSelected = {},
         )
     }
 }

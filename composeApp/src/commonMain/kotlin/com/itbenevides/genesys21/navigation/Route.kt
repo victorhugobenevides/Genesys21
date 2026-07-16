@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.navigation
 
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 
@@ -20,6 +21,10 @@ sealed class Route {
 
     data class ProductEditor(val page: Page, val product: Product? = null, val componentIndex: Int? = null) : Route()
 
+    data class ServiceEditor(val page: Page? = null, val service: BookingService? = null, val componentIndex: Int? = null) : Route()
+
+    data class ServiceSelection(val page: Page, val selectedIds: List<String>, val componentIndex: Int) : Route()
+
     data class Cart(val page: Page?) : Route()
 
     data class OrderTracking(val orderId: String) : Route()
@@ -31,4 +36,6 @@ sealed class Route {
     object EditorShowcase : Route()
 
     object TemplateShowcase : Route()
+
+    data class ServiceBooking(val service: BookingService, val page: Page) : Route()
 }

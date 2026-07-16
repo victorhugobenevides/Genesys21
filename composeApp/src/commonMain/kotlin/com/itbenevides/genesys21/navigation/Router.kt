@@ -82,12 +82,15 @@ class Router(val viewModel: PageViewModel) {
                 is Route.PublicViewer -> route.page.title
                 is Route.ProductDetails -> "Produto: ${route.product.name}"
                 is Route.ProductEditor -> "Editando Produto"
+                is Route.ServiceEditor -> "Editando Serviço"
+                is Route.ServiceSelection -> "Selecionar Serviços"
                 is Route.Cart -> "Meu Carrinho"
                 is Route.OrderTracking -> "Rastreio de Pedido"
                 is Route.CustomerOrderHistory -> "Meus Pedidos"
                 is Route.DesignSystemShowcase -> "Design System Showcase"
                 is Route.EditorShowcase -> "Editor Showcase"
                 is Route.TemplateShowcase -> "Catálogo de Templates"
+                is Route.ServiceBooking -> "Agendamento: ${route.service.name}"
             }
         AnalyticsManager.trackPageView(pageName)
     }
@@ -108,6 +111,8 @@ class Router(val viewModel: PageViewModel) {
                     Triple(pId, current.product.id, current.product.name)
                 }
                 is Route.ProductEditor -> Triple(current.page.id, current.product?.id, "Produto: ${current.product?.name ?: "Novo"}")
+                is Route.ServiceEditor -> Triple(current.page?.id, current.service?.id, "Serviço: ${current.service?.name ?: "Novo"}")
+                is Route.ServiceSelection -> Triple(current.page.id, null, "Selecionar Serviços")
                 is Route.OrderTracking -> Triple(null, null, "Pedido: ${current.orderId}")
                 is Route.CustomerOrderHistory -> Triple(current.page?.id, null, "Meus Pedidos")
                 is Route.Cart -> Triple(null, null, "Meu Carrinho")
@@ -116,7 +121,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.DesignSystemShowcase -> Triple(null, null, "Design System Showcase")
                 is Route.EditorShowcase -> Triple(null, null, "Editor Showcase")
                 is Route.TemplateShowcase -> Triple(null, null, "Catálogo de Templates")
-                else -> Triple(null, null, "Genesys21")
+                is Route.ServiceBooking -> Triple(current.page.id, current.service.id, "Agendar: ${current.service.name}")
             }
 
         val screen =
@@ -129,15 +134,17 @@ class Router(val viewModel: PageViewModel) {
                 is Route.PublicViewer -> Screen.PublicViewer
                 is Route.ProductDetails -> Screen.ProductDetails
                 is Route.ProductEditor -> Screen.ProductEditor
+                is Route.ServiceEditor -> Screen.ServiceBooking // Map to a general booking/service screen
+                is Route.ServiceSelection -> Screen.ServiceBooking
                 is Route.Cart -> Screen.Cart
                 is Route.OrderTracking -> Screen.OrderTracking
                 is Route.CustomerOrderHistory -> Screen.OrderHistory
                 Route.DesignSystemShowcase -> Screen.DesignSystemShowcase
                 Route.EditorShowcase -> Screen.EditorShowcase
                 Route.TemplateShowcase -> Screen.TemplateShowcase
+                is Route.ServiceBooking -> Screen.ServiceBooking
             }
 
-        // CORREÇÃO: Garante que o título nunca seja nulo ao sincronizar com o navegador
         syncUrlWithScreen(screen, pageId, productId, title ?: "Genesys21")
     }
 
@@ -148,7 +155,6 @@ class Router(val viewModel: PageViewModel) {
                 val urlPath = getInitialUrlPath() ?: "/"
                 val params = getUrlParams()
 
-                // T026: Rastreamento de UTMs
                 if (params.containsKey("utm_source")) {
                     AnalyticsManager.logEvent("traffic_source", params.mapValues { it.value as Any })
                 }
@@ -160,7 +166,7 @@ class Router(val viewModel: PageViewModel) {
                 val orderId = urlPath.extractId("/track/")
                 if (orderId != null) {
                     applyRouteState(Route.OrderTracking(orderId))
-                    forceSyncUrl() // Garante atualização do título no deep link
+                    forceSyncUrl()
                     return@launch
                 }
 

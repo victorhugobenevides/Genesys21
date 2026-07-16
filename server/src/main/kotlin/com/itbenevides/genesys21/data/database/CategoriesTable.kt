@@ -6,7 +6,7 @@ import org.jetbrains.exposed.dao.id.IntIdTable
  * Tabela dedicada para categorias, permitindo expansão futura (cores, ícones, etc).
  */
 object CategoriesTable : IntIdTable("categories") {
-    val ownerId = varchar("owner_id", 100).index() // Vincula a categoria ao lojista
+    val ownerId = varchar("owner_id", 100).index("idx_categories_owner_id") // Vincula a categoria ao lojista
     val name = varchar("name", 100)
     val icon = varchar("icon_name", 50).nullable()
     val color = varchar("color_hex", 10).nullable()

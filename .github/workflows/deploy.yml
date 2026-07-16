@@ -1,8 +1,8 @@
-name: Deploy to AWS EC2
+name: Deploy to Oracle Cloud (OCIR)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -78,10 +78,7 @@ jobs:
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
               <title>Genesys21</title>
-
-              <!-- Otimização: Preload do binário Wasm -->
               <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
-
               <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
               <script>
                   window.dataLayer = window.dataLayer || [];
@@ -105,27 +102,32 @@ jobs:
           </html>
           EOF
 
-      - name: Login to Docker Hub
+      - name: Login to Oracle Cloud Infrastructure Registry (OCIR)
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ${{ secrets.OCI_REGION }}.ocir.io
+          username: ${{ secrets.OCI_TENANCY_NAMESPACE }}/${{ secrets.OCI_USER }}
+          password: ${{ secrets.OCI_AUTH_TOKEN }}
 
-      - name: Build and Push Multi-arch Images
+      - name: Build and Push Multi-arch Images to OCIR
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest -f Dockerfile.server --push .
-          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest -f Dockerfile.web --push .
+          REGISTRY=${{ secrets.OCI_REGION }}.ocir.io/${{ secrets.OCI_TENANCY_NAMESPACE }}
+          docker buildx build --platform linux/amd64,linux/arm64 -t $REGISTRY/genesys-server:latest -f Dockerfile.server --push .
+          docker buildx build --platform linux/amd64,linux/arm64 -t $REGISTRY/genesys-web:latest -f Dockerfile.web --push .
 
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to Oracle Cloud via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
-            # Gerar Nginx de Produção com suporte a ambos os domínios
+            # Login no OCIR na instância para permitir o pull
+            echo "${{ secrets.OCI_AUTH_TOKEN }}" | docker login ${{ secrets.OCI_REGION }}.ocir.io -u "${{ secrets.OCI_TENANCY_NAMESPACE }}/${{ secrets.OCI_USER }}" --password-stdin
+
+            # Gerar Nginx de Produção
             cat <<EOF > nginx.prod.conf
             user  nginx;
             worker_processes  auto;
@@ -135,15 +137,9 @@ jobs:
                 types { application/wasm wasm; }
                 default_type application/octet-stream;
                 client_max_body_size 50M;
-
-                # Otimizações de Performance
                 gzip on;
                 gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
-                gzip_proxied any;
-                gzip_comp_level 6;
-                gzip_min_length 1000;
 
-                # REDIRECT HTTP -> HTTPS
                 server {
                     listen 80;
                     server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
@@ -151,40 +147,24 @@ jobs:
                     location / { return 301 https://\$host\$request_uri; }
                 }
 
-                # SERVIDOR HTTPS (UNIFICADO)
                 server {
                     listen 443 ssl;
                     server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
-
-                    # Usamos o caminho do certificado principal (Expandido)
                     ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
                     ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
-
-                    # SSL Hardening
                     ssl_protocols TLSv1.2 TLSv1.3;
-                    ssl_prefer_server_ciphers on;
-                    ssl_session_cache shared:SSL:10m;
 
                     root /usr/share/nginx/html;
                     index index.html;
-
-                    # Cache de Assets Estáticos
-                    location ~* \.(js|css|wasm|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|otf)$ {
-                        expires 30d;
-                        add_header Cache-Control "public, no-transform";
-                    }
 
                     location ^~ /api/ {
                         proxy_pass http://server:8080;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
-                        proxy_set_header X-Forwarded-Proto \$scheme;
                     }
 
                     location /uploads/ {
                         alias /usr/share/nginx/html/uploads/;
-                        expires 7d;
-                        add_header Cache-Control "public";
                         try_files \$uri @backend_fallback;
                     }
 
@@ -192,17 +172,17 @@ jobs:
 
                     location / {
                         try_files \$uri \$uri/ /index.html;
-                        add_header Cache-Control "no-store, no-cache, must-revalidate";
                     }
                 }
             }
             EOF
 
-            # Gerar Docker Compose com serviço Certbot incluso
+            # Gerar Docker Compose usando imagens do OCIR
+            REGISTRY=${{ secrets.OCI_REGION }}.ocir.io/${{ secrets.OCI_TENANCY_NAMESPACE }}
             cat <<EOF > docker-compose.yml
             services:
               server:
-                image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-server:latest
+                image: \$REGISTRY/genesys-server:latest
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
@@ -210,7 +190,7 @@ jobs:
                 networks:
                   - genesys-network
               web:
-                image: ${{ secrets.DOCKERHUB_USERNAME }}/genesys-web:latest
+                image: \$REGISTRY/genesys-web:latest
                 ports:
                   - "80:80"
                   - "443:443"

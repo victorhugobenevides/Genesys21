@@ -74,6 +74,13 @@ object DatabaseFactory {
                 CartItemsTable,
                 OrdersTable,
                 OrderItemsTable,
+                BookingServicesTable,
+                BookingServiceImagesTable,
+                MerchantAvailabilityTable,
+                WeeklyAvailabilityTable,
+                BlockedDatesTable,
+                AppointmentsTable,
+                AppointmentNotesTable,
             )
         }
     }

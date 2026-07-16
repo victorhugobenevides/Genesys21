@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.di.getBaseUrl
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
@@ -36,6 +37,7 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysSearchBar
@@ -45,19 +47,21 @@ import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.staggeredEntry
 import com.itbenevides.genesys21.util.AnalyticsManager
-import org.koin.compose.koinInject
-import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import kotlin.math.roundToLong
 
 @Composable
 fun PageComponentRenderer(
     component: PageComponent,
     onProductClick: ((Product) -> Unit)? = null,
+    onServiceClick: ((BookingService) -> Unit)? = null,
     filterQuery: String = "",
     onFilterQueryChange: (String) -> Unit = {},
     allAvailableCategories: List<String> = emptyList(),
     allProducts: List<Product> = emptyList(),
+    allServices: List<BookingService> = emptyList(),
     isEditMode: Boolean = false,
     onEditClick: (() -> Unit)? = null,
 ) {
@@ -136,6 +140,7 @@ fun PageComponentRenderer(
                 is PageComponent.Header -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
                 is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
                 is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
+                is PageComponent.ServiceList -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
                 else -> true
             }
         }
@@ -144,6 +149,23 @@ fun PageComponentRenderer(
 
     Box(modifier = Modifier.fillMaxWidth().animateContentSize()) {
         when (component) {
+            is PageComponent.ServiceList -> {
+                val servicesToDisplay =
+                    remember(component.services, allServices) {
+                        if (component.services.isEmpty()) allServices else component.services
+                    }
+                GenesysColumn(usePadding = true) {
+                    GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    servicesToDisplay.forEach { service ->
+                        ServiceCard(
+                            service = service,
+                            onClick = { onServiceClick?.invoke(service) },
+                        )
+                        GenesysSpacer(GenesysSpacing.Small)
+                    }
+                }
+            }
             is PageComponent.ProfileHeader -> {
                 val displayUrl =
                     remember(component.imageUrl, backendUrl) {

@@ -14,6 +14,49 @@ object DatabaseMigrator {
     fun Transaction.runFixes() {
         fixCustomDomainConstraint()
         fixResidualIndices()
+        fixAppointmentsTable()
+    }
+
+    private fun Transaction.fixAppointmentsTable() {
+        try {
+            val tableSql =
+                exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='appointments'") { rs ->
+                    if (rs.next()) rs.getString("sql") else ""
+                } ?: ""
+
+            if (tableSql.isNotBlank()) {
+                // Se a tabela tem a restrição de FK (BookingServicesTable), precisamos reconstruir
+                // para permitir agendamentos em serviços de templates que não estão no banco global.
+                // Agora verificamos de forma mais agressiva qualquer sinal de 'service_id' ou FK.
+                val hasStrictFK = tableSql.contains("REFERENCES", true) &&
+                                 (tableSql.contains("booking_services", true) ||
+                                  tableSql.contains("fk_appointments_service_id", true) ||
+                                  tableSql.contains("service_id", true))
+
+                if (hasStrictFK || !tableSql.contains("merchant_id", true) || !tableSql.contains("start_time_ms", true) || tableSql.contains("customer_notes", true)) {
+                    println("DatabaseMigrator: Reconstruindo tabela 'appointments' para o novo formato de notas (tabela separada)...")
+                    exec("DROP TABLE IF EXISTS appointment_notes") // Limpa notas antigas se houver
+                    exec("DROP TABLE IF EXISTS appointments_old")
+                    exec("ALTER TABLE appointments RENAME TO appointments_old")
+                    SchemaUtils.create(AppointmentsTable)
+                    SchemaUtils.create(AppointmentNotesTable)
+
+                    // Tenta migrar os dados básicos
+                    try {
+                        exec("""
+                            INSERT INTO appointments (id, service_id, customer_name, customer_phone, status, merchant_id, start_time_ms, end_time_ms)
+                            SELECT id, service_id, customer_name, customer_phone, status, 'admin', 0, 0 FROM appointments_old
+                        """.trimIndent())
+                    } catch (e: Exception) {
+                        println("DatabaseMigrator: Não foi possível migrar dados antigos de agendamentos.")
+                    }
+
+                    exec("DROP TABLE appointments_old")
+                }
+            }
+        } catch (e: Exception) {
+            println("DatabaseMigrator: Erro ao corrigir tabela 'appointments' - ${e.message}")
+        }
     }
 
     private fun Transaction.fixResidualIndices() {
@@ -23,6 +66,7 @@ object DatabaseMigrator {
             val residualIndices =
                 listOf(
                     "page_components_page_id",
+                    "pages_custom_domain",
                     "pages_custom_domain_unique",
                     "pages_owner_id",
                     "categories_owner_id",
@@ -64,7 +108,9 @@ object DatabaseMigrator {
             }
 
             // Remove índices residuais
+            exec("DROP INDEX IF EXISTS pages_custom_domain")
             exec("DROP INDEX IF EXISTS pages_custom_domain_unique")
+            exec("DROP INDEX IF EXISTS idx_pages_custom_domain")
         } catch (e: Exception) {
             println("DatabaseMigrator: Erro na migração de 'pages' - ${e.message}")
         }

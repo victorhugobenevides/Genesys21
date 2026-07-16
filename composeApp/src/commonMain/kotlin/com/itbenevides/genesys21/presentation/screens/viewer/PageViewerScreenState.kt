@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
@@ -25,6 +26,8 @@ sealed class PageViewerScreenEvent {
     data class OnFilterQueryChanged(val query: String) : PageViewerScreenEvent()
 
     data class OnProductClicked(val product: Product) : PageViewerScreenEvent()
+
+    data class OnServiceClicked(val service: BookingService) : PageViewerScreenEvent()
 
     object OnOpenCartClicked : PageViewerScreenEvent()
 

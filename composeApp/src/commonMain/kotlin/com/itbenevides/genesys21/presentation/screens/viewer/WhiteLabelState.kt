@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.domain.model.BookingService
 
 /**
  * UI State para a tela de Editor Administrativo (WhiteLabel).
@@ -34,6 +35,8 @@ sealed class WhiteLabelEvent {
     object OnBackClicked : WhiteLabelEvent()
 
     data class OnEditProductClicked(val product: Product?, val componentIndex: Int?) : WhiteLabelEvent()
+
+    data class OnEditServiceClicked(val service: BookingService?, val componentIndex: Int?) : WhiteLabelEvent()
 
     // UI Toggles
     data class OnShowCatalogChanged(val show: Boolean) : WhiteLabelEvent()

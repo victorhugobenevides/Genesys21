@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerContent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreenState
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
@@ -26,6 +28,7 @@ fun TemplateShowcaseScreen(
                 "Social Bio" to Page.profileTemplate("tpl_2", "Victor Benevides"),
                 "Blog Article" to Page.blogPostTemplate("tpl_3", "Building with KMP"),
                 "Default Store" to Page.defaultTemplate("tpl_4", "My Vintage Store"),
+                "Barber Shop" to Page.barberShopTemplate("tpl_5", "Classic Barbershop"),
             )
         }
 

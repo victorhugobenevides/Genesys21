@@ -24,4 +24,15 @@ val domainModule =
         single { GetCategoriesUseCase(get()) }
         single { SaveCategoryUseCase(get()) }
         single { DeleteCategoryUseCase(get()) }
+
+        // Booking Use Cases
+        single { GetBookingServicesUseCase(get()) }
+        single { SaveBookingServiceUseCase(get()) }
+        single { DeleteBookingServiceUseCase(get()) }
+        single { GetAvailabilityUseCase(get()) }
+        single { SaveAvailabilityUseCase(get()) }
+        single { GetAppointmentsUseCase(get()) }
+        single { CreateAppointmentUseCase(get()) }
+        single { UpdateAppointmentUseCase(get()) }
+        single { ValidateBookingSlotUseCase(get()) }
     }

@@ -17,7 +17,9 @@ class SqliteCartRepository {
             }
 
             // 2. Busca com tratamento de nulos para produtos de template
-            (CartItemsTable leftJoin ProductsTable leftJoin CategoriesTable)
+            CartItemsTable
+                .leftJoin(ProductsTable, { productId }, { id })
+                .leftJoin(CategoriesTable, { ProductsTable.categoryId }, { CategoriesTable.id })
                 .selectAll().where { CartItemsTable.userId eq userId }
                 .map { row ->
                     val productId = row[CartItemsTable.productId]

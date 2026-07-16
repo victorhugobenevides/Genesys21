@@ -1,26 +1,22 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.domain.model.Appointment
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysLazyColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -46,53 +42,24 @@ fun CustomerOrderHistoryScreen(
 ) {
     val viewModel: PageViewModel = koinViewModel()
     val orders by viewModel.customerOrders.collectAsState()
+    val appointments by viewModel.customerAppointments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
-    var state by remember { mutableStateOf(OrderHistoryState()) }
-
-    state =
-        state.copy(
-            orders = orders,
-            isLoading = isLoading,
-        )
 
     LaunchedEffect(Unit) {
         viewModel.loadCustomerOrders()
         AnalyticsManager.trackPageView(GenesysStrings.OrderHistoryTitle)
     }
 
-    val onEvent: (OrderHistoryEvent) -> Unit = { event ->
-        when (event) {
-            is OrderHistoryEvent.OnBackClicked -> onBack()
-            is OrderHistoryEvent.OnOrderClicked -> {
-                AnalyticsManager.logEvent("view_order_from_history", mapOf("order_id" to event.order.id))
-                onOrderClick(event.order)
-            }
-        }
-    }
-
-    OrderHistoryContent(state, onEvent)
-}
-
-@Composable
-private fun OrderHistoryContent(
-    state: OrderHistoryState,
-    onEvent: (OrderHistoryEvent) -> Unit,
-) {
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
                 title = GenesysStrings.OrderHistoryTitle,
-                onBack = { onEvent(OrderHistoryEvent.OnBackClicked) },
+                onBack = onBack,
             )
         },
     ) {
-        GenesysColumn(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = GenesysAlignment.Center,
-            usePadding = false,
-        ) {
-            if (state.orders.isEmpty() && !state.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            if (orders.isEmpty() && appointments.isEmpty() && !isLoading) {
                 GenesysEmptyState(
                     icon = GenesysIcons.ShoppingBag,
                     title = GenesysStrings.NoHistoryTitle,
@@ -100,20 +67,101 @@ private fun OrderHistoryContent(
                     action = {
                         GenesysLoadingButton(
                             text = GenesysStrings.Back,
-                            onClick = { onEvent(OrderHistoryEvent.OnBackClicked) },
+                            onClick = onBack,
                         )
                     },
                 )
             } else {
-                GenesysLazyColumn(
-                    items = state.orders,
-                    maxWidth = GenesysDimens.ContentMaxWidth,
-                ) { order ->
-                    HistoryOrderCard(
-                        order = order,
-                        onClick = { onEvent(OrderHistoryEvent.OnOrderClicked(order)) },
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().widthIn(max = GenesysDimens.ContentMaxWidth).padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (appointments.isNotEmpty()) {
+                        item {
+                            GenesysText(
+                                text = "Seus Agendamentos",
+                                style = GenesysTextStyle.Title,
+                                fontWeight = GenesysFontWeight.Bold
+                            )
+                        }
+                        items(appointments) { appointment ->
+                            HistoryAppointmentCard(appointment)
+                        }
+                    }
+
+                    if (orders.isNotEmpty()) {
+                        item {
+                            GenesysSpacer(GenesysSpacing.Large)
+                            GenesysText(
+                                text = "Seus Pedidos",
+                                style = GenesysTextStyle.Title,
+                                fontWeight = GenesysFontWeight.Bold
+                            )
+                        }
+                        items(orders) { order ->
+                            HistoryOrderCard(
+                                order = order,
+                                onClick = { onOrderClick(order) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryAppointmentCard(appointment: Appointment) {
+    val startTime = appointment.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
+    val dateStr = "${startTime.dayOfMonth.toString().padStart(2, '0')}/${startTime.monthNumber.toString().padStart(2, '0')}/${startTime.year}"
+    val timeStr = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')}"
+
+    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+        GenesysColumn(usePadding = true) {
+            GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                GenesysWeightBox(1f) {
+                    GenesysColumn(usePadding = false) {
+                        GenesysText(
+                            text = "Agendamento: $dateStr às $timeStr",
+                            fontWeight = GenesysFontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        GenesysText(
+                            text = "Status: ${appointment.status.name}",
+                            style = GenesysTextStyle.Label,
+                        )
+                    }
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = when (appointment.status.name) {
+                        "CONFIRMED" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                        "CANCELLED" -> Color(0xFFF44336).copy(alpha = 0.1f)
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    }
+                ) {
+                    Text(
+                        appointment.status.name,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall
                     )
-                    GenesysSpacer(GenesysSpacing.Medium)
+                }
+            }
+
+            // Show public notes
+            val publicNotes = appointment.notes.filter { !it.isPrivate }
+            if (publicNotes.isNotEmpty()) {
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysDivider()
+                GenesysSpacer(GenesysSpacing.Small)
+                publicNotes.forEach { note ->
+                    GenesysText(
+                        text = "${note.authorName}: ${note.content}",
+                        style = GenesysTextStyle.Label,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -129,7 +177,8 @@ private fun HistoryOrderCard(
         remember(order.createdAt) {
             val instant = Instant.fromEpochMilliseconds(order.createdAt)
             val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-            "${dt.dayOfMonth.toString().padStart(2, '0')}/${dt.monthNumber.toString().padStart(2, '0')}/${dt.year}"
+            val month = dt.monthNumber
+            "${dt.dayOfMonth.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${dt.year}"
         }
 
     GenesysCard(
@@ -143,7 +192,7 @@ private fun HistoryOrderCard(
                         GenesysText(
                             text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}",
                             fontWeight = GenesysFontWeight.ExtraBold,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                         GenesysText(
                             text = dateText,
@@ -170,7 +219,7 @@ private fun HistoryOrderCard(
                     text = "${GenesysStrings.PricePrefix}$totalFormatted",
                     style = GenesysTextStyle.Title,
                     fontWeight = GenesysFontWeight.ExtraBold,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

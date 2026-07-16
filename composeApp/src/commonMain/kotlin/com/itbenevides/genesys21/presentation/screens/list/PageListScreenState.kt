@@ -1,13 +1,17 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
+import com.itbenevides.genesys21.domain.model.Appointment
+import com.itbenevides.genesys21.domain.model.MerchantAvailability
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.model.Page
+import kotlinx.datetime.LocalDate
 
 enum class PageTemplateType {
     PROFESSIONAL_VITRINE,
     BIO_PROFILE,
     BLOG_POST,
+    BARBER_SHOP,
     PRO_DESIGN,
     EMPTY,
 }
@@ -18,11 +22,14 @@ enum class PageTemplateType {
 data class PageListState(
     val pages: List<Page> = emptyList(),
     val orders: List<Order> = emptyList(),
+    val appointments: List<Appointment> = emptyList(),
+    val availability: MerchantAvailability? = null,
     val isLoading: Boolean = false,
     val selectedTab: Int = 0,
     val pendingOrdersCount: Int = 0,
     val searchQuery: String = "",
     val selectedStatusFilter: OrderStatus? = null,
+    val selectedDate: LocalDate? = null,
     val showCreateDialog: Boolean = false,
     val showGlobalSettings: Boolean = false,
     val showRenameDialog: Boolean = false,
@@ -39,6 +46,8 @@ sealed class PageListEvent {
     data class OnSearchQueryChanged(val query: String) : PageListEvent()
 
     data class OnStatusFilterSelected(val status: OrderStatus?) : PageListEvent()
+
+    data class OnDateSelected(val date: LocalDate) : PageListEvent()
 
     object OnCreatePageClicked : PageListEvent()
 

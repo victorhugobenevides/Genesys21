@@ -35,11 +35,9 @@ fun CategoryManagementDialog(
 
     fun handleSave() {
         if (editingCategory != null && editingCategory!!.name.isNotBlank()) {
-            viewModel.saveCategory(editingCategory!!)
-            editingCategory = null
+            viewModel.saveCategory(editingCategory!!) { editingCategory = null }
         } else if (newCategoryName.isNotBlank()) {
-            viewModel.saveCategory(Category(ownerId = "", name = newCategoryName))
-            newCategoryName = ""
+            viewModel.saveCategory(Category(ownerId = "", name = newCategoryName)) { newCategoryName = "" }
         }
     }
 

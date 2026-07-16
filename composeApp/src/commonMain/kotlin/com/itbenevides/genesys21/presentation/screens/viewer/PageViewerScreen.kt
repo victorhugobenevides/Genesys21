@@ -39,6 +39,10 @@ fun PageViewerScreen(
                 AnalyticsManager.logEvent("product_view", mapOf("product_id" to event.product.id))
                 router.navigateTo(Route.ProductDetails(event.product, fromRoute = Route.PublicViewer(page)))
             }
+            is PageViewerScreenEvent.OnServiceClicked -> {
+                AnalyticsManager.logEvent("service_view", mapOf("service_id" to event.service.id))
+                router.navigateTo(Route.ServiceBooking(event.service, page))
+            }
             is PageViewerScreenEvent.OnShareClicked -> {
                 val url = "${getWebBaseUrl()}/page/${state.page.id}"
                 ShareManagerInstance.shareLink(
@@ -112,6 +116,7 @@ fun PageViewerContent(
                     PageComponentRenderer(
                         component = component,
                         onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
+                        onServiceClick = { onEvent(PageViewerScreenEvent.OnServiceClicked(it)) },
                         filterQuery = currentFilterQuery,
                         onFilterQueryChange = { onEvent(PageViewerScreenEvent.OnFilterQueryChanged(it)) },
                     )

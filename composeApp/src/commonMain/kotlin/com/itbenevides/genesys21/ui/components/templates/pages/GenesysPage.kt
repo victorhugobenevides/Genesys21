@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun GenesysPage(
     topBar: @Composable () -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
@@ -22,6 +23,7 @@ fun GenesysPage(
 
     Scaffold(
         topBar = topBar,
+        bottomBar = bottomBar,
         floatingActionButton = floatingActionButton,
         containerColor = MaterialTheme.colorScheme.background,
         content = { padding ->

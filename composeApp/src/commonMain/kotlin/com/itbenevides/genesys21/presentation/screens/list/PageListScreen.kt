@@ -19,10 +19,12 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.getWebBaseUrl
+import com.itbenevides.genesys21.navigation.Route
+import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
@@ -31,6 +33,7 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
@@ -46,6 +49,7 @@ import com.itbenevides.genesys21.util.rememberFileHandler
 import kotlin.math.roundToLong
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.koin.compose.koinInject
 
 @Composable
 fun PageListScreen(
@@ -60,6 +64,7 @@ fun PageListScreen(
     val orders by viewModel.orders.collectAsState()
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val uriHandler = LocalUriHandler.current
+    val router: Router = koinInject()
 
     var state by remember { mutableStateOf(PageListState()) }
 
@@ -74,6 +79,7 @@ fun PageListScreen(
     LaunchedEffect(Unit) {
         viewModel.loadPages()
         viewModel.loadOrders()
+        viewModel.loadBookingServices()
     }
 
     val onEvent: (PageListEvent) -> Unit = { event ->
@@ -81,6 +87,7 @@ fun PageListScreen(
             is PageListEvent.OnTabSelected -> state = state.copy(selectedTab = event.index)
             is PageListEvent.OnSearchQueryChanged -> state = state.copy(searchQuery = event.query)
             is PageListEvent.OnStatusFilterSelected -> state = state.copy(selectedStatusFilter = event.status)
+            is PageListEvent.OnDateSelected -> state = state.copy(selectedDate = event.date)
             is PageListEvent.OnCreatePageClicked -> state = state.copy(showCreateDialog = true)
             is PageListEvent.OnDismissCreateDialog -> state = state.copy(showCreateDialog = false, newPageTitle = "")
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
@@ -91,6 +98,7 @@ fun PageListScreen(
                         PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
+                        PageTemplateType.BARBER_SHOP -> Page.barberShopTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.PRO_DESIGN -> Page.proDesignTemplate(id, state.newPageTitle.trim())
                         PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
                     }
@@ -172,6 +180,7 @@ fun PageListScreen(
 
     PageListContent(
         state = state,
+        viewModel = viewModel,
         onEvent = onEvent,
         onViewPage = onViewPage,
         onEditPage = onEditPage,
@@ -182,12 +191,16 @@ fun PageListScreen(
             uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
         },
         onShowcase = onShowcase,
+        onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
+        onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
+        onDeleteService = { viewModel.deleteBookingService(it) }
     )
 }
 
 @Composable
 private fun PageListContent(
     state: PageListState,
+    viewModel: PageViewModel,
     onEvent: (PageListEvent) -> Unit,
     onViewPage: (Page) -> Unit,
     onEditPage: (Page) -> Unit,
@@ -195,7 +208,12 @@ private fun PageListContent(
     onExportAll: () -> Unit,
     onContactCustomer: (String, String, String) -> Unit,
     onShowcase: () -> Unit,
+    onAddService: () -> Unit,
+    onEditService: (BookingService) -> Unit,
+    onDeleteService: (String) -> Unit,
 ) {
+    val services by viewModel.services.collectAsState()
+
     GenesysPage(
         topBar = {
             GenesysColumn(usePadding = false, modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
@@ -217,6 +235,8 @@ private fun PageListContent(
                         listOf(
                             GenesysTabData(GenesysStrings.VitrineTab, GenesysIcons.Web),
                             GenesysTabData(GenesysStrings.OrdersTab, GenesysIcons.List, badgeCount = state.pendingOrdersCount),
+                            GenesysTabData("Agenda", GenesysIcons.Schedule),
+                            GenesysTabData("Serviços", GenesysIcons.Inventory),
                         ),
                     onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(index)) },
                 )
@@ -231,10 +251,11 @@ private fun PageListContent(
             ) {
                 item {
                     GenesysColumn(modifier = Modifier.widthIn(max = 1200.dp), usePadding = false) {
-                        if (state.selectedTab == 0) {
-                            PagesTabUI(state, onEvent, onViewPage, onEditPage)
-                        } else {
-                            OrdersHeaderUI(state, onEvent)
+                        when (state.selectedTab) {
+                            0 -> PagesTabUI(state, onEvent, onViewPage, onEditPage)
+                            1 -> OrdersHeaderUI(state, onEvent)
+                            2 -> MerchantAgendaTabUI(state, viewModel, onEvent)
+                            3 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
                         }
                     }
                 }
@@ -332,6 +353,66 @@ private fun PagesTabUI(
                     onDelete = { onEvent(PageListEvent.OnDeletePageClicked(page.id)) },
                 )
                 GenesysSpacer(GenesysSpacing.Medium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServicesTabUI(
+    services: List<BookingService>,
+    onAddService: () -> Unit,
+    onEditService: (BookingService) -> Unit,
+    onDeleteService: (String) -> Unit,
+) {
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+        GenesysSpacer(GenesysSpacing.Large)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                GenesysText(text = "Catálogo de Serviços", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+                GenesysText(
+                    text = "Gerencie os serviços oferecidos em suas vitrines.",
+                    style = GenesysTextStyle.Body,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            GenesysLoadingButton(
+                text = "Novo Serviço",
+                icon = GenesysIcons.Add,
+                onClick = onAddService
+            )
+        }
+        GenesysSpacer(GenesysSpacing.Large)
+
+        if (services.isEmpty()) {
+            GenesysEmptyState(
+                icon = GenesysIcons.Inventory,
+                title = "Nenhum serviço cadastrado",
+                description = "Comece adicionando o primeiro serviço do seu negócio.",
+                action = {
+                    GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
+                }
+            )
+        } else {
+            services.forEach { service ->
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    ServiceCard(
+                        service = service,
+                        onClick = { onEditService(service) }
+                    )
+                    Row(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                        GenesysIconButton(
+                            icon = GenesysIcons.Delete,
+                            tint = Color.Red.copy(alpha = 0.6f),
+                            onClick = { onDeleteService(service.id) }
+                        )
+                    }
+                }
+                GenesysSpacer(GenesysSpacing.Small)
             }
         }
     }
@@ -438,7 +519,7 @@ private fun PageItemRow(
 
 @Composable
 private fun OrderCardUI(
-    order: Order,
+    order: com.itbenevides.genesys21.domain.model.Order,
     onStatusUpdate: (OrderStatus) -> Unit,
     onContact: () -> Unit,
 ) {
@@ -584,6 +665,10 @@ private fun CreatePageDialog(
                 GenesysLoadingButton(text = "Criar Post de Blog", onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.List)
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysLoadingButton(text = "Criar Página de Barbearia 💈", onClick = {
+                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BARBER_SHOP))
+                }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Schedule, containerColor = Color(0xFF5D4037))
                 GenesysSpacer(GenesysSpacing.Small)
                 GenesysLoadingButton(text = "Criar Vitrine Design PRO 💎", onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PRO_DESIGN))

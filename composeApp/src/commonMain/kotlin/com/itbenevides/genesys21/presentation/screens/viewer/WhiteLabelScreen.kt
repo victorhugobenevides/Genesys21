@@ -1,35 +1,24 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.BrandingEffects
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.*
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysFab
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.atoms.indicators.*
-import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.molecules.feedback.*
 import com.itbenevides.genesys21.ui.components.organisms.feedback.*
-import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
@@ -41,6 +30,7 @@ fun WhiteLabelScreen(
     onPageChange: (Page) -> Unit,
     onBack: () -> Unit,
     onEditProduct: (Product?, Int?) -> Unit,
+    onEditService: (BookingService?, Int?) -> Unit,
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val serverProducts by viewModel.allAvailableProducts.collectAsState()
@@ -128,13 +118,14 @@ fun WhiteLabelScreen(
                 onPageChange(event.newPage)
             }
             is WhiteLabelEvent.OnPublishClicked -> {
-                viewModel.savePage(state.page, true) {
+                viewModel.savePage(state.page, isDraft = false) {
                     viewModel.clearDraft(state.page.id)
                     onBack()
                 }
             }
             is WhiteLabelEvent.OnBackClicked -> onBack()
             is WhiteLabelEvent.OnEditProductClicked -> onEditProduct(event.product, event.componentIndex)
+            is WhiteLabelEvent.OnEditServiceClicked -> onEditService(event.service, event.componentIndex)
             is WhiteLabelEvent.OnShowCatalogChanged -> state = state.copy(showCatalog = event.show)
             is WhiteLabelEvent.OnShowThemeSelectorChanged -> state = state.copy(showThemeSelector = event.show)
             is WhiteLabelEvent.OnShowPageSettingsChanged -> state = state.copy(showPageSettings = event.show)
@@ -256,282 +247,15 @@ fun WhiteLabelScreen(
                 },
             )
         }
-    }
-}
 
-@Composable
-private fun WhiteLabelContent(
-    state: WhiteLabelState,
-    viewModel: PageViewModel,
-    onEvent: (WhiteLabelEvent) -> Unit,
-    originalPage: Page,
-    displayCategories: List<String>,
-    allProducts: List<Product>,
-    onManageCategories: () -> Unit,
-    onPickImage: () -> Unit,
-    onDiscardClicked: () -> Unit,
-) {
-    GenesysPage(
-        topBar = {
-            GenesysTopAppBar(
-                title = state.page.title,
-                onBack = { onEvent(WhiteLabelEvent.OnBackClicked) },
-                actions = {
-                    GenesysIconButton(
-                        icon = GenesysIcons.Palette,
-                        contentDescription = GenesysStrings.EditorThemes,
-                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) },
-                    )
-
-                    GenesysIconButton(
-                        icon = GenesysIcons.Magic,
-                        contentDescription = "Theme Lab",
-                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true)) },
-                    )
-
-                    if (state.page != originalPage) {
-                        GenesysIconButton(
-                            icon = GenesysIcons.Delete,
-                            contentDescription = GenesysStrings.DiscardDraft,
-                            tint = MaterialTheme.colorScheme.error,
-                            onClick = onDiscardClicked,
-                        )
-                    }
-
-                    GenesysLoadingButton(
-                        text = GenesysStrings.Publish,
-                        onClick = { onEvent(WhiteLabelEvent.OnPublishClicked) },
-                        isLoading = state.isLoading,
-                    )
-                },
-            )
-        },
-        floatingActionButton = {
-            if (!state.isLoading) {
-                GenesysFab(
-                    icon = GenesysIcons.Add,
-                    contentDescription = GenesysStrings.AddBlockAction,
-                    onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) },
-                )
-            }
-        },
-    ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 1000.dp
-
-            if (state.isLoading) {
-                GenesysLoadingOverlay()
-            } else {
-                GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
-                    GenesysWeightBox(if (isWideScreen) 0.65f else 1f) {
-                        GenesysColumn(
-                            maxWidth = GenesysDimens.ViewerMaxWidth,
-                            horizontalAlignment = GenesysAlignment.Center,
-                            usePadding = false,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            if (state.page.components.isEmpty()) {
-                                GenesysEmptyState(
-                                    icon = GenesysIcons.Magic,
-                                    title = GenesysStrings.EmptyEditorTitle,
-                                    description = GenesysStrings.EmptyEditorDescription,
-                                    action = {
-                                        GenesysLoadingButton(
-                                            text = GenesysStrings.AddBlockAction,
-                                            onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) },
-                                        )
-                                    },
-                                )
-                            } else {
-                                GenesysLazyColumnIndexed(
-                                    items = state.page.components,
-                                    maxWidth = GenesysDimens.ViewerMaxWidth,
-                                    usePadding = true,
-                                    // Reduzido para celulares
-                                    spacing = GenesysSpacing.Medium,
-                                    key = { _, component -> component.hashCode() },
-                                ) { index, component ->
-                                    val isEditing = state.editingComponentIndex == index
-                                    ComponentWrapperUI(component, index, isEditing, displayCategories, allProducts, onEvent)
-                                }
-                            }
-                        }
-                    }
-
-                    if (isWideScreen) {
-                        GenesysWeightBox(0.35f) {
-                            GenesysCard(
-                                modifier = Modifier.fillMaxHeight().padding(16.dp),
-                                elevation = GenesysDimens.ElevationMedium,
-                            ) {
-                                state.editingComponentIndex?.let { index ->
-                                    ComponentEditorUI(
-                                        state = state,
-                                        viewModel = viewModel,
-                                        index = index,
-                                        onEvent = onEvent,
-                                        isEmbedded = true,
-                                        originalPage = originalPage,
-                                        onManageCategories = onManageCategories,
-                                        onPickImage = onPickImage,
-                                    )
-                                } ?: run {
-                                    GenesysEmptyState(
-                                        icon = GenesysIcons.Edit,
-                                        title = GenesysStrings.SelectBlockToEdit,
-                                        description = GenesysStrings.SelectBlockToEditDesc,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!isWideScreen) {
-                state.editingComponentIndex?.let { index ->
-                    GenesysBottomSheet(
-                        onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
-                        title = GenesysStrings.BlockSettings,
-                    ) {
-                        ComponentEditorUI(
-                            state = state,
-                            viewModel = viewModel,
-                            index = index,
-                            onEvent = onEvent,
-                            isEmbedded = false,
-                            originalPage = originalPage,
-                            onManageCategories = onManageCategories,
-                            onPickImage = onPickImage,
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    if (state.showPageSettings) PageSettingsUI(state, onEvent)
-    if (state.showCatalog) ComponentCatalogUI(state, onEvent)
-}
-
-@Composable
-private fun ComponentWrapperUI(
-    component: PageComponent,
-    index: Int,
-    isEditing: Boolean,
-    allCategories: List<String>,
-    allProducts: List<Product>,
-    onEvent: (WhiteLabelEvent) -> Unit,
-) {
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (isEditing) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
-                    } else {
-                        Modifier
-                    },
-                )
-                // Reduzido para mobile
-                .padding(2.dp)
-                .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
-    ) {
-        PageComponentRenderer(
-            component = component,
-            isEditMode = true,
-            onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
-            allAvailableCategories = allCategories,
-            allProducts = allProducts,
-            onProductClick = { product ->
-                onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
-            },
-        )
-
-        // SEMPRE VISÍVEL: Controles de Gerenciamento (Mover e Excluir)
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val isMobile = maxWidth < 400.dp
-
-            Surface(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopStart)
-                        .padding(if (isMobile) 4.dp else 8.dp),
-                shape = CircleShape,
-                color = if (isEditing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                tonalElevation = 6.dp,
-            ) {
-                Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
-                    GenesysIconButton(
-                        icon = GenesysIcons.ArrowUp,
-                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier,
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.ArrowDown,
-                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier,
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.Delete,
-                        onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) },
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = if (isMobile) Modifier.size(32.dp) else Modifier,
-                    )
-                }
-            }
+        if (state.showCatalog) {
+            ComponentCatalogUI(state, ::onEvent)
         }
     }
 }
 
 @Composable
-private fun PageSettingsUI(
-    state: WhiteLabelState,
-    onEvent: (WhiteLabelEvent) -> Unit,
-) {
-    var title by remember { mutableStateOf(state.page.title) }
-    var whatsapp by remember { mutableStateOf(state.page.whatsapp ?: "") }
-
-    GenesysBottomSheet(
-        onDismiss = { onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false)) },
-        title = "Configurações da Página",
-    ) {
-        GenesysColumn(usePadding = true) {
-            GenesysTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = "Título da Página",
-                icon = GenesysIcons.Web,
-            )
-
-            GenesysSpacer(GenesysSpacing.Medium)
-
-            GenesysTextField(
-                value = whatsapp,
-                onValueChange = { whatsapp = it },
-                label = "WhatsApp de Contato",
-                icon = GenesysIcons.WhatsApp,
-            )
-
-            GenesysSpacer(GenesysSpacing.Large)
-
-            GenesysLoadingButton(
-                text = "Salvar Configurações",
-                onClick = {
-                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(title = title, whatsapp = whatsapp.ifBlank { null })))
-                    onEvent(WhiteLabelEvent.OnShowPageSettingsChanged(false))
-                },
-                fillWidth = true,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ComponentCatalogUI(
+fun ComponentCatalogUI(
     state: WhiteLabelState,
     onEvent: (WhiteLabelEvent) -> Unit,
 ) {
@@ -554,6 +278,7 @@ private fun ComponentCatalogUI(
                     CatalogItem("Links Sociais", GenesysIcons.Share) { PageComponent.SocialLinks() },
                     CatalogItem("Carrinho", GenesysIcons.ShoppingBag) { PageComponent.CartComponent() },
                     CatalogItem("Rastreio", GenesysIcons.List) { PageComponent.OrderTrackingComponent() },
+                    CatalogItem("Lista de Serviços", GenesysIcons.Schedule) { PageComponent.ServiceList() },
                 )
 
             catalogItems.chunked(2).forEach { rowItems ->

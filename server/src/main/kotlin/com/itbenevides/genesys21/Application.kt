@@ -5,14 +5,9 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
-import com.itbenevides.genesys21.data.repository.SqliteCartRepository
-import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
-import com.itbenevides.genesys21.data.repository.SqlitePageRepository
+import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.routes.cartRoutes
-import com.itbenevides.genesys21.routes.categoryRoutes
-import com.itbenevides.genesys21.routes.orderRoutes
-import com.itbenevides.genesys21.routes.pageRoutes
+import com.itbenevides.genesys21.routes.*
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
@@ -46,7 +41,6 @@ fun main() {
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
 
-    // CORREÇÃO: Usar banco em memória se estiver em ambiente de teste
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     if (isTesting) {
         DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared")
@@ -57,8 +51,8 @@ fun Application.module() {
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
     val orderRepository = SqliteOrderRepository()
+    val bookingRepository = SqliteBookingRepository()
 
-    // CORREÇÃO: Usar pasta de uploads relativa em ambiente local/teste
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
@@ -70,7 +64,6 @@ fun Application.module() {
         }
     }
 
-    // Otimização: Compressão Gzip agressiva para reduzir transferência de dados (JS/JSON)
     install(Compression) {
         gzip { priority = 1.0 }
         deflate {
@@ -121,7 +114,6 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
-        // Otimização: Cache agressivo para imagens de upload (30 dias)
         get("/uploads/{filename...}") {
             val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
             val file = File(uploadDir, filename)
@@ -133,7 +125,6 @@ fun Application.module() {
             }
         }
 
-        // Rota para Metadados Dinâmicos (SEO/Compartilhamento) com Redirecionamento
         get("/p/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = pageRepository.getPublicPage(id).getOrNull()
@@ -141,7 +132,6 @@ fun Application.module() {
             val title = page?.title ?: "Página não encontrada"
             val siteName = "Social Bio"
 
-            // T022: Extração dinâmica de Bio e Imagem
             val description =
                 page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.bio
                     ?: page?.components?.filterIsInstance<PageComponent.Text>()?.firstOrNull()?.content
@@ -152,7 +142,6 @@ fun Application.module() {
                     ?: page?.components?.filterIsInstance<PageComponent.Image>()?.firstOrNull()?.url
                     ?: ""
 
-            // Resolve URL absoluta para imagem
             val ogImage =
                 if (rawImage.startsWith("/uploads/")) {
                     val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
@@ -199,7 +188,6 @@ fun Application.module() {
             call.respondText(html, ContentType.Text.Html)
         }
 
-        // T023: Sitemap Automático
         get("/sitemap.xml") {
             val ids = pageRepository.getAllPublicPageIds().getOrDefault(emptyList())
             val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
@@ -226,6 +214,7 @@ fun Application.module() {
             cartRoutes(cartRepository)
             orderRoutes(orderRepository)
             categoryRoutes(pageRepository)
+            bookingRoutes(bookingRepository)
 
             authenticate("firebase") {
                 post("/upload") {
@@ -245,16 +234,14 @@ fun Application.module() {
                         val file = File(uploadDir, fileName)
 
                         try {
-                            // Otimização: Redimensionar e comprimir imagem (max 1200px)
                             val outputStream = ByteArrayOutputStream()
                             Thumbnails.of(ByteArrayInputStream(fileBytes))
                                 .size(1200, 1200)
-                                .outputFormat("jpg") // WebP seria melhor mas requer bibliotecas nativas extras
+                                .outputFormat("jpg")
                                 .outputQuality(0.8)
                                 .toOutputStream(outputStream)
                             file.writeBytes(outputStream.toByteArray())
                         } catch (e: Exception) {
-                            // Se falhar a compressão (ex: formato não suportado), salva o original
                             file.writeBytes(fileBytes!!)
                         }
 

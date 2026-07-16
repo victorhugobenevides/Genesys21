@@ -1,13 +1,11 @@
 package com.itbenevides.genesys21.presentation
 
-import com.itbenevides.genesys21.domain.model.CartItem
-import com.itbenevides.genesys21.domain.model.Order
-import com.itbenevides.genesys21.domain.model.OrderStatus
-import com.itbenevides.genesys21.domain.repository.CartRepository
-import com.itbenevides.genesys21.domain.repository.CustomerRepository
+import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.repository.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.datetime.LocalDate
 
 class FakeCartRepository : CartRepository {
     private val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
@@ -63,7 +61,7 @@ class FakeCustomerRepository : CustomerRepository {
     override suspend fun loadName() {}
 }
 
-class FakeOrderRepository : com.itbenevides.genesys21.domain.repository.OrderRepository {
+class FakeOrderRepository : OrderRepository {
     override fun getOrders(token: String) = flowOf(emptyList<Order>())
 
     override suspend fun createOrder(order: Order) = Result.success(Unit)
@@ -77,4 +75,27 @@ class FakeOrderRepository : com.itbenevides.genesys21.domain.repository.OrderRep
         orderId: String,
         status: OrderStatus,
     ) = Result.success(Unit)
+}
+
+class FakeBookingRepository : BookingRepository {
+    private var servicesList = mutableListOf<BookingService>()
+    private val appointmentsList = mutableListOf<Appointment>()
+    private var merchantAvailability: MerchantAvailability? = null
+
+    override suspend fun getServices(): List<BookingService> = servicesList
+    override suspend fun getServiceById(id: String): BookingService? = servicesList.find { it.id == id }
+    override suspend fun saveService(service: BookingService) {
+        servicesList.add(service)
+    }
+    override suspend fun deleteService(id: String) {
+        servicesList.removeAll { it.id == id }
+    }
+    override suspend fun getAvailability(merchantId: String): MerchantAvailability? = merchantAvailability
+    override suspend fun saveAvailability(availability: MerchantAvailability) {
+        this.merchantAvailability = availability
+    }
+    override suspend fun getAppointments(serviceId: String, date: LocalDate): List<Appointment> = appointmentsList
+    override suspend fun createAppointment(appointment: Appointment) {
+        appointmentsList.add(appointment)
+    }
 }

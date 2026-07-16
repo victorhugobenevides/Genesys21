@@ -204,6 +204,19 @@ sealed class PageComponent {
         override val destinationUrl: String? = null,
     ) : PageComponent()
 
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ServiceList")
+    data class ServiceList(
+        val services: List<BookingService> = emptyList(),
+        val title: String = "Nossos Serviços",
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = true,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
     companion object
 }
 
@@ -407,6 +420,98 @@ data class Page(
                             isHorizontal = true,
                         ),
                         PageComponent.SocialLinks(instagram = "https://instagram.com"),
+                    ),
+            )
+        }
+
+        fun barberShopTemplate(
+            id: String,
+            title: String,
+        ): Page {
+            val demoServices =
+                listOf(
+                    BookingService(
+                        id = "bs_1",
+                        name = "Corte de Cabelo",
+                        description = "Corte degradê ou social, finalizado na tesoura e máquina.",
+                        price = 45.0,
+                        durationMinutes = 40,
+                        imageUrls = listOf("https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=800"),
+                    ),
+                    BookingService(
+                        id = "bs_2",
+                        name = "Barba Completa",
+                        description = "Toalha quente, óleo para barba e alinhamento com navalha.",
+                        price = 35.0,
+                        durationMinutes = 30,
+                        imageUrls = listOf("https://images.unsplash.com/photo-1621605815841-aa887ad58b74?q=80&w=800"),
+                    ),
+                    BookingService(
+                        id = "bs_3",
+                        name = "Combo Corte + Barba",
+                        description = "O trato completo para o homem moderno.",
+                        price = 70.0,
+                        durationMinutes = 60,
+                        imageUrls = listOf("https://images.unsplash.com/photo-1599351431247-f579338ae045?q=80&w=800"),
+                    ),
+                )
+
+            val demoProducts =
+                listOf(
+                    Product(
+                        id = "bp_1",
+                        name = "Pomada Efeito Matte",
+                        price = 55.0,
+                        imageUrls = listOf("https://images.unsplash.com/photo-1590159357421-2e67605d398f?q=80&w=800"),
+                        categoryName = "Finalizadores",
+                        stock = 10,
+                    ),
+                    Product(
+                        id = "bp_2",
+                        name = "Óleo para Barba 30ml",
+                        price = 42.0,
+                        imageUrls = listOf("https://images.unsplash.com/photo-1626285495547-f7e853758b15?q=80&w=800"),
+                        categoryName = "Cuidado com Barba",
+                        stock = 5,
+                    ),
+                )
+
+            return Page(
+                id = id,
+                title = if (title.isBlank()) "Barbearia Genesys" else title,
+                theme = PageThemeConfig.ROYAL,
+                components =
+                    listOf(
+                        PageComponent.Header(
+                            title = if (title.isBlank()) "Barbearia Clássica" else title,
+                            textAlign = "CENTER",
+                            fontSize = 32,
+                        ),
+                        PageComponent.Image(
+                            url = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1200",
+                            isFullWidth = true,
+                            isRounded = true,
+                        ),
+                        PageComponent.Text(
+                            content = "Estilo, tradição e excelência. O melhor corte da região com o conforto que você merece.",
+                            textAlign = "CENTER",
+                        ),
+                        PageComponent.Header(title = "Nossos Serviços", fontSize = 24),
+                        PageComponent.ServiceList(
+                            services = demoServices,
+                            title = "Agende seu horário",
+                            customLabel = "Serviços de Barbearia",
+                        ),
+                        PageComponent.Header(title = "Produtos Premium", fontSize = 24),
+                        PageComponent.ProductList(
+                            products = demoProducts,
+                            isHorizontal = true,
+                            customLabel = "Cuidados em Casa",
+                        ),
+                        PageComponent.SocialLinks(
+                            instagram = "https://instagram.com",
+                            whatsapp = "https://wa.me/5500000000000",
+                        ),
                     ),
             )
         }

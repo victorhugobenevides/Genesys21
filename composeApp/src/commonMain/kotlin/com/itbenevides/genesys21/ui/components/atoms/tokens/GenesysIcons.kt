@@ -65,4 +65,6 @@ object GenesysIcons {
     val AlignCenter = Icons.Default.FormatAlignCenter
     val AlignRight = Icons.AutoMirrored.Filled.FormatAlignRight
     val Bold = Icons.Default.FormatBold
+    val Schedule = Icons.Default.Schedule
+    val History = Icons.Default.History
 }
