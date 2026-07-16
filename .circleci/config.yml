@@ -133,14 +133,14 @@ jobs:
       - run:
           name: SSH Deploy to Oracle Cloud
           command: |
-            ssh -o StrictHostKeyChecking=no ${OCI_USERNAME}@${OCI_HOST} \<< 'SSH_EOF'
+            ssh -o StrictHostKeyChecking=no ${OCI_USERNAME}@${OCI_HOST} << SSH_EOF
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
               echo "${OCI_AUTH_TOKEN}" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
               # Gerar Nginx de Produção
-              cat \<<EOF > nginx.prod.conf
+              cat <<EOF > nginx.prod.conf
               user  nginx;
               worker_processes  auto;
               events { worker_connections  1024; }
@@ -190,7 +190,7 @@ jobs:
             EOF
 
               # Gerar Docker Compose
-              cat \<<EOF > docker-compose.yml
+              cat <<EOF > docker-compose.yml
               services:
                 server:
                   image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest
