@@ -15,6 +15,16 @@ object DatabaseMigrator {
         fixCustomDomainConstraint()
         fixResidualIndices()
         fixAppointmentsTable()
+        fixUsersTable()
+    }
+
+    private fun Transaction.fixUsersTable() {
+        try {
+            // Garante que o victorkoto@gmail.com seja SUPERADMIN se existir
+            exec("UPDATE users SET role = 'SUPERADMIN' WHERE email = 'victorkoto@gmail.com'")
+        } catch (e: Exception) {
+            // Ignora se a tabela ainda não existir
+        }
     }
 
     private fun Transaction.fixAppointmentsTable() {

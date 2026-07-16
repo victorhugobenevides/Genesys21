@@ -10,8 +10,15 @@ external fun firebaseSignIn(
     pass: String,
 ): Promise<JsString>
 
+@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
+@JsFun("() => window.firebaseSignInGoogle()")
+external fun firebaseSignInGoogle(): Promise<JsString>
+
 @JsFun("() => window.firebaseGetToken()")
 external fun firebaseGetToken(): Promise<JsString?>
+
+@JsFun("() => window.firebaseGetUserId()")
+external fun firebaseGetUserId(): Promise<JsString?>
 
 @JsFun("() => window.firebaseSignOut()")
 external fun firebaseSignOut(): Promise<JsAny?>
@@ -31,6 +38,23 @@ class WasmAuthRepository : AuthRepository {
         }
     }
 
+    override suspend fun signIn(
+        idToken: String,
+        accessToken: String?,
+        provider: String,
+    ): Result<String?> {
+        return try {
+            if (provider == "google") {
+                val token = firebaseSignInGoogle().await().toString()
+                Result.success(token)
+            } else {
+                Result.success(idToken)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getCurrentUserToken(): String? {
         return try {
             val token = firebaseGetToken().await()?.toString()
@@ -38,6 +62,14 @@ class WasmAuthRepository : AuthRepository {
             token
         } catch (e: Exception) {
             println("WASM: Erro ao buscar token -> \${e.message}")
+            null
+        }
+    }
+
+    override suspend fun getCurrentUserId(): String? {
+        return try {
+            firebaseGetUserId().await()?.toString()
+        } catch (e: Exception) {
             null
         }
     }

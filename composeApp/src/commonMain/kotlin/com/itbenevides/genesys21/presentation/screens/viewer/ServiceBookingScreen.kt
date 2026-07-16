@@ -33,6 +33,7 @@ fun ServiceBookingScreen(
 ) {
     var selectedDateTime by remember { mutableStateOf<LocalDateTime?>(null) }
     val isLoading by viewModel.isLoading.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val customerName by viewModel.customerName.collectAsState()
     val customerPhone by viewModel.customerPhone.collectAsState()
     var customerNotes by remember { mutableStateOf("") }
@@ -42,6 +43,7 @@ fun ServiceBookingScreen(
     var slotLoading by remember { mutableStateOf(false) }
 
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var showLoginDialog by remember { mutableStateOf(false) }
 
     // Logic to load available slots when date changes
     val updateAvailableSlots = { date: LocalDate ->
@@ -148,35 +150,39 @@ fun ServiceBookingScreen(
                 GenesysLoadingButton(
                     text = if (!canConfirm) "Preencha todos os dados" else "Confirmar Agendamento",
                     onClick = {
-                        selectedDateTime?.let { dt ->
-                            val startInstant = dt.toInstant(TimeZone.currentSystemDefault())
-                            val endInstant = startInstant.plus(service.durationMinutes.minutes)
+                        if (!isLoggedIn) {
+                            showLoginDialog = true
+                        } else {
+                            selectedDateTime?.let { dt ->
+                                val startInstant = dt.toInstant(TimeZone.currentSystemDefault())
+                                val endInstant = startInstant.plus(service.durationMinutes.minutes)
 
-                            val appointment = Appointment(
-                                id = "", // Server will generate
-                                serviceId = service.id,
-                                merchantId = page.ownerId ?: "admin",
-                                customerName = customerName,
-                                customerPhone = customerPhone,
-                                startTime = startInstant,
-                                endTime = endInstant,
-                                notes = if (customerNotes.isNotBlank()) {
-                                    listOf(
-                                        BookingNote(
-                                            content = customerNotes,
-                                            createdAt = kotlin.time.Clock.System.now().toEpochMilliseconds(),
-                                            authorName = customerName,
-                                            isPrivate = false
+                                val appointment = Appointment(
+                                    id = "", // Server will generate
+                                    serviceId = service.id,
+                                    merchantId = page.ownerId ?: "admin",
+                                    customerName = customerName,
+                                    customerPhone = customerPhone,
+                                    startTime = startInstant,
+                                    endTime = endInstant,
+                                    notes = if (customerNotes.isNotBlank()) {
+                                        listOf(
+                                            BookingNote(
+                                                content = customerNotes,
+                                                createdAt = kotlin.time.Clock.System.now().toEpochMilliseconds(),
+                                                authorName = customerName,
+                                                isPrivate = false
+                                            )
                                         )
-                                    )
-                                } else emptyList()
-                            )
+                                    } else emptyList()
+                                )
 
-                            viewModel.createAppointment(
-                                merchantId = page.ownerId ?: "admin",
-                                appointment = appointment
-                            ) {
-                                showSuccessDialog = true
+                                viewModel.createAppointment(
+                                    merchantId = page.ownerId ?: "admin",
+                                    appointment = appointment
+                                ) {
+                                    showSuccessDialog = true
+                                }
                             }
                         }
                     },
@@ -185,6 +191,22 @@ fun ServiceBookingScreen(
                     fillWidth = true,
                 )
             }
+        }
+    }
+
+    if (showLoginDialog) {
+        com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog(
+            onDismissRequest = { showLoginDialog = false },
+            title = "Acesse sua conta",
+            confirmButton = {}
+        ) {
+            com.itbenevides.genesys21.presentation.screens.login.LoginScreen(
+                viewModel = viewModel,
+                onLoginSuccess = {
+                    showLoginDialog = false
+                    // Trigger confirm again or directly
+                }
+            )
         }
     }
 

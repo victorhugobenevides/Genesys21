@@ -52,7 +52,7 @@ jobs:
           # Gerar ponte Firebase
           cat <<EOF > deploy/web/firebase-bridge.js
           import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-          import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+          import { getAuth, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
           const firebaseConfig = {
               apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
               authDomain: "genesys21-32035.firebaseapp.com",
@@ -66,7 +66,13 @@ jobs:
               const userCredential = await signInWithEmailAndPassword(auth, email, pass);
               return await userCredential.user.getIdToken();
           };
+          window.firebaseSignInGoogle = async () => {
+              const provider = new GoogleAuthProvider();
+              const result = await signInWithPopup(auth, provider);
+              return await result.user.getIdToken();
+          };
           window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
+          window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
           window.firebaseSignOut = async () => await signOut(auth);
           EOF
 

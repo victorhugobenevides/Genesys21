@@ -47,9 +47,11 @@ fun CartScreen(
     val customerName by viewModel.customerName.collectAsState()
     val customerPhone by viewModel.customerPhone.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val backendUrl = remember { getBaseUrl() }
 
     var state by remember { mutableStateOf(CartScreenState()) }
+    var showLoginDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(customerName, customerPhone) {
         state =
@@ -82,9 +84,13 @@ fun CartScreen(
             is CartScreenEvent.OnCustomerNameChanged -> viewModel.saveCustomerName(event.name)
             is CartScreenEvent.OnCustomerPhoneChanged -> viewModel.saveCustomerPhone(event.phone)
             is CartScreenEvent.OnCheckoutClicked -> {
-                AnalyticsManager.trackInitiateCheckout(state.total)
-                viewModel.submitOrder(page, state.customerPhone) { orderId ->
-                    onOrderSubmitted(orderId)
+                if (!isLoggedIn) {
+                    showLoginDialog = true
+                } else {
+                    AnalyticsManager.trackInitiateCheckout(state.total)
+                    viewModel.submitOrder(page, state.customerPhone) { orderId ->
+                        onOrderSubmitted(orderId)
+                    }
                 }
             }
             is CartScreenEvent.OnBackClicked -> onBack()
@@ -92,6 +98,23 @@ fun CartScreen(
     }
 
     CartContent(state, backendUrl, onEvent)
+
+    if (showLoginDialog) {
+        // Simple Login Dialog for Customers
+        com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog(
+            onDismissRequest = { showLoginDialog = false },
+            title = "Acesse sua conta",
+            confirmButton = {} // Login logic in content
+        ) {
+            com.itbenevides.genesys21.presentation.screens.login.LoginScreen(
+                viewModel = viewModel,
+                onLoginSuccess = {
+                    showLoginDialog = false
+                    onEvent(CartScreenEvent.OnCheckoutClicked)
+                }
+            )
+        }
+    }
 }
 
 @Composable

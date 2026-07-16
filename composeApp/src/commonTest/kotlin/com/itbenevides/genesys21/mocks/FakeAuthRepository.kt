@@ -17,6 +17,18 @@ class FakeAuthRepository : AuthRepository {
         }
     }
 
+    override suspend fun signIn(
+        idToken: String,
+        accessToken: String?,
+        provider: String,
+    ): Result<String?> {
+        return if (shouldReturnError) {
+            Result.failure(Exception("Login falhou"))
+        } else {
+            Result.success(mockToken)
+        }
+    }
+
     override suspend fun getCurrentUserToken(): String? = mockToken
 
     fun setToken(token: String?) {

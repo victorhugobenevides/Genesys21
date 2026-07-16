@@ -52,6 +52,7 @@ fun Application.module() {
     val cartRepository = SqliteCartRepository()
     val orderRepository = SqliteOrderRepository()
     val bookingRepository = SqliteBookingRepository()
+    val userRepository = SqliteUserRepository()
 
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
@@ -210,6 +211,8 @@ fun Application.module() {
         get("/") { call.respondText("API Online") }
 
         route("/api") {
+            userRoutes(userRepository)
+            adminRoutes(userRepository)
             pageRoutes(pageRepository)
             cartRoutes(cartRepository)
             orderRoutes(orderRepository)

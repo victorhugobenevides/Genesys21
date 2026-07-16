@@ -64,6 +64,7 @@ object DatabaseFactory {
             // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
             @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
+                UsersTable,
                 CategoriesTable,
                 PagesTable,
                 PageComponentsTable,

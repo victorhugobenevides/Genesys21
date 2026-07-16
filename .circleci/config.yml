@@ -85,7 +85,13 @@ jobs:
                 const userCredential = await signInWithEmailAndPassword(auth, email, pass);
                 return await userCredential.user.getIdToken();
             };
+            window.firebaseSignInGoogle = async () => {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                return await result.user.getIdToken();
+            };
             window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
             window.firebaseSignOut = async () => await signOut(auth);
             EOF
 

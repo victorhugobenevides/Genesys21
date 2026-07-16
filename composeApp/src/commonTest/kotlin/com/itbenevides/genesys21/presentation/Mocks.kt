@@ -121,3 +121,27 @@ class FakeBookingRepository : BookingRepository {
         return appointmentsList.filter { it.customerPhone == phone }
     }
 }
+
+class FakeUserRepository : UserRepository {
+    private val users = mutableListOf<UserProfile>()
+
+    override suspend fun getUserProfile(id: String): Result<UserProfile> {
+        return users.find { it.id == id }?.let { Result.success(it) }
+            ?: Result.failure(Exception("Not found"))
+    }
+
+    override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> {
+        users.add(profile)
+        return Result.success(Unit)
+    }
+
+    override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = Result.success(users)
+
+    override suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> {
+        return Result.success(Unit)
+    }
+}

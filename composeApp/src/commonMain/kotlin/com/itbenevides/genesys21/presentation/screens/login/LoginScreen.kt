@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.components.auth.GoogleSignInButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
@@ -66,16 +67,21 @@ fun LoginScreen(
                     },
                 )
             }
+            is LoginEvent.OnError -> {
+                state = state.copy(isLoading = false, errorMessage = event.message)
+            }
         }
     }
 
-    LoginContent(state, onEvent)
+    LoginContent(state, onEvent, viewModel, onLoginSuccess)
 }
 
 @Composable
 private fun LoginContent(
     state: LoginState,
     onEvent: (LoginEvent) -> Unit,
+    viewModel: PageViewModel,
+    onLoginSuccess: () -> Unit,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "icon")
     val iconScale by infiniteTransition.animateFloat(
@@ -170,6 +176,26 @@ private fun LoginContent(
                                 isLoading = state.isLoading,
                                 enabled = state.canLogin,
                                 icon = GenesysIcons.Check,
+                            )
+
+                            GenesysSpacer(GenesysSpacing.Medium)
+
+                            GenesysText(text = "OU", style = GenesysTextStyle.Label)
+
+                            GenesysSpacer(GenesysSpacing.Medium)
+
+                            GoogleSignInButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onTokenReceived = { idToken, accessToken ->
+                                    viewModel.signInWithToken(
+                                        idToken = idToken,
+                                        accessToken = accessToken,
+                                        provider = "google",
+                                        onSuccess = onLoginSuccess,
+                                        onError = { onEvent(LoginEvent.OnError(it)) }
+                                    )
+                                },
+                                onError = { onEvent(LoginEvent.OnError(it)) }
                             )
 
                             if (state.errorMessage.isNotEmpty()) {

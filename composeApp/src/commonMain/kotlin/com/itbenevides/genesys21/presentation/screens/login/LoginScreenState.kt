@@ -20,4 +20,6 @@ sealed class LoginEvent {
     data class OnPasswordChanged(val password: String) : LoginEvent()
 
     object OnLoginClicked : LoginEvent()
+
+    data class OnError(val message: String) : LoginEvent()
 }

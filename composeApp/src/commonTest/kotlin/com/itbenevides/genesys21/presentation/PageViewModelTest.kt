@@ -22,6 +22,7 @@ class PageViewModelTest {
     private lateinit var fakeCustomerRepository: FakeCustomerRepository
     private lateinit var fakeOrderRepository: FakeOrderRepository
     private lateinit var fakeBookingRepository: FakeBookingRepository
+    private lateinit var fakeUserRepository: FakeUserRepository
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -36,6 +37,7 @@ class PageViewModelTest {
         fakeCustomerRepository = FakeCustomerRepository()
         fakeOrderRepository = FakeOrderRepository()
         fakeBookingRepository = FakeBookingRepository()
+        fakeUserRepository = FakeUserRepository()
 
         viewModel =
             PageViewModel(
@@ -67,6 +69,11 @@ class PageViewModelTest {
                 validateBookingSlotUseCase = ValidateBookingSlotUseCase(fakeBookingRepository),
                 getAvailabilityUseCase = GetAvailabilityUseCase(fakeBookingRepository),
                 saveAvailabilityUseCase = SaveAvailabilityUseCase(fakeBookingRepository),
+                getUserProfileUseCase = GetUserProfileUseCase(fakeUserRepository),
+                saveUserProfileUseCase = SaveUserProfileUseCase(fakeUserRepository),
+                getAllUsersUseCase = GetAllUsersUseCase(fakeUserRepository),
+                updateUserRoleUseCase = UpdateUserRoleUseCase(fakeUserRepository),
+                updateUserStatusUseCase = UpdateUserStatusUseCase(fakeUserRepository)
             )
     }
 

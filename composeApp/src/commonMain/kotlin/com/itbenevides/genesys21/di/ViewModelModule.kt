@@ -14,13 +14,14 @@ val viewModelModule =
         // PageViewModel como SINGLE para compartilhar o estado do carrinho e dados entre todas as telas
         single {
             PageViewModel(
-                get(), get(), get(), get(), get(), get(), get(),
-                get(), get(), get(), get(), get(),
-                get(), get(), get(), get(),
-                get(), get(), get(),
-                get(), get(), get(),
-                get(), get(), get(),
-                get(), get(), get(),
+                get(), get(), get(), get(), get(), get(), get(), // 7
+                get(), get(), get(), get(), get(), // 5
+                get(), get(), get(), get(), // 4
+                get(), get(), get(), // 3
+                get(), get(), get(), // 3
+                get(), get(), get(), // 3
+                get(), get(), get(), // 3
+                get(), get(), get(), get(), get() // 5
             )
         }
 

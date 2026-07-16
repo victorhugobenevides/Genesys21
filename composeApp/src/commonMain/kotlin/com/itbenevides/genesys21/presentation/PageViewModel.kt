@@ -49,9 +49,22 @@ class PageViewModel(
     private val validateBookingSlotUseCase: ValidateBookingSlotUseCase,
     private val getAvailabilityUseCase: GetAvailabilityUseCase,
     private val saveAvailabilityUseCase: SaveAvailabilityUseCase,
+    private val getUserProfileUseCase: GetUserProfileUseCase,
+    private val saveUserProfileUseCase: SaveUserProfileUseCase,
+    private val getAllUsersUseCase: GetAllUsersUseCase,
+    private val updateUserRoleUseCase: UpdateUserRoleUseCase,
+    private val updateUserStatusUseCase: UpdateUserStatusUseCase,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
+
+    private val _userProfile = MutableStateFlow<UserProfile?>(null)
+    val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
+
+    val isLoggedIn = _userProfile.map { it != null }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val _allUsers = MutableStateFlow<List<UserProfile>>(emptyList())
+    val allUsers: StateFlow<List<UserProfile>> = _allUsers.asStateFlow()
 
     private val _orders = MutableStateFlow<List<Order>>(emptyList())
     val orders: StateFlow<List<Order>> = _orders.asStateFlow()
@@ -93,6 +106,10 @@ class PageViewModel(
         viewModelScope.launch {
             customerRepository.loadData()
             cartRepository.loadInitialCart()
+
+            authRepository.getCurrentUserId()?.let { uid ->
+                loadUserProfile(uid)
+            }
         }
     }
 
@@ -631,8 +648,69 @@ class PageViewModel(
         return null // Should be handled by suspend calls
     }
 
+    fun loadUserProfile(userId: String) {
+        viewModelScope.launch {
+            getUserProfileUseCase(userId).onSuccess {
+                _userProfile.value = it
+            }
+        }
+    }
+
+    fun loadAllUsers() {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            _isLoading.value = true
+            getAllUsersUseCase(token).onSuccess {
+                _allUsers.value = it
+            }.onFailure {
+                handleError("Erro ao carregar usuários", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun updateUserRole(userId: String, role: UserRole) {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            _isLoading.value = true
+            updateUserRoleUseCase(token, userId, role).onSuccess {
+                loadAllUsers()
+            }.onFailure {
+                handleError("Erro ao atualizar cargo", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
     fun signIn(
+        email: String,
+        password: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                authRepository.signIn(email, password).onSuccess { token ->
+                    val userId = authRepository.getCurrentUserId()
+                    if (userId != null) {
+                        loadUserProfile(userId)
+                    }
+                    onSuccess()
+                }.onFailure {
+                    onError(it.message ?: "Erro desconhecido")
+                }
+            } catch (e: Exception) {
+                onError(e.message ?: "Erro desconhecido")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun signInWithToken(
         idToken: String,
+        accessToken: String?,
         provider: String,
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
@@ -640,7 +718,11 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                authRepository.signIn(idToken, provider).onSuccess { _ ->
+                authRepository.signIn(idToken, accessToken, provider).onSuccess { token ->
+                    val userId = authRepository.getCurrentUserId()
+                    if (userId != null) {
+                        loadUserProfile(userId)
+                    }
                     onSuccess()
                 }.onFailure {
                     onError(it.message ?: "Erro desconhecido")

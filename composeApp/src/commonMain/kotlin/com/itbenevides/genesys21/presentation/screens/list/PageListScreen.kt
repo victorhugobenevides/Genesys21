@@ -43,6 +43,8 @@ import com.itbenevides.genesys21.ui.components.molecules.navigation.*
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
+import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.downloadFile
 import com.itbenevides.genesys21.util.rememberFileHandler
@@ -213,6 +215,8 @@ private fun PageListContent(
     onDeleteService: (String) -> Unit,
 ) {
     val services by viewModel.services.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsState()
+    val isSuperAdmin = userProfile?.role == UserRole.SUPERADMIN
 
     GenesysPage(
         topBar = {
@@ -229,15 +233,20 @@ private fun PageListContent(
                     },
                 )
 
+                val tabs = mutableListOf(
+                    GenesysTabData(GenesysStrings.VitrineTab, GenesysIcons.Web),
+                    GenesysTabData(GenesysStrings.OrdersTab, GenesysIcons.List, badgeCount = state.pendingOrdersCount),
+                    GenesysTabData("Agenda", GenesysIcons.Schedule),
+                    GenesysTabData("Serviços", GenesysIcons.Inventory),
+                )
+
+                if (isSuperAdmin) {
+                    tabs.add(GenesysTabData("SuperAdmin", GenesysIcons.AdminPanelSettings))
+                }
+
                 GenesysTabRow(
                     selectedTabIndex = state.selectedTab,
-                    tabs =
-                        listOf(
-                            GenesysTabData(GenesysStrings.VitrineTab, GenesysIcons.Web),
-                            GenesysTabData(GenesysStrings.OrdersTab, GenesysIcons.List, badgeCount = state.pendingOrdersCount),
-                            GenesysTabData("Agenda", GenesysIcons.Schedule),
-                            GenesysTabData("Serviços", GenesysIcons.Inventory),
-                        ),
+                    tabs = tabs,
                     onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(index)) },
                 )
             }
@@ -256,6 +265,7 @@ private fun PageListContent(
                             1 -> OrdersHeaderUI(state, onEvent)
                             2 -> MerchantAgendaTabUI(state, viewModel, onEvent)
                             3 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
+                            4 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
                         }
                     }
                 }

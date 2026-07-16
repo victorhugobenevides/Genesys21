@@ -40,6 +40,7 @@ object GenesysIcons {
     val ArrowDown = Icons.Default.ArrowDownward
     val Check = Icons.Default.Check
     val Dashboard = Icons.Default.Dashboard
+    val AdminPanelSettings = Icons.Default.AdminPanelSettings
     val CloudUpload = Icons.Default.CloudUpload
     val ArrowDropDown = Icons.Default.ArrowDropDown
     val Magic = Icons.Default.AutoAwesome
