@@ -31,6 +31,8 @@ sealed class Route {
 
     data class CustomerOrderHistory(val page: Page?) : Route()
 
+    object Profile : Route()
+
     object DesignSystemShowcase : Route()
 
     object EditorShowcase : Route()

@@ -87,6 +87,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Cart -> "Meu Carrinho"
                 is Route.OrderTracking -> "Rastreio de Pedido"
                 is Route.CustomerOrderHistory -> "Meus Pedidos"
+                is Route.Profile -> "Meu Perfil"
                 is Route.DesignSystemShowcase -> "Design System Showcase"
                 is Route.EditorShowcase -> "Editor Showcase"
                 is Route.TemplateShowcase -> "Catálogo de Templates"
@@ -119,6 +120,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Login -> Triple(null, null, "Entrar - Genesys21")
                 is Route.PageList -> Triple(null, null, "Administração")
                 is Route.DesignSystemShowcase -> Triple(null, null, "Design System Showcase")
+                is Route.Profile -> Triple(null, null, "Meu Perfil")
                 is Route.EditorShowcase -> Triple(null, null, "Editor Showcase")
                 is Route.TemplateShowcase -> Triple(null, null, "Catálogo de Templates")
                 is Route.ServiceBooking -> Triple(current.page.id, current.service.id, "Agendar: ${current.service.name}")
@@ -139,6 +141,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Cart -> Screen.Cart
                 is Route.OrderTracking -> Screen.OrderTracking
                 is Route.CustomerOrderHistory -> Screen.OrderHistory
+                Route.Profile -> Screen.Profile
                 Route.DesignSystemShowcase -> Screen.DesignSystemShowcase
                 Route.EditorShowcase -> Screen.EditorShowcase
                 Route.TemplateShowcase -> Screen.TemplateShowcase

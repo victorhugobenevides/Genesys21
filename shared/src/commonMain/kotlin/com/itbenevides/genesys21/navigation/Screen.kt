@@ -12,6 +12,7 @@ enum class Screen {
     Cart,
     OrderTracking,
     OrderHistory,
+    Profile,
     DesignSystemShowcase,
     EditorShowcase,
     TemplateShowcase,

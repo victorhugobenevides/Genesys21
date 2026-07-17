@@ -53,7 +53,7 @@ fun PageViewerScreen(
             }
             is PageViewerScreenEvent.OnOpenAdminSettingsClicked -> onOpenDashboard()
             is PageViewerScreenEvent.OnOpenCartClicked -> router.navigateTo(Route.Cart(state.page))
-            is PageViewerScreenEvent.OnOpenHistoryClicked -> router.navigateTo(Route.CustomerOrderHistory(state.page))
+            is PageViewerScreenEvent.OnOpenHistoryClicked -> router.navigateTo(Route.Profile)
             is PageViewerScreenEvent.OnFilterQueryChanged -> {
                 currentFilterQuery = event.query
             }

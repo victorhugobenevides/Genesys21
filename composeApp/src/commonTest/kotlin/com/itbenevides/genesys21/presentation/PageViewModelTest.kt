@@ -9,8 +9,8 @@ import kotlin.test.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import kotlin.time.Clock.System.now
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {
@@ -144,7 +144,7 @@ class PageViewModelTest {
     @Test
     fun `createAppointment should add appointment when slot is valid`() =
         runTest {
-            val now = Clock.System.now()
+            val currentNow = now()
             val appointment =
                 Appointment(
                     id = "a1",
@@ -152,8 +152,8 @@ class PageViewModelTest {
                     merchantId = "m1",
                     customerName = "Victor",
                     customerPhone = "99999999",
-                    startTime = now,
-                    endTime = now,
+                    startTime = currentNow,
+                    endTime = currentNow,
                 )
 
             var success = false
@@ -169,11 +169,11 @@ class PageViewModelTest {
     @Test
     fun `createAppointment should fail when slot is overlapping`() =
         runTest {
-            val now = Clock.System.now()
-            val app1 = Appointment("1", "s1", "m1", "C1", "1", now, now)
+            val currentNow = now()
+            val app1 = Appointment("1", "s1", "m1", "C1", "1", currentNow, currentNow)
             fakeBookingRepository.createAppointment(app1)
 
-            val app2 = Appointment("2", "s1", "m1", "C2", "2", now, now)
+            val app2 = Appointment("2", "s1", "m1", "C2", "2", currentNow, currentNow)
 
             var success = false
             viewModel.createAppointment("m1", app2) { success = true }

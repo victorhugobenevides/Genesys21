@@ -27,6 +27,7 @@ import com.itbenevides.genesys21.presentation.screens.SplashScreen
 import com.itbenevides.genesys21.presentation.screens.editor.*
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
+import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import org.koin.compose.koinInject
@@ -278,6 +279,12 @@ fun App() {
                                 onBack = { router.goBack() },
                                 onOpenEditorShowcase = { router.navigateTo(Route.EditorShowcase) },
                                 onOpenTemplateShowcase = { router.navigateTo(Route.TemplateShowcase) },
+                            )
+                        }
+                        is Route.Profile -> {
+                            ProfileScreen(
+                                viewModel = router.viewModel,
+                                router = router
                             )
                         }
                         is Route.EditorShowcase -> {
