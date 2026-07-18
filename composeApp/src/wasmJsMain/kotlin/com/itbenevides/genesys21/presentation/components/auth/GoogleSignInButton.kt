@@ -9,8 +9,8 @@ import kotlin.js.Promise
 import kotlin.js.ExperimentalWasmJsInterop
 
 @OptIn(ExperimentalWasmJsInterop::class)
-@JsFun("() => window.firebaseSignInGoogle()")
-external fun firebaseSignInGoogle(): Promise<JsString>
+@JsFun("() => { if (typeof window.firebaseSignInGoogle === 'function') { return window.firebaseSignInGoogle(); } else { return Promise.reject('Firebase JS functions not found in window object'); } }")
+external fun firebaseSignInGoogleSafe(): Promise<JsString>
 
 // Extensão para aguardar Promises em Wasm
 private suspend fun <T : JsAny?> Promise<T>.await(): T =
@@ -21,7 +21,7 @@ private suspend fun <T : JsAny?> Promise<T>.await(): T =
                 null
             },
             { error ->
-                continuation.resumeWith(Result.failure(Exception("JS Error")))
+                continuation.resumeWith(Result.failure(Exception("JS Error: " + error.toString())))
                 null
             },
         )
@@ -48,9 +48,10 @@ actual fun GoogleSignInButton(
         onClick = {
             scope.launch {
                 try {
-                    val token = firebaseSignInGoogle().await().toString()
+                    val token = firebaseSignInGoogleSafe().await().toString()
                     onTokenReceived(token, null)
                 } catch (e: Exception) {
+                    println("WASM Login Error: \${e.message}")
                     onError(e.message ?: "Erro ao entrar com Google")
                 }
             }

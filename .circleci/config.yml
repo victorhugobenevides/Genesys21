@@ -70,8 +70,6 @@ jobs:
 
             # Gerar ponte Firebase
             cat \<<EOF > deploy/web/firebase-bridge.js
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-            import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
             const firebaseConfig = {
                 apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
                 authDomain: "genesys21-32035.firebaseapp.com",
@@ -79,20 +77,13 @@ jobs:
                 storageBucket: "genesys21-32035.firebasestorage.app",
                 appId: "1:674755208954:web:26e7b20a54f9ceb0dc4b43"
             };
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            window.firebaseSignIn = async (email, pass) => {
-                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-                return await userCredential.user.getIdToken();
-            };
-            window.firebaseSignInGoogle = async () => {
-                const provider = new GoogleAuthProvider();
-                const result = await signInWithPopup(auth, provider);
-                return await result.user.getIdToken();
-            };
-            window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
-            window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
-            window.firebaseSignOut = async () => await signOut(auth);
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            window.firebaseSignIn = (email, pass) => auth.signInWithEmailAndPassword(email, pass).then(u => u.user.getIdToken());
+            window.firebaseSignInGoogle = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(u => u.user.getIdToken());
+            window.firebaseGetToken = () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null);
+            window.firebaseGetUserId = () => auth.currentUser ? Promise.resolve(auth.currentUser.uid) : Promise.resolve(null);
+            window.firebaseSignOut = () => auth.signOut();
             EOF
 
             # Gerar index.html
@@ -103,7 +94,9 @@ jobs:
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
                 <title>Genesys21</title>
-                <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
+                <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+                <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+                <script src="/firebase-bridge.js"></script>
                 <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
                 <script>
                     window.dataLayer = window.dataLayer || [];
@@ -111,8 +104,6 @@ jobs:
                     gtag('js', new Date());
                     gtag('config', 'G-LW7Y13Y2M8');
                 </script>
-                <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
-                <script type="module" src="/firebase-bridge.js"></script>
                 <style>
                     html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: manipulation; }
                     #ComposeTarget { width: 100%; height: 100%; }
@@ -121,8 +112,9 @@ jobs:
                 </style>
             </head>
             <body>
-                <canvas id="ComposeTarget"></canvas>
-                <script type="module" src="/composeApp.js"></script>
+                <div id="ComposeTarget"></div>
+                <script src="/skiko.js"></script>
+                <script src="/composeApp.js"></script>
             </body>
             </html>
             EOF

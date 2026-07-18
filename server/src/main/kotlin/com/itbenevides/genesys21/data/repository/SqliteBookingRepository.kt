@@ -200,6 +200,7 @@ class SqliteBookingRepository : BookingRepository {
 
                     Appointment(
                         id = apptId,
+                        userId = row[AppointmentsTable.userId],
                         serviceId = row[AppointmentsTable.serviceId],
                         merchantId = row[AppointmentsTable.merchantId],
                         customerName = row[AppointmentsTable.customerName],
@@ -240,6 +241,7 @@ class SqliteBookingRepository : BookingRepository {
 
                 Appointment(
                     id = apptId,
+                    userId = row[AppointmentsTable.userId],
                     serviceId = row[AppointmentsTable.serviceId],
                     merchantId = row[AppointmentsTable.merchantId],
                     customerName = row[AppointmentsTable.customerName],
@@ -264,6 +266,7 @@ class SqliteBookingRepository : BookingRepository {
 
                 AppointmentsTable.insert {
                     it[id] = aid
+                    it[userId] = appointment.userId
                     it[serviceId] = appointment.serviceId
                     it[merchantId] = mid
                     it[customerName] = appointment.customerName

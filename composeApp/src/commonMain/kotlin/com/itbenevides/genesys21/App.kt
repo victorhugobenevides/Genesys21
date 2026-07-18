@@ -60,7 +60,7 @@ fun App() {
                 currentActivePageTheme = currentRoute.page.theme
                 currentActiveCustomTheme = currentRoute.page.customTheme
             }
-            is Route.Splash, is Route.Login, is Route.PageList -> {
+            is Route.Splash, is Route.Login, is Route.PageList, is Route.Profile -> {
                 currentActivePageTheme = null
                 currentActiveCustomTheme = null
             }
@@ -274,29 +274,25 @@ fun App() {
                                 onBack = { router.goBack() },
                             )
                         }
-                        is Route.DesignSystemShowcase -> {
+                        is Route.Profile ->
+                            ProfileScreen(
+                                viewModel = router.viewModel,
+                                router = router
+                            )
+                        is Route.DesignSystemShowcase ->
                             DesignSystemShowcaseScreen(
                                 onBack = { router.goBack() },
                                 onOpenEditorShowcase = { router.navigateTo(Route.EditorShowcase) },
                                 onOpenTemplateShowcase = { router.navigateTo(Route.TemplateShowcase) },
                             )
-                        }
-                        is Route.Profile -> {
-                            ProfileScreen(
-                                viewModel = router.viewModel,
-                                router = router
-                            )
-                        }
-                        is Route.EditorShowcase -> {
+                        is Route.EditorShowcase ->
                             EditorShowcaseScreen(
                                 onBack = { router.goBack() },
                             )
-                        }
-                        is Route.TemplateShowcase -> {
+                        is Route.TemplateShowcase ->
                             TemplateShowcaseScreen(
                                 onBack = { router.goBack() },
                             )
-                        }
                     }
                 }
             }

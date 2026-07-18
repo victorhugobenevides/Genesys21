@@ -10,7 +10,26 @@ class JsAuthRepository : AuthRepository {
         return Result.failure(Exception("Firebase not supported on JS in this version"))
     }
 
+    override suspend fun signIn(
+        idToken: String,
+        accessToken: String?,
+        provider: String,
+    ): Result<String?> {
+        return Result.failure(Exception("Firebase not supported on JS in this version"))
+    }
+
+    override suspend fun signUp(
+        email: String,
+        password: String,
+    ): Result<String?> {
+        return Result.failure(Exception("Firebase not supported on JS in this version"))
+    }
+
     override suspend fun getCurrentUserToken(): String? {
+        return null
+    }
+
+    override suspend fun getCurrentUserId(): String? {
         return null
     }
 

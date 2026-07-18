@@ -2,8 +2,8 @@ package com.itbenevides.genesys21.presentation.components.auth
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.mmk.kmpauth.google.GoogleUser
-import com.mmk.kmpauth.uihelper.google.GoogleButton
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.mmk.kmpauth.google.GoogleButtonUiContainer
 
 @Composable
 actual fun GoogleSignInButton(
@@ -11,16 +11,21 @@ actual fun GoogleSignInButton(
     onTokenReceived: (idToken: String, accessToken: String?) -> Unit,
     onError: (String) -> Unit
 ) {
-    GoogleButton(
-        modifier = modifier,
-        onResult = { googleUser: GoogleUser? ->
+    GoogleButtonUiContainer(
+        onGoogleSignInResult = { googleUser ->
             val idToken = googleUser?.idToken
             val accessToken = googleUser?.accessToken
             if (idToken != null) {
                 onTokenReceived(idToken, accessToken)
             } else {
-                onError("Falha ao obter token do Google")
+                onError("Login cancelado ou falhou")
             }
         }
-    )
+    ) {
+        GenesysLoadingButton(
+            text = "Entrar com Google",
+            onClick = { this.onClick() },
+            modifier = modifier
+        )
+    }
 }

@@ -3,53 +3,82 @@ package com.itbenevides.genesys21.data.repository
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import kotlin.js.Promise
 
-// Interop com as funções globais definidas no index.html
-@JsFun("(email, pass) => window.firebaseSignIn(email, pass)")
-external fun firebaseSignIn(
-    email: String,
-    pass: String,
-): Promise<JsString>
+// Interop seguro: Se a função não existir no window, retorna um valor padrão em vez de crashar
+@JsFun("""(email, pass) => {
+    if (typeof window.firebaseSignIn === 'function') {
+        return window.firebaseSignIn(email, pass);
+    } else {
+        console.error('DEBUG: window.firebaseSignIn não encontrado');
+        return Promise.reject('JS Not Ready - window.firebaseSignIn missing');
+    }
+}""")
+external fun firebaseSignInSafe(email: String, pass: String): Promise<JsString>
+
+@JsFun("""(email, pass) => {
+    if (typeof window.firebaseSignUp === 'function') {
+        return window.firebaseSignUp(email, pass);
+    } else {
+        console.error('DEBUG: window.firebaseSignUp não encontrado');
+        return Promise.reject('JS Not Ready - window.firebaseSignUp missing');
+    }
+}""")
+external fun firebaseSignUpSafe(email: String, pass: String): Promise<JsString>
 
 @OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
-@JsFun("() => window.firebaseSignInGoogle()")
-external fun firebaseSignInGoogle(): Promise<JsString>
+@JsFun("""() => {
+    if (typeof window.firebaseSignInGoogle === 'function') {
+        return window.firebaseSignInGoogle();
+    } else {
+        console.error('DEBUG: window.firebaseSignInGoogle não encontrado');
+        return Promise.reject('JS Not Ready - window.firebaseSignInGoogle missing');
+    }
+}""")
+external fun firebaseSignInGoogleSafe(): Promise<JsString>
 
-@JsFun("() => window.firebaseGetToken()")
-external fun firebaseGetToken(): Promise<JsString?>
+@JsFun("() => (typeof window.firebaseGetToken === 'function') ? window.firebaseGetToken() : Promise.resolve(null)")
+external fun firebaseGetTokenSafe(): Promise<JsString?>
 
-@JsFun("() => window.firebaseGetUserId()")
-external fun firebaseGetUserId(): Promise<JsString?>
+@JsFun("() => (typeof window.firebaseGetUserId === 'function') ? window.firebaseGetUserId() : Promise.resolve(null)")
+external fun firebaseGetUserIdSafe(): Promise<JsString?>
 
-@JsFun("() => window.firebaseSignOut()")
-external fun firebaseSignOut(): Promise<JsAny?>
+@JsFun("() => (typeof window.firebaseSignOut === 'function') ? window.firebaseSignOut() : Promise.resolve(null)")
+external fun firebaseSignOutSafe(): Promise<JsAny?>
 
 class WasmAuthRepository : AuthRepository {
-    override suspend fun signIn(
-        email: String,
-        password: String,
-    ): Result<String?> {
+    override suspend fun signIn(email: String, password: String): Result<String?> {
+        println("DEBUG KOTLIN: Tentando login para $email")
+        val promise = firebaseSignInSafe(email, password)
+        println("DEBUG KOTLIN: Promise criada")
         return try {
-            val token = firebaseSignIn(email, password).await().toString()
-            println("WASM: Login realizado com sucesso. Token obtido.")
+            val token = promise.await().toString()
+            println("DEBUG KOTLIN: Token recebido: $token")
             Result.success(token)
         } catch (e: Exception) {
-            println("WASM: Erro no login -> \${e.message}")
-            Result.failure(Exception(e.message))
+            println("DEBUG KOTLIN: Erro capturado: $e")
+            Result.failure(e)
         }
     }
 
-    override suspend fun signIn(
-        idToken: String,
-        accessToken: String?,
-        provider: String,
-    ): Result<String?> {
+    override suspend fun signIn(idToken: String, accessToken: String?, provider: String): Result<String?> {
         return try {
             if (provider == "google") {
-                val token = firebaseSignInGoogle().await().toString()
+                println("WASM: Disparando login Google...")
+                val token = firebaseSignInGoogleSafe().await().toString()
+                println("WASM: Login Google sucesso! Token obtido.")
                 Result.success(token)
             } else {
                 Result.success(idToken)
             }
+        } catch (e: Exception) {
+            println("WASM: Falha crítica no Login Google: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun signUp(email: String, password: String): Result<String?> {
+        return try {
+            val token = firebaseSignUpSafe(email, password).await().toString()
+            Result.success(token)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -57,18 +86,15 @@ class WasmAuthRepository : AuthRepository {
 
     override suspend fun getCurrentUserToken(): String? {
         return try {
-            val token = firebaseGetToken().await()?.toString()
-            if (token == null) println("WASM: Nenhum usuário logado no Firebase.")
-            token
+            firebaseGetTokenSafe().await()?.toString()
         } catch (e: Exception) {
-            println("WASM: Erro ao buscar token -> \${e.message}")
             null
         }
     }
 
     override suspend fun getCurrentUserId(): String? {
         return try {
-            firebaseGetUserId().await()?.toString()
+            firebaseGetUserIdSafe().await()?.toString()
         } catch (e: Exception) {
             null
         }
@@ -76,15 +102,13 @@ class WasmAuthRepository : AuthRepository {
 
     override suspend fun signOut() {
         try {
-            firebaseSignOut().await()
-            println("WASM: Logout realizado.")
+            firebaseSignOutSafe().await()
         } catch (e: Exception) {
-            println("WASM: Erro no logout.")
         }
     }
 }
 
-// Extensão para aguardar Promises em Wasm
+// Extensões de Promise para Wasm
 private suspend fun <T : JsAny?> Promise<T>.await(): T =
     suspendInternal { continuation ->
         this.then(
@@ -93,7 +117,8 @@ private suspend fun <T : JsAny?> Promise<T>.await(): T =
                 null
             },
             { error ->
-                continuation.resumeWith(Result.failure(Exception("JS Error")))
+                val errorMessage = error?.toString() ?: "JS Error"
+                continuation.resumeWith(Result.failure(Exception(errorMessage)))
                 null
             },
         )

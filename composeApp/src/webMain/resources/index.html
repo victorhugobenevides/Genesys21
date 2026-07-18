@@ -4,66 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Social Bio</title>
-    <meta name="description" content="Sua vitrine digital personalizada.">
 
-    <!-- Open Graph / Facebook / Instagram -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Social Bio">
-    <meta property="og:description" content="Confira minha vitrine digital.">
-    <meta property="og:site_name" content="Social Bio">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Social Bio">
-    <meta name="twitter:description" content="Sua vitrine digital personalizada.">
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
+        const firebaseConfig = {
+            apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
+            authDomain: "genesys21-32035.firebaseapp.com",
+            projectId: "genesys21-32035",
+            storageBucket: "genesys21-32035.firebasestorage.app",
+            appId: "1:674755208954:web:26e7b20a54f9ceb0dc4b43"
+        };
 
-        gtag('config', 'G-LW7Y13Y2M8', {
-            'debug_mode': true,
-            'send_page_view': false
-        });
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+        // BRIDGE EMBUTIDO
+        window.firebaseSignIn = (email, pass) => auth.signInWithEmailAndPassword(email, pass).then(u => u.user.getIdToken());
+        window.firebaseSignInGoogle = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            return auth.signInWithPopup(provider)
+                .then(u => u.user.getIdToken())
+                .catch(error => {
+                    if (error.code === 'auth/account-exists-with-different-credential') {
+                        throw new Error("ACCOUNT_EXISTS_PASSWORD");
+                    }
+                    throw error;
+                });
+        };
+        window.firebaseGetToken = () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null);
+        window.firebaseGetUserId = () => Promise.resolve(auth.currentUser ? auth.currentUser.uid : null);
+        window.firebaseSignOut = () => auth.signOut();
+
+        console.log("BRIDGE: Funções carregadas.");
     </script>
 
-    <link type="text/css" rel="stylesheet" href="/styles.css">
-
+    <link type="text/css" rel="stylesheet" href="styles.css">
     <style>
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #F2F2F7;
-            position: fixed;
-            left: 0;
-            top: 0;
-            touch-action: none;
-        }
-        #ComposeTarget {
-            width: 100%;
-            height: 100%;
-        }
-        canvas {
-            outline: none;
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
-        }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
-        input, textarea { font-size: 16px !important; }
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: none; }
+        #ComposeTarget { width: 100%; height: 100%; }
+        canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
     </style>
 </head>
 <body>
     <div id="ComposeTarget"></div>
-    <script src="/skiko.js"></script>
-    <script src="/composeApp.js"></script>
+    <script src="skiko.js"></script>
+    <script src="composeApp.js"></script>
 </body>
 </html>

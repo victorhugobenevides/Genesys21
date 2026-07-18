@@ -38,6 +38,18 @@ class AndroidAuthRepository : AuthRepository {
         }
     }
 
+    override suspend fun signUp(
+        email: String,
+        password: String,
+    ): Result<String?> {
+        return try {
+            auth.createUserWithEmailAndPassword(email, password)
+            Result.success(getCurrentUserToken())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getCurrentUserToken(): String? {
         return auth.currentUser?.getIdToken(false)
     }

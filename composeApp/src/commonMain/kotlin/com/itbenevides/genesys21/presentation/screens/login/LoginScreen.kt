@@ -67,6 +67,23 @@ fun LoginScreen(
                     },
                 )
             }
+            is LoginEvent.OnSignUpClicked -> {
+                state = state.copy(isLoading = true, errorMessage = "")
+                viewModel.signUp(
+                    state.email,
+                    state.password,
+                    onSuccess = {
+                        state = state.copy(isLoading = false)
+                        onLoginSuccess()
+                    },
+                    onError = {
+                        state = state.copy(isLoading = false, errorMessage = it)
+                    },
+                )
+            }
+            is LoginEvent.ToggleMode -> {
+                state = state.copy(isSignUp = !state.isSignUp, errorMessage = "")
+            }
             is LoginEvent.OnError -> {
                 state = state.copy(isLoading = false, errorMessage = event.message)
             }
@@ -144,7 +161,7 @@ private fun LoginContent(
                             )
 
                             GenesysText(
-                                text = GenesysStrings.LoginSubtitle,
+                                text = if (state.isSignUp) "Crie sua conta para começar" else GenesysStrings.LoginSubtitle,
                                 style = GenesysTextStyle.Body,
                             )
 
@@ -170,13 +187,26 @@ private fun LoginContent(
                             GenesysSpacer(GenesysSpacing.Large)
 
                             GenesysLoadingButton(
-                                text = GenesysStrings.LoginButton,
-                                onClick = { onEvent(LoginEvent.OnLoginClicked) },
+                                text = if (state.isSignUp) "Criar Conta" else GenesysStrings.LoginButton,
+                                onClick = {
+                                    if (state.isSignUp) onEvent(LoginEvent.OnSignUpClicked)
+                                    else onEvent(LoginEvent.OnLoginClicked)
+                                },
                                 fillWidth = true,
                                 isLoading = state.isLoading,
                                 enabled = state.canLogin,
-                                icon = GenesysIcons.Check,
+                                icon = if (state.isSignUp) GenesysIcons.Add else GenesysIcons.Check,
                             )
+
+                            GenesysSpacer(GenesysSpacing.Medium)
+
+                            TextButton(onClick = { onEvent(LoginEvent.ToggleMode) }) {
+                                GenesysText(
+                                    text = if (state.isSignUp) "Já tem conta? Faça login" else "Ainda não tem conta? Cadastre-se",
+                                    style = GenesysTextStyle.Label,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
 
                             GenesysSpacer(GenesysSpacing.Medium)
 

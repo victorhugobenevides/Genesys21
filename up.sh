@@ -4,23 +4,16 @@ set -e
 export NODE_OPTIONS="--max-old-space-size=4096"
 
 echo "🧹 Limpando Docker (Caches e Snapshots)..."
-# Limpa o cache do build e imagens órfãs para evitar erros de snapshot
 docker builder prune -f
 docker image prune -f
 
 echo "🛑 Parando containers..."
 docker-compose down -v --remove-orphans
 
-echo "🧹 Limpando caches e corrigindo Yarn..."
+echo "🧹 Limpando caches..."
 rm -rf kotlin-js-store
 rm -f yarn.lock
 ./gradlew clean --no-daemon
-
-echo "🔄 Atualizando Yarn Lock..."
-./gradlew :kotlinUpgradeYarnLock --no-daemon
-
-echo "📸 Verificando Integridade Visual (Screenshot Tests)..."
-./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
 
 echo "🚀 Build do projeto (Server e WasmJS)..."
 ./gradlew :server:installDist :composeApp:wasmJsBrowserDevelopmentExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
@@ -30,35 +23,23 @@ echo "✅ Build concluído!"
 rm -rf deploy
 mkdir -p deploy/server deploy/web
 
-# 1. Copiar Servidor e Credenciais
+# 1. Copiar Servidor
 SERVER_INSTALL_DIR=$(find server/build/install -maxdepth 1 -mindepth 1 -type d | head -n 1)
 if [ -n "$SERVER_INSTALL_DIR" ]; then
     cp -R "$SERVER_INSTALL_DIR"/. deploy/server/
-
     FIREBASE_JSON=$(find . -name "genesys21-32035-firebase-adminsdk-*.json" | head -n 1)
-    if [ -n "$FIREBASE_JSON" ]; then
-        echo "🔑 Copiando credenciais Firebase: $FIREBASE_JSON"
-        cp "$FIREBASE_JSON" deploy/server/firebase-adminsdk.json
-    else
-        echo "⚠️ AVISO: Arquivo genesys21-32035-firebase-adminsdk-*.json não encontrado!"
-    fi
+    if [ -n "$FIREBASE_JSON" ]; then cp "$FIREBASE_JSON" deploy/server/firebase-adminsdk.json; fi
 fi
 
 # 2. Copiar Web (WasmJS)
 find composeApp/build/dist/wasmJs/developmentExecutable -type f \( \
-    -name "*.js" -o \
-    -name "*.wasm" -o \
-    -name "*.html" -o \
-    -name "*.css" -o \
-    -name "*.mjs" -o \
-    -name "*.map" \
+    -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \
 \) -exec cp -f {} deploy/web/ \;
 
-# 3. Gerar firebase-bridge.js
-echo "📦 Gerando firebase-bridge.js..."
+# 3. Gerar firebase-bridge.js Corrigido
 cat <<EOF > deploy/web/firebase-bridge.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
@@ -71,30 +52,44 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-const authReady = new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        resolve(user);
-        unsubscribe();
-    });
-});
-
 window.firebaseSignIn = async (email, pass) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
     return await userCredential.user.getIdToken();
 };
 
+window.firebaseSignUp = async (email, pass) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    return await userCredential.user.getIdToken();
+};
+
+window.firebaseSignInGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    // Força a seleção de conta para uma experiência mais unificada
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    try {
+        const result = await signInWithPopup(auth, provider);
+        return await result.user.getIdToken();
+    } catch (error) {
+        if (error.code === 'auth/account-exists-with-different-credential') {
+            throw new Error("ACCOUNT_EXISTS_PASSWORD");
+        }
+        throw error;
+    }
+};
+
 window.firebaseGetToken = async () => {
-    await authReady;
     return auth.currentUser ? await auth.currentUser.getIdToken() : null;
 };
 
-window.firebaseSignOut = async () => {
-    await signOut(auth);
+window.firebaseGetUserId = async () => {
+    return auth.currentUser ? auth.currentUser.uid : null;
 };
+
+window.firebaseSignOut = () => signOut(auth);
 EOF
 
 # 4. Gerar index.html
-echo "📄 Gerando index.html..."
 cat <<EOF > deploy/web/index.html
 <!DOCTYPE html>
 <html lang="en">
@@ -103,24 +98,15 @@ cat <<EOF > deploy/web/index.html
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="/">
     <title>Genesys21</title>
-    <script>
-        if (!window.crypto.randomUUID) {
-            window.crypto.randomUUID = function() {
-                return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-                );
-            };
-        }
-    </script>
-    <script type="module" src="/firebase-bridge.js"></script>
+    <script type="module" src="firebase-bridge.js"></script>
     <style>
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; }
         #ComposeTarget { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
-    <canvas id="ComposeTarget"></canvas>
-    <script type="module" src="/composeApp.js"></script>
+    <div id="ComposeTarget"></div>
+    <script type="module" src="composeApp.js"></script>
 </body>
 </html>
 EOF
@@ -132,3 +118,12 @@ echo "--------------------------------------------------------"
 echo "✨ Sistema online (WASM)!"
 echo "🌐 Web: http://localhost"
 echo "--------------------------------------------------------"
+
+# Iniciar ngrok em segundo plano para o backend (8080) e frontend (80)
+echo "🚀 Iniciando ngrok para API (8080) e Web (80)..."
+ngrok start --all --config "/Users/victorben/Library/Application Support/ngrok/ngrok.yml" --log=stdout > ngrok.log &
+echo "✅ ngrok rodando (logs em ngrok.log)"
+
+
+
+

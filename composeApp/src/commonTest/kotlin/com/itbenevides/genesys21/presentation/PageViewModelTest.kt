@@ -144,7 +144,7 @@ class PageViewModelTest {
     @Test
     fun `createAppointment should add appointment when slot is valid`() =
         runTest {
-            val currentNow = now()
+            val futureTime = now().plus(kotlin.time.Duration.parse("1h"))
             val appointment =
                 Appointment(
                     id = "a1",
@@ -152,8 +152,8 @@ class PageViewModelTest {
                     merchantId = "m1",
                     customerName = "Victor",
                     customerPhone = "99999999",
-                    startTime = currentNow,
-                    endTime = currentNow,
+                    startTime = futureTime,
+                    endTime = futureTime.plus(kotlin.time.Duration.parse("30m")),
                 )
 
             var success = false
@@ -169,11 +169,27 @@ class PageViewModelTest {
     @Test
     fun `createAppointment should fail when slot is overlapping`() =
         runTest {
-            val currentNow = now()
-            val app1 = Appointment("1", "s1", "m1", "C1", "1", currentNow, currentNow)
+            val futureTime = now().plus(kotlin.time.Duration.parse("2h"))
+            val app1 = Appointment(
+                id = "1",
+                serviceId = "s1",
+                merchantId = "m1",
+                customerName = "C1",
+                customerPhone = "1",
+                startTime = futureTime,
+                endTime = futureTime.plus(kotlin.time.Duration.parse("30m"))
+            )
             fakeBookingRepository.createAppointment(app1)
 
-            val app2 = Appointment("2", "s1", "m1", "C2", "2", currentNow, currentNow)
+            val app2 = Appointment(
+                id = "2",
+                serviceId = "s1",
+                merchantId = "m1",
+                customerName = "C2",
+                customerPhone = "2",
+                startTime = futureTime,
+                endTime = futureTime.plus(kotlin.time.Duration.parse("30m"))
+            )
 
             var success = false
             viewModel.createAppointment("m1", app2) { success = true }

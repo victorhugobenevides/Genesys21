@@ -20,6 +20,10 @@ data class AppError(
     val stackTrace: String? = null,
 )
 
+sealed class UiEvent {
+    data class ShowAccountLinkingDialog(val email: String) : UiEvent()
+}
+
 class PageViewModel(
     private val getPagesUseCase: GetPagesUseCase,
     private val savePageUseCase: SavePageUseCase,
@@ -95,6 +99,9 @@ class PageViewModel(
 
     private val _currentError = MutableStateFlow<AppError?>(null)
     val currentError: StateFlow<AppError?> = _currentError.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<UiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
 
     val customerName = customerRepository.customerName
     val customerPhone = customerRepository.customerPhone
@@ -224,10 +231,12 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                val currentUserId = authRepository.getCurrentUserId()
                 val order =
                     Order(
                         id = "",
                         userId = page?.ownerId ?: "",
+                        customerId = currentUserId ?: cartRepository.getSessionId(),
                         customerName = customerName.value,
                         customerPhone = customerPhone.value,
                         items = cart.value,
@@ -581,7 +590,11 @@ class PageViewModel(
                     ).getOrDefault(false)
 
                 if (isValid) {
-                    createAppointmentUseCase(appointment).onSuccess { _ ->
+                    val finalAppointment = if (appointment.userId == null) {
+                        appointment.copy(userId = authRepository.getCurrentUserId())
+                    } else appointment
+
+                    createAppointmentUseCase(finalAppointment).onSuccess { _ ->
                         onSuccess()
                     }.onFailure {
                         handleError("Erro ao agendar", it)
@@ -708,6 +721,32 @@ class PageViewModel(
         }
     }
 
+    fun signUp(
+        email: String,
+        password: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                authRepository.signUp(email, password).onSuccess { token ->
+                    val userId = authRepository.getCurrentUserId()
+                    if (userId != null) {
+                        loadUserProfile(userId)
+                    }
+                    onSuccess()
+                }.onFailure {
+                    onError(it.message ?: "Erro desconhecido")
+                }
+            } catch (e: Exception) {
+                onError(e.message ?: "Erro desconhecido")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun signInWithToken(
         idToken: String,
         accessToken: String?,
@@ -724,8 +763,12 @@ class PageViewModel(
                         loadUserProfile(userId)
                     }
                     onSuccess()
-                }.onFailure {
-                    onError(it.message ?: "Erro desconhecido")
+                }.onFailure { e ->
+                    if (e.message == "ACCOUNT_EXISTS_PASSWORD") {
+                        _uiEvent.emit(UiEvent.ShowAccountLinkingDialog(email = "Seu e-mail"))
+                    } else {
+                        onError(e.message ?: "Erro desconhecido")
+                    }
                 }
             } catch (e: Exception) {
                 onError(e.message ?: "Erro desconhecido")

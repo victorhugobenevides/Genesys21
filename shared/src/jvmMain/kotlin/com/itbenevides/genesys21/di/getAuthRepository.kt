@@ -10,7 +10,20 @@ actual fun getAuthRepository(): AuthRepository =
             password: String,
         ): Result<String?> = Result.failure(Exception("Not implemented on JVM"))
 
+        override suspend fun signIn(
+            idToken: String,
+            accessToken: String?,
+            provider: String,
+        ): Result<String?> = Result.failure(Exception("Not implemented on JVM"))
+
+        override suspend fun signUp(
+            email: String,
+            password: String,
+        ): Result<String?> = Result.failure(Exception("Not implemented on JVM"))
+
         override suspend fun getCurrentUserToken(): String? = null
+
+        override suspend fun getCurrentUserId(): String? = null
 
         override suspend fun signOut() {}
     }

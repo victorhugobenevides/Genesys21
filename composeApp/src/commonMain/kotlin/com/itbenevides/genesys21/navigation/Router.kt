@@ -102,6 +102,7 @@ class Router(val viewModel: PageViewModel) {
 
         val (pageId, productId, title) =
             when (current) {
+                is Route.Splash -> Triple(null, null, "Genesys21")
                 is Route.PageEditor -> Triple(current.page?.id, null, "Editor: ${current.page?.title ?: "Nova Página"}")
                 is Route.WhiteLabel -> Triple(current.page.id, null, "Gerenciar: ${current.page.title}")
                 is Route.PublicViewer -> Triple(current.page.id, null, current.page.title)
@@ -128,9 +129,9 @@ class Router(val viewModel: PageViewModel) {
 
         val screen =
             when (current) {
-                Route.Splash -> Screen.Splash
-                Route.Login -> Screen.Login
-                Route.PageList -> Screen.List
+                is Route.Splash -> Screen.Splash
+                is Route.Login -> Screen.Login
+                is Route.PageList -> Screen.List
                 is Route.PageEditor -> Screen.Editor
                 is Route.WhiteLabel -> Screen.WhiteLabel
                 is Route.PublicViewer -> Screen.PublicViewer
@@ -141,10 +142,10 @@ class Router(val viewModel: PageViewModel) {
                 is Route.Cart -> Screen.Cart
                 is Route.OrderTracking -> Screen.OrderTracking
                 is Route.CustomerOrderHistory -> Screen.OrderHistory
-                Route.Profile -> Screen.Profile
-                Route.DesignSystemShowcase -> Screen.DesignSystemShowcase
-                Route.EditorShowcase -> Screen.EditorShowcase
-                Route.TemplateShowcase -> Screen.TemplateShowcase
+                is Route.Profile -> Screen.Profile
+                is Route.DesignSystemShowcase -> Screen.DesignSystemShowcase
+                is Route.EditorShowcase -> Screen.EditorShowcase
+                is Route.TemplateShowcase -> Screen.TemplateShowcase
                 is Route.ServiceBooking -> Screen.ServiceBooking
             }
 

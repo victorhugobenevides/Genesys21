@@ -73,6 +73,7 @@ data class Appointment(
     val startTime: Instant,
     @Serializable(with = SafeInstantSerializer::class)
     val endTime: Instant,
+    val userId: String? = null,
     val status: BookingStatus = BookingStatus.PENDING,
     val notes: List<BookingNote> = emptyList(),
 )

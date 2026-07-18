@@ -29,7 +29,20 @@ class FakeAuthRepository : AuthRepository {
         }
     }
 
+    override suspend fun signUp(
+        email: String,
+        password: String,
+    ): Result<String?> {
+        return if (shouldReturnError) {
+            Result.failure(Exception("Signup falhou"))
+        } else {
+            Result.success(mockToken)
+        }
+    }
+
     override suspend fun getCurrentUserToken(): String? = mockToken
+
+    override suspend fun getCurrentUserId(): String? = if (mockToken != null) "test_user_id" else null
 
     fun setToken(token: String?) {
         mockToken = token

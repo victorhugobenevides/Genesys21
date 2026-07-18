@@ -12,6 +12,11 @@ interface AuthRepository {
         provider: String,
     ): Result<String?>
 
+    suspend fun signUp(
+        email: String,
+        password: String,
+    ): Result<String?>
+
     suspend fun getCurrentUserToken(): String?
 
     suspend fun getCurrentUserId(): String?

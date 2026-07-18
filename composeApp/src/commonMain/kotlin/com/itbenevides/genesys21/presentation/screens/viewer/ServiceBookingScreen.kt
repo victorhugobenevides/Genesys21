@@ -165,6 +165,7 @@ fun ServiceBookingScreen(
                                     customerPhone = customerPhone,
                                     startTime = startInstant,
                                     endTime = endInstant,
+                                    userId = viewModel.userProfile.value?.id,
                                     notes = if (customerNotes.isNotBlank()) {
                                         listOf(
                                             BookingNote(

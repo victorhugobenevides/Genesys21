@@ -9,6 +9,7 @@ data class LoginState(
     val isLoading: Boolean = false,
     val errorMessage: String = "",
     val canLogin: Boolean = false,
+    val isSignUp: Boolean = false,
 )
 
 /**
@@ -20,6 +21,10 @@ sealed class LoginEvent {
     data class OnPasswordChanged(val password: String) : LoginEvent()
 
     object OnLoginClicked : LoginEvent()
+
+    object OnSignUpClicked : LoginEvent()
+
+    object ToggleMode : LoginEvent()
 
     data class OnError(val message: String) : LoginEvent()
 }

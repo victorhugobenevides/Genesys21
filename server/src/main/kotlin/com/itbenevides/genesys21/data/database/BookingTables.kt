@@ -56,6 +56,7 @@ object BlockedDatesTable : Table("blocked_dates") {
 
 object AppointmentsTable : Table("appointments") {
     val id = varchar("id", 50)
+    val userId = varchar("user_id", 100).nullable().index("idx_appointments_user_id")
     val serviceId = varchar("service_id", 50)
     val merchantId = varchar("merchant_id", 100).index("idx_appointments_merchant_id")
     val customerName = varchar("customer_name", 255)
