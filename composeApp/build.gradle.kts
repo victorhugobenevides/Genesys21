@@ -43,10 +43,7 @@ kotlin {
             commonWebpackConfig {
                 devServer =
                     (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                        static =
-                            (static ?: mutableListOf()).apply {
-                                add(project.file("src/webMain/resources").canonicalPath)
-                            }
+                        static?.add(project.file("src/webMain/resources").canonicalPath)
 
                         // Configuração de Proxy para desenvolvimento
                         proxy =
@@ -143,7 +140,7 @@ android {
 }
 
 dependencies {
-    debugImplementation(compose.uiTooling)
+    debugImplementation("org.jetbrains.compose.ui:ui-tooling")
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
 }

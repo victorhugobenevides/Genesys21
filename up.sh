@@ -16,7 +16,7 @@ rm -f yarn.lock
 ./gradlew clean --no-daemon
 
 echo "🚀 Build do projeto (Server e WasmJS)..."
-./gradlew :server:installDist :composeApp:wasmJsBrowserDevelopmentExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
+./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
 
 echo "✅ Build concluído!"
 
@@ -32,7 +32,7 @@ if [ -n "$SERVER_INSTALL_DIR" ]; then
 fi
 
 # 2. Copiar Web (WasmJS)
-find composeApp/build/dist/wasmJs/developmentExecutable -type f \( \
+find composeApp/build/dist/wasmJs -type f \( \
     -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \
 \) -exec cp -f {} deploy/web/ \;
 

@@ -59,14 +59,14 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Distribution
-          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
+          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
       - run:
           name: Prepare Deploy Content & Docker Push
           command: |
             mkdir -p deploy/server deploy/web
             cp -R server/build/install/server/. deploy/server/
             cp firebase-adminsdk.json deploy/server/bin/ 2>/dev/null || true
-            find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+            find composeApp/build/dist/wasmJs -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
 
             # Gerar ponte Firebase
             cat \<<EOF > deploy/web/firebase-bridge.js
