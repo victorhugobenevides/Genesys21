@@ -63,4 +63,23 @@ class MoleculesSnapshotTest {
             }
         }
     }
+
+    @Test
+    fun testInputs() {
+        paparazzi.genesysSnapshot {
+            Column(Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                com.itbenevides.genesys21.ui.components.molecules.input.GenesysColorField(
+                    value = "#6200EE",
+                    onValueChange = {},
+                    label = "Color Field"
+                )
+                com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField(
+                    value = "Option 1",
+                    onValueChange = {},
+                    label = "Dropdown Field",
+                    options = listOf("Option 1", "Option 2", "Option 3")
+                )
+            }
+        }
+    }
 }

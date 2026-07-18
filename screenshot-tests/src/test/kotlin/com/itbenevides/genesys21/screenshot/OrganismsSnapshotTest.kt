@@ -55,4 +55,16 @@ class OrganismsSnapshotTest {
             }
         }
     }
+
+    @Test
+    fun testBookingEngine() {
+        paparazzi.genesysSnapshot {
+            com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine(
+                selectedDateTime = null,
+                availableSlots = listOf("09:00", "11:00", "15:00"),
+                onDateSelected = {},
+                onDateTimeSelected = {}
+            )
+        }
+    }
 }

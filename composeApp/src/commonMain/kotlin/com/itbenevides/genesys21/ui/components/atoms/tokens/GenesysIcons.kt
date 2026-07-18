@@ -51,6 +51,10 @@ object GenesysIcons {
     val GridView = Icons.Default.GridView
     val Favorite = Icons.Default.Favorite
     val ShoppingCart = Icons.Default.ShoppingCart
+    val Info = Icons.Default.Info
+    val Feedback = Icons.Default.Feedback
+    val Notifications = Icons.Default.Notifications
+    val ViewModule = Icons.Default.ViewModule
 
     // Ícones de Navegação
     val ArrowLeft = Icons.AutoMirrored.Filled.ArrowBack

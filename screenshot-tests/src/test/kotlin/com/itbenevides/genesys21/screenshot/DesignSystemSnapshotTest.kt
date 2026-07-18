@@ -13,9 +13,44 @@ class DesignSystemSnapshotTest {
     val paparazzi = createGenesysPaparazzi(deviceConfig = app.cash.paparazzi.DeviceConfig.PIXEL_5)
 
     @Test
-    fun testShowcaseFullPage() {
+    fun testShowcaseFoundation() {
         paparazzi.genesysSnapshot {
-            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {})
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 0)
+        }
+    }
+
+    @Test
+    fun testShowcaseInputs() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 1)
+        }
+    }
+
+    @Test
+    fun testShowcaseActionNav() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 2)
+        }
+    }
+
+    @Test
+    fun testShowcaseDisplay() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 3)
+        }
+    }
+
+    @Test
+    fun testShowcaseFeedback() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 4)
+        }
+    }
+
+    @Test
+    fun testShowcaseBooking() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 5)
         }
     }
 
