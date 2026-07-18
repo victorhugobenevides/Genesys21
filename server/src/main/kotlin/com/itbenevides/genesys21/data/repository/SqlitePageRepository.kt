@@ -19,10 +19,11 @@ class SqlitePageRepository : PageRepository {
                 if (token.isBlank()) {
                     PagesTable.selectAll()
                 } else {
-                    PagesTable.selectAll().where { PagesTable.ownerId eq token }
+                    (PagesTable innerJoin StoresTable)
+                        .selectAll().where { StoresTable.ownerId eq token }
                 }
 
-            pagesQuery.map { row ->
+            pagesQuery.where { PagesTable.deletedAt.isNull() }.map { row ->
                 val pageId = row[PagesTable.id]
                 val components = fetchComponentsForPage(pageId)
                 row.toPage(components)
@@ -84,27 +85,28 @@ class SqlitePageRepository : PageRepository {
                 if (exists) {
                     PagesTable.update({ PagesTable.id eq page.id }) {
                         it[title] = page.title
-                        it[ownerId] = token
+                        it[storeId] = page.storeId
                         it[theme] = page.theme.name
                         it[customDomain] = formattedDomain
                         it[whatsapp] = formattedWhatsapp
+                        it[updatedAt] = System.currentTimeMillis()
                     }
                 } else {
                     PagesTable.insert {
                         it[id] = page.id
                         it[title] = page.title
-                        it[ownerId] = token
+                        it[storeId] = page.storeId
                         it[theme] = page.theme.name
                         it[customDomain] = formattedDomain
                         it[whatsapp] = formattedWhatsapp
                     }
                 }
 
-                // CORREÇÃO: Sincroniza apenas o WhatsApp globalmente, mas mantém o domínio exclusivo por página.
-                // O domínio NÃO pode ser replicado para todas as páginas do usuário devido ao UniqueIndex.
-                if (isEditing && token.isNotBlank() && formattedWhatsapp != null) {
-                    PagesTable.update({ PagesTable.ownerId eq token }) {
+                // CORREÇÃO: Sincroniza apenas o WhatsApp globalmente para a LOJA.
+                if (isEditing && page.storeId.isNotBlank() && formattedWhatsapp != null) {
+                    StoresTable.update({ StoresTable.id eq page.storeId }) {
                         it[whatsapp] = formattedWhatsapp
+                        it[updatedAt] = System.currentTimeMillis()
                     }
                 }
 
@@ -121,8 +123,9 @@ class SqlitePageRepository : PageRepository {
                             it[content] = json.encodeToString(component)
                         }
 
+                    val finalComponentId = componentId
                     if (component is PageComponent.ProductList) {
-                        saveProductsForComponent(componentId.value, component.products, token)
+                        saveProductsForComponent(finalComponentId.value, component.products, page.storeId)
                     }
                 }
 
@@ -138,8 +141,10 @@ class SqlitePageRepository : PageRepository {
     ): Result<Unit> =
         try {
             dbQuery {
-                val deleted = PagesTable.deleteWhere { (PagesTable.id eq id) and (ownerId eq token) }
-                if (deleted > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir"))
+                val updated = PagesTable.update({ (PagesTable.id eq id) and (StoresTable.ownerId eq token) }) {
+                    it[deletedAt] = System.currentTimeMillis()
+                }
+                if (updated > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -159,7 +164,7 @@ class SqlitePageRepository : PageRepository {
                 val products =
                     (ProductsTable leftJoin CategoriesTable)
                         .selectAll()
-                        .where { ProductsTable.ownerId eq token }
+                        .where { (StoresTable.ownerId eq token) and (ProductsTable.deletedAt.isNull()) }
                         .map { row ->
                             fetchProductFromRow(row)
                         }
@@ -173,15 +178,20 @@ class SqlitePageRepository : PageRepository {
         try {
             dbQuery {
                 val categories =
-                    CategoriesTable.selectAll()
-                        .where { CategoriesTable.ownerId eq token }
+                    (CategoriesTable innerJoin StoresTable)
+                        .selectAll()
+                        .where { (StoresTable.ownerId eq token) and (CategoriesTable.deletedAt.isNull()) }
                         .map { row ->
                             Category(
-                                id = row[CategoriesTable.id].value,
-                                ownerId = row[CategoriesTable.ownerId],
+                                id = row[CategoriesTable.id],
+                                storeId = row[CategoriesTable.storeId],
                                 name = row[CategoriesTable.name],
+                                parentId = row[CategoriesTable.parentId],
                                 icon = row[CategoriesTable.icon],
                                 color = row[CategoriesTable.color],
+                                createdAt = row[CategoriesTable.createdAt],
+                                updatedAt = row[CategoriesTable.updatedAt],
+                                deletedAt = row[CategoriesTable.deletedAt]
                             )
                         }
                 Result.success(categories)
@@ -196,16 +206,21 @@ class SqlitePageRepository : PageRepository {
     ): Result<Unit> =
         try {
             dbQuery {
-                if (category.id != null) {
-                    CategoriesTable.update({ (CategoriesTable.id eq category.id) and (CategoriesTable.ownerId eq token) }) {
+                val exists = CategoriesTable.selectAll().where { CategoriesTable.id eq category.id }.count() > 0
+                if (exists) {
+                    CategoriesTable.update({ CategoriesTable.id eq category.id }) {
                         it[name] = category.name
+                        it[parentId] = category.parentId
                         it[icon] = category.icon
                         it[color] = category.color
+                        it[updatedAt] = System.currentTimeMillis()
                     }
                 } else {
                     CategoriesTable.insert {
-                        it[ownerId] = token
+                        it[id] = category.id.ifBlank { java.util.UUID.randomUUID().toString() }
+                        it[storeId] = category.storeId
                         it[name] = category.name
+                        it[parentId] = category.parentId
                         it[icon] = category.icon
                         it[color] = category.color
                     }
@@ -217,13 +232,15 @@ class SqlitePageRepository : PageRepository {
         }
 
     override suspend fun deleteCategory(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit> =
         try {
             dbQuery {
-                val deleted = CategoriesTable.deleteWhere { (CategoriesTable.id eq id) and (ownerId eq token) }
-                if (deleted > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir categoria"))
+                val updated = CategoriesTable.update({ (CategoriesTable.id eq id) and (StoresTable.ownerId eq token) }) {
+                    it[deletedAt] = System.currentTimeMillis()
+                }
+                if (updated > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir categoria"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -242,32 +259,35 @@ class SqlitePageRepository : PageRepository {
     private fun saveProductsForComponent(
         componentId: Int,
         products: List<Product>,
-        ownerId: String,
+        storeId: String,
     ) {
         products.forEachIndexed { index, product ->
             var effectiveCategoryId = product.categoryId
             if (effectiveCategoryId == null && !product.categoryName.isNullOrBlank()) {
                 val existingCat =
                     CategoriesTable.selectAll()
-                        .where { (CategoriesTable.ownerId eq ownerId) and (CategoriesTable.name eq product.categoryName!!) }
+                        .where { (CategoriesTable.storeId eq storeId) and (CategoriesTable.name eq product.categoryName!!) }
                         .firstOrNull()
 
                 effectiveCategoryId =
                     if (existingCat != null) {
-                        existingCat[CategoriesTable.id].value
+                        existingCat[CategoriesTable.id]
                     } else {
-                        CategoriesTable.insertAndGetId {
-                            it[CategoriesTable.ownerId] = ownerId
-                            it[CategoriesTable.name] = product.categoryName!!
-                        }.value
+                        val newCatId = java.util.UUID.randomUUID().toString()
+                        CategoriesTable.insert {
+                            it[id] = newCatId
+                            it[this.storeId] = storeId
+                            it[this.name] = product.categoryName!!
+                        }
+                        newCatId
                     }
             }
 
             val productExists = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.count() > 0
             if (!productExists) {
                 ProductsTable.insert {
-                    it[id] = product.id
-                    it[this.ownerId] = ownerId
+                    it[id] = product.id.ifBlank { java.util.UUID.randomUUID().toString() }
+                    it[this.storeId] = storeId
                     it[name] = product.name
                     it[price] = product.price
                     it[description] = product.description
@@ -281,12 +301,14 @@ class SqlitePageRepository : PageRepository {
                     it[description] = product.description
                     it[categoryId] = effectiveCategoryId
                     it[stock] = product.stock
+                    it[updatedAt] = System.currentTimeMillis()
                 }
             }
 
             ProductImagesTable.deleteWhere { productId eq product.id }
             product.imageUrls.forEachIndexed { imgIndex, url ->
                 ProductImagesTable.insert {
+                    it[id] = java.util.UUID.randomUUID().toString()
                     it[productId] = product.id
                     it[imageUrl] = url
                     it[order] = imgIndex
@@ -294,9 +316,9 @@ class SqlitePageRepository : PageRepository {
             }
 
             ComponentProductsTable.insert {
-                it[this.componentId] = componentId
-                it[productId] = product.id
-                it[order] = index
+                it[ComponentProductsTable.componentId] = componentId
+                it[ComponentProductsTable.productId] = product.id
+                it[ComponentProductsTable.order] = index
             }
         }
     }
@@ -320,7 +342,8 @@ class SqlitePageRepository : PageRepository {
     }
 
     private fun fetchProductsForComponent(componentId: Int): List<Product> {
-        return (ComponentProductsTable innerJoin ProductsTable leftJoin CategoriesTable)
+        return (ComponentProductsTable innerJoin ProductsTable)
+            .join(CategoriesTable, JoinType.LEFT, ProductsTable.categoryId, CategoriesTable.id)
             .selectAll().where { ComponentProductsTable.componentId eq componentId }
             .orderBy(ComponentProductsTable.order to SortOrder.ASC)
             .map { row ->
@@ -333,26 +356,30 @@ class SqlitePageRepository : PageRepository {
         val images =
             ProductImagesTable.selectAll()
                 .where { ProductImagesTable.productId eq productId }
-                .orderBy(ProductImagesTable.order to SortOrder.ASC)
+                .orderBy(ProductImagesTable.updatedAt to SortOrder.ASC) // Use updatedAt for order if image order is not enough
                 .map { it[ProductImagesTable.imageUrl] }
 
         return Product(
             id = productId,
+            storeId = row[ProductsTable.storeId],
             name = row[ProductsTable.name],
             price = row[ProductsTable.price],
             imageUrls = images,
             description = row[ProductsTable.description] ?: "",
-            categoryId = row[ProductsTable.categoryId]?.value,
+            categoryId = row[ProductsTable.categoryId],
             categoryName = row.getOrNull(CategoriesTable.name),
             stock = row[ProductsTable.stock],
+            createdAt = row[ProductsTable.createdAt],
+            updatedAt = row[ProductsTable.updatedAt],
+            deletedAt = row[ProductsTable.deletedAt]
         )
     }
 
     private fun ResultRow.toPage(components: List<PageComponent>) =
         Page(
             id = this[PagesTable.id],
+            storeId = this[PagesTable.storeId],
             title = this[PagesTable.title],
-            ownerId = this[PagesTable.ownerId],
             customDomain = this[PagesTable.customDomain],
             whatsapp = this[PagesTable.whatsapp],
             components = components,
@@ -362,5 +389,8 @@ class SqlitePageRepository : PageRepository {
                 } catch (e: Exception) {
                     PageThemeConfig.DEFAULT
                 },
+            createdAt = this[PagesTable.createdAt],
+            updatedAt = this[PagesTable.updatedAt],
+            deletedAt = this[PagesTable.deletedAt]
         )
 }

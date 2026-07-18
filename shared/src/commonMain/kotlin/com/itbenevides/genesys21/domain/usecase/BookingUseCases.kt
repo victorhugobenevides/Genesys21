@@ -19,7 +19,7 @@ class DeleteBookingServiceUseCase(private val repository: BookingRepository) {
 }
 
 class GetAvailabilityUseCase(private val repository: BookingRepository) {
-    suspend operator fun invoke(merchantId: String): MerchantAvailability? = repository.getAvailability(merchantId)
+    suspend operator fun invoke(storeId: String): MerchantAvailability? = repository.getAvailability(storeId)
 }
 
 class SaveAvailabilityUseCase(private val repository: BookingRepository) {
@@ -29,8 +29,8 @@ class SaveAvailabilityUseCase(private val repository: BookingRepository) {
 }
 
 class GetAppointmentsUseCase(private val repository: BookingRepository) {
-    suspend operator fun invoke(serviceId: String?, merchantId: String?, date: LocalDate): List<Appointment> =
-        repository.getAppointments(serviceId, merchantId, date)
+    suspend operator fun invoke(serviceId: String?, storeId: String?, date: LocalDate): List<Appointment> =
+        repository.getAppointments(serviceId, storeId, date)
 
     suspend fun byPhone(phone: String): List<Appointment> = repository.getAppointmentsByPhone(phone)
 }

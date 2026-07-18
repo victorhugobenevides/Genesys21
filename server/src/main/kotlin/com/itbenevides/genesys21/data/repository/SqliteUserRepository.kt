@@ -15,9 +15,13 @@ class SqliteUserRepository : UserRepository {
         id = this[UsersTable.id],
         email = this[UsersTable.email],
         name = this[UsersTable.name],
+        avatarUrl = this[UsersTable.avatarUrl],
+        phone = this[UsersTable.phone],
         role = UserRole.valueOf(this[UsersTable.role]),
         status = UserStatus.valueOf(this[UsersTable.status]),
-        createdAt = this[UsersTable.createdAt]
+        createdAt = this[UsersTable.createdAt],
+        updatedAt = this[UsersTable.updatedAt],
+        deletedAt = this[UsersTable.deletedAt]
     )
 
     override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
@@ -38,16 +42,19 @@ class SqliteUserRepository : UserRepository {
                 UsersTable.update({ UsersTable.id eq profile.id }) {
                     it[name] = profile.name
                     it[email] = profile.email
-                    // Role e Status não são atualizados pelo próprio usuário via saveUserProfile
+                    it[avatarUrl] = profile.avatarUrl
+                    it[phone] = profile.phone
+                    it[updatedAt] = System.currentTimeMillis()
                 }
             } else {
                 UsersTable.insert {
                     it[id] = profile.id
                     it[name] = profile.name
                     it[email] = profile.email
+                    it[avatarUrl] = profile.avatarUrl
+                    it[phone] = profile.phone
                     it[role] = profile.role.name
                     it[status] = profile.status.name
-                    it[createdAt] = profile.createdAt
                 }
             }
             Result.success(Unit)

@@ -22,9 +22,6 @@ fun Route.userRoutes(userRepository: UserRepository) {
                     id = id,
                     email = "", // Será atualizado no próximo save
                     name = "Novo Usuário",
-                    role = com.itbenevides.genesys21.domain.model.UserRole.CUSTOMER,
-                    status = com.itbenevides.genesys21.domain.model.UserStatus.APPROVED,
-                    createdAt = System.currentTimeMillis()
                 )
                 userRepository.saveUserProfile(newProfile).onSuccess {
                     call.respond(newProfile)

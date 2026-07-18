@@ -81,7 +81,7 @@ class FakePageRepository : PageRepository {
     }
 
     override suspend fun deleteCategory(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit> {
         if (shouldReturnError) return Result.failure(Exception("Erro deletar categoria"))

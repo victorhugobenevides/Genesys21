@@ -1,18 +1,22 @@
 package com.itbenevides.genesys21.data.database
 
-import org.jetbrains.exposed.dao.id.IntIdTable
+import org.jetbrains.exposed.sql.ReferenceOption
 
 /**
  * Tabela dedicada para categorias, permitindo expansão futura (cores, ícones, etc).
+ * Redesenhada para usar UUIDs e suporte multi-tenant (StoreId).
  */
-object CategoriesTable : IntIdTable("categories") {
-    val ownerId = varchar("owner_id", 100).index("idx_categories_owner_id") // Vincula a categoria ao lojista
+object CategoriesTable : BaseTable("categories") {
+    val id = varchar("id", 50) // UUID
+    val storeId = varchar("store_id", 50).references(StoresTable.id, onDelete = ReferenceOption.CASCADE)
     val name = varchar("name", 100)
+    val parentId = varchar("parent_id", 50).references(id, onDelete = ReferenceOption.SET_NULL).nullable()
     val icon = varchar("icon_name", 50).nullable()
     val color = varchar("color_hex", 10).nullable()
 
+    override val primaryKey = PrimaryKey(id)
+
     init {
-        // Garante que o mesmo lojista não crie categorias duplicadas com o mesmo nome
-        uniqueIndex("unique_category_per_owner", ownerId, name)
+        uniqueIndex("unique_category_per_store", storeId, name)
     }
 }

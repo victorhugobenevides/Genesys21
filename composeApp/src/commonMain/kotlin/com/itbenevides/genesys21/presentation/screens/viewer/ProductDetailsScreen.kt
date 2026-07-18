@@ -328,7 +328,7 @@ private fun ProductInfoSection(
     GenesysSpacer(GenesysSpacing.Small)
 
     GenesysText(
-        text = state.product.description.ifBlank { GenesysStrings.ProductDescriptionFallback },
+        text = state.product.description?.ifBlank { GenesysStrings.ProductDescriptionFallback } ?: GenesysStrings.ProductDescriptionFallback,
         style = GenesysTextStyle.Body,
     )
 

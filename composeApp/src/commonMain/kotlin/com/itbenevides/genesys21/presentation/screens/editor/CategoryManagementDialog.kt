@@ -37,7 +37,8 @@ fun CategoryManagementDialog(
         if (editingCategory != null && editingCategory!!.name.isNotBlank()) {
             viewModel.saveCategory(editingCategory!!) { editingCategory = null }
         } else if (newCategoryName.isNotBlank()) {
-            viewModel.saveCategory(Category(ownerId = "", name = newCategoryName)) { newCategoryName = "" }
+            // NOTE: StoreId should ideally come from current page context
+            viewModel.saveCategory(Category(id = "", storeId = "default", name = newCategoryName)) { newCategoryName = "" }
         }
     }
 

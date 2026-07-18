@@ -90,7 +90,8 @@ fun ProductEditorScreen(
             is ProductEditorEvent.OnSaveClicked -> {
                 val finalProduct =
                     Product(
-                        id = product?.id ?: "P-${Random.nextInt(1000, 9999)}",
+                        id = product?.id ?: (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
+                        storeId = page.storeId,
                         name = state.name.trim(),
                         price = InputValidator.parsePrice(state.price.replace(",", ".")),
                         imageUrls = state.imageUrls,

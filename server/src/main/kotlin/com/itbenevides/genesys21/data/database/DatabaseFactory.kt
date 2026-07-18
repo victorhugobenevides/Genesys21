@@ -13,7 +13,10 @@ import kotlinx.coroutines.Dispatchers
 object DatabaseFactory {
     private var database: Database? = null
 
-    fun init(jdbcUrl: String = "jdbc:sqlite:data/genesys21.db") {
+    fun init(
+        jdbcUrl: String = "jdbc:sqlite:data/genesys21.db",
+        rebuild: Boolean = false,
+    ) {
         if (jdbcUrl.contains("data/")) {
             setupDatabaseDirectory()
             applySqliteOptimizations(jdbcUrl)
@@ -22,7 +25,12 @@ object DatabaseFactory {
         val dataSource = hikari(jdbcUrl)
         database = Database.connect(dataSource)
 
-        runMigrations()
+        if (rebuild) {
+            dropAndRebuild()
+            Seeder.seedInitialData()
+        } else {
+            runMigrations()
+        }
     }
 
     private fun setupDatabaseDirectory() {
@@ -59,12 +67,13 @@ object DatabaseFactory {
     private fun runMigrations() {
         transaction {
             // Executa correções estruturais antes de deixar o Exposed criar as tabelas
-            runFixes()
+            // runFixes()
 
             // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
             @Suppress("DEPRECATION")
             SchemaUtils.createMissingTablesAndColumns(
                 UsersTable,
+                StoresTable,
                 CategoriesTable,
                 PagesTable,
                 PageComponentsTable,
@@ -82,9 +91,40 @@ object DatabaseFactory {
                 BlockedDatesTable,
                 AppointmentsTable,
                 AppointmentNotesTable,
+                MediaTable,
+                AuditLogsTable,
             )
         }
     }
 
     suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
+
+    fun dropAndRebuild() {
+        transaction {
+            SchemaUtils.drop(
+                UsersTable,
+                StoresTable,
+                CategoriesTable,
+                PagesTable,
+                PageComponentsTable,
+                ProductsTable,
+                ProductImagesTable,
+                ComponentProductsTable,
+                CartsTable,
+                CartItemsTable,
+                OrdersTable,
+                OrderItemsTable,
+                BookingServicesTable,
+                BookingServiceImagesTable,
+                MerchantAvailabilityTable,
+                WeeklyAvailabilityTable,
+                BlockedDatesTable,
+                AppointmentsTable,
+                AppointmentNotesTable,
+                MediaTable,
+                AuditLogsTable,
+            )
+            runMigrations()
+        }
+    }
 }

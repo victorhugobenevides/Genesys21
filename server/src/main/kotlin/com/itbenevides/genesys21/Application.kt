@@ -42,10 +42,12 @@ fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
 
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
+    val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
+
     if (isTesting) {
-        DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared")
+        DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared", rebuild = true)
     } else {
-        DatabaseFactory.init()
+        DatabaseFactory.init(rebuild = shouldRebuild)
     }
 
     val pageRepository = SqlitePageRepository()

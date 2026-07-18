@@ -94,7 +94,7 @@ class FakeBookingRepository : BookingRepository {
         servicesList.removeAll { it.id == id }
     }
 
-    override suspend fun getAvailability(merchantId: String): MerchantAvailability? = merchantAvailability
+    override suspend fun getAvailability(storeId: String): MerchantAvailability? = merchantAvailability
 
     override suspend fun saveAvailability(availability: MerchantAvailability) {
         this.merchantAvailability = availability
@@ -102,7 +102,7 @@ class FakeBookingRepository : BookingRepository {
 
     override suspend fun getAppointments(
         serviceId: String?,
-        merchantId: String?,
+        storeId: String?,
         date: LocalDate,
     ): List<Appointment> = appointmentsList
 

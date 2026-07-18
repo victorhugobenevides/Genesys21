@@ -10,7 +10,7 @@ data class ProductEditorState(
     val price: String = "",
     val imageUrls: List<String> = emptyList(),
     val description: String = "",
-    val categoryId: Int? = null,
+    val categoryId: String? = null,
     val categoryName: String = "",
     val stock: String = "0",
     val isLoading: Boolean = false,
@@ -44,7 +44,7 @@ sealed class ProductEditorEvent {
 
     data class OnDescriptionChanged(val description: String) : ProductEditorEvent()
 
-    data class OnCategoryChanged(val categoryId: Int?, val categoryName: String) : ProductEditorEvent()
+    data class OnCategoryChanged(val categoryId: String?, val categoryName: String) : ProductEditorEvent()
 
     data class OnStockChanged(val stock: String) : ProductEditorEvent()
 

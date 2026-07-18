@@ -43,15 +43,15 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun getAvailability(merchantId: String): MerchantAvailability? {
+    override suspend fun getAvailability(storeId: String): MerchantAvailability? {
         return try {
-            val response = client.get("$baseUrl/api/booking/availability/$merchantId")
+            val response = client.get("$baseUrl/api/booking/availability/$storeId")
             if (response.status == HttpStatusCode.NotFound) {
-                return MerchantAvailability(merchantId = merchantId)
+                return MerchantAvailability(storeId = storeId)
             }
             response.body()
         } catch (e: Exception) {
-            MerchantAvailability(merchantId = merchantId)
+            MerchantAvailability(storeId = storeId)
         }
     }
 
@@ -65,11 +65,11 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun getAppointments(serviceId: String?, merchantId: String?, date: LocalDate): List<Appointment> {
+    override suspend fun getAppointments(serviceId: String?, storeId: String?, date: LocalDate): List<Appointment> {
         return try {
             val response = client.get("$baseUrl/api/booking/appointments") {
                 if (serviceId != null) parameter("serviceId", serviceId)
-                if (merchantId != null) parameter("merchantId", merchantId)
+                if (storeId != null) parameter("storeId", storeId)
                 parameter("date", date.toString())
             }
             if (response.status.isSuccess()) {

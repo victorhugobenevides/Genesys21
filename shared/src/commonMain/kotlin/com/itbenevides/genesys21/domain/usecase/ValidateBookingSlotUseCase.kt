@@ -8,7 +8,7 @@ class ValidateBookingSlotUseCase(
     private val repository: BookingRepository,
 ) {
     suspend operator fun invoke(
-        merchantId: String,
+        storeId: String,
         serviceId: String,
         startTime: Instant,
         endTime: Instant,
@@ -28,7 +28,7 @@ class ValidateBookingSlotUseCase(
         }
 
         // 2. Check merchant availability for that day
-        val availability = repository.getAvailability(merchantId)
+        val availability = repository.getAvailability(storeId)
         if (availability != null && availability.weeklyConfig.isNotEmpty()) {
             // Check blocked dates
             if (availability.blockedDates.contains(date)) {
@@ -48,7 +48,7 @@ class ValidateBookingSlotUseCase(
         // 3. Check for overlapping appointments
         // Buscamos apenas os agendamentos do mercador (independente do serviço)
         // para garantir que um profissional não tenha dois clientes ao mesmo tempo.
-        val existingAppointments = repository.getAppointments(null, merchantId, date)
+        val existingAppointments = repository.getAppointments(null, storeId, date)
         val hasOverlap =
             existingAppointments.any {
                 (startTime >= it.startTime && startTime < it.endTime) ||

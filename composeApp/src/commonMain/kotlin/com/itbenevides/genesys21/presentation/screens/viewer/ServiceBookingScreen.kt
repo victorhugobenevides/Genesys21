@@ -49,7 +49,7 @@ fun ServiceBookingScreen(
     val updateAvailableSlots = { date: LocalDate ->
         coroutineScope.launch {
             slotLoading = true
-            availableSlotsForDate = viewModel.getAvailableSlots(page.ownerId ?: "admin", service, date)
+            availableSlotsForDate = viewModel.getAvailableSlots(page.storeId ?: "admin", service, date)
             slotLoading = false
         }
     }
@@ -159,16 +159,17 @@ fun ServiceBookingScreen(
 
                                 val appointment = Appointment(
                                     id = "", // Server will generate
+                                    storeId = page.storeId,
                                     serviceId = service.id,
-                                    merchantId = page.ownerId ?: "admin",
+                                    customerId = viewModel.userProfile.value?.id,
                                     customerName = customerName,
                                     customerPhone = customerPhone,
                                     startTime = startInstant,
                                     endTime = endInstant,
-                                    userId = viewModel.userProfile.value?.id,
                                     notes = if (customerNotes.isNotBlank()) {
                                         listOf(
                                             BookingNote(
+                                                id = "",
                                                 content = customerNotes,
                                                 createdAt = kotlin.time.Clock.System.now().toEpochMilliseconds(),
                                                 authorName = customerName,
@@ -179,7 +180,7 @@ fun ServiceBookingScreen(
                                 )
 
                                 viewModel.createAppointment(
-                                    merchantId = page.ownerId ?: "admin",
+                                    storeId = page.storeId,
                                     appointment = appointment
                                 ) {
                                     showSuccessDialog = true

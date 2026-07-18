@@ -136,7 +136,8 @@ fun ServiceEditorScreen(
                     text = if (service == null) "Cadastrar Serviço" else "Salvar Alterações",
                     onClick = {
                         val newService = BookingService(
-                            id = service?.id ?: "s_${Random.nextInt(1000000)}",
+                            id = service?.id ?: (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
+                            storeId = "default", // Should be passed via props
                             name = name,
                             description = description,
                             price = price.toDoubleOrNull() ?: 0.0,

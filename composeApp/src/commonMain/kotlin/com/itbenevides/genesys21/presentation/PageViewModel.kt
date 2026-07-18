@@ -235,14 +235,13 @@ class PageViewModel(
                 val order =
                     Order(
                         id = "",
-                        userId = page?.ownerId ?: "",
+                        storeId = page?.storeId ?: "",
                         customerId = currentUserId ?: cartRepository.getSessionId(),
                         customerName = customerName.value,
                         customerPhone = customerPhone.value,
                         items = cart.value,
                         total = cartTotal.value,
                         status = OrderStatus.PENDING,
-                        createdAt = now().toEpochMilliseconds(),
                     )
                 submitOrderUseCase(order).onSuccess { _ ->
                     cartRepository.clearCart()
@@ -397,7 +396,7 @@ class PageViewModel(
         }
     }
 
-    fun deleteCategory(categoryId: Int) {
+    fun deleteCategory(categoryId: String) {
         viewModelScope.launch {
             val token = authRepository.getCurrentUserToken() ?: return@launch
             try {
@@ -454,10 +453,10 @@ class PageViewModel(
         }
     }
 
-    fun loadAvailability(merchantId: String) {
+    fun loadAvailability(storeId: String) {
         viewModelScope.launch {
             try {
-                val mid = merchantId.ifBlank { "admin" }
+                val mid = storeId.ifBlank { "admin" }
                 _availability.value = getAvailabilityUseCase(mid)
             } catch (e: Exception) {
                 handleError("Erro ao carregar disponibilidade", e)
@@ -483,11 +482,11 @@ class PageViewModel(
     }
 
     suspend fun getAvailableSlots(
-        merchantId: String,
+        storeId: String,
         service: BookingService,
         date: LocalDate,
     ): List<String> {
-        val mid = merchantId.ifBlank { "admin" }
+        val mid = storeId.ifBlank { "admin" }
         val avail = getAvailabilityUseCase(mid)
 
         // 1. Check if day is blocked
@@ -556,13 +555,13 @@ class PageViewModel(
 
     fun loadAppointments(
         date: LocalDate,
-        merchantId: String = "admin",
+        storeId: String = "admin",
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 // Buscamos todos os agendamentos do mercador para o dia
-                _appointments.value = getAppointmentsUseCase(null, merchantId, date)
+                _appointments.value = getAppointmentsUseCase(null, storeId, date)
             } catch (e: Exception) {
                 handleError("Erro ao carregar agenda", e)
             } finally {
@@ -572,7 +571,7 @@ class PageViewModel(
     }
 
     fun createAppointment(
-        merchantId: String,
+        storeId: String,
         appointment: Appointment,
         onSuccess: () -> Unit,
     ) {
@@ -580,18 +579,18 @@ class PageViewModel(
             _isLoading.value = true
             try {
                 // Validation before creating
-                val mid = merchantId.ifBlank { "admin" }
+                val mid = storeId.ifBlank { "admin" }
                 val isValid =
                     validateBookingSlotUseCase(
-                        merchantId = mid,
+                        storeId = mid,
                         serviceId = appointment.serviceId,
                         startTime = appointment.startTime,
                         endTime = appointment.endTime,
                     ).getOrDefault(false)
 
                 if (isValid) {
-                    val finalAppointment = if (appointment.userId == null) {
-                        appointment.copy(userId = authRepository.getCurrentUserId())
+                    val finalAppointment = if (appointment.customerId == null) {
+                        appointment.copy(customerId = authRepository.getCurrentUserId())
                     } else appointment
 
                     createAppointmentUseCase(finalAppointment).onSuccess { _ ->
@@ -617,7 +616,7 @@ class PageViewModel(
                 updateAppointmentUseCase(appointment).onSuccess { _ ->
                     // Reload appointments to reflect changes
                     val today = now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                    loadAppointments(today, appointment.merchantId)
+                    loadAppointments(today, appointment.storeId)
                 }.onFailure {
                     handleError("Erro ao atualizar agendamento", it)
                 }

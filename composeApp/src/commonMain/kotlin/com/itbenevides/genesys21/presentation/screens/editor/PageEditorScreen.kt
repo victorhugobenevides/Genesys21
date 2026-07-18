@@ -38,7 +38,7 @@ fun PageEditorScreen(
                     )
             }
             is PageEditorEvent.OnSaveClicked -> {
-                val newPage = (page ?: Page(state.id, state.title.trim())).copy(title = state.title.trim())
+                val newPage = (page ?: Page(state.id, "default", state.title.trim())).copy(title = state.title.trim())
                 viewModel.savePage(newPage, isDraft = false) { onBack() }
             }
             is PageEditorEvent.OnBackClicked -> onBack()

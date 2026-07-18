@@ -3,16 +3,16 @@ package com.itbenevides.genesys21.domain.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Product(
+data class Store(
     val id: String, // UUID
-    val storeId: String, // Store.id
+    val ownerId: String, // UserProfile.id
     val name: String,
-    val price: Double,
     val description: String? = null,
-    val imageUrls: List<String> = emptyList(),
-    val categoryId: String? = null, // Refactor to String (UUID)
-    val categoryName: String? = null,
-    val stock: Int = 0,
+    val logoUrl: String? = null,
+    val whatsapp: String? = null,
+    val customDomain: String? = null,
+    val theme: PageThemeConfig = PageThemeConfig.ROYAL,
+    val customTheme: CustomThemeConfig? = null,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
     val deletedAt: Long? = null

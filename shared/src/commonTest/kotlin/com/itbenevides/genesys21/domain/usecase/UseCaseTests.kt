@@ -23,7 +23,7 @@ class UseCaseTests {
     @Test
     fun getPagesUseCase_should_return_list_from_repository() =
         runTest {
-            val testPage = Page("1", "Teste")
+            val testPage = Page("1", "s1", "Teste")
             repository.savePage(testPage, "token", isEditing = false)
 
             val result = getPagesUseCase("token")
@@ -35,7 +35,7 @@ class UseCaseTests {
     @Test
     fun savePageUseCase_should_call_save_when_isEditing_is_false() =
         runTest {
-            val page = Page("new", "Nova Página")
+            val page = Page("new", "s1", "Nova Página")
             val result = savePageUseCase(page, "token", isEditing = false)
 
             assertTrue(result.isSuccess)
@@ -45,7 +45,7 @@ class UseCaseTests {
     @Test
     fun savePageUseCase_should_call_update_when_isEditing_is_true() =
         runTest {
-            val page = Page("1", "Original")
+            val page = Page("1", "s1", "Original")
             repository.savePage(page, "token", isEditing = false)
 
             val updatedPage = page.copy(title = "Editada")
@@ -59,7 +59,7 @@ class UseCaseTests {
     fun savePageUseCase_should_return_failure_when_repository_fails() =
         runTest {
             repository.shouldReturnError = true
-            val page = Page("1", "Erro")
+            val page = Page("1", "s1", "Erro")
 
             val result = savePageUseCase(page, "token", isEditing = false)
 

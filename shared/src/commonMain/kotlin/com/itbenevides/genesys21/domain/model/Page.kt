@@ -223,13 +223,16 @@ sealed class PageComponent {
 @Serializable
 data class Page(
     val id: String,
+    val storeId: String,
     val title: String,
-    val ownerId: String? = null,
     val customDomain: String? = null,
     val whatsapp: String? = null,
     val components: List<PageComponent> = emptyList(),
     val theme: PageThemeConfig = PageThemeConfig.ROYAL,
     val customTheme: CustomThemeConfig? = null,
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0,
+    val deletedAt: Long? = null
 ) {
     companion object {
         fun defaultTemplate(
@@ -243,6 +246,7 @@ data class Page(
                     val category = oldSchoolCategories[i % oldSchoolCategories.size]
                     Product(
                         id = "vint_$i",
+                        storeId = "default",
                         name =
                             when (category) {
                                 "Vintage Denim" -> listOf("Calça Jeans 501", "Shorts Acid Wash", "Jaqueta Jeans Oversized").random() + " #$i"
@@ -260,6 +264,7 @@ data class Page(
 
             return Page(
                 id = id,
+                storeId = "default",
                 title = if (title.isBlank()) "Sua Vitrine" else title,
                 theme = PageThemeConfig.OCEAN,
                 components =
@@ -295,6 +300,7 @@ data class Page(
         ): Page {
             return Page(
                 id = id,
+                storeId = "default",
                 title = if (title.isBlank()) "Meu Perfil" else title,
                 theme = PageThemeConfig.RADARANI,
                 components =
@@ -320,6 +326,7 @@ data class Page(
                                 (1..4).map { i ->
                                     Product(
                                         id = "post_$i",
+                                        storeId = "default",
                                         name = "Post #$i",
                                         price = 0.0,
                                         imageUrls = listOf("https://picsum.photos/seed/insta$i/400/400"),
@@ -338,6 +345,7 @@ data class Page(
         ): Page {
             return Page(
                 id = id,
+                storeId = "default",
                 title = if (title.isBlank()) "Meu Artigo" else title,
                 theme = PageThemeConfig.MINIMAL,
                 components =
@@ -395,6 +403,7 @@ data class Page(
         ): Page {
             return Page(
                 id = id,
+                storeId = "default",
                 title = if (title.isBlank()) "Design Pro" else title,
                 theme = PageThemeConfig.MODERN,
                 customTheme =
@@ -432,6 +441,7 @@ data class Page(
                 listOf(
                     BookingService(
                         id = "bs_1",
+                        storeId = "default",
                         name = "Corte de Cabelo",
                         description = "Corte degradê ou social, finalizado na tesoura e máquina.",
                         price = 45.0,
@@ -440,6 +450,7 @@ data class Page(
                     ),
                     BookingService(
                         id = "bs_2",
+                        storeId = "default",
                         name = "Barba Completa",
                         description = "Toalha quente, óleo para barba e alinhamento com navalha.",
                         price = 35.0,
@@ -448,6 +459,7 @@ data class Page(
                     ),
                     BookingService(
                         id = "bs_3",
+                        storeId = "default",
                         name = "Combo Corte + Barba",
                         description = "O trato completo para o homem moderno.",
                         price = 70.0,
@@ -460,6 +472,7 @@ data class Page(
                 listOf(
                     Product(
                         id = "bp_1",
+                        storeId = "default",
                         name = "Pomada Efeito Matte",
                         price = 55.0,
                         imageUrls = listOf("https://images.unsplash.com/photo-1590159357421-2e67605d398f?q=80&w=800"),
@@ -468,6 +481,7 @@ data class Page(
                     ),
                     Product(
                         id = "bp_2",
+                        storeId = "default",
                         name = "Óleo para Barba 30ml",
                         price = 42.0,
                         imageUrls = listOf("https://images.unsplash.com/photo-1626285495547-f7e853758b15?q=80&w=800"),
@@ -478,6 +492,7 @@ data class Page(
 
             return Page(
                 id = id,
+                storeId = "default",
                 title = if (title.isBlank()) "Barbearia Genesys" else title,
                 theme = PageThemeConfig.ROYAL,
                 components =

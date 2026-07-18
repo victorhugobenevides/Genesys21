@@ -11,10 +11,10 @@ interface BookingRepository {
     suspend fun saveService(service: BookingService)
     suspend fun deleteService(id: String)
 
-    suspend fun getAvailability(merchantId: String): MerchantAvailability?
+    suspend fun getAvailability(storeId: String): MerchantAvailability?
     suspend fun saveAvailability(availability: MerchantAvailability)
 
-    suspend fun getAppointments(serviceId: String?, merchantId: String?, date: LocalDate): List<Appointment>
+    suspend fun getAppointments(serviceId: String?, storeId: String?, date: LocalDate): List<Appointment>
     suspend fun getAppointmentsByPhone(phone: String): List<Appointment>
     suspend fun createAppointment(appointment: Appointment)
     suspend fun updateAppointment(appointment: Appointment)

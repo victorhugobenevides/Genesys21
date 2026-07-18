@@ -24,7 +24,7 @@ fun Route.categoryRoutes(repository: PageRepository) {
             post {
                 val principal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
                 val category = call.receive<Category>()
-                repository.saveCategory(category.copy(ownerId = principal.name), principal.name).onSuccess {
+                repository.saveCategory(category, principal.name).onSuccess {
                     call.respond(HttpStatusCode.Created)
                 }.onFailure {
                     call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar categoria")
@@ -34,7 +34,7 @@ fun Route.categoryRoutes(repository: PageRepository) {
             put {
                 val principal = call.principal<UserIdPrincipal>() ?: return@put call.respond(HttpStatusCode.Unauthorized)
                 val category = call.receive<Category>()
-                repository.saveCategory(category.copy(ownerId = principal.name), principal.name).onSuccess {
+                repository.saveCategory(category, principal.name).onSuccess {
                     call.respond(HttpStatusCode.OK)
                 }.onFailure {
                     call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao atualizar categoria")
@@ -43,7 +43,7 @@ fun Route.categoryRoutes(repository: PageRepository) {
 
             delete("/{id}") {
                 val principal = call.principal<UserIdPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
-                val id = call.parameters["id"]?.toIntOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 repository.deleteCategory(id, principal.name).onSuccess {
                     call.respond(HttpStatusCode.OK)
                 }.onFailure {

@@ -19,22 +19,27 @@ object SafeInstantSerializer : KSerializer<Instant> {
 
 @Serializable
 data class BookingService(
-    val id: String,
+    val id: String, // UUID
+    val storeId: String, // Store.id
     val name: String,
-    val description: String,
+    val description: String? = null,
     val price: Double,
     val durationMinutes: Int,
     val bufferTimeMinutes: Int = 0,
-    val categoryId: Int? = null,
+    val categoryId: String? = null, // Refactor to String (UUID)
     val imageUrls: List<String> = emptyList(),
     val isEnabled: Boolean = true,
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0,
+    val deletedAt: Long? = null
 )
 
 @Serializable
 data class MerchantAvailability(
-    val merchantId: String,
+    val storeId: String, // Rename from merchantId
     val weeklyConfig: List<DayConfig> = emptyList(),
     val blockedDates: List<LocalDate> = emptyList(),
+    val updatedAt: Long = 0
 )
 
 @Serializable
@@ -55,27 +60,31 @@ data class TimeSlotRange(
 
 @Serializable
 data class BookingNote(
-    val id: String = "",
+    val id: String, // UUID
     val content: String,
-    val createdAt: Long,
+    val authorId: String? = null, // Link to UserProfile.id
     val authorName: String,
-    val isPrivate: Boolean = false, // Se true, apenas o mercador vê
+    val isPrivate: Boolean = false,
+    val createdAt: Long = 0
 )
 
 @Serializable
 data class Appointment(
-    val id: String,
-    val serviceId: String,
-    val merchantId: String,
+    val id: String, // UUID
+    val storeId: String, // Rename from merchantId
+    val serviceId: String, // UUID
+    val customerId: String? = null, // Rename from userId
     val customerName: String,
     val customerPhone: String,
     @Serializable(with = SafeInstantSerializer::class)
     val startTime: Instant,
     @Serializable(with = SafeInstantSerializer::class)
     val endTime: Instant,
-    val userId: String? = null,
     val status: BookingStatus = BookingStatus.PENDING,
     val notes: List<BookingNote> = emptyList(),
+    val createdAt: Long = 0,
+    val updatedAt: Long = 0,
+    val deletedAt: Long? = null
 )
 
 @Serializable

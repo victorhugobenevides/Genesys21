@@ -232,7 +232,7 @@ class KtorPageRepository(
     }
 
     override suspend fun deleteCategory(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit> {
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))

@@ -18,6 +18,7 @@ class PageSerializationTest {
         val page =
             Page(
                 id = "test-1",
+                storeId = "s1",
                 title = "Test Page",
                 components =
                     listOf(
@@ -65,7 +66,7 @@ class PageSerializationTest {
     fun testReorderingLogic() {
         val c1 = PageComponent.Header("First")
         val c2 = PageComponent.Header("Second")
-        val page = Page("id", "title", components = listOf(c1, c2))
+        val page = Page("id", "s1", "title", components = listOf(c1, c2))
 
         // Simulate Move Down (0 to 1)
         val list = page.components.toMutableList()

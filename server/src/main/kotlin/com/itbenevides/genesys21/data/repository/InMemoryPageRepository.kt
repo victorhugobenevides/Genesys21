@@ -6,19 +6,19 @@ import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryPageRepository : PageRepository {
     private val pagesDB = ConcurrentHashMap<String, Page>()
-    private val categoriesDB = ConcurrentHashMap<Int, Category>()
-    private var categoryIdCounter = 1
+    private val categoriesDB = ConcurrentHashMap<String, Category>()
 
     override suspend fun getPages(token: String): List<Page> {
-        return pagesDB.values.filter { it.ownerId == token }
+        // Mock simplification: in memory doesn't join with stores
+        return pagesDB.values.filter { it.deletedAt == null }
     }
 
     override suspend fun getPublicPage(id: String): Result<Page> {
-        return pagesDB[id]?.let { Result.success(it) } ?: Result.failure(Exception("Page not found"))
+        return pagesDB[id]?.let { if (it.deletedAt == null) Result.success(it) else Result.failure(Exception("Deleted")) } ?: Result.failure(Exception("Page not found"))
     }
 
     override suspend fun getPageByDomain(domain: String): Result<Page> {
-        return pagesDB.values.find { it.customDomain == domain }
+        return pagesDB.values.find { it.customDomain == domain && it.deletedAt == null }
             ?.let { Result.success(it) }
             ?: Result.failure(Exception("Domain not linked"))
     }
@@ -28,16 +28,7 @@ class InMemoryPageRepository : PageRepository {
         token: String,
         isEditing: Boolean,
     ): Result<Unit> {
-        val pageWithOwner = page.copy(ownerId = token)
-
-        if (isEditing) {
-            val existingPage = pagesDB[page.id]
-            if (existingPage != null && existingPage.ownerId != token) {
-                return Result.failure(Exception("Unauthorized: You do not own this page"))
-            }
-        }
-
-        pagesDB[page.id] = pageWithOwner
+        pagesDB[page.id] = page
         return Result.success(Unit)
     }
 
@@ -45,16 +36,9 @@ class InMemoryPageRepository : PageRepository {
         id: String,
         token: String,
     ): Result<Unit> {
-        val existingPage = pagesDB[id]
-        if (existingPage != null && existingPage.ownerId != token) {
-            return Result.failure(Exception("Unauthorized: You do not own this page"))
-        }
-
-        return if (pagesDB.remove(id) != null) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Page not found"))
-        }
+        val page = pagesDB[id] ?: return Result.failure(Exception("Not found"))
+        pagesDB[id] = page.copy(deletedAt = System.currentTimeMillis())
+        return Result.success(Unit)
     }
 
     override suspend fun uploadImage(
@@ -68,7 +52,7 @@ class InMemoryPageRepository : PageRepository {
     override suspend fun getAllProducts(token: String): Result<List<Product>> {
         val products =
             pagesDB.values
-                .filter { it.ownerId == token }
+                .filter { it.deletedAt == null }
                 .flatMap { page ->
                     page.components.filterIsInstance<PageComponent.ProductList>().flatMap { it.products }
                 }
@@ -78,28 +62,24 @@ class InMemoryPageRepository : PageRepository {
     }
 
     override suspend fun getCategories(token: String): Result<List<Category>> {
-        return Result.success(categoriesDB.values.filter { it.ownerId == token }.toList())
+        return Result.success(categoriesDB.values.filter { it.deletedAt == null }.toList())
     }
 
     override suspend fun saveCategory(
         category: Category,
         token: String,
     ): Result<Unit> {
-        val catId = category.id
-        if (catId != null) {
-            categoriesDB[catId] = category
-        } else {
-            val newId = categoryIdCounter++
-            categoriesDB[newId] = category.copy(id = newId, ownerId = token)
-        }
+        val catId = category.id.ifBlank { java.util.UUID.randomUUID().toString() }
+        categoriesDB[catId] = category.copy(id = catId)
         return Result.success(Unit)
     }
 
     override suspend fun deleteCategory(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit> {
-        categoriesDB.remove(id)
+        val cat = categoriesDB[id] ?: return Result.failure(Exception("Not found"))
+        categoriesDB[id] = cat.copy(deletedAt = System.currentTimeMillis())
         return Result.success(Unit)
     }
 

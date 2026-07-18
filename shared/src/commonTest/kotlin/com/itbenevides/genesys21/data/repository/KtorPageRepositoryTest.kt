@@ -31,7 +31,7 @@ class KtorPageRepositoryTest {
     @Test
     fun getPages_should_return_list_when_server_returns_success() =
         runTest {
-            val mockPages = listOf(Page("1", "Página 1"), Page("2", "Página 2"))
+            val mockPages = listOf(Page("1", "s1", "Página 1"), Page("2", "s1", "Página 2"))
             val client =
                 createMockClient { _ ->
                     respond(
@@ -51,7 +51,7 @@ class KtorPageRepositoryTest {
     @Test
     fun savePage_should_send_correct_data_and_return_success() =
         runTest {
-            val pageToSave = Page("new", "Nova")
+            val pageToSave = Page("new", "s1", "Nova")
             val client =
                 createMockClient { request ->
                     assertEquals(HttpMethod.Post, request.method)

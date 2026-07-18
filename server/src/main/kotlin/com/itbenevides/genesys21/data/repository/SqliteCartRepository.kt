@@ -39,13 +39,17 @@ class SqliteCartRepository {
                         product =
                             Product(
                                 id = productId,
+                                storeId = if (hasProductMaster) row[ProductsTable.storeId] else "default",
                                 name = if (hasProductMaster) row[ProductsTable.name] else "Produto de Exemplo",
                                 price = if (hasProductMaster) row[ProductsTable.price] else 0.0,
                                 imageUrls = images,
                                 description = if (hasProductMaster) (row[ProductsTable.description] ?: "") else "",
-                                categoryId = row[ProductsTable.categoryId]?.value,
+                                categoryId = row[ProductsTable.categoryId],
                                 categoryName = row.getOrNull(CategoriesTable.name),
                                 stock = if (hasProductMaster) row[ProductsTable.stock] else 0,
+                                createdAt = if (hasProductMaster) row[ProductsTable.createdAt] else 0,
+                                updatedAt = if (hasProductMaster) row[ProductsTable.updatedAt] else 0,
+                                deletedAt = if (hasProductMaster) row[ProductsTable.deletedAt] else null,
                             ),
                         quantity = row[CartItemsTable.quantity],
                     )

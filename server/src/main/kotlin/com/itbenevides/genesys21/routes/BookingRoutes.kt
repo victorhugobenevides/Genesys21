@@ -36,9 +36,9 @@ fun Route.bookingRoutes(repository: BookingRepository) {
             call.respond(HttpStatusCode.OK)
         }
 
-        get("/availability/{merchantId}") {
-            val merchantId = call.parameters["merchantId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val availability = repository.getAvailability(merchantId)
+        get("/availability/{storeId}") {
+            val storeId = call.parameters["storeId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val availability = repository.getAvailability(storeId)
             if (availability != null) call.respond(availability) else call.respond(HttpStatusCode.NotFound)
         }
 
@@ -57,10 +57,10 @@ fun Route.bookingRoutes(repository: BookingRepository) {
                 }
 
                 val serviceId = call.request.queryParameters["serviceId"]
-                val merchantId = call.request.queryParameters["merchantId"]
+                val storeId = call.request.queryParameters["storeId"]
                 val dateStr = call.request.queryParameters["date"] ?: return@get call.respond(HttpStatusCode.BadRequest)
                 val date = LocalDate.parse(dateStr)
-                val appointments = repository.getAppointments(serviceId, merchantId, date)
+                val appointments = repository.getAppointments(serviceId, storeId, date)
                 call.respond(appointments)
             } catch (e: Exception) {
                 e.printStackTrace()

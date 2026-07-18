@@ -16,7 +16,7 @@ class SaveCategoryUseCase(private val repository: PageRepository) {
 
 class DeleteCategoryUseCase(private val repository: PageRepository) {
     suspend operator fun invoke(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit> = repository.deleteCategory(id, token)
 }

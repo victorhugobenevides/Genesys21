@@ -67,7 +67,7 @@ fun ServiceCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = service.description,
+                    text = service.description ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,

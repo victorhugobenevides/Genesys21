@@ -140,7 +140,7 @@ android {
 }
 
 dependencies {
-    debugImplementation("org.jetbrains.compose.ui:ui-tooling")
+    debugImplementation("org.jetbrains.compose.ui:ui-tooling:${libs.versions.composeMultiplatform.get()}")
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
 }

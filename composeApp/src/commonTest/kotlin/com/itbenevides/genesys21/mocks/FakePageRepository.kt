@@ -74,7 +74,7 @@ class FakePageRepository : PageRepository {
     }
 
     override suspend fun deleteCategory(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit> {
         categories.removeAll { it.id == id }

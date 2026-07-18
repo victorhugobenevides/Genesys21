@@ -317,7 +317,7 @@ private fun ActionNavShowcase() {
 
 @Composable
 private fun DisplayShowcase() {
-    val sampleProduct = Product("s1", "Modern Desk Lamp", 129.0, imageUrls = listOf("https://images.unsplash.com/photo-1534073828943-f801091bb18c?q=80&w=800"))
+    val sampleProduct = Product("s1", "s1", "Modern Desk Lamp", 129.0, imageUrls = listOf("https://images.unsplash.com/photo-1534073828943-f801091bb18c?q=80&w=800"))
 
     ShowcaseSection("Cards & Stats", "Information display containers.") {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -413,7 +413,7 @@ private fun FeedbackShowcase() {
 
 @Composable
 private fun BookingShowcase() {
-    val sampleService = BookingService("s1", "Haircut", "Classic man haircut.", 45.0, 40)
+    val sampleService = BookingService("s1", "s1", "Haircut", "Classic man haircut.", 45.0, 40)
 
     ShowcaseSection("Booking Atoms", "Day tiles and time slots.") {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

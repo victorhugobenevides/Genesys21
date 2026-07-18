@@ -95,14 +95,15 @@ fun PageListScreen(
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+                val storeId = (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("") // Dummy storeId
                 val newPage =
                     when (event.templateType) {
-                        PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim())
-                        PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim())
-                        PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim())
-                        PageTemplateType.BARBER_SHOP -> Page.barberShopTemplate(id, state.newPageTitle.trim())
-                        PageTemplateType.PRO_DESIGN -> Page.proDesignTemplate(id, state.newPageTitle.trim())
-                        PageTemplateType.EMPTY -> Page(id, state.newPageTitle.trim())
+                        PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
+                        PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
+                        PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
+                        PageTemplateType.BARBER_SHOP -> Page.barberShopTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
+                        PageTemplateType.PRO_DESIGN -> Page.proDesignTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
+                        PageTemplateType.EMPTY -> Page(id, storeId, state.newPageTitle.trim())
                     }
 
                 viewModel.savePage(newPage, false) {

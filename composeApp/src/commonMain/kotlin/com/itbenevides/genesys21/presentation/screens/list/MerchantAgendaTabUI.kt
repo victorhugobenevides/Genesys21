@@ -33,7 +33,7 @@ fun MerchantAgendaTabUI(
 ) {
     val appointments by viewModel.appointments.collectAsState()
     val pages by viewModel.pages.collectAsState()
-    val merchantId = pages.firstOrNull()?.ownerId ?: "admin"
+    val storeId = pages.firstOrNull()?.storeId ?: "admin"
     val availability by viewModel.availability.collectAsState()
 
     val today = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
@@ -42,9 +42,9 @@ fun MerchantAgendaTabUI(
     var showAvailabilityDialog by remember { mutableStateOf(false) }
     var selectedAppointmentForEdit by remember { mutableStateOf<Appointment?>(null) }
 
-    LaunchedEffect(selectedDate, merchantId) {
-        viewModel.loadAppointments(selectedDate, merchantId)
-        viewModel.loadAvailability(merchantId)
+    LaunchedEffect(selectedDate, storeId) {
+        viewModel.loadAppointments(selectedDate, storeId)
+        viewModel.loadAvailability(storeId)
     }
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
@@ -108,10 +108,10 @@ fun MerchantAgendaTabUI(
 
     if (showAvailabilityDialog) {
         AvailabilitySettingsDialog(
-            initialAvailability = availability ?: MerchantAvailability(merchantId = merchantId),
+            initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
             onDismiss = { showAvailabilityDialog = false },
             onSave = {
-                viewModel.saveAvailability(it)
+                viewModel.saveAvailability(it.copy(storeId = storeId))
                 showAvailabilityDialog = false
             }
         )

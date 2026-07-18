@@ -87,7 +87,7 @@ class PageViewModelTest {
     @Test
     fun `loadPages should update state with list from repository`() =
         runTest {
-            val testPage = Page("1", "Teste ViewModel")
+            val testPage = Page("1", "s1", "Teste ViewModel")
             fakePageRepository.savePage(testPage, "token", isEditing = false)
             fakeAuthRepository.setToken("token")
 
@@ -103,7 +103,7 @@ class PageViewModelTest {
     fun `savePage should call repository and refresh list`() =
         runTest {
             fakeAuthRepository.setToken("valid-token")
-            val newPage = Page("p1", "New Page")
+            val newPage = Page("p1", "s1", "New Page")
 
             var success = false
             viewModel.savePage(newPage) { success = true }
@@ -117,7 +117,7 @@ class PageViewModelTest {
     fun `deletePage should call repository and refresh list`() =
         runTest {
             fakeAuthRepository.setToken("token")
-            val testPage = Page("1", "ToDelete")
+            val testPage = Page("1", "s1", "ToDelete")
             fakePageRepository.savePage(testPage, "token", isEditing = false)
 
             viewModel.deletePage("1") { }
@@ -131,7 +131,7 @@ class PageViewModelTest {
     @Test
     fun `loadBookingServices should update services state`() =
         runTest {
-            val service = BookingService("s1", "Cabelo", "Corte", 50.0, 30)
+            val service = BookingService("s1", "s1", "Cabelo", "Corte", 50.0, 30)
             fakeBookingRepository.saveService(service)
 
             viewModel.loadBookingServices()
@@ -148,8 +148,8 @@ class PageViewModelTest {
             val appointment =
                 Appointment(
                     id = "a1",
+                    storeId = "s1",
                     serviceId = "s1",
-                    merchantId = "m1",
                     customerName = "Victor",
                     customerPhone = "99999999",
                     startTime = futureTime,
@@ -157,11 +157,11 @@ class PageViewModelTest {
                 )
 
             var success = false
-            viewModel.createAppointment("m1", appointment) { success = true }
+            viewModel.createAppointment("s1", appointment) { success = true }
             advanceUntilIdle()
 
             assertTrue(success)
-            viewModel.loadAppointments(LocalDate(2025, 1, 1), "m1")
+            viewModel.loadAppointments(LocalDate(2025, 1, 1), "s1")
             advanceUntilIdle()
             assertEquals(1, viewModel.appointments.value.size)
         }
@@ -172,8 +172,8 @@ class PageViewModelTest {
             val futureTime = now().plus(kotlin.time.Duration.parse("2h"))
             val app1 = Appointment(
                 id = "1",
+                storeId = "s1",
                 serviceId = "s1",
-                merchantId = "m1",
                 customerName = "C1",
                 customerPhone = "1",
                 startTime = futureTime,
@@ -183,8 +183,8 @@ class PageViewModelTest {
 
             val app2 = Appointment(
                 id = "2",
+                storeId = "s1",
                 serviceId = "s1",
-                merchantId = "m1",
                 customerName = "C2",
                 customerPhone = "2",
                 startTime = futureTime,
@@ -192,7 +192,7 @@ class PageViewModelTest {
             )
 
             var success = false
-            viewModel.createAppointment("m1", app2) { success = true }
+            viewModel.createAppointment("s1", app2) { success = true }
             advanceUntilIdle()
 
             assertFalse(success)
@@ -205,7 +205,7 @@ class PageViewModelTest {
     @Test
     fun `addToCart should update cart state and total`() =
         runTest {
-            val product = Product("pr1", "Camisa", 100.0)
+            val product = Product("pr1", "s1", "Camisa", 100.0)
 
             viewModel.addToCart(product)
             advanceUntilIdle()
@@ -218,7 +218,7 @@ class PageViewModelTest {
     @Test
     fun `removeFromCart should update cart correctly`() =
         runTest {
-            val product = Product("pr1", "Camisa", 100.0)
+            val product = Product("pr1", "s1", "Camisa", 100.0)
             viewModel.addToCart(product)
             advanceUntilIdle()
 
@@ -234,7 +234,7 @@ class PageViewModelTest {
     @Test
     fun `submitOrder should clear cart on success`() =
         runTest {
-            val product = Product("pr1", "Camisa", 100.0)
+            val product = Product("pr1", "s1", "Camisa", 100.0)
             viewModel.addToCart(product)
             advanceUntilIdle()
 
@@ -252,7 +252,7 @@ class PageViewModelTest {
     fun `saveCategory should refresh category list`() =
         runTest {
             fakeAuthRepository.setToken("token")
-            val cat = Category(id = 1, ownerId = "o1", name = "Test Cat")
+            val cat = Category(id = "c1", storeId = "s1", name = "Test Cat")
 
             viewModel.saveCategory(cat) { }
             advanceUntilIdle()
@@ -266,7 +266,7 @@ class PageViewModelTest {
     @Test
     fun `saveDraft and getDraft should work together`() =
         runTest {
-            val page = Page("d1", "Draft")
+            val page = Page("d1", "s1", "Draft")
             viewModel.saveDraft(page)
 
             val loaded = viewModel.getDraft("d1")
@@ -291,7 +291,7 @@ class PageViewModelTest {
     @Test
     fun `signOut should clear state`() =
         runTest {
-            val testPage = Page("1", "Page")
+            val testPage = Page("1", "s1", "Page")
             fakePageRepository.savePage(testPage, "token", isEditing = false)
             fakeAuthRepository.setToken("token")
             viewModel.loadPages()

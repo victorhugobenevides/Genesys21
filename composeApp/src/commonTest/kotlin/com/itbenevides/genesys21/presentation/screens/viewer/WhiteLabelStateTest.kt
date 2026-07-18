@@ -7,7 +7,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class WhiteLabelStateTest {
-    private val emptyPage = Page(id = "1", title = "Test", components = emptyList())
+    private val emptyPage = Page(id = "1", storeId = "s1", title = "Test", components = emptyList())
 
     @Test
     fun initialState_isCorrect() {

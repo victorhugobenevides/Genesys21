@@ -14,11 +14,12 @@ class SqliteOrderRepository : OrderRepository {
         flow {
             val orders =
                 dbQuery {
-                    OrdersTable.selectAll().where { OrdersTable.userId eq token }
+                    (OrdersTable innerJoin StoresTable)
+                        .selectAll().where { StoresTable.ownerId eq token }
                         .orderBy(OrdersTable.createdAt to SortOrder.DESC)
                         .map { row ->
                             val orderId = row[OrdersTable.id]
-                            val items = fetchOrderItems(orderId)
+                            val items = fetchOrderItems(orderId, row[OrdersTable.storeId])
                             row.toOrder(items)
                         }
                 }
@@ -30,7 +31,7 @@ class SqliteOrderRepository : OrderRepository {
             dbQuery {
                 OrdersTable.selectAll().where { OrdersTable.id eq orderId }
                     .map { row ->
-                        val items = fetchOrderItems(orderId)
+                        val items = fetchOrderItems(orderId, row[OrdersTable.storeId])
                         row.toOrder(items)
                     }
                     .singleOrNull()?.let { Result.success(it) }
@@ -48,7 +49,7 @@ class SqliteOrderRepository : OrderRepository {
                         .orderBy(OrdersTable.createdAt to SortOrder.DESC)
                         .map { row ->
                             val orderId = row[OrdersTable.id]
-                            val items = fetchOrderItems(orderId)
+                            val items = fetchOrderItems(orderId, row[OrdersTable.storeId])
                             row.toOrder(items)
                         }
                 Result.success(orders)
@@ -60,7 +61,7 @@ class SqliteOrderRepository : OrderRepository {
     override suspend fun createOrder(order: Order): Result<Unit> =
         try {
             dbQuery {
-                // IDEMPOTÊNCIA (Fase 3): Verificar se o pedido já existe
+                // IDEMPOTÊNCIA: Verificar se o pedido já existe
                 val existing = OrdersTable.selectAll().where { OrdersTable.id eq order.id }.count()
                 if (existing > 0) {
                     return@dbQuery Result.success(Unit) // Já processado
@@ -68,14 +69,13 @@ class SqliteOrderRepository : OrderRepository {
 
                 // 1. Inserir cabeçalho do pedido
                 OrdersTable.insert {
-                    it[id] = order.id
-                    it[userId] = order.userId
+                    it[id] = order.id.ifBlank { java.util.UUID.randomUUID().toString() }
+                    it[storeId] = order.storeId
                     it[customerId] = order.customerId
                     it[customerName] = order.customerName
                     it[customerPhone] = order.customerPhone
                     it[total] = order.total
                     it[status] = order.status.name
-                    it[createdAt] = order.createdAt
                     it[whatsappContact] = order.whatsappContact
                     it[theme] = order.theme.name
                 }
@@ -84,6 +84,7 @@ class SqliteOrderRepository : OrderRepository {
                 order.items.forEach { item ->
                     // Salva o item no histórico do pedido
                     OrderItemsTable.insert {
+                        it[id] = java.util.UUID.randomUUID().toString()
                         it[orderId] = order.id
                         it[productId] = item.product.id
                         it[productName] = item.product.name
@@ -112,8 +113,9 @@ class SqliteOrderRepository : OrderRepository {
         try {
             dbQuery {
                 val updated =
-                    OrdersTable.update({ (OrdersTable.id eq orderId) and (OrdersTable.userId eq token) }) {
+                    OrdersTable.update({ (OrdersTable.id eq orderId) and (StoresTable.ownerId eq token) }) {
                         it[this.status] = status.name
+                        it[updatedAt] = System.currentTimeMillis()
                     }
                 if (updated > 0) Result.success(Unit) else Result.failure(Exception("Acesso negado ou pedido inexistente"))
             }
@@ -121,13 +123,14 @@ class SqliteOrderRepository : OrderRepository {
             Result.failure(e)
         }
 
-    private fun fetchOrderItems(orderId: String): List<CartItem> {
+    private fun fetchOrderItems(orderId: String, storeId: String): List<CartItem> {
         return OrderItemsTable.selectAll().where { OrderItemsTable.orderId eq orderId }
             .map { row ->
                 CartItem(
                     product =
                         Product(
-                            id = row[OrderItemsTable.productId],
+                            id = row[OrderItemsTable.productId] ?: "",
+                            storeId = storeId,
                             name = row[OrderItemsTable.productName],
                             price = row[OrderItemsTable.productPrice],
                         ),
@@ -139,7 +142,7 @@ class SqliteOrderRepository : OrderRepository {
     private fun ResultRow.toOrder(items: List<CartItem>) =
         Order(
             id = this[OrdersTable.id],
-            userId = this[OrdersTable.userId],
+            storeId = this[OrdersTable.storeId],
             customerId = this[OrdersTable.customerId],
             customerName = this[OrdersTable.customerName],
             customerPhone = this[OrdersTable.customerPhone],
@@ -152,6 +155,8 @@ class SqliteOrderRepository : OrderRepository {
                     OrderStatus.PENDING
                 },
             createdAt = this[OrdersTable.createdAt],
+            updatedAt = this[OrdersTable.updatedAt],
+            deletedAt = this[OrdersTable.deletedAt],
             whatsappContact = this[OrdersTable.whatsappContact],
             theme =
                 try {

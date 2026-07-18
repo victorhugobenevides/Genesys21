@@ -39,7 +39,7 @@ interface PageRepository {
     ): Result<Unit>
 
     suspend fun deleteCategory(
-        id: Int,
+        id: String,
         token: String,
     ): Result<Unit>
 
