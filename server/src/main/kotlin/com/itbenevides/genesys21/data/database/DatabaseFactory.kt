@@ -30,6 +30,8 @@ object DatabaseFactory {
             Seeder.seedInitialData()
         } else {
             runMigrations()
+            // Garante dados iniciais básicos se o banco estiver vazio
+            Seeder.seedInitialData()
         }
     }
 
