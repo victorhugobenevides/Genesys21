@@ -141,7 +141,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.OCI_HOST }}
-          username: ${{ secrets.OCI_USERNAME }}
+          username: ubuntu
           key: ${{ secrets.OCI_SSH_KEY }}
           script: |
             mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app

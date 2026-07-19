@@ -170,13 +170,13 @@ jobs:
           name: Setup SSH Key
           command: |
             mkdir -p ~/.ssh
-            echo "$OCI_SSH_KEY" > ~/.ssh/id_rsa
+            echo "${OCI_SSH_KEY}" > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
             ssh-keyscan -H ${OCI_HOST} >> ~/.ssh/known_hosts
       - run:
           name: SSH Deploy to Oracle Cloud
           command: |
-            ssh -o StrictHostKeyChecking=no ${OCI_USERNAME}@${OCI_HOST} \<< SSH_EOF
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} \<< SSH_EOF
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
