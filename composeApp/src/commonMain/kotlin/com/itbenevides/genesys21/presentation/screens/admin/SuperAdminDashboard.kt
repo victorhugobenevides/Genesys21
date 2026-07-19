@@ -19,29 +19,48 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
+import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
 @Composable
 fun SuperAdminDashboard(viewModel: PageViewModel) {
     val users by viewModel.allUsers.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val currentError by viewModel.currentError.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.loadAllUsers()
     }
 
-    GenesysColumn(usePadding = true, modifier = Modifier.fillMaxSize()) {
+    GenesysColumn(usePadding = true, modifier = Modifier.fillMaxWidth()) {
         GenesysText(text = "Painel SuperAdmin", style = GenesysTextStyle.Headline)
         GenesysText(text = "Gerencie permissões de acesso ao sistema", style = GenesysTextStyle.Body)
 
         GenesysSpacer(GenesysSpacing.Large)
 
         if (isLoading && users.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
+        } else if (currentError != null && users.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(GenesysIcons.Feedback, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysText(text = currentError?.message ?: "Erro ao carregar usuários", style = GenesysTextStyle.Error)
+                    GenesysSpacer(GenesysSpacing.Large)
+                    GenesysLoadingButton(text = "Tentar Novamente", onClick = { viewModel.loadAllUsers() })
+                }
+            }
+        } else if (users.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                GenesysText(text = "Nenhum usuário encontrado.", style = GenesysTextStyle.Body)
+            }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(users) { user ->
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                users.forEach { user ->
                     UserAdminCard(user) { newRole ->
                         viewModel.updateUserRole(user.id, newRole)
                     }
@@ -53,32 +72,56 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
 
 @Composable
 fun UserAdminCard(user: UserProfile, onRoleChange: (UserRole) -> Unit) {
-    GenesysCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                GenesysText(text = user.name, style = GenesysTextStyle.Title)
-                GenesysText(text = user.email, style = GenesysTextStyle.Label)
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysRow(verticalAlignment = Alignment.CenterVertically) {
-                     GenesysText(text = "Cargo: ", style = GenesysTextStyle.Label)
-                     GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.primary)
-                }
-            }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (user.role == UserRole.CUSTOMER) {
-                    Button(onClick = { onRoleChange(UserRole.MERCHANT) }) {
-                        Text("Tornar Merchant")
-                    }
-                } else if (user.role == UserRole.MERCHANT) {
-                    OutlinedButton(onClick = { onRoleChange(UserRole.CUSTOMER) }) {
-                        Text("Remover Acesso")
-                    }
-                }
+    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+        if (isCompact) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                UserInfoSection(user)
+                GenesysSpacer(GenesysSpacing.Medium)
+                UserActionsSection(user, onRoleChange, modifier = Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                UserInfoSection(user, modifier = Modifier.weight(1f))
+                UserActionsSection(user, onRoleChange)
+            }
+        }
+    }
+}
+
+@Composable
+private fun UserInfoSection(user: UserProfile, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        GenesysText(text = user.name, style = GenesysTextStyle.Title)
+        GenesysText(text = user.email, style = GenesysTextStyle.Label)
+        GenesysSpacer(GenesysSpacing.Small)
+        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+            GenesysText(text = "Cargo: ", style = GenesysTextStyle.Label)
+            GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun UserActionsSection(
+    user: UserProfile,
+    onRoleChange: (UserRole) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+        if (user.role == UserRole.CUSTOMER) {
+            Button(onClick = { onRoleChange(UserRole.MERCHANT) }, modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier) {
+                Text("Tornar Merchant")
+            }
+        } else if (user.role == UserRole.MERCHANT) {
+            OutlinedButton(onClick = { onRoleChange(UserRole.CUSTOMER) }, modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier) {
+                Text("Remover Acesso")
             }
         }
     }

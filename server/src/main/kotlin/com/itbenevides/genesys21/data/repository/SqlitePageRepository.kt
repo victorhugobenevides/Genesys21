@@ -17,13 +17,13 @@ class SqlitePageRepository : PageRepository {
         dbQuery {
             val pagesQuery =
                 if (token.isBlank()) {
-                    PagesTable.selectAll()
+                    PagesTable.selectAll().where { PagesTable.deletedAt.isNull() }
                 } else {
                     (PagesTable innerJoin StoresTable)
-                        .selectAll().where { StoresTable.ownerId eq token }
+                        .selectAll().where { (StoresTable.ownerId eq token) and (PagesTable.deletedAt.isNull()) }
                 }
 
-            pagesQuery.where { PagesTable.deletedAt.isNull() }.map { row ->
+            pagesQuery.map { row ->
                 val pageId = row[PagesTable.id]
                 val components = fetchComponentsForPage(pageId)
                 row.toPage(components)

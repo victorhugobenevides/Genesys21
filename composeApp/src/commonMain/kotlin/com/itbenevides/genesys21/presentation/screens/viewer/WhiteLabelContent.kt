@@ -31,6 +31,8 @@ import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAp
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
 @Composable
 fun WhiteLabelContent(
@@ -45,36 +47,76 @@ fun WhiteLabelContent(
     onDiscardClicked: () -> Unit,
 ) {
     val allServices by viewModel.services.collectAsState()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
-                title = state.page.title,
+                title = if (isCompact) state.page.title.take(15).let { if (it.length < state.page.title.length) "$it..." else it } else state.page.title,
                 onBack = { onEvent(WhiteLabelEvent.OnBackClicked) },
                 actions = {
-                    GenesysIconButton(
-                        icon = GenesysIcons.Palette,
-                        contentDescription = GenesysStrings.EditorThemes,
-                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) },
-                    )
-
-                    GenesysIconButton(
-                        icon = GenesysIcons.Magic,
-                        contentDescription = "Theme Lab",
-                        onClick = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true)) },
-                    )
-
-                    if (state.page != originalPage) {
+                    if (!isCompact) {
                         GenesysIconButton(
-                            icon = GenesysIcons.Delete,
-                            contentDescription = GenesysStrings.DiscardDraft,
-                            tint = MaterialTheme.colorScheme.error,
-                            onClick = onDiscardClicked,
+                            icon = GenesysIcons.Palette,
+                            contentDescription = GenesysStrings.EditorThemes,
+                            onClick = { onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true)) },
                         )
+
+                        GenesysIconButton(
+                            icon = GenesysIcons.Magic,
+                            contentDescription = "Theme Lab",
+                            onClick = { onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true)) },
+                        )
+
+                        if (state.page != originalPage) {
+                            GenesysIconButton(
+                                icon = GenesysIcons.Delete,
+                                contentDescription = GenesysStrings.DiscardDraft,
+                                tint = MaterialTheme.colorScheme.error,
+                                onClick = onDiscardClicked,
+                            )
+                        }
+                    } else {
+                        // Overflow for compact
+                        var showMenu by remember { mutableStateOf(false) }
+                        Box {
+                            GenesysIconButton(icon = GenesysIcons.MoreVert, onClick = { showMenu = true })
+                            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(GenesysStrings.EditorThemes) },
+                                    onClick = {
+                                        showMenu = false
+                                        onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true))
+                                    },
+                                    leadingIcon = { Icon(GenesysIcons.Palette, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Theme Lab") },
+                                    onClick = {
+                                        showMenu = false
+                                        onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true))
+                                    },
+                                    leadingIcon = { Icon(GenesysIcons.Magic, null) }
+                                )
+                                if (state.page != originalPage) {
+                                    DropdownMenuItem(
+                                        text = { Text(GenesysStrings.DiscardDraft) },
+                                        onClick = {
+                                            showMenu = false
+                                            onDiscardClicked()
+                                        },
+                                        leadingIcon = { Icon(GenesysIcons.Delete, null, tint = MaterialTheme.colorScheme.error) }
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     GenesysLoadingButton(
-                        text = GenesysStrings.Publish,
+                        text = if (isCompact) "" else GenesysStrings.Publish,
+                        icon = if (isCompact) GenesysIcons.Check else null,
                         onClick = { onEvent(WhiteLabelEvent.OnPublishClicked) },
                         isLoading = state.isLoading,
                     )
@@ -91,96 +133,92 @@ fun WhiteLabelContent(
             }
         },
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 1000.dp
-
-            if (state.isLoading) {
-                GenesysLoadingOverlay()
-            } else {
-                GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
-                    GenesysWeightBox(if (isWideScreen) 0.65f else 1f) {
-                        GenesysColumn(
-                            maxWidth = GenesysDimens.ViewerMaxWidth,
-                            horizontalAlignment = GenesysAlignment.Center,
-                            usePadding = false,
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            if (state.page.components.isEmpty()) {
-                                GenesysEmptyState(
-                                    icon = GenesysIcons.Magic,
-                                    title = GenesysStrings.EmptyEditorTitle,
-                                    description = GenesysStrings.EmptyEditorDescription,
-                                    action = {
-                                        GenesysLoadingButton(
-                                            text = GenesysStrings.AddBlockAction,
-                                            onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) },
-                                        )
-                                    },
-                                )
-                            } else {
-                                GenesysLazyColumnIndexed(
-                                    items = state.page.components,
-                                    maxWidth = GenesysDimens.ViewerMaxWidth,
-                                    usePadding = true,
-                                    spacing = GenesysSpacing.Medium,
-                                    key = { _, component -> component.hashCode() },
-                                ) { index, component ->
-                                    val isEditing = state.editingComponentIndex == index
-                                    ComponentWrapperUI(
-                                        component = component,
-                                        index = index,
-                                        isEditing = isEditing,
-                                        allCategories = displayCategories,
-                                        allProducts = allProducts,
-                                        allServices = allServices,
-                                        onEvent = onEvent,
+        if (state.isLoading) {
+            GenesysLoadingOverlay()
+        } else {
+            GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
+                GenesysWeightBox(if (isExpanded) 0.65f else 1f) {
+                    GenesysColumn(
+                        maxWidth = GenesysDimens.ViewerMaxWidth,
+                        horizontalAlignment = GenesysAlignment.Center,
+                        usePadding = false,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        if (state.page.components.isEmpty()) {
+                            GenesysEmptyState(
+                                icon = GenesysIcons.Magic,
+                                title = GenesysStrings.EmptyEditorTitle,
+                                description = GenesysStrings.EmptyEditorDescription,
+                                action = {
+                                    GenesysLoadingButton(
+                                        text = GenesysStrings.AddBlockAction,
+                                        onClick = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(true)) },
                                     )
-                                }
+                                },
+                            )
+                        } else {
+                            GenesysLazyColumnIndexed(
+                                items = state.page.components,
+                                maxWidth = GenesysDimens.ViewerMaxWidth,
+                                usePadding = true,
+                                spacing = GenesysSpacing.Medium,
+                                key = { _, component -> component.hashCode() },
+                            ) { index, component ->
+                                val isEditing = state.editingComponentIndex == index
+                                ComponentWrapperUI(
+                                    component = component,
+                                    index = index,
+                                    isEditing = isEditing,
+                                    allCategories = displayCategories,
+                                    allProducts = allProducts,
+                                    allServices = allServices,
+                                    onEvent = onEvent,
+                                )
                             }
                         }
                     }
+                }
 
-                    if (isWideScreen) {
-                        GenesysWeightBox(0.35f) {
-                            GenesysCard(
-                                modifier = Modifier.fillMaxHeight().padding(16.dp),
-                                elevation = GenesysDimens.ElevationMedium,
-                            ) {
-                                state.editingComponentIndex?.let { index ->
-                                    ComponentEditorUI(
-                                        state = state,
-                                        viewModel = viewModel,
-                                        index = index,
-                                        onEvent = onEvent,
-                                        onPickImage = onPickImage,
-                                    )
-                                } ?: run {
-                                    GenesysEmptyState(
-                                        icon = GenesysIcons.Edit,
-                                        title = GenesysStrings.SelectBlockToEdit,
-                                        description = GenesysStrings.SelectBlockToEditDesc,
-                                    )
-                                }
+                if (isExpanded) {
+                    GenesysWeightBox(0.35f) {
+                        GenesysCard(
+                            modifier = Modifier.fillMaxHeight().padding(16.dp),
+                            elevation = GenesysDimens.ElevationMedium,
+                        ) {
+                            state.editingComponentIndex?.let { index ->
+                                ComponentEditorUI(
+                                    state = state,
+                                    viewModel = viewModel,
+                                    index = index,
+                                    onEvent = onEvent,
+                                    onPickImage = onPickImage,
+                                )
+                            } ?: run {
+                                GenesysEmptyState(
+                                    icon = GenesysIcons.Edit,
+                                    title = GenesysStrings.SelectBlockToEdit,
+                                    description = GenesysStrings.SelectBlockToEditDesc,
+                                )
                             }
                         }
                     }
                 }
             }
+        }
 
-            if (!isWideScreen) {
-                state.editingComponentIndex?.let { index ->
-                    GenesysBottomSheet(
-                        onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
-                        title = GenesysStrings.BlockSettings,
-                    ) {
-                        ComponentEditorUI(
-                            state = state,
-                            viewModel = viewModel,
-                            index = index,
-                            onEvent = onEvent,
-                            onPickImage = onPickImage,
-                        )
-                    }
+        if (!isExpanded) {
+            state.editingComponentIndex?.let { index ->
+                GenesysBottomSheet(
+                    onDismiss = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
+                    title = GenesysStrings.BlockSettings,
+                ) {
+                    ComponentEditorUI(
+                        state = state,
+                        viewModel = viewModel,
+                        index = index,
+                        onEvent = onEvent,
+                        onPickImage = onPickImage,
+                    )
                 }
             }
         }

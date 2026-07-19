@@ -25,7 +25,7 @@ fun EditorShowcaseScreen(
     onBack: () -> Unit,
     viewModel: PageViewModel = koinInject(),
 ) {
-    val samplePage = remember { Page.defaultTemplate("showcase", "Editor Test") }
+    val samplePage = remember { Page.createFromTemplate("professional_vitrine", "showcase", "default", "Editor Test") }
 
     val components =
         listOf(

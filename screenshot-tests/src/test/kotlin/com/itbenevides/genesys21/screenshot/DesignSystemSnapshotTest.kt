@@ -13,44 +13,58 @@ class DesignSystemSnapshotTest {
     val paparazzi = createGenesysPaparazzi(deviceConfig = app.cash.paparazzi.DeviceConfig.PIXEL_5)
 
     @Test
-    fun testShowcaseFoundation() {
+    fun testShowcaseArchitecture() {
         paparazzi.genesysSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 0)
         }
     }
 
     @Test
-    fun testShowcaseInputs() {
+    fun testShowcaseFoundation() {
         paparazzi.genesysSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 1)
         }
     }
 
     @Test
-    fun testShowcaseActionNav() {
+    fun testShowcaseInputs() {
         paparazzi.genesysSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 2)
         }
     }
 
     @Test
-    fun testShowcaseDisplay() {
+    fun testShowcaseActionNav() {
         paparazzi.genesysSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 3)
         }
     }
 
     @Test
-    fun testShowcaseFeedback() {
+    fun testShowcaseDisplay() {
         paparazzi.genesysSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 4)
         }
     }
 
     @Test
-    fun testShowcaseBooking() {
+    fun testShowcaseFeedback() {
         paparazzi.genesysSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 5)
+        }
+    }
+
+    @Test
+    fun testShowcaseBooking() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 6)
+        }
+    }
+
+    @Test
+    fun testShowcaseQuality() {
+        paparazzi.genesysSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 7)
         }
     }
 

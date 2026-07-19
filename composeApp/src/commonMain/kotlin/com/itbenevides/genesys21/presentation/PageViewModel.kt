@@ -58,6 +58,7 @@ class PageViewModel(
     private val getAllUsersUseCase: GetAllUsersUseCase,
     private val updateUserRoleUseCase: UpdateUserRoleUseCase,
     private val updateUserStatusUseCase: UpdateUserStatusUseCase,
+    private val getTemplatesUseCase: GetTemplatesUseCase,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -94,6 +95,9 @@ class PageViewModel(
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
 
+    private val _templates = MutableStateFlow<List<PageTemplate>>(emptyList())
+    val templates: StateFlow<List<PageTemplate>> = _templates.asStateFlow()
+
     private val _isLoading = MutableStateFlow(value = false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -110,6 +114,7 @@ class PageViewModel(
         loadPages()
         loadCategories()
         loadBookingServices()
+        loadTemplates()
         viewModelScope.launch {
             customerRepository.loadData()
             cartRepository.loadInitialCart()
@@ -118,6 +123,10 @@ class PageViewModel(
                 loadUserProfile(uid)
             }
         }
+    }
+
+    fun loadTemplates() {
+        _templates.value = getTemplatesUseCase()
     }
 
     fun saveCustomerName(name: String) =

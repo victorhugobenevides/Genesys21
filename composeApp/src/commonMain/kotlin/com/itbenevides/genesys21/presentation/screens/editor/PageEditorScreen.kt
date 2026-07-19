@@ -49,7 +49,7 @@ fun PageEditorScreen(
 }
 
 @Composable
-private fun PageEditorContent(
+fun PageEditorContent(
     state: PageEditorState,
     onEvent: (PageEditorEvent) -> Unit,
 ) {

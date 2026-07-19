@@ -16,6 +16,8 @@ import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAp
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.AnalyticsManager
 import com.itbenevides.genesys21.util.ShareManagerInstance
 
@@ -27,6 +29,8 @@ fun PageViewerScreen(
 ) {
     var state by remember { mutableStateOf(PageViewerScreenState(page)) }
     var currentFilterQuery by remember { mutableStateOf("") }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     LaunchedEffect(page) {
         state = state.copy(page = page)
@@ -63,7 +67,7 @@ fun PageViewerScreen(
     BrandingEffects(state.page)
 
     AppTheme(themeConfig = state.page.theme, customTheme = state.page.customTheme) {
-        PageViewerContent(state, currentFilterQuery, onEvent)
+        PageViewerContent(state, currentFilterQuery, isCompact, onEvent)
     }
 }
 
@@ -71,30 +75,58 @@ fun PageViewerScreen(
 fun PageViewerContent(
     state: PageViewerScreenState,
     currentFilterQuery: String,
+    isCompact: Boolean,
     onEvent: (PageViewerScreenEvent) -> Unit,
 ) {
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
-                title = state.page.title,
+                title = if (isCompact) state.page.title.take(20).let { if (it.length < state.page.title.length) "$it..." else it } else state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
-                    GenesysIconButton(
-                        icon = GenesysIcons.ShoppingBag,
-                        onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.List,
-                        onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
-                    )
-                    GenesysIconButton(
-                        icon = GenesysIcons.Share,
-                        onClick = { onEvent(PageViewerScreenEvent.OnShareClicked) },
-                    )
-                    if (false) { // Apenas se autenticado como admin
+                    if (isCompact) {
+                        var showMenu by remember { mutableStateOf(false) }
+                        Box {
+                            GenesysIconButton(icon = GenesysIcons.MoreVert, onClick = { showMenu = true })
+                            DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Carrinho") },
+                                    onClick = {
+                                        showMenu = false
+                                        onEvent(PageViewerScreenEvent.OnOpenCartClicked)
+                                    },
+                                    leadingIcon = { Icon(GenesysIcons.ShoppingBag, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Pedidos") },
+                                    onClick = {
+                                        showMenu = false
+                                        onEvent(PageViewerScreenEvent.OnOpenHistoryClicked)
+                                    },
+                                    leadingIcon = { Icon(GenesysIcons.List, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Compartilhar") },
+                                    onClick = {
+                                        showMenu = false
+                                        onEvent(PageViewerScreenEvent.OnShareClicked)
+                                    },
+                                    leadingIcon = { Icon(GenesysIcons.Share, null) }
+                                )
+                            }
+                        }
+                    } else {
                         GenesysIconButton(
-                            icon = GenesysIcons.Settings,
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenAdminSettingsClicked) },
+                            icon = GenesysIcons.ShoppingBag,
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
+                        )
+                        GenesysIconButton(
+                            icon = GenesysIcons.List,
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
+                        )
+                        GenesysIconButton(
+                            icon = GenesysIcons.Share,
+                            onClick = { onEvent(PageViewerScreenEvent.OnShareClicked) },
                         )
                     }
                 },

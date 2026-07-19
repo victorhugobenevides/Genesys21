@@ -32,6 +32,8 @@ import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAp
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.InputValidator
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
@@ -46,13 +48,6 @@ fun ProductEditorScreen(
     onBack: () -> Unit,
 ) {
     var state by remember { mutableStateOf(ProductEditorState.initial(product)) }
-    val isGlobalLoading by viewModel.isLoading.collectAsState()
-    val backendUrl = remember { getBaseUrl() }
-    val categories by viewModel.categories.collectAsState()
-
-    var showCategoryManagement by remember { mutableStateOf(false) }
-
-    state = state.copy(isLoading = isGlobalLoading)
 
     val imagePicker =
         rememberImagePicker { bytes ->
@@ -70,22 +65,55 @@ fun ProductEditorScreen(
             }
         }
 
+    ProductEditorContent(
+        viewModel = viewModel,
+        page = page,
+        product = product,
+        onSave = onSave,
+        onBack = onBack,
+        state = state,
+        onStateChange = { state = it },
+        onPickImage = { imagePicker() }
+    )
+}
+
+@Composable
+fun ProductEditorContent(
+    viewModel: PageViewModel,
+    page: Page,
+    product: Product?,
+    onSave: (Product) -> Unit,
+    onBack: () -> Unit,
+    state: ProductEditorState,
+    onStateChange: (ProductEditorState) -> Unit,
+    onPickImage: () -> Unit,
+) {
+    val isGlobalLoading by viewModel.isLoading.collectAsState()
+    val backendUrl = remember { getBaseUrl() }
+    val categories by viewModel.categories.collectAsState()
+
+    var showCategoryManagement by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isGlobalLoading) {
+        onStateChange(state.copy(isLoading = isGlobalLoading))
+    }
+
     val onEvent: (ProductEditorEvent) -> Unit = { event ->
         when (event) {
-            is ProductEditorEvent.OnNameChanged -> state = state.copy(name = event.name)
-            is ProductEditorEvent.OnPriceChanged -> state = state.copy(price = InputValidator.validatePrice(event.price))
-            is ProductEditorEvent.OnDescriptionChanged -> state = state.copy(description = event.description)
+            is ProductEditorEvent.OnNameChanged -> onStateChange(state.copy(name = event.name))
+            is ProductEditorEvent.OnPriceChanged -> onStateChange(state.copy(price = InputValidator.validatePrice(event.price)))
+            is ProductEditorEvent.OnDescriptionChanged -> onStateChange(state.copy(description = event.description))
             is ProductEditorEvent.OnCategoryChanged -> {
-                state = state.copy(categoryId = event.categoryId, categoryName = event.categoryName)
+                onStateChange(state.copy(categoryId = event.categoryId, categoryName = event.categoryName))
             }
-            is ProductEditorEvent.OnStockChanged -> state = state.copy(stock = InputValidator.validateStock(event.stock))
-            is ProductEditorEvent.OnAddPhotoClicked -> if (!state.isUploading && state.imageUrls.size < 5) imagePicker()
+            is ProductEditorEvent.OnStockChanged -> onStateChange(state.copy(stock = InputValidator.validateStock(event.stock)))
+            is ProductEditorEvent.OnAddPhotoClicked -> if (!state.isUploading && state.imageUrls.size < 5) onPickImage()
             is ProductEditorEvent.OnRemovePhotoClicked -> {
                 val toRemove =
                     state.imageUrls.find {
                         (if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it) == event.url
                     } ?: event.url
-                state = state.copy(imageUrls = state.imageUrls.filter { it != toRemove })
+                onStateChange(state.copy(imageUrls = state.imageUrls.filter { it != toRemove }))
             }
             is ProductEditorEvent.OnSaveClicked -> {
                 val finalProduct =
@@ -106,7 +134,7 @@ fun ProductEditorScreen(
     }
 
     AppTheme(themeConfig = page.theme) {
-        ProductEditorContent(
+        ProductEditorMainLayout(
             state = state,
             backendUrl = backendUrl,
             categoryOptions = categories.map { it.name },
@@ -125,7 +153,7 @@ fun ProductEditorScreen(
 }
 
 @Composable
-private fun ProductEditorContent(
+private fun ProductEditorMainLayout(
     state: ProductEditorState,
     backendUrl: String,
     categoryOptions: List<String>,
@@ -133,6 +161,9 @@ private fun ProductEditorContent(
     onBack: () -> Unit,
     onManageCategories: () -> Unit,
 ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
+
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
@@ -140,54 +171,51 @@ private fun ProductEditorContent(
                 onBack = onBack,
                 actions = {
                     GenesysLoadingButton(
-                        text = GenesysStrings.Save,
+                        text = if (isExpanded) GenesysStrings.Save else "",
+                        icon = if (isExpanded) GenesysIcons.Check else GenesysIcons.Check,
                         onClick = { onEvent(ProductEditorEvent.OnSaveClicked) },
                         isLoading = state.isLoading,
                         enabled = state.canSave,
-                        icon = GenesysIcons.Check,
                     )
                 },
             )
         },
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 900.dp
-            val scrollState = rememberScrollState()
+        val scrollState = rememberScrollState()
 
-            // Root Container com largura máxima centralizada
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-                Column(
-                    modifier =
-                        Modifier
-                            .widthIn(max = 1200.dp)
-                            .fillMaxSize()
-                            .then(if (!isWideScreen) Modifier.verticalScroll(scrollState) else Modifier),
-                ) {
-                    if (isWideScreen) {
-                        // DESKTOP: Lado a Lado
-                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                            // Seção Fotos
-                            Box(modifier = Modifier.weight(0.45f)) {
-                                PhotosSection(state, backendUrl, onEvent)
-                            }
-
-                            Spacer(Modifier.width(24.dp))
-
-                            // Seção Dados (com scroll interno no desktop)
-                            Box(modifier = Modifier.weight(0.55f).fillMaxHeight()) {
-                                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                    DataFormSection(state, categoryOptions, onEvent, onManageCategories)
-                                }
-                            }
-                        }
-                    } else {
-                        // MOBILE: Um abaixo do outro (Scroll unificado no pai)
-                        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        // Root Container com largura máxima centralizada
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            Column(
+                modifier =
+                    Modifier
+                        .widthIn(max = 1200.dp)
+                        .fillMaxSize()
+                        .then(if (!isExpanded) Modifier.verticalScroll(scrollState) else Modifier),
+            ) {
+                if (isExpanded) {
+                    // DESKTOP: Lado a Lado
+                    Row(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        // Seção Fotos
+                        Box(modifier = Modifier.weight(0.45f)) {
                             PhotosSection(state, backendUrl, onEvent)
-                            Spacer(Modifier.height(24.dp))
-                            DataFormSection(state, categoryOptions, onEvent, onManageCategories)
-                            Spacer(Modifier.height(64.dp))
                         }
+
+                        Spacer(Modifier.width(24.dp))
+
+                        // Seção Dados (com scroll interno no desktop)
+                        Box(modifier = Modifier.weight(0.55f).fillMaxHeight()) {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                            }
+                        }
+                    }
+                } else {
+                    // MOBILE: Um abaixo do outro (Scroll unificado no pai)
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        PhotosSection(state, backendUrl, onEvent)
+                        Spacer(Modifier.height(24.dp))
+                        DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                        Spacer(Modifier.height(64.dp))
                     }
                 }
             }

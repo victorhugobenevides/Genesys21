@@ -15,10 +15,11 @@ The Genesys Design System is a set of standardized UI components built with Comp
 
 ## Primary Components
 
-### 1. Layout
+### 1. Layout & Aesthetics
 - `GenesysPage`: Top-level scaffold with unified top bars and snackbar support.
 - `GenesysColumn` / `GenesysRow`: Standard layout containers with consistent arrangement and padding defaults.
-- `GenesysWeightBox`: Utility for handling weighted layout segments within rows and columns.
+- **Glassmorphism**: Use translucent surfaces (`copy(alpha = 0.7f)`) with backdrop blur approximations and thin borders (`0.5.dp`) for premium cards and overlays.
+- **Micro-Animations**: Spring-based physics (`Spring.DampingRatioMediumBouncy`) for scaling effects on interactive cards and buttons.
 
 ### 2. Inputs
 - `GenesysTextField`: Resilient text input with internal state buffering for stability.

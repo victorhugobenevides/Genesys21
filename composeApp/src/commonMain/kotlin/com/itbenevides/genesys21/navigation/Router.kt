@@ -182,7 +182,8 @@ class Router(val viewModel: PageViewModel) {
                     }
                 }
 
-                val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/")
+                val pageIdFromParams = params["pageId"]
+                val pageId = urlPath.extractId("/p/") ?: urlPath.extractId("/view/") ?: urlPath.extractId("/editor/") ?: pageIdFromParams
                 val productId = urlPath.extractId("/product/")
 
                 if (pageId != null && pageId != "new" && pageId.length >= 4) {

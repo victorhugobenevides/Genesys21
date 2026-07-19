@@ -10,7 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,6 +25,9 @@ fun GenesysTopAppBar(
     containerColor: Color = Color.Transparent,
     isTranslucent: Boolean = false,
 ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
     val finalContainerColor =
         if (isTranslucent) {
             MaterialTheme.colorScheme.background.copy(alpha = 0.8f)
@@ -32,8 +39,10 @@ fun GenesysTopAppBar(
         modifier = if (isTranslucent) Modifier.background(Color.Transparent) else Modifier,
         title = {
             Text(
-                title,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                if (isCompact && title.length > 20) title.take(17) + "..." else title,
+                style = if (isCompact) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
         navigationIcon = {

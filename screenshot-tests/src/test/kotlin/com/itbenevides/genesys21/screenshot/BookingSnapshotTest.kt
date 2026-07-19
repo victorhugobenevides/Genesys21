@@ -31,12 +31,13 @@ class BookingSnapshotTest {
 
         val sampleService = BookingService(
             id = "s1",
+            storeId = "store-1",
             name = "Corte de Cabelo Masculino",
             description = "Corte degradê com finalização.",
             price = 45.0,
             durationMinutes = 40
         )
-        val samplePage = Page(id = "p1", title = "Barbearia Teste")
+        val samplePage = Page(id = "p1", storeId = "store-1", title = "Barbearia Teste")
 
         paparazzi.genesysSnapshot {
             ServiceBookingScreen(

@@ -72,4 +72,5 @@ object GenesysIcons {
     val Bold = Icons.Default.FormatBold
     val Schedule = Icons.Default.Schedule
     val History = Icons.Default.History
+    val MoreVert = Icons.Default.MoreVert
 }

@@ -17,6 +17,8 @@ import com.itbenevides.genesys21.presentation.screens.viewer.ProductCard
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.coroutines.launch
 
 /**
@@ -35,25 +37,25 @@ fun GenesysProductList(
 ) {
     if (products.isEmpty()) return
 
-    BoxWithConstraints(modifier = modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        val isMobile = maxWidth < 600.dp
-        val scope = rememberCoroutineScope()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val scope = rememberCoroutineScope()
 
-        val maxColumns =
-            when {
-                maxWidth > 900.dp -> 4
-                maxWidth > 600.dp -> 3
-                else -> 2
-            }
+    val maxColumns = when (windowSizeClass) {
+        GenesysWindowSizeClass.EXPANDED -> 4
+        GenesysWindowSizeClass.MEDIUM -> 3
+        GenesysWindowSizeClass.COMPACT -> 2
+    }
 
-        val horizontalItemWidth =
-            when {
-                maxWidth > 900.dp -> 220.dp
-                maxWidth > 600.dp -> 180.dp
-                else -> 150.dp
-            }
+    val horizontalItemWidth = when (windowSizeClass) {
+        GenesysWindowSizeClass.EXPANDED -> 220.dp
+        GenesysWindowSizeClass.MEDIUM -> 180.dp
+        GenesysWindowSizeClass.COMPACT -> 150.dp
+    }
 
-        val spacing = if (isMobile) 8.dp else 16.dp
+    val spacing = if (windowSizeClass == GenesysWindowSizeClass.COMPACT) 8.dp else 16.dp
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    Box(modifier = modifier.fillMaxWidth().padding(vertical = 12.dp)) {
 
         if (isHorizontal) {
             val listState = rememberLazyListState()
@@ -62,7 +64,7 @@ fun GenesysProductList(
                     state = listState,
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(spacing),
-                    contentPadding = PaddingValues(horizontal = if (isMobile) 0.dp else 48.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = if (isCompact) 0.dp else 48.dp, vertical = 8.dp),
                 ) {
                     itemsIndexed(products) { index, product ->
                         ProductCard(
@@ -77,7 +79,7 @@ fun GenesysProductList(
                     }
                 }
 
-                if (!isMobile && products.size > 1) {
+                if (!isCompact && products.size > 1) {
                     Surface(
                         modifier = Modifier.align(Alignment.CenterStart).size(40.dp),
                         shape = CircleShape,
@@ -138,7 +140,7 @@ fun GenesysProductList(
                             }
                         }
                     }
-                    GenesysSpacer(if (isMobile) GenesysSpacing.Small else GenesysSpacing.Medium)
+                    GenesysSpacer(if (isCompact) GenesysSpacing.Small else GenesysSpacing.Medium)
                 }
             }
         }

@@ -46,6 +46,8 @@ import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
 import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.downloadFile
 import com.itbenevides.genesys21.util.rememberFileHandler
 import kotlin.math.roundToLong
@@ -90,19 +92,19 @@ fun PageListScreen(
             is PageListEvent.OnSearchQueryChanged -> state = state.copy(searchQuery = event.query)
             is PageListEvent.OnStatusFilterSelected -> state = state.copy(selectedStatusFilter = event.status)
             is PageListEvent.OnDateSelected -> state = state.copy(selectedDate = event.date)
-            is PageListEvent.OnCreatePageClicked -> state = state.copy(showCreateDialog = true)
+            is PageListEvent.OnCreatePageClicked -> router.navigateTo(Route.TemplateShowcase)
             is PageListEvent.OnDismissCreateDialog -> state = state.copy(showCreateDialog = false, newPageTitle = "")
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                val storeId = (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("") // Dummy storeId
+                val storeId = "genesys-official-store"
                 val newPage =
                     when (event.templateType) {
-                        PageTemplateType.PROFESSIONAL_VITRINE -> Page.defaultTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
-                        PageTemplateType.BIO_PROFILE -> Page.profileTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
-                        PageTemplateType.BLOG_POST -> Page.blogPostTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
-                        PageTemplateType.BARBER_SHOP -> Page.barberShopTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
-                        PageTemplateType.PRO_DESIGN -> Page.proDesignTemplate(id, state.newPageTitle.trim()).copy(storeId = storeId)
+                        PageTemplateType.PROFESSIONAL_VITRINE -> Page.createFromTemplate("professional_vitrine", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.BIO_PROFILE -> Page.createFromTemplate("bio_profile", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.BLOG_POST -> Page.createFromTemplate("blog_post", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.BARBER_SHOP -> Page.createFromTemplate("barber_shop", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.PRO_DESIGN -> Page.createFromTemplate("pro_design", id, storeId, state.newPageTitle.trim())
                         PageTemplateType.EMPTY -> Page(id, storeId, state.newPageTitle.trim())
                     }
 
@@ -437,21 +439,35 @@ private fun OrdersHeaderUI(
     val rawRevenue = remember(state.orders) { state.orders.filter { it.status == OrderStatus.COMPLETED }.sumOf { it.total } }
     val totalRevenue = (rawRevenue * 100.0).roundToLong() / 100.0
     val totalPending = remember(state.orders) { state.orders.count { it.status == OrderStatus.PENDING } }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
         GenesysSpacer(GenesysSpacing.Large)
-        GenesysRow(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            GenesysWeightBox(1f) {
+        if (isCompact) {
+            GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
                 GenesysStatsCard(
                     label = GenesysStrings.Revenue,
                     value = "${GenesysStrings.PricePrefix}$totalRevenue",
                     color = Color(0xFF34C759),
                 )
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500))
             }
-            GenesysSpacer(GenesysSpacing.Medium)
-            GenesysWeightBox(
-                1f,
-            ) { GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500)) }
+        } else {
+            GenesysRow(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+                GenesysWeightBox(1f) {
+                    GenesysStatsCard(
+                        label = GenesysStrings.Revenue,
+                        value = "${GenesysStrings.PricePrefix}$totalRevenue",
+                        color = Color(0xFF34C759),
+                    )
+                }
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysWeightBox(
+                    1f,
+                ) { GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500)) }
+            }
         }
         GenesysSpacer(GenesysSpacing.Large)
         GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {

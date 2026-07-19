@@ -20,6 +20,7 @@ class OrganismsSnapshotTest {
     private val sampleProduct =
         Product(
             id = "1",
+            storeId = "store-1",
             name = "SmartWatch Genesys Pro",
             price = 899.90,
             imageUrls = listOf("https://images.unsplash.com/photo-1544117518-30dd5f2f309e?q=80&w=800"),

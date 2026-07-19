@@ -87,6 +87,7 @@ exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "e
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 thumbnailator = { module = "net.coobird:thumbnailator", version.ref = "thumbnailator" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+windowSizeClass = { module = "androidx.compose.material3:material3-window-size-class", version = "1.2.1" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -1,18 +1,17 @@
 package com.itbenevides.genesys21.screenshot.util
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Paparazzi
-import com.itbenevides.genesys21.di.viewModelModule
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.theme.AppTheme
+import com.itbenevides.genesys21.ui.util.ProvideWindowSizeClass
 import io.mockk.every
 import io.mockk.mockk
-import org.koin.compose.KoinContext
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
+import org.koin.compose.KoinApplication
 import org.koin.dsl.module
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -29,15 +28,12 @@ fun createGenesysPaparazzi(
     )
 
 /**
- * Helper to snapshot a component wrapped in the standard AppTheme and Koin context.
+ * Helper to snapshot a component wrapped in the standard AppTheme and an isolated Koin context.
  */
 fun Paparazzi.genesysSnapshot(
+    widthOverride: Dp? = null,
     content: @Composable () -> Unit,
 ) {
-    if (GlobalContext.getOrNull() != null) {
-        stopKoin()
-    }
-
     val mockModule =
         module {
             single<PageViewModel> {
@@ -51,6 +47,10 @@ fun Paparazzi.genesysSnapshot(
                     every { customerPhone } returns MutableStateFlow("")
                     every { allAvailableCategories } returns MutableStateFlow(emptyList())
                     every { isLoading } returns MutableStateFlow(false)
+                    every { userProfile } returns MutableStateFlow(null)
+                    every { services } returns MutableStateFlow(emptyList())
+                    every { allAvailableProducts } returns MutableStateFlow(emptyList())
+                    every { categories } returns MutableStateFlow(emptyList())
                 }
             }
 
@@ -60,14 +60,17 @@ fun Paparazzi.genesysSnapshot(
             single<String>(org.koin.core.qualifier.named("baseUrl")) { "http://localhost:8080" }
         }
 
-    startKoin {
-        modules(viewModelModule, mockModule)
-    }
+    // Default to Pixel 5 width if not provided
+    val widthDp = widthOverride ?: 393.dp
 
     this.snapshot {
-        KoinContext {
-            AppTheme {
-                content()
+        KoinApplication(application = {
+            modules(mockModule)
+        }) {
+            ProvideWindowSizeClass(widthDp) {
+                AppTheme {
+                    content()
+                }
             }
         }
     }

@@ -14,7 +14,7 @@ class WhiteLabelInteractionSnapshotTest {
 
     @Test
     fun testComponentCatalogVisibility() {
-        val samplePage = Page(id = "test", title = "Editor Test")
+        val samplePage = Page(id = "test", storeId = "store-1", title = "Editor Test")
         val state = WhiteLabelState(
             page = samplePage,
             showCatalog = true

@@ -31,6 +31,7 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
+import com.itbenevides.genesys21.triggerPrint
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
@@ -45,6 +46,8 @@ import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductL
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.ui.util.staggeredEntry
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.delay
@@ -87,7 +90,11 @@ fun PageComponentRenderer(
                     }
                 }
             } else if (!destUrl.isNullOrBlank()) {
-                uriHandler.openUri(destUrl)
+                if (destUrl == "print") {
+                    triggerPrint()
+                } else {
+                    uriHandler.openUri(destUrl)
+                }
             }
         }
     }
@@ -141,6 +148,9 @@ fun PageComponentRenderer(
                 is PageComponent.Text -> !isCategoryFilterActive && component.content.contains(filterQuery, ignoreCase = true)
                 is PageComponent.Image -> !isCategoryFilterActive && component.url.contains(filterQuery, ignoreCase = true)
                 is PageComponent.ServiceList -> !isCategoryFilterActive && component.title.contains(filterQuery, ignoreCase = true)
+                is PageComponent.Hero -> !isCategoryFilterActive && (component.title.contains(filterQuery, ignoreCase = true) || component.subtitle?.contains(filterQuery, ignoreCase = true) == true)
+                is PageComponent.Benefits -> !isCategoryFilterActive && (component.title?.contains(filterQuery, ignoreCase = true) == true || component.items.any { it.title.contains(filterQuery, ignoreCase = true) })
+                is PageComponent.Testimonial -> !isCategoryFilterActive && component.quote.contains(filterQuery, ignoreCase = true)
                 else -> true
             }
         }
@@ -171,20 +181,23 @@ fun PageComponentRenderer(
                     remember(component.imageUrl, backendUrl) {
                         if (component.imageUrl.startsWith("/") && !component.imageUrl.startsWith("http")) "$backendUrl${component.imageUrl}" else component.imageUrl
                     }
+                val windowSizeClass = LocalWindowSizeClass.current
+                val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+                val effectiveImageSize = if (isCompact) (component.imageSize * 0.8).toInt() else component.imageSize
 
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp).clickable { onComponentClick() },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = if (isCompact) 16.dp else 24.dp).clickable { onComponentClick() },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     GenesysImage(
                         url = displayUrl,
-                        size = component.imageSize.dp,
+                        size = effectiveImageSize.dp,
                         isCircular = component.isCircular,
                     )
                     GenesysSpacer(GenesysSpacing.Medium)
                     GenesysText(
                         text = component.name,
-                        style = GenesysTextStyle.Headline,
+                        style = if (isCompact) GenesysTextStyle.Title else GenesysTextStyle.Headline,
                         fontWeight = GenesysFontWeight.ExtraBold,
                         textAlign = GenesysTextAlign.Center,
                     )
@@ -193,7 +206,8 @@ fun PageComponentRenderer(
                             text = component.bio,
                             style = GenesysTextStyle.Body,
                             textAlign = GenesysTextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 32.dp),
+                            modifier = Modifier.padding(horizontal = if (isCompact) 16.dp else 32.dp),
+                            fontSize = if (isCompact) 14.sp else 16.sp
                         )
                     }
                 }
@@ -238,11 +252,21 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Button -> {
-                Box(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
+                val windowSizeClass = LocalWindowSizeClass.current
+                val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+                Box(modifier = Modifier.padding(vertical = 4.dp, horizontal = if (isCompact) 8.dp else 16.dp)) {
                     GenesysLoadingButton(
                         text = component.text,
                         onClick = onComponentClick,
                         fillWidth = true,
+                        icon = when {
+                            component.text.contains("PDF", true) -> GenesysIcons.Description
+                            component.text.contains("GitHub", true) -> GenesysIcons.Language
+                            component.text.contains("LinkedIn", true) -> GenesysIcons.Share
+                            component.text.contains("Showcase", true) -> GenesysIcons.Magic
+                            else -> null
+                        }
                     )
                 }
             }
@@ -485,6 +509,154 @@ fun PageComponentRenderer(
                             isCircular = component.isCircular,
                             modifier = if (component.isFullWidth) Modifier.fillMaxWidth() else Modifier.align(Alignment.CenterHorizontally),
                         )
+                    }
+                }
+            }
+            is PageComponent.Row -> {
+                GenesysRow(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    usePadding = true
+                ) {
+                    component.components.forEach { child ->
+                        GenesysWeightBox(1f) {
+                            PageComponentRenderer(
+                                component = child,
+                                onProductClick = onProductClick,
+                                onServiceClick = onServiceClick,
+                                filterQuery = filterQuery,
+                                onFilterQueryChange = onFilterQueryChange,
+                                allAvailableCategories = allAvailableCategories,
+                                allProducts = allProducts,
+                                allServices = allServices,
+                                isEditMode = isEditMode,
+                                onEditClick = onEditClick
+                            )
+                        }
+                    }
+                }
+            }
+
+            is PageComponent.Hero -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(component.height.dp)
+                ) {
+                    val displayUrl = remember(component.imageUrl, backendUrl) {
+                        if (component.imageUrl.startsWith("/") && !component.imageUrl.startsWith("http")) "$backendUrl${component.imageUrl}" else component.imageUrl
+                    }
+                    AsyncImage(
+                        model = displayUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.4f))
+                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = when (component.textAlign) {
+                            "CENTER" -> Alignment.CenterHorizontally
+                            "END" -> Alignment.End
+                            else -> Alignment.Start
+                        }
+                    ) {
+                        GenesysText(
+                            text = component.title,
+                            style = GenesysTextStyle.Headline,
+                            color = Color.White,
+                            textAlign = when (component.textAlign) {
+                                "CENTER" -> GenesysTextAlign.Center
+                                "END" -> GenesysTextAlign.End
+                                else -> GenesysTextAlign.Start
+                            },
+                            fontWeight = GenesysFontWeight.ExtraBold
+                        )
+                        component.subtitle?.let {
+                            GenesysText(
+                                text = it,
+                                style = GenesysTextStyle.Title,
+                                color = Color.White.copy(alpha = 0.9f),
+                                textAlign = when (component.textAlign) {
+                                    "CENTER" -> GenesysTextAlign.Center
+                                    "END" -> GenesysTextAlign.End
+                                    else -> GenesysTextAlign.Start
+                                }
+                            )
+                        }
+                        val btnText = component.buttonText
+                        if (!btnText.isNullOrBlank()) {
+                            GenesysSpacer(GenesysSpacing.Large)
+                            GenesysLoadingButton(
+                                text = btnText,
+                                onClick = onComponentClick
+                            )
+                        }
+                    }
+                }
+            }
+
+            is PageComponent.Benefits -> {
+                GenesysColumn(usePadding = true) {
+                    component.title?.let {
+                        GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                    }
+                    component.items.forEach { item ->
+                        Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            val icon = when (item.iconName) {
+                                "Check" -> GenesysIcons.Check
+                                "Magic" -> GenesysIcons.Magic
+                                "Inventory" -> GenesysIcons.Inventory
+                                "Payments" -> GenesysIcons.Payments
+                                else -> GenesysIcons.Info
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            }
+                            GenesysSpacer(GenesysSpacing.Medium)
+                            Column {
+                                GenesysText(text = item.title, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                                GenesysText(text = item.description, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+
+            is PageComponent.Testimonial -> {
+                GenesysCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    GenesysColumn(usePadding = true) {
+                        Row {
+                            repeat(component.rating) {
+                                Icon(GenesysIcons.Favorite, null, tint = Color(0xFFFFB300), modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysText(
+                            text = "\"${component.quote}\"",
+                            style = GenesysTextStyle.Body,
+                            fontWeight = GenesysFontWeight.Normal
+                        )
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        Column {
+                            GenesysText(text = component.author, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                            component.authorTitle?.let {
+                                GenesysText(text = it, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
                     }
                 }
             }

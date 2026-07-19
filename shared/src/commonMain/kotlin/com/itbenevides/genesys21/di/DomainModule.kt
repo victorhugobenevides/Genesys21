@@ -11,6 +11,7 @@ val domainModule =
         single { GetPublicPageUseCase(get()) }
         single { GetPageByDomainUseCase(get()) }
         single { GetFirstPublicPageUseCase(get()) }
+        single { GetTemplatesUseCase() }
 
         single { GetOrdersUseCase(get()) }
         single { GetCustomerOrdersUseCase(get()) }

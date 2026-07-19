@@ -28,14 +28,7 @@ fun ServiceEditorScreen(
     onSave: (BookingService) -> Unit,
     onBack: () -> Unit,
 ) {
-    var name by remember { mutableStateOf(service?.name ?: "") }
-    var description by remember { mutableStateOf(service?.description ?: "") }
-    var price by remember { mutableStateOf(service?.price?.toString() ?: "") }
-    var duration by remember { mutableStateOf(service?.durationMinutes?.toString() ?: "30") }
-    var buffer by remember { mutableStateOf(service?.bufferTimeMinutes?.toString() ?: "0") }
     var imageUrls by remember { mutableStateOf(service?.imageUrls ?: emptyList()) }
-
-    val isLoading by viewModel.isLoading.collectAsState()
     var isUploading by remember { mutableStateOf(false) }
 
     val imagePicker = rememberImagePicker { bytes ->
@@ -47,6 +40,37 @@ fun ServiceEditorScreen(
             }
         }
     }
+
+    ServiceEditorContent(
+        viewModel = viewModel,
+        service = service,
+        onSave = onSave,
+        onBack = onBack,
+        imageUrls = imageUrls,
+        onImageUrlsChange = { imageUrls = it },
+        isUploading = isUploading,
+        onPickImage = { imagePicker() }
+    )
+}
+
+@Composable
+fun ServiceEditorContent(
+    viewModel: PageViewModel,
+    service: BookingService?,
+    onSave: (BookingService) -> Unit,
+    onBack: () -> Unit,
+    imageUrls: List<String>,
+    onImageUrlsChange: (List<String>) -> Unit,
+    isUploading: Boolean,
+    onPickImage: () -> Unit,
+) {
+    var name by remember { mutableStateOf(service?.name ?: "") }
+    var description by remember { mutableStateOf(service?.description ?: "") }
+    var price by remember { mutableStateOf(service?.price?.toString() ?: "") }
+    var duration by remember { mutableStateOf(service?.durationMinutes?.toString() ?: "30") }
+    var buffer by remember { mutableStateOf(service?.bufferTimeMinutes?.toString() ?: "0") }
+
+    val isLoading by viewModel.isLoading.collectAsState()
 
     GenesysPage(
         topBar = {
@@ -124,7 +148,7 @@ fun ServiceEditorScreen(
                     }
                     GenesysLoadingButton(
                         text = "Adicionar Foto",
-                        onClick = { imagePicker() },
+                        onClick = onPickImage,
                         isLoading = isUploading,
                         icon = GenesysIcons.Add
                     )

@@ -2,8 +2,10 @@ package com.itbenevides.genesys21.screenshot
 
 import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
+import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.TypographySet
 import com.itbenevides.genesys21.presentation.screens.editor.ThemeLabDialog
+import com.itbenevides.genesys21.presentation.screens.editor.ThemeSelectorBottomSheet
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
 import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
 import org.junit.Rule
@@ -26,6 +28,17 @@ class EditorSnapshotTest {
                     ),
                 onSave = {},
                 onDismiss = {},
+            )
+        }
+    }
+
+    @Test
+    fun testThemeSelectorBottomSheet() {
+        paparazzi.genesysSnapshot {
+            ThemeSelectorBottomSheet(
+                currentTheme = PageThemeConfig.ROYAL,
+                onThemeSelected = {},
+                onDismiss = {}
             )
         }
     }

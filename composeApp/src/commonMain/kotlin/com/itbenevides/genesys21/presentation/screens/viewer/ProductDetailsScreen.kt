@@ -34,6 +34,8 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysConfirm
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.ui.util.glassmorphic
 import com.itbenevides.genesys21.util.*
 import org.koin.compose.viewmodel.koinViewModel
@@ -121,6 +123,8 @@ fun ProductDetailsContent(
 ) {
     val pagerState = rememberPagerState(pageCount = { state.product.imageUrls.size.coerceAtLeast(1) })
     val scope = rememberCoroutineScope()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
 
     val buttonScale by animateFloatAsState(
         targetValue = if (state.isAddingToCart) 0.95f else 1f,
@@ -142,53 +146,49 @@ fun ProductDetailsContent(
             )
         },
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth > 900.dp
-
-            if (isWideScreen) {
-                // --- LAYOUT DESKTOP ---
-                GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
-                    GenesysWeightBox(0.5f) {
-                        GenesysBox(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            ProductImageCarousel(state, pagerState, backendUrl) { index ->
-                                scope.launch { pagerState.animateScrollToPage(index) }
-                            }
-                        }
-                    }
-
-                    GenesysWeightBox(0.5f) {
-                        GenesysColumn(
-                            usePadding = true,
-                            useScroll = true,
-                            modifier = Modifier.fillMaxHeight(),
-                            horizontalAlignment = GenesysAlignment.Start,
-                        ) {
-                            ProductInfoSection(state, buttonScale, onEvent)
-                        }
-                    }
-                }
-            } else {
-                // --- LAYOUT MOBILE ---
-                GenesysColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    usePadding = false,
-                    useScroll = true,
-                    horizontalAlignment = GenesysAlignment.Center,
-                ) {
-                    Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
+        if (isExpanded) {
+            // --- LAYOUT DESKTOP ---
+            GenesysRow(modifier = Modifier.fillMaxSize(), usePadding = false) {
+                GenesysWeightBox(0.5f) {
+                    GenesysBox(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         ProductImageCarousel(state, pagerState, backendUrl) { index ->
                             scope.launch { pagerState.animateScrollToPage(index) }
                         }
                     }
+                }
 
-                    GenesysSpacer(GenesysSpacing.Large)
-
-                    GenesysColumn(maxWidth = 600.dp, usePadding = true) {
+                GenesysWeightBox(0.5f) {
+                    GenesysColumn(
+                        usePadding = true,
+                        useScroll = true,
+                        modifier = Modifier.fillMaxHeight(),
+                        horizontalAlignment = GenesysAlignment.Start,
+                    ) {
                         ProductInfoSection(state, buttonScale, onEvent)
                     }
-
-                    GenesysSpacer(GenesysSpacing.Huge)
                 }
+            }
+        } else {
+            // --- LAYOUT MOBILE ---
+            GenesysColumn(
+                modifier = Modifier.fillMaxSize(),
+                usePadding = false,
+                useScroll = true,
+                horizontalAlignment = GenesysAlignment.Center,
+            ) {
+                Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f)) {
+                    ProductImageCarousel(state, pagerState, backendUrl) { index ->
+                        scope.launch { pagerState.animateScrollToPage(index) }
+                    }
+                }
+
+                GenesysSpacer(GenesysSpacing.Large)
+
+                GenesysColumn(maxWidth = 600.dp, usePadding = true) {
+                    ProductInfoSection(state, buttonScale, onEvent)
+                }
+
+                GenesysSpacer(GenesysSpacing.Huge)
             }
         }
     }

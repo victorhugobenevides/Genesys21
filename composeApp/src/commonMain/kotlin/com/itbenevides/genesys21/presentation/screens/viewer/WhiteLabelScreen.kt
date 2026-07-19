@@ -279,6 +279,9 @@ fun ComponentCatalogUI(
                     CatalogItem("Carrinho", GenesysIcons.ShoppingBag) { PageComponent.CartComponent() },
                     CatalogItem("Rastreio", GenesysIcons.List) { PageComponent.OrderTrackingComponent() },
                     CatalogItem("Lista de Serviços", GenesysIcons.Schedule) { PageComponent.ServiceList() },
+                    CatalogItem("Banner Hero (Destaque)", GenesysIcons.Image) { PageComponent.Hero(title = "Destaque", imageUrl = "https://picsum.photos/1200/600") },
+                    CatalogItem("Benefícios/Vantagens", GenesysIcons.Check) { PageComponent.Benefits(items = listOf(PageComponent.BenefitItem("Título", "Descrição", "Check"))) },
+                    CatalogItem("Depoimento", GenesysIcons.Feedback) { PageComponent.Testimonial(quote = "Excelente serviço!", author = "Cliente Satisfeito") },
                 )
 
             catalogItems.chunked(2).forEach { rowItems ->

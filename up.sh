@@ -10,9 +10,10 @@ docker image prune -f
 echo "🛑 Parando containers..."
 docker-compose down -v --remove-orphans
 
-echo "🧹 Limpando caches..."
+echo "🧹 Limpando caches e banco de dados..."
 rm -rf kotlin-js-store
 rm -f yarn.lock
+rm -f data/genesys21.db*
 ./gradlew clean --no-daemon
 
 echo "🚀 Build do projeto (Server e WasmJS)..."
@@ -89,7 +90,60 @@ window.firebaseGetUserId = async () => {
 window.firebaseSignOut = () => signOut(auth);
 EOF
 
-# 4. Gerar index.html
+echo "🚀 Gerando Relatórios de Testes e Snapshots..."
+./gradlew :screenshot-tests:testDebugUnitTest :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --continue || true
+
+# 4. Copiar Relatórios de Qualidade (Para o Showcase)
+echo "📂 Organizando relatórios de qualidade..."
+mkdir -p deploy/web/reports/paparazzi
+mkdir -p deploy/web/reports/shared
+mkdir -p deploy/web/reports/app
+mkdir -p deploy/web/reports/server
+mkdir -p deploy/web/reports/coverage/app
+mkdir -p deploy/web/reports/coverage/shared
+mkdir -p deploy/web/reports/coverage/server
+
+# Paparazzi - Copiando de forma robusta
+PAPARAZZI_DIR=$(find screenshot-tests/build/reports/paparazzi -name "index.html" 2>/dev/null | head -n 1 | xargs dirname)
+if [ -n "$PAPARAZZI_DIR" ]; then
+    cp -R "$PAPARAZZI_DIR"/* deploy/web/reports/paparazzi/
+    echo "✅ Relatório Paparazzi copiado."
+fi
+
+# Shared Tests
+if [ -d "shared/build/reports/tests/testDebugUnitTest" ]; then
+    cp -R shared/build/reports/tests/testDebugUnitTest/* deploy/web/reports/shared/
+    echo "✅ Relatório Shared Tests copiado."
+fi
+
+# App Tests
+if [ -d "composeApp/build/reports/tests/testDebugUnitTest" ]; then
+    cp -R composeApp/build/reports/tests/testDebugUnitTest/* deploy/web/reports/app/
+    echo "✅ Relatório App Tests copiado."
+fi
+
+# Server Tests
+if [ -d "server/build/reports/tests/test" ]; then
+    cp -R server/build/reports/tests/test/* deploy/web/reports/server/
+    echo "✅ Relatório Server Tests copiado."
+fi
+
+# Coverage - Consolidando múltiplos relatórios
+echo "📊 Coletando relatórios de cobertura (Jacoco)..."
+if [ -d "composeApp/jacoco-reports/html" ]; then
+    cp -R composeApp/jacoco-reports/html/. deploy/web/reports/coverage/app/
+    echo "✅ Cobertura App copiada."
+fi
+if [ -d "shared/jacoco-reports/html" ]; then
+    cp -R shared/jacoco-reports/html/. deploy/web/reports/coverage/shared/
+    echo "✅ Cobertura Shared copiada."
+fi
+if [ -d "server/jacoco-reports/html" ]; then
+    cp -R server/jacoco-reports/html/. deploy/web/reports/coverage/server/
+    echo "✅ Cobertura Server copiada."
+fi
+
+# 5. Gerar index.html
 cat <<EOF > deploy/web/index.html
 <!DOCTYPE html>
 <html lang="en">

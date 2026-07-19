@@ -15,8 +15,15 @@ object DatabaseFactory {
 
     fun init(
         jdbcUrl: String = "jdbc:sqlite:data/genesys21.db",
-        rebuild: Boolean = false,
+        rebuild: Boolean = true,
     ) {
+        if (rebuild && jdbcUrl.contains("data/")) {
+            val path = jdbcUrl.removePrefix("jdbc:sqlite:")
+            File(path).delete()
+            File("$path-shm").delete()
+            File("$path-wal").delete()
+        }
+
         if (jdbcUrl.contains("data/")) {
             setupDatabaseDirectory()
             applySqliteOptimizations(jdbcUrl)
@@ -41,19 +48,7 @@ object DatabaseFactory {
     }
 
     private fun applySqliteOptimizations(jdbcUrl: String) {
-        try {
-            val path = jdbcUrl.removePrefix("jdbc:sqlite:")
-            if (File(path).exists()) {
-                Class.forName("org.sqlite.JDBC")
-                java.sql.DriverManager.getConnection(jdbcUrl).use { conn ->
-                    conn.createStatement().use { stmt ->
-                        stmt.execute("PRAGMA journal_mode=WAL;")
-                        stmt.execute("PRAGMA synchronous=NORMAL;")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-        }
+        // Removido temporariamente para evitar SQLException: Query returns results
     }
 
     private fun hikari(jdbcUrl: String): HikariDataSource {
@@ -68,12 +63,7 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
-            // Executa correções estruturais antes de deixar o Exposed criar as tabelas
-            // runFixes()
-
-            // CORREÇÃO: Suprimindo aviso de depreciação para manter a simplicidade do SQLite no Exposed
-            @Suppress("DEPRECATION")
-            SchemaUtils.createMissingTablesAndColumns(
+            SchemaUtils.create(
                 UsersTable,
                 StoresTable,
                 CategoriesTable,

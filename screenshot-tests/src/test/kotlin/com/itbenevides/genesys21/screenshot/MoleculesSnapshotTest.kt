@@ -20,6 +20,7 @@ class MoleculesSnapshotTest {
     private val sampleProduct =
         Product(
             id = "1",
+            storeId = "store-1",
             name = "Smartphone Genesys X",
             price = 2999.0,
             imageUrls = listOf("https://via.placeholder.com/300"),
