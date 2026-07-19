@@ -167,6 +167,13 @@ jobs:
             docker push $REGISTRY/genesys-server:latest
             docker push $REGISTRY/genesys-web:latest
       - run:
+          name: Setup SSH Key
+          command: |
+            mkdir -p ~/.ssh
+            echo "$OCI_SSH_KEY" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan -H ${OCI_HOST} >> ~/.ssh/known_hosts
+      - run:
           name: SSH Deploy to Oracle Cloud
           command: |
             ssh -o StrictHostKeyChecking=no ${OCI_USERNAME}@${OCI_HOST} \<< SSH_EOF
