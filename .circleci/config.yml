@@ -44,32 +44,64 @@ jobs:
               echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
             fi
       - run:
-          name: Run Unit Tests
-          command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true
+          name: Run Unit Tests & Coverage
+          command: |
+            ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon || true
+            ./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon || true
+      - run:
+          name: Verify Visual Integrity (Screenshot Tests)
+          command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true
+      - persist_to_workspace:
+          root: .
+          paths:
+            - screenshot-tests/build/reports/paparazzi
+            - composeApp/jacoco-reports
+            - shared/jacoco-reports
+            - server/jacoco-reports
+            - shared/build/reports/tests
+            - composeApp/build/reports/tests
+            - server/build/reports/tests
       - store_test_results:
           path: /tmp/test-results
 
   deploy-to-oracle:
     docker:
       - image: cimg/openjdk:21.0
+    environment:
+      DOCKER_API_VERSION: "1.41"
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - setup_remote_docker:
           version: 20.10.24
           docker_layer_caching: true
       - run:
           name: Build Distribution
-          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
+          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
       - run:
           name: Prepare Deploy Content & Docker Push
           command: |
-            mkdir -p deploy/server deploy/web
+            mkdir -p deploy/server deploy/web/reports/paparazzi deploy/web/reports/shared deploy/web/reports/app deploy/web/reports/server deploy/web/reports/coverage/app deploy/web/reports/coverage/shared deploy/web/reports/coverage/server
             cp -R server/build/install/server/. deploy/server/
             cp firebase-adminsdk.json deploy/server/bin/ 2>/dev/null || true
-            find composeApp/build/dist/wasmJs -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+            find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+
+            # Copiar Relatórios
+            [ -d "screenshot-tests/build/reports/paparazzi/debug" ] && cp -R screenshot-tests/build/reports/paparazzi/debug/* deploy/web/reports/paparazzi/ || true
+            [ -d "shared/build/reports/tests/testDebugUnitTest" ] && cp -R shared/build/reports/tests/testDebugUnitTest/* deploy/web/reports/shared/ || true
+            [ -d "composeApp/build/reports/tests/testDebugUnitTest" ] && cp -R composeApp/build/reports/tests/testDebugUnitTest/* deploy/web/reports/app/ || true
+            [ -d "server/build/reports/tests/test" ] && cp -R server/build/reports/tests/test/* deploy/web/reports/server/ || true
+
+            # Coverage
+            [ -d "composeApp/jacoco-reports/html" ] && cp -R composeApp/jacoco-reports/html/* deploy/web/reports/coverage/app/ || true
+            [ -d "shared/jacoco-reports/html" ] && cp -R shared/jacoco-reports/html/* deploy/web/reports/coverage/shared/ || true
+            [ -d "server/jacoco-reports/html" ] && cp -R server/jacoco-reports/html/* deploy/web/reports/coverage/server/ || true
 
             # Gerar ponte Firebase
             cat \<<EOF > deploy/web/firebase-bridge.js
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+            import { getAuth, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
             const firebaseConfig = {
                 apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
                 authDomain: "genesys21-32035.firebaseapp.com",
@@ -77,13 +109,20 @@ jobs:
                 storageBucket: "genesys21-32035.firebasestorage.app",
                 appId: "1:674755208954:web:26e7b20a54f9ceb0dc4b43"
             };
-            firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            window.firebaseSignIn = (email, pass) => auth.signInWithEmailAndPassword(email, pass).then(u => u.user.getIdToken());
-            window.firebaseSignInGoogle = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(u => u.user.getIdToken());
-            window.firebaseGetToken = () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null);
-            window.firebaseGetUserId = () => auth.currentUser ? Promise.resolve(auth.currentUser.uid) : Promise.resolve(null);
-            window.firebaseSignOut = () => auth.signOut();
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            window.firebaseSignIn = async (email, pass) => {
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                return await userCredential.user.getIdToken();
+            };
+            window.firebaseSignInGoogle = async () => {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                return await result.user.getIdToken();
+            };
+            window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
+            window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
+            window.firebaseSignOut = async () => await signOut(auth);
             EOF
 
             # Gerar index.html
@@ -94,9 +133,7 @@ jobs:
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
                 <title>Genesys21</title>
-                <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-                <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-                <script src="/firebase-bridge.js"></script>
+                <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
                 <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
                 <script>
                     window.dataLayer = window.dataLayer || [];
@@ -104,6 +141,8 @@ jobs:
                     gtag('js', new Date());
                     gtag('config', 'G-LW7Y13Y2M8');
                 </script>
+                <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
+                <script type="module" src="/firebase-bridge.js"></script>
                 <style>
                     html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: manipulation; }
                     #ComposeTarget { width: 100%; height: 100%; }
@@ -112,9 +151,8 @@ jobs:
                 </style>
             </head>
             <body>
-                <div id="ComposeTarget"></div>
-                <script src="/skiko.js"></script>
-                <script src="/composeApp.js"></script>
+                <canvas id="ComposeTarget"></canvas>
+                <script type="module" src="/composeApp.js"></script>
             </body>
             </html>
             EOF
@@ -122,7 +160,7 @@ jobs:
             # Docker Login OCIR
             echo "$OCI_AUTH_TOKEN" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
-            # Build and Push (Usando a arquitetura nativa do CircleCI runner, que é AMD64)
+            # Build and Push
             REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
             docker build -t $REGISTRY/genesys-server:latest -f Dockerfile.server .
             docker build -t $REGISTRY/genesys-web:latest -f Dockerfile.web .
