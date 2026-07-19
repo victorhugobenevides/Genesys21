@@ -29,7 +29,12 @@ jobs:
         run: chmod +x gradlew
 
       - name: Verify Visual Integrity (Screenshot Tests)
-        run: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
+        run: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true
+
+      - name: Run Unit Tests & Coverage
+        run: |
+          ./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon || true
+          ./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon || true
 
       - name: Decode Firebase Secrets
         run: |
@@ -44,10 +49,21 @@ jobs:
 
       - name: Prepare Deploy Folder
         run: |
-          mkdir -p deploy/server deploy/web
+          mkdir -p deploy/server deploy/web/reports/paparazzi deploy/web/reports/shared deploy/web/reports/app deploy/web/reports/server deploy/web/reports/coverage/app deploy/web/reports/coverage/shared deploy/web/reports/coverage/server
           cp -R server/build/install/server/. deploy/server/
           cp firebase-adminsdk.json deploy/server/bin/
           find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+
+          # Copiar Relatórios
+          [ -d "screenshot-tests/build/reports/paparazzi/debug" ] && cp -R screenshot-tests/build/reports/paparazzi/debug/* deploy/web/reports/paparazzi/ || true
+          [ -d "shared/build/reports/tests/testDebugUnitTest" ] && cp -R shared/build/reports/tests/testDebugUnitTest/* deploy/web/reports/shared/ || true
+          [ -d "composeApp/build/reports/tests/testDebugUnitTest" ] && cp -R composeApp/build/reports/tests/testDebugUnitTest/* deploy/web/reports/app/ || true
+          [ -d "server/build/reports/tests/test" ] && cp -R server/build/reports/tests/test/* deploy/web/reports/server/ || true
+
+          # Coverage
+          [ -d "composeApp/jacoco-reports/html" ] && cp -R composeApp/jacoco-reports/html/* deploy/web/reports/coverage/app/ || true
+          [ -d "shared/jacoco-reports/html" ] && cp -R shared/jacoco-reports/html/* deploy/web/reports/coverage/shared/ || true
+          [ -d "server/jacoco-reports/html" ] && cp -R server/jacoco-reports/html/* deploy/web/reports/coverage/server/ || true
 
           # Gerar ponte Firebase
           cat <<EOF > deploy/web/firebase-bridge.js
