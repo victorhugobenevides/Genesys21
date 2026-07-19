@@ -78,7 +78,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Distribution
-          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
+          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
       - run:
           name: Prepare Deploy Content & Docker Push
           command: |
