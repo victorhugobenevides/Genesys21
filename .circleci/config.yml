@@ -210,7 +210,7 @@ jobs:
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
-              echo "${OCI_AUTH_TOKEN}" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
+              echo "${OCI_AUTH_TOKEN}" | sudo docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
               # Gerar Nginx de Produção
               cat \<<EOF > nginx.prod.conf
@@ -299,9 +299,16 @@ jobs:
                   driver: bridge
             EOF
 
-              docker compose pull
-              docker compose up -d --force-recreate
-              docker image prune -f
+              # Tenta usar docker compose (V2) ou docker-compose (V1) com sudo
+              if sudo docker compose version >/dev/null 2>&1; then
+                DOCKER_CMD="sudo docker compose"
+              else
+                DOCKER_CMD="sudo docker-compose"
+              fi
+
+              $DOCKER_CMD pull
+              $DOCKER_CMD up -d --force-recreate
+              sudo docker image prune -f
             SSH_EOF
 
 workflows:
