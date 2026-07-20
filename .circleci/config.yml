@@ -260,7 +260,7 @@ jobs:
                       }
                   }
               }
-EOF
+              EOF
 
               # Gerar Docker Compose
               REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
@@ -298,7 +298,7 @@ EOF
               networks:
                 genesys-network:
                   driver: bridge
-EOF
+              EOF
 
               # Tenta usar docker compose (V2) ou docker-compose (V1) com sudo
               if sudo docker compose version >/dev/null 2>&1; then
