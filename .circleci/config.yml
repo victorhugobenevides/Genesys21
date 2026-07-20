@@ -177,7 +177,8 @@ jobs:
       - run:
           name: SSH Deploy to Oracle Cloud
           command: |
-            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} \<< SSH_EOF
+            # Adicionado PubkeyAcceptedAlgorithms para permitir chaves RSA em servidores modernos
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${OCI_HOST} \<< SSH_EOF
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
