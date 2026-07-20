@@ -213,7 +213,7 @@ jobs:
               echo "${OCI_AUTH_TOKEN}" | sudo docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
               # Gerar Nginx de Produção com literal strings
-              cat <<'EOF' > nginx.prod.conf
+              cat \<<'EOF' > nginx.prod.conf
               user  nginx;
               worker_processes  auto;
               events { worker_connections  1024; }
@@ -264,7 +264,7 @@ jobs:
 
               # Gerar Docker Compose
               REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
-              cat <<EOF > docker-compose.yml
+              cat \<<EOF > docker-compose.yml
               services:
                 server:
                   image: ${REGISTRY}/genesys-server:latest
