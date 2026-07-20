@@ -178,12 +178,20 @@ jobs:
               exit 1
             fi
 
-            echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
+            # Tenta decodificar como Base64 primeiro, se falhar ou não parecer Base64, usa o valor bruto
+            # Isso resolve o problema de quebras de linha perdidas no console do CircleCI
+            if echo "${OCI_SSH_KEY}" | grep -q "=" || [ ${#OCI_SSH_KEY} -gt 1000 ]; then
+                echo "Detectada chave possivelmente em Base64, tentando decodificar..."
+                echo "${OCI_SSH_KEY}" | base64 -d > ~/.ssh/oracle_key 2>/dev/null || echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
+            else
+                echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
+            fi
+
             chmod 600 ~/.ssh/oracle_key
 
-            if ! head -n 1 ~/.ssh/oracle_key | grep -q "BEGIN"; then
-              echo "ERROR: oracle_key does not start with -----BEGIN. Check your environment variable."
-              echo "Content starts with: $(head -c 15 ~/.ssh/oracle_key)"
+            if ! grep -q "BEGIN" ~/.ssh/oracle_key; then
+              echo "ERROR: oracle_key format is invalid (missing BEGIN header)."
+              echo "TIP: Run 'cat your_key | base64 | pbcopy' and update OCI_SSH_KEY in CircleCI."
               exit 1
             fi
 
