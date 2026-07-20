@@ -170,12 +170,23 @@ jobs:
           name: Setup SSH Key
           command: |
             mkdir -p ~/.ssh
-            # Limpa a variável OCI_HOST de espaços, quebras de linha ou http://
             CLEAN_HOST=$(echo "${OCI_HOST}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's|https://||' -e 's|http://||' -e 's|/.*||')
             echo "export CLEAN_HOST=${CLEAN_HOST}" >> $BASH_ENV
 
+            if [ -z "${OCI_SSH_KEY}" ]; then
+              echo "ERROR: OCI_SSH_KEY is empty!"
+              exit 1
+            fi
+
             echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
             chmod 600 ~/.ssh/oracle_key
+
+            if ! head -n 1 ~/.ssh/oracle_key | grep -q "BEGIN"; then
+              echo "ERROR: oracle_key does not start with -----BEGIN. Check your environment variable."
+              echo "Content starts with: $(head -c 15 ~/.ssh/oracle_key)"
+              exit 1
+            fi
+
             ssh-keygen -l -f ~/.ssh/oracle_key
             ssh-keyscan -H "${CLEAN_HOST}" >> ~/.ssh/known_hosts
       - run:
