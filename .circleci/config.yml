@@ -206,99 +206,21 @@ jobs:
           name: SSH Deploy to Oracle Cloud
           command: |
             source $BASH_ENV
-            SSH_AUTH_SOCK="" ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${CLEAN_HOST} \<< SSH_EOF
+            # Passa variáveis locais para o ambiente remoto do SSH
+            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa \
+                ubuntu@${CLEAN_HOST} "OCI_REGION=${OCI_REGION} OCI_TENANCY_NAMESPACE=${OCI_TENANCY_NAMESPACE} OCI_USER=${OCI_USER} OCI_AUTH_TOKEN=${OCI_AUTH_TOKEN} bash -s" \<< 'SSH_EOF'
+              set -e
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
               echo "${OCI_AUTH_TOKEN}" | sudo docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
-              # Gerar Nginx de Produção com literal strings
-              cat \<<'EOF' > nginx.prod.conf
-              user  nginx;
-              worker_processes  auto;
-              events { worker_connections  1024; }
-              http {
-                  include /etc/nginx/mime.types;
-                  types { application/wasm wasm; }
-                  default_type application/octet-stream;
-                  client_max_body_size 50M;
-                  gzip on;
-                  gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
-
-                  server {
-                      listen 80;
-                      server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
-                      location /.well-known/acme-challenge/ { root /var/www/certbot; }
-                      location / { return 301 https://$host$request_uri; }
-                  }
-
-                  server {
-                      listen 443 ssl;
-                      server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
-                      ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
-                      ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
-                      ssl_protocols TLSv1.2 TLSv1.3;
-
-                      root /usr/share/nginx/html;
-                      index index.html;
-
-                      location ^~ /api/ {
-                          proxy_pass http://server:8080;
-                          proxy_set_header Host $host;
-                          proxy_set_header X-Real-IP $remote_addr;
-                      }
-
-                      location /uploads/ {
-                          alias /usr/share/nginx/html/uploads/;
-                          try_files $uri @backend_fallback;
-                      }
-
-                      location @backend_fallback { proxy_pass http://server:8080; }
-
-                      location / {
-                          try_files $uri $uri/ /index.html;
-                      }
-                  }
-              }
-              EOF
+              # Gerar Nginx de Produção usando printf para evitar conflitos de heredoc/YAML
+              printf "user  nginx;\nworker_processes  auto;\nevents { worker_connections  1024; }\nhttp {\n    include /etc/nginx/mime.types;\n    types { application/wasm wasm; }\n    default_type application/octet-stream;\n    client_max_body_size 50M;\n    gzip on;\n    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;\n    server {\n        listen 80;\n        server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;\n        location /.well-known/acme-challenge/ { root /var/www/certbot; }\n        location / { return 301 https://\$host\$request_uri; }\n    }\n    server {\n        listen 443 ssl;\n        server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;\n        ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;\n        ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;\n        ssl_protocols TLSv1.2 TLSv1.3;\n        root /usr/share/nginx/html;\n        index index.html;\n        location ^~ /api/ {\n            proxy_pass http://server:8080;\n            proxy_set_header Host \$host;\n            proxy_set_header X-Real-IP \$remote_addr;\n        }\n        location /uploads/ {\n            alias /usr/share/nginx/html/uploads/;\n            try_files \$uri @backend_fallback;\n        }\n        location @backend_fallback { proxy_pass http://server:8080; }\n        location / {\n            try_files \$uri \$uri/ /index.html;\n        }\n    }\n}\n" > nginx.prod.conf
 
               # Gerar Docker Compose
               REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
-              cat \<<EOF > docker-compose.yml
-              services:
-                server:
-                  image: ${REGISTRY}/genesys-server:latest
-                  volumes:
-                    - ./data:/app/data
-                    - ./uploads:/app/uploads
-                  restart: unless-stopped
-                  networks:
-                    - genesys-network
-                web:
-                  image: ${REGISTRY}/genesys-web:latest
-                  ports:
-                    - "80:80"
-                    - "443:443"
-                  volumes:
-                    - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
-                    - ./uploads:/usr/share/nginx/html/uploads:ro
-                    - ./certbot/conf:/etc/letsencrypt:ro
-                    - ./certbot/www:/var/www/certbot:ro
-                  restart: unless-stopped
-                  networks:
-                    - genesys-network
-                certbot:
-                  image: certbot/certbot
-                  volumes:
-                    - ./certbot/conf:/etc/letsencrypt
-                    - ./certbot/www:/var/www/certbot
-                  networks:
-                    - genesys-network
-                  entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'"
-              networks:
-                genesys-network:
-                  driver: bridge
-              EOF
+              printf "services:\n  server:\n    image: ${REGISTRY}/genesys-server:latest\n    volumes:\n      - ./data:/app/data\n      - ./uploads:/app/uploads\n    restart: unless-stopped\n    networks:\n      - genesys-network\n  web:\n    image: ${REGISTRY}/genesys-web:latest\n    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro\n      - ./uploads:/usr/share/nginx/html/uploads:ro\n      - ./certbot/conf:/etc/letsencrypt:ro\n      - ./certbot/www:/var/www/certbot:ro\n    restart: unless-stopped\n    networks:\n      - genesys-network\n  certbot:\n    image: certbot/certbot\n    volumes:\n      - ./certbot/conf:/etc/letsencrypt\n      - ./certbot/www:/var/www/certbot\n    networks:\n      - genesys-network\n    entrypoint: \"/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'\"\nnetworks:\n  genesys-network:\n    driver: bridge\n" > docker-compose.yml
 
               # Tenta usar docker compose (V2) ou docker-compose (V1) com sudo
               if sudo docker compose version >/dev/null 2>&1; then
