@@ -170,16 +170,14 @@ jobs:
           name: Setup SSH Key
           command: |
             mkdir -p ~/.ssh
-            # Usando printf para garantir que as quebras de linha sejam interpretadas corretamente
             printf "%s" "${OCI_SSH_KEY}" > ~/.ssh/id_rsa
             chmod 600 ~/.ssh/id_rsa
-            ssh-keygen -l -f ~/.ssh/id_rsa # Mostra o fingerprint para conferência
+            ssh-keygen -l -f ~/.ssh/id_rsa
             ssh-keyscan -H ${OCI_HOST} >> ~/.ssh/known_hosts
       - run:
           name: SSH Deploy to Oracle Cloud
           command: |
-            # Adicionado -vv para debug profundo e forçado o uso da chave
-            ssh -vv -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} \<< SSH_EOF
+            ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} \<< SSH_EOF
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
