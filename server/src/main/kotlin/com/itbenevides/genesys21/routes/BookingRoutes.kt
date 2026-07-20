@@ -29,7 +29,11 @@ fun Route.bookingRoutes(repository: BookingRepository) {
         get("/availability/{storeId}") {
             val storeId = call.parameters["storeId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val availability = repository.getAvailability(storeId)
-            call.respond(availability)
+            if (availability != null) {
+                call.respond(availability)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Disponibilidade não configurada")
+            }
         }
 
         get("/appointments") {

@@ -19,11 +19,9 @@ dependencies {
     implementation(libs.ktor.serverAuth)
     implementation(libs.ktor.serverContentNegotiation)
     implementation(libs.ktor.serverCors)
-    implementation("io.ktor:ktor-server-rate-limit-jvm:${libs.versions.ktor.get()}")
-    implementation("io.ktor:ktor-server-default-headers-jvm:${libs.versions.ktor.get()}")
-
-    // CORREÇÃO: Usando string direta para garantir que o build não falhe por falta no catálogo
-    implementation("io.ktor:ktor-server-status-pages:3.0.3")
+    implementation("io.ktor:ktor-server-rate-limit-jvm:3.0.3")
+    implementation("io.ktor:ktor-server-default-headers-jvm:3.0.3")
+    implementation("io.ktor:ktor-server-status-pages-jvm:3.0.3")
 
     implementation(libs.ktor.server.compression)
     implementation(libs.ktor.server.caching.headers)

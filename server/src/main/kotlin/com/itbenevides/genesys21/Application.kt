@@ -17,10 +17,12 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.plugins.ratelimit.*
-import io.ktor.server.plugins.defaultheaders.*
-import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.ratelimit.RateLimit
+import io.ktor.server.plugins.ratelimit.RateLimitName
+import io.ktor.server.plugins.ratelimit.rateLimit as rateLimitRoute
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -102,6 +104,7 @@ fun Application.module() {
         header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos;")
     }
 
+    /*
     install(RateLimit) {
         global {
             rateLimit(limit = 100, period = 60.seconds)
@@ -110,6 +113,7 @@ fun Application.module() {
             rateLimit(limit = 5, period = 60.seconds)
         }
     }
+    */
 
     install(CORS) {
         val prodHosts = listOf("radarani.site", "victorbenevides.dev")
@@ -150,9 +154,9 @@ fun Application.module() {
     routing {
         // Aplica rate limit na rota de login e upload
         authenticate("firebase") {
-            withRateLimit(RateLimitName("login")) {
+            // rateLimit(RateLimitName("login")) {
                 post("/api/login_check") { call.respond(HttpStatusCode.OK) }
-            }
+            // }
         }
 
         get("/uploads/{filename...}") {
