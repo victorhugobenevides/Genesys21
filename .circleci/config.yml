@@ -170,16 +170,19 @@ jobs:
           name: Setup SSH Key
           command: |
             mkdir -p ~/.ssh
-            # Usando nome personalizado para evitar que o CircleCI sobrescreva com chaves padrão
+            # Limpa a variável OCI_HOST de espaços, quebras de linha ou http://
+            CLEAN_HOST=$(echo "${OCI_HOST}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's|https://||' -e 's|http://||' -e 's|/.*||')
+            echo "export CLEAN_HOST=${CLEAN_HOST}" >> $BASH_ENV
+
             echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
             chmod 600 ~/.ssh/oracle_key
             ssh-keygen -l -f ~/.ssh/oracle_key
-            ssh-keyscan -H ${OCI_HOST} >> ~/.ssh/known_hosts
+            ssh-keyscan -H "${CLEAN_HOST}" >> ~/.ssh/known_hosts
       - run:
           name: SSH Deploy to Oracle Cloud
           command: |
-            # Força o uso da nossa chave específica e ignora qualquer agente do CircleCI
-            SSH_AUTH_SOCK="" ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${OCI_HOST} \<< SSH_EOF
+            source $BASH_ENV
+            SSH_AUTH_SOCK="" ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${CLEAN_HOST} \<< SSH_EOF
               mkdir -p ~/app/certbot/conf ~/app/certbot/www && cd ~/app
 
               # Login no OCIR na instância
