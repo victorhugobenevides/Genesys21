@@ -212,8 +212,8 @@ jobs:
               # Login no OCIR na instância
               echo "${OCI_AUTH_TOKEN}" | sudo docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
-              # Gerar Nginx de Produção
-              cat \<<EOF > nginx.prod.conf
+              # Gerar Nginx de Produção com literal strings
+              cat <<'EOF' > nginx.prod.conf
               user  nginx;
               worker_processes  auto;
               events { worker_connections  1024; }
@@ -229,7 +229,7 @@ jobs:
                       listen 80;
                       server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
                       location /.well-known/acme-challenge/ { root /var/www/certbot; }
-                      location / { return 301 https://\$host\$request_uri; }
+                      location / { return 301 https://$host$request_uri; }
                   }
 
                   server {
@@ -244,29 +244,30 @@ jobs:
 
                       location ^~ /api/ {
                           proxy_pass http://server:8080;
-                          proxy_set_header Host \$host;
-                          proxy_set_header X-Real-IP \$remote_addr;
+                          proxy_set_header Host $host;
+                          proxy_set_header X-Real-IP $remote_addr;
                       }
 
                       location /uploads/ {
                           alias /usr/share/nginx/html/uploads/;
-                          try_files \$uri @backend_fallback;
+                          try_files $uri @backend_fallback;
                       }
 
                       location @backend_fallback { proxy_pass http://server:8080; }
 
                       location / {
-                          try_files \$uri \$uri/ /index.html;
+                          try_files $uri $uri/ /index.html;
                       }
                   }
               }
-            EOF
+EOF
 
               # Gerar Docker Compose
-              cat \<<EOF > docker-compose.yml
+              REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
+              cat <<EOF > docker-compose.yml
               services:
                 server:
-                  image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest
+                  image: ${REGISTRY}/genesys-server:latest
                   volumes:
                     - ./data:/app/data
                     - ./uploads:/app/uploads
@@ -274,7 +275,7 @@ jobs:
                   networks:
                     - genesys-network
                 web:
-                  image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-web:latest
+                  image: ${REGISTRY}/genesys-web:latest
                   ports:
                     - "80:80"
                     - "443:443"
@@ -297,7 +298,7 @@ jobs:
               networks:
                 genesys-network:
                   driver: bridge
-            EOF
+EOF
 
               # Tenta usar docker compose (V2) ou docker-compose (V1) com sudo
               if sudo docker compose version >/dev/null 2>&1; then
