@@ -435,8 +435,9 @@ class PageViewModel(
         onSuccess: () -> Unit,
     ) {
         viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
             try {
-                saveBookingServiceUseCase(service).onSuccess { _ ->
+                saveBookingServiceUseCase(service, token).onSuccess { _ ->
                     loadBookingServices()
                     onSuccess()
                 }.onFailure {
@@ -450,8 +451,9 @@ class PageViewModel(
 
     fun deleteBookingService(serviceId: String) {
         viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
             try {
-                deleteBookingServiceUseCase(serviceId).onSuccess { _ ->
+                deleteBookingServiceUseCase(serviceId, token).onSuccess { _ ->
                     loadBookingServices()
                 }.onFailure {
                     handleError("Erro ao deletar serviço", it)
@@ -475,9 +477,10 @@ class PageViewModel(
 
     fun saveAvailability(availability: MerchantAvailability) {
         viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
             _isLoading.value = true
             try {
-                saveAvailabilityUseCase(availability).onSuccess { _ ->
+                saveAvailabilityUseCase(availability, token).onSuccess { _ ->
                     _availability.value = availability
                 }.onFailure {
                     handleError("Erro ao salvar disponibilidade", it)
@@ -620,9 +623,10 @@ class PageViewModel(
 
     fun updateAppointment(appointment: Appointment) {
         viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
             _isLoading.value = true
             try {
-                updateAppointmentUseCase(appointment).onSuccess { _ ->
+                updateAppointmentUseCase(appointment, token).onSuccess { _ ->
                     // Reload appointments to reflect changes
                     val today = now().toLocalDateTime(TimeZone.currentSystemDefault()).date
                     loadAppointments(today, appointment.storeId)

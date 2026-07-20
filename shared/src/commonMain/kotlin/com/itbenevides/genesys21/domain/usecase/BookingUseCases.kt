@@ -7,14 +7,14 @@ import com.itbenevides.genesys21.domain.repository.BookingRepository
 import kotlinx.datetime.LocalDate
 
 class SaveBookingServiceUseCase(private val repository: BookingRepository) {
-    suspend operator fun invoke(service: BookingService): Result<Unit> = runCatching {
-        repository.saveService(service)
+    suspend operator fun invoke(service: BookingService, token: String): Result<Unit> = runCatching {
+        repository.saveService(service, token)
     }
 }
 
 class DeleteBookingServiceUseCase(private val repository: BookingRepository) {
-    suspend operator fun invoke(id: String): Result<Unit> = runCatching {
-        repository.deleteService(id)
+    suspend operator fun invoke(id: String, token: String): Result<Unit> = runCatching {
+        repository.deleteService(id, token)
     }
 }
 
@@ -23,8 +23,8 @@ class GetAvailabilityUseCase(private val repository: BookingRepository) {
 }
 
 class SaveAvailabilityUseCase(private val repository: BookingRepository) {
-    suspend operator fun invoke(availability: MerchantAvailability): Result<Unit> = runCatching {
-        repository.saveAvailability(availability)
+    suspend operator fun invoke(availability: MerchantAvailability, token: String): Result<Unit> = runCatching {
+        repository.saveAvailability(availability, token)
     }
 }
 
@@ -42,7 +42,7 @@ class CreateAppointmentUseCase(private val repository: BookingRepository) {
 }
 
 class UpdateAppointmentUseCase(private val repository: BookingRepository) {
-    suspend operator fun invoke(appointment: Appointment): Result<Unit> = runCatching {
-        repository.updateAppointment(appointment)
+    suspend operator fun invoke(appointment: Appointment, token: String): Result<Unit> = runCatching {
+        repository.updateAppointment(appointment, token)
     }
 }

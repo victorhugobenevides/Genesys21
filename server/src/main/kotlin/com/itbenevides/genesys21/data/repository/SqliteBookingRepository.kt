@@ -67,8 +67,14 @@ class SqliteBookingRepository : BookingRepository {
         }.singleOrNull()
     }
 
-    override suspend fun saveService(service: BookingService) {
+    override suspend fun saveService(service: BookingService, token: String) {
         dbQuery {
+            // Validação de Posse
+            val isOwner = StoresTable.selectAll()
+                .where { (StoresTable.id eq service.storeId) and (StoresTable.ownerId eq token) }
+                .count() > 0
+            if (!isOwner) throw Exception("Acesso negado: Você não é o dono desta loja.")
+
             val exists = BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }.count() > 0
             if (exists) {
                 BookingServicesTable.update({ BookingServicesTable.id eq service.id }) {
@@ -107,8 +113,20 @@ class SqliteBookingRepository : BookingRepository {
         }
     }
 
-    override suspend fun deleteService(id: String) {
+    override suspend fun deleteService(id: String, token: String) {
         dbQuery {
+            // Busca storeId do serviço para validar posse
+            val storeId = BookingServicesTable.select(BookingServicesTable.storeId)
+                .where { BookingServicesTable.id eq id }
+                .firstOrNull()?.get(BookingServicesTable.storeId)
+
+            if (storeId == null) throw Exception("Serviço não encontrado.")
+
+            val isOwner = StoresTable.selectAll()
+                .where { (StoresTable.id eq storeId) and (StoresTable.ownerId eq token) }
+                .count() > 0
+            if (!isOwner) throw Exception("Acesso negado.")
+
             BookingServicesTable.update({ BookingServicesTable.id eq id }) {
                 it[deletedAt] = System.currentTimeMillis()
             }
@@ -143,8 +161,14 @@ class SqliteBookingRepository : BookingRepository {
         )
     }
 
-    override suspend fun saveAvailability(availability: MerchantAvailability) {
+    override suspend fun saveAvailability(availability: MerchantAvailability, token: String) {
         dbQuery {
+            // Validação de Posse
+            val isOwner = StoresTable.selectAll()
+                .where { (StoresTable.id eq availability.storeId) and (StoresTable.ownerId eq token) }
+                .count() > 0
+            if (!isOwner) throw Exception("Acesso negado.")
+
             val availabilityRow = MerchantAvailabilityTable.selectAll().where { MerchantAvailabilityTable.storeId eq availability.storeId }.singleOrNull()
             val availabilityId = if (availabilityRow == null) {
                 val newId = java.util.UUID.randomUUID().toString()
@@ -325,8 +349,14 @@ class SqliteBookingRepository : BookingRepository {
         }
     }
 
-    override suspend fun updateAppointment(appointment: Appointment) {
+    override suspend fun updateAppointment(appointment: Appointment, token: String) {
         dbQuery {
+            // Validação de Posse
+            val isOwner = StoresTable.selectAll()
+                .where { (StoresTable.id eq appointment.storeId) and (StoresTable.ownerId eq token) }
+                .count() > 0
+            if (!isOwner) throw Exception("Acesso negado.")
+
             AppointmentsTable.update({ AppointmentsTable.id eq appointment.id }) {
                 it[status] = appointment.status.name
                 it[updatedAt] = System.currentTimeMillis()

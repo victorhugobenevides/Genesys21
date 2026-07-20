@@ -26,8 +26,9 @@ class KtorBookingRepository(
         return response.body()
     }
 
-    override suspend fun saveService(service: BookingService) {
+    override suspend fun saveService(service: BookingService, token: String) {
         val response = client.post("$baseUrl/api/booking/services") {
+            header(HttpHeaders.Authorization, "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(service)
         }
@@ -36,8 +37,10 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun deleteService(id: String) {
-        val response = client.delete("$baseUrl/api/booking/services/$id")
+    override suspend fun deleteService(id: String, token: String) {
+        val response = client.delete("$baseUrl/api/booking/services/$id") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
         if (!response.status.isSuccess()) {
             throw Exception("Erro ao excluir serviço")
         }
@@ -55,8 +58,9 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun saveAvailability(availability: MerchantAvailability) {
+    override suspend fun saveAvailability(availability: MerchantAvailability, token: String) {
         val response = client.post("$baseUrl/api/booking/availability") {
+            header(HttpHeaders.Authorization, "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(availability)
         }
@@ -109,8 +113,9 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun updateAppointment(appointment: Appointment) {
+    override suspend fun updateAppointment(appointment: Appointment, token: String) {
         val response = client.put("$baseUrl/api/booking/appointments/${appointment.id}") {
+            header(HttpHeaders.Authorization, "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(appointment)
         }

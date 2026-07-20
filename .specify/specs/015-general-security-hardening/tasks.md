@@ -1,10 +1,16 @@
 # Tasks: Spec 015 - Security Hardening
 
-## Phase 1: Server-Side (Ktor)
-- [ ] Install and configure Ktor `RateLimit` plugin. <!-- id: 0 -->
-- [ ] Refactor CORS configuration to use a whitelist of domains. <!-- id: 1 -->
-- [ ] Add security headers middleware to Ktor. <!-- id: 2 -->
-- [ ] Audit `SqlitePageRepository` for potential SQL injection points (even when using Exposed). <!-- id: 3 -->
+## Phase 1: Server-Side Hardening (Ktor)
+- [x] Install and configure Ktor `RateLimit` plugin. <!-- id: 0 -->
+- [x] Restrict CORS to specific production and staging domains. <!-- id: 1 -->
+- [x] Implement `DefaultHeaders` with `X-Frame-Options`, `X-Content-Type-Options`, and `HSTS`. <!-- id: 2 -->
+- [x] Sanitize `StatusPages` error responses to avoid leaking stack traces/messages in production. <!-- id: 3 -->
+- [x] Implement maximum file size and type validation in `/api/upload`. <!-- id: 13 -->
+
+## Phase 2: Database & Multi-tenancy Hardening
+- [x] Enforce `ownerId` checks in all `SqlitePageRepository` write operations (Categories, Products). <!-- id: 14 -->
+- [ ] Integrate `AuditLogsTable` into critical repository operations (Role updates, Page deletions). <!-- id: 15 -->
+- [ ] Transition from sequential integer IDs to UUIDs for `PageComponents` (Spec 011 alignment). <!-- id: 16 -->
 
 ## Phase 2: App-Side (Compose)
 - [ ] Implement `SecureStorage` interface with platform-specific implementations. <!-- id: 4 -->

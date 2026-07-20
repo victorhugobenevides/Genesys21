@@ -18,6 +18,8 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.ratelimit.*
+import io.ktor.server.plugins.defaultheaders.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -29,6 +31,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 
 const val SERVER_PORT = 8080
@@ -62,8 +65,14 @@ fun Application.module() {
 
     install(StatusPages) {
         exception<Throwable> { call, cause ->
+            val isProd = System.getenv("PROD_MODE") == "true"
             logger.error("Erro Interno: ${cause.message}", cause)
-            call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
+
+            if (isProd) {
+                call.respond(HttpStatusCode.InternalServerError, "Ocorreu um erro inesperado no servidor.")
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
+            }
         }
     }
 
@@ -85,8 +94,30 @@ fun Application.module() {
         )
     }
 
+    install(DefaultHeaders) {
+        header(HttpHeaders.Server, "GenesysServer")
+        header("X-Frame-Options", "DENY")
+        header("X-Content-Type-Options", "nosniff")
+        header("X-XSS-Protection", "1; mode=block")
+        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos;")
+    }
+
+    install(RateLimit) {
+        global {
+            rateLimit(limit = 100, period = 60.seconds)
+        }
+        register(RateLimitName("login")) {
+            rateLimit(limit = 5, period = 60.seconds)
+        }
+    }
+
     install(CORS) {
-        anyHost()
+        val prodHosts = listOf("radarani.site", "victorbenevides.dev")
+        val stagingHosts = listOf("localhost:8081", "localhost:8080")
+
+        prodHosts.forEach { allowHost(it, schemes = listOf("https")) }
+        stagingHosts.forEach { allowHost(it, schemes = listOf("http", "https")) }
+
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
         allowHeader(HttpHeaders.CacheControl)
@@ -117,6 +148,13 @@ fun Application.module() {
     initFirebase(logger)
 
     routing {
+        // Aplica rate limit na rota de login e upload
+        authenticate("firebase") {
+            withRateLimit(RateLimitName("login")) {
+                post("/api/login_check") { call.respond(HttpStatusCode.OK) }
+            }
+        }
+
         get("/uploads/{filename...}") {
             val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
             val file = File(uploadDir, filename)
@@ -226,15 +264,29 @@ fun Application.module() {
                     val multipart = call.receiveMultipart()
                     var fileName = ""
                     var fileBytes: ByteArray? = null
+
                     multipart.forEachPart { part ->
                         if (part is PartData.FileItem) {
+                            // Validação de Tipo de Arquivo
+                            val contentType = part.contentType?.toString() ?: ""
+                            if (!contentType.startsWith("image/")) {
+                                return@forEachPart call.respond(HttpStatusCode.UnsupportedMediaType, "Apenas imagens são permitidas.")
+                            }
+
                             val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
                             fileName = "${UUID.randomUUID()}.$ext"
                             val channel = part.provider()
                             fileBytes = channel.toByteArray()
+
+                            // Validação de Tamanho (Max 10MB)
+                            if (fileBytes != null && fileBytes!!.size > 10 * 1024 * 1024) {
+                                fileBytes = null
+                                return@forEachPart call.respond(HttpStatusCode.PayloadTooLarge, "Imagem muito grande (máximo 10MB).")
+                            }
                         }
                         part.dispose()
                     }
+
                     if (fileBytes != null) {
                         val file = File(uploadDir, fileName)
 

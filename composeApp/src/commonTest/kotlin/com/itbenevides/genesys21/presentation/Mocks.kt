@@ -86,17 +86,17 @@ class FakeBookingRepository : BookingRepository {
 
     override suspend fun getServiceById(id: String): BookingService? = servicesList.find { it.id == id }
 
-    override suspend fun saveService(service: BookingService) {
+    override suspend fun saveService(service: BookingService, token: String) {
         servicesList.add(service)
     }
 
-    override suspend fun deleteService(id: String) {
+    override suspend fun deleteService(id: String, token: String) {
         servicesList.removeAll { it.id == id }
     }
 
     override suspend fun getAvailability(storeId: String): MerchantAvailability? = merchantAvailability
 
-    override suspend fun saveAvailability(availability: MerchantAvailability) {
+    override suspend fun saveAvailability(availability: MerchantAvailability, token: String) {
         this.merchantAvailability = availability
     }
 
@@ -110,7 +110,7 @@ class FakeBookingRepository : BookingRepository {
         appointmentsList.add(appointment)
     }
 
-    override suspend fun updateAppointment(appointment: Appointment) {
+    override suspend fun updateAppointment(appointment: Appointment, token: String) {
         val index = appointmentsList.indexOfFirst { it.id == appointment.id }
         if (index != -1) {
             appointmentsList[index] = appointment

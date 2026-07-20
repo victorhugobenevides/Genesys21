@@ -66,6 +66,13 @@ class SqlitePageRepository : PageRepository {
     ): Result<Unit> =
         try {
             dbQuery {
+                // Validação de Posse (Multi-tenancy)
+                val isOwner = StoresTable.selectAll()
+                    .where { (StoresTable.id eq page.storeId) and (StoresTable.ownerId eq token) }
+                    .count() > 0
+
+                if (!isOwner) throw Exception("Acesso negado: Você não é o dono desta loja.")
+
                 val formattedDomain = page.customDomain?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
                 val formattedWhatsapp = page.whatsapp?.trim()?.takeIf { it.isNotBlank() }
 
@@ -206,6 +213,13 @@ class SqlitePageRepository : PageRepository {
     ): Result<Unit> =
         try {
             dbQuery {
+                // Valida se o usuário é o dono da Store antes de salvar a categoria
+                val isOwner = StoresTable.selectAll()
+                    .where { (StoresTable.id eq category.storeId) and (StoresTable.ownerId eq token) }
+                    .count() > 0
+
+                if (!isOwner) throw Exception("Acesso negado: Você não é o dono desta loja.")
+
                 val exists = CategoriesTable.selectAll().where { CategoriesTable.id eq category.id }.count() > 0
                 if (exists) {
                     CategoriesTable.update({ CategoriesTable.id eq category.id }) {
@@ -237,7 +251,20 @@ class SqlitePageRepository : PageRepository {
     ): Result<Unit> =
         try {
             dbQuery {
-                val updated = CategoriesTable.update({ (CategoriesTable.id eq id) and (StoresTable.ownerId eq token) }) {
+                // Busca a storeId da categoria para validar posse
+                val storeId = CategoriesTable.select(CategoriesTable.storeId)
+                    .where { CategoriesTable.id eq id }
+                    .firstOrNull()?.get(CategoriesTable.storeId)
+
+                if (storeId == null) throw Exception("Categoria não encontrada.")
+
+                val isOwner = StoresTable.selectAll()
+                    .where { (StoresTable.id eq storeId) and (StoresTable.ownerId eq token) }
+                    .count() > 0
+
+                if (!isOwner) throw Exception("Acesso negado: Você não tem permissão para excluir esta categoria.")
+
+                val updated = CategoriesTable.update({ CategoriesTable.id eq id }) {
                     it[deletedAt] = System.currentTimeMillis()
                 }
                 if (updated > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir categoria"))
