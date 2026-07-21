@@ -209,91 +209,91 @@ jobs:
 
             # 1. Gerar Nginx de Produção localmente (Runner)
             cat \<<'NGINX_EOF' > nginx.prod.conf
-user  nginx;
-worker_processes  auto;
-events { worker_connections  1024; }
-http {
-    include /etc/nginx/mime.types;
-    types { application/wasm wasm; }
-    default_type application/octet-stream;
-    client_max_body_size 50M;
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
+            user  nginx;
+            worker_processes  auto;
+            events { worker_connections  1024; }
+            http {
+                include /etc/nginx/mime.types;
+                types { application/wasm wasm; }
+                default_type application/octet-stream;
+                client_max_body_size 50M;
+                gzip on;
+                gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;
 
-    server {
-        listen 80;
-        server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
-        location /.well-known/acme-challenge/ { root /var/www/certbot; }
-        location / { return 301 https://$host$request_uri; }
-    }
+                server {
+                    listen 80;
+                    server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
+                    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+                    location / { return 301 https://$host$request_uri; }
+                }
 
-    server {
-        listen 443 ssl;
-        server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
-        ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
-        ssl_protocols TLSv1.2 TLSv1.3;
+                server {
+                    listen 443 ssl;
+                    server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;
+                    ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
+                    ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
+                    ssl_protocols TLSv1.2 TLSv1.3;
 
-        root /usr/share/nginx/html;
-        index index.html;
+                    root /usr/share/nginx/html;
+                    index index.html;
 
-        location ^~ /api/ {
-            proxy_pass http://server:8080;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
+                    location ^~ /api/ {
+                        proxy_pass http://server:8080;
+                        proxy_set_header Host $host;
+                        proxy_set_header X-Real-IP $remote_addr;
+                    }
 
-        location /uploads/ {
-            alias /usr/share/nginx/html/uploads/;
-            try_files $uri @backend_fallback;
-        }
+                    location /uploads/ {
+                        alias /usr/share/nginx/html/uploads/;
+                        try_files $uri @backend_fallback;
+                    }
 
-        location @backend_fallback { proxy_pass http://server:8080; }
+                    location @backend_fallback { proxy_pass http://server:8080; }
 
-        location / {
-            try_files $uri $uri/ /index.html;
-        }
-    }
-}
-NGINX_EOF
+                    location / {
+                        try_files $uri $uri/ /index.html;
+                    }
+                }
+            }
+            NGINX_EOF
 
             # 2. Gerar Docker Compose localmente (Runner)
             REGISTRY="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}"
             cat \<<EOF > docker-compose.yml
-services:
-  server:
-    image: ${REGISTRY}/genesys-server:latest
-    volumes:
-      - ./data:/app/data
-      - ./uploads:/app/uploads
-    restart: unless-stopped
-    networks:
-      - genesys-network
-  web:
-    image: ${REGISTRY}/genesys-web:latest
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - ./uploads:/usr/share/nginx/html/uploads:ro
-      - ./certbot/conf:/etc/letsencrypt:ro
-      - ./certbot/www:/var/www/certbot:ro
-    restart: unless-stopped
-    networks:
-      - genesys-network
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    networks:
-      - genesys-network
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'"
-networks:
-  genesys-network:
-    driver: bridge
-EOF
+            services:
+              server:
+                image: ${REGISTRY}/genesys-server:latest
+                volumes:
+                  - ./data:/app/data
+                  - ./uploads:/app/uploads
+                restart: unless-stopped
+                networks:
+                  - genesys-network
+              web:
+                image: ${REGISTRY}/genesys-web:latest
+                ports:
+                  - "80:80"
+                  - "443:443"
+                volumes:
+                  - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+                  - ./uploads:/usr/share/nginx/html/uploads:ro
+                  - ./certbot/conf:/etc/letsencrypt:ro
+                  - ./certbot/www:/var/www/certbot:ro
+                restart: unless-stopped
+                networks:
+                  - genesys-network
+              certbot:
+                image: certbot/certbot
+                volumes:
+                  - ./certbot/conf:/etc/letsencrypt
+                  - ./certbot/www:/var/www/certbot
+                networks:
+                  - genesys-network
+                entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'"
+            networks:
+              genesys-network:
+                driver: bridge
+            EOF
 
             # 3. Transferir arquivos e executar comandos via SSH
             ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${CLEAN_HOST} "mkdir -p ~/app"
