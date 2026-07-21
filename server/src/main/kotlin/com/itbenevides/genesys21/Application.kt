@@ -52,7 +52,9 @@ fun Application.module() {
     if (isTesting) {
         DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared", rebuild = true)
     } else {
+        logger.info("Inicializando Banco de Dados (rebuild=$shouldRebuild)...")
         DatabaseFactory.init(rebuild = shouldRebuild)
+        logger.info("Banco de Dados inicializado com sucesso.")
     }
 
     val pageRepository = SqlitePageRepository()
