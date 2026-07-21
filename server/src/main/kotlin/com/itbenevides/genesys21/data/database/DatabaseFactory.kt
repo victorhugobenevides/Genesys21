@@ -86,6 +86,7 @@ object DatabaseFactory {
                 MediaTable,
                 AuditLogsTable,
             )
+            runFixes()
         }
     }
 

@@ -112,8 +112,9 @@ object DatabaseMigrator {
             // Verifica se a tabela ainda tem a estrutura antiga ou a restrição UNIQUE indesejada
             val hasUnique = tableSql.contains("custom_domain", true) && tableSql.contains("UNIQUE", true)
             val hasOldComponentsColumn = tableSql.contains("components", true)
+            val isMissingAudit = !tableSql.contains("created_at", true)
 
-            if (hasUnique || hasOldComponentsColumn) {
+            if (hasUnique || hasOldComponentsColumn || isMissingAudit) {
                 rebuildPagesTable(hasOldComponentsColumn)
             }
 
@@ -130,20 +131,46 @@ object DatabaseMigrator {
      * Reconstrói a tabela de páginas para aplicar a normalização e remover constraints.
      */
     private fun Transaction.rebuildPagesTable(migrateComponents: Boolean) {
-        println("DatabaseMigrator: Reconstruindo tabela 'pages' para normalização...")
+        println("DatabaseMigrator: Reconstruindo tabela 'pages' para normalização e auditoria...")
 
+        exec("DROP TABLE IF EXISTS pages_old")
         exec("ALTER TABLE pages RENAME TO pages_old")
 
-        // Cria a nova estrutura baseada na definição atual do PagesTable (sem UNIQUE e sem 'components')
+        // Cria a nova estrutura baseada na definição atual do PagesTable
         SchemaUtils.create(PagesTable)
 
-        // Insere apenas as colunas atômicas que permaneceram na tabela Pages
-        exec(
-            """
-            INSERT INTO pages (id, title, owner_id, theme, custom_domain, whatsapp)
-            SELECT id, title, owner_id, theme, custom_domain, whatsapp FROM pages_old
-            """.trimIndent(),
-        )
+        // Mapeia colunas existentes para migração
+        val columns = mutableListOf("id", "title", "theme", "custom_domain", "whatsapp")
+
+        // Verifica se store_id ou owner_id existe na tabela antiga
+        val oldCols = exec("PRAGMA table_info(pages_old)") { rs ->
+            val list = mutableListOf<String>()
+            while(rs.next()) list.add(rs.getString("name"))
+            list
+        } ?: emptyList()
+
+        val storeIdCol = if (oldCols.contains("store_id")) "store_id" else if (oldCols.contains("owner_id")) "owner_id" else null
+
+        val insertCols = columns.toMutableList()
+        val selectCols = columns.toMutableList()
+
+        if (storeIdCol != null) {
+            insertCols.add("store_id")
+            selectCols.add(storeIdCol)
+        }
+
+        // Tenta migrar datas se existirem
+        if (oldCols.contains("created_at")) {
+            insertCols.add("created_at")
+            selectCols.add("created_at")
+        }
+        if (oldCols.contains("updated_at")) {
+            insertCols.add("updated_at")
+            selectCols.add("updated_at")
+        }
+
+        val sql = "INSERT INTO pages (${insertCols.joinToString()}) SELECT ${selectCols.joinToString()} FROM pages_old"
+        exec(sql)
 
         if (migrateComponents) {
             println("DatabaseMigrator: Aviso - Dados da coluna 'components' foram isolados na tabela 'pages_old'.")
