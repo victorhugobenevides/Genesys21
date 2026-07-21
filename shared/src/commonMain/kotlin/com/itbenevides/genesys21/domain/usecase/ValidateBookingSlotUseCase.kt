@@ -2,7 +2,7 @@ package com.itbenevides.genesys21.domain.usecase
 
 import com.itbenevides.genesys21.domain.repository.BookingRepository
 import kotlinx.datetime.*
-import kotlin.time.Clock.System.now
+import kotlinx.datetime.Clock.System.now
 
 class ValidateBookingSlotUseCase(
     private val repository: BookingRepository,

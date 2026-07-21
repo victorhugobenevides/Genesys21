@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
 import kotlinx.datetime.LocalDate
-import kotlin.time.Clock.System.now
+import kotlinx.datetime.Clock.System.now
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {

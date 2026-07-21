@@ -10,7 +10,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.utils.io.core.*
-import kotlin.time.Clock.System.now
+import kotlinx.datetime.Clock.System.now
 
 /**
  * Implementação do repositório de páginas usando Ktor Client.

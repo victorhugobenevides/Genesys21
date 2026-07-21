@@ -12,7 +12,7 @@ import com.itbenevides.genesys21.util.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
-import kotlin.time.Clock.System.now
+import kotlinx.datetime.Clock.System.now
 
 data class AppError(
     val title: String,
