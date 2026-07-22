@@ -10,6 +10,7 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GenesysTabRow(
     selectedTabIndex: Int,

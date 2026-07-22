@@ -484,6 +484,7 @@ private fun ActionNavShowcase() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DisplayShowcase() {
     val sampleProduct = Product("s1", "store-1", "Modern Desk Lamp", 129.0, imageUrls = listOf("https://images.unsplash.com/photo-1534073828943-f801091bb18c?q=80&w=800"))
