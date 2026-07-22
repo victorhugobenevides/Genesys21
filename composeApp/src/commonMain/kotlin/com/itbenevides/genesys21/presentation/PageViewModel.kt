@@ -513,7 +513,7 @@ class PageViewModel(
         val existing = getAppointmentsUseCase(null, mid, date)
 
         val availableSlots = mutableListOf<String>()
-        val durationMs = service.durationMinutes * 60 * 1000L
+        val durationMs = service.durationMinutes.toLong() * 60L * 1000L
         val nowMs = now().toEpochMilliseconds()
 
         dayConfig.slots.forEach { range ->
@@ -534,7 +534,7 @@ class PageViewModel(
 
                     // 4. Bloqueia horários no passado
                     if (slotStart < nowMs) {
-                        currentMs += if (durationMs < 30 * 60 * 1000L) 30 * 60 * 1000L else durationMs
+                        currentMs += if (durationMs < 30L * 60L * 1000L) 30L * 60L * 1000L else durationMs
                         continue
                     }
 
@@ -543,7 +543,7 @@ class PageViewModel(
                             val apptStart = appt.startTime.toEpochMilliseconds()
                             val apptEnd = appt.endTime.toEpochMilliseconds()
 
-                            (slotStart in apptStart..<apptEnd) ||
+                            (slotStart >= apptStart && slotStart < apptEnd) ||
                                 (slotEnd > apptStart && slotEnd <= apptEnd) ||
                                 (slotStart <= apptStart && slotEnd >= apptEnd)
                         }
@@ -554,7 +554,7 @@ class PageViewModel(
                     }
 
                     // Avança 30 minutos ou o tempo de serviço para o próximo slot sugerido
-                    val stepMs = if (durationMs < 30 * 60 * 1000L) 30 * 60 * 1000L else durationMs
+                    val stepMs = if (durationMs < 30L * 60L * 1000L) 30L * 60L * 1000L else durationMs
                     currentMs += stepMs
                 }
             } catch (e: Exception) {

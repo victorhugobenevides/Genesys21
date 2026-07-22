@@ -6,9 +6,7 @@ import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import kotlinx.coroutines.launch
 import kotlin.js.Promise
-import kotlin.js.ExperimentalWasmJsInterop
 
-@OptIn(ExperimentalWasmJsInterop::class)
 @JsFun("() => { if (typeof window.firebaseSignInGoogle === 'function') { return window.firebaseSignInGoogle(); } else { return Promise.reject('Firebase JS functions not found in window object'); } }")
 external fun firebaseSignInGoogleSafe(): Promise<JsString>
 

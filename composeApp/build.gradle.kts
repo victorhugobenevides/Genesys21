@@ -80,7 +80,6 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
-            implementation(libs.kotlinx.datetime)
         }
 
         androidMain.dependencies {
@@ -102,6 +101,11 @@ kotlin {
             implementation(libs.kmpauth.firebase)
             implementation(libs.kmpauth.uihelper)
             implementation(libs.peekaboo.image.picker)
+        }
+
+        val wasmJsMain by getting {
+            kotlin.srcDirs("src/wasmJsMain/kotlin", "src/webMain/kotlin")
+            resources.srcDirs("src/wasmJsMain/resources", "src/webMain/resources")
         }
 
         commonTest.dependencies {

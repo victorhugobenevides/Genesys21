@@ -25,9 +25,9 @@ fun AnimatedGradientBackground(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "background")
 
-    val phase by infiniteTransition.animateFloat(
+    val phaseState = infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 2 * PI.toFloat(),
+        targetValue = 2f * PI.toFloat(),
         animationSpec =
             infiniteRepeatable(
                 animation = tween(10000, easing = LinearEasing),
@@ -39,13 +39,14 @@ fun AnimatedGradientBackground(
     Canvas(modifier = modifier.fillMaxSize()) {
         val width = size.width
         val height = size.height
+        val phase = phaseState.value
 
         // Calculate dynamic centers for two overlapping gradients
-        val centerX1 = width / 2 + (width / 4) * cos(phase)
-        val centerY1 = height / 2 + (height / 4) * sin(phase)
+        val centerX1 = width / 2f + (width / 4f) * cos(phase)
+        val centerY1 = height / 2f + (height / 4f) * sin(phase)
 
-        val centerX2 = width / 2 + (width / 4) * sin(phase + PI.toFloat())
-        val centerY2 = height / 2 + (height / 4) * cos(phase + PI.toFloat())
+        val centerX2 = width / 2f + (width / 4f) * sin(phase + PI.toFloat())
+        val centerY2 = height / 2f + (height / 4f) * cos(phase + PI.toFloat())
 
         // Draw primary blob
         drawRect(

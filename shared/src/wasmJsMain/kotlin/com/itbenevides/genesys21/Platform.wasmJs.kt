@@ -6,7 +6,6 @@ class WasmPlatform : Platform {
 
 actual fun getPlatform(): Platform = WasmPlatform()
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 @JsFun("() => window.print()")
 external fun jsPrint()
 

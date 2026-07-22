@@ -24,7 +24,6 @@ external fun firebaseSignInSafe(email: String, pass: String): Promise<JsString>
 }""")
 external fun firebaseSignUpSafe(email: String, pass: String): Promise<JsString>
 
-@OptIn(kotlin.js.ExperimentalWasmJsInterop::class)
 @JsFun("""() => {
     if (typeof window.firebaseSignInGoogle === 'function') {
         return window.firebaseSignInGoogle();

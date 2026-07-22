@@ -33,7 +33,6 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
-    implementation(libs.kotlinx.datetime)
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.59.0")
     implementation(libs.sqlite.jdbc)
     implementation(libs.hikaricp)
