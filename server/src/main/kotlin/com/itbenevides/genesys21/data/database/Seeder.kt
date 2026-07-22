@@ -53,31 +53,30 @@ object Seeder {
             val pageExists = PagesTable.selectAll().where { PagesTable.id eq cvPageId }.count() > 0
 
             val components = listOf(
-                PageComponent.ProfileHeader(
-                    imageUrl = "https://github.com/victorhugobenevides.png",
-                    name = "Victor Hugo",
-                    bio = "Desenvolvedor Android Especialista | Mobile & Flutter Expert",
-                    imageSize = 140,
+                PageComponent.Image(
+                    url = "https://github.com/victorhugobenevides.png",
+                    size = 140,
                     isCircular = true
                 ),
-                PageComponent.SocialLinks(
-                    email = "victorkoto@gmail.com",
-                    whatsapp = "5511998104606"
+                PageComponent.Header(
+                    title = "Victor Hugo",
+                    textAlign = "CENTER",
+                    fontSize = 28,
+                    fontWeight = "EXTRA_BOLD"
+                ),
+                PageComponent.Text(
+                    content = "Desenvolvedor Android Especialista | Mobile & Flutter Expert",
+                    textAlign = "CENTER",
+                    fontSize = 16
                 ),
 
                 PageComponent.Header(title = "Redes & Portfólio", fontSize = 18, textAlign = "CENTER"),
-                PageComponent.Row(
-                    components = listOf(
-                        PageComponent.Button(text = "LinkedIn", url = "https://linkedin.com/in/victorhugobenevides", isPrimary = true),
-                        PageComponent.Button(text = "GitHub", url = "https://github.com/victorhugobenevides", isPrimary = false)
-                    )
-                ),
-                PageComponent.Row(
-                    components = listOf(
-                        PageComponent.Button(text = "📐 Showcase", url = "/about", isPrimary = false),
-                        PageComponent.Button(text = "📥 PDF", url = "print", isPrimary = false)
-                    )
-                ),
+                PageComponent.Button(text = "LinkedIn", url = "https://linkedin.com/in/victorhugobenevides", isPrimary = true),
+                PageComponent.Button(text = "GitHub", url = "https://github.com/victorhugobenevides", isPrimary = false),
+                PageComponent.Button(text = "WhatsApp", url = "https://wa.me/5511998104606", isPrimary = false),
+                PageComponent.Button(text = "E-mail", url = "mailto:victorkoto@gmail.com", isPrimary = false),
+                PageComponent.Button(text = "📐 Showcase", url = "/about", isPrimary = false),
+                PageComponent.Button(text = "📥 PDF", url = "print", isPrimary = false),
 
                 PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
 
