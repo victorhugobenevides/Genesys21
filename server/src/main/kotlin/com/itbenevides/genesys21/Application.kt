@@ -321,14 +321,23 @@ fun Application.module() {
 private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
         val fileName = "firebase-adminsdk.json"
+        val file = File(fileName)
         val stream =
             this::class.java.classLoader.getResourceAsStream(fileName)
-                ?: if (File(fileName).exists()) File(fileName).inputStream() else null
+                ?: if (file.exists()) file.inputStream() else null
+
         if (stream != null) {
+            logger.info("Inicializando Firebase Admin SDK usando $fileName...")
             val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(stream)).build()
-            if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
+            if (FirebaseApp.getApps().isEmpty()) {
+                FirebaseApp.initializeApp(options)
+                logger.info("Firebase Admin SDK inicializado com sucesso.")
+            }
+        } else {
+            logger.error("ERRO: Arquivo $fileName não encontrado! Autenticação Firebase não funcionará.")
+            logger.error("Caminho absoluto tentado: ${file.absolutePath}")
         }
     } catch (e: Exception) {
-        logger.error("Erro Firebase: ${e.message}")
+        logger.error("Erro Crítico no Firebase: ${e.message}", e)
     }
 }

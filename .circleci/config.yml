@@ -73,6 +73,15 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - run:
+          name: Decode Firebase Admin JSON (Server)
+          command: |
+            if [ -z "$FIREBASE_ADMIN_JSON" ]; then
+              echo "ERROR: FIREBASE_ADMIN_JSON is not set in deploy job!"
+              exit 1
+            else
+              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
+            fi
       - setup_remote_docker:
           version: 20.10.24
           docker_layer_caching: true
@@ -84,7 +93,8 @@ jobs:
           command: |
             mkdir -p deploy/server deploy/web/reports/paparazzi deploy/web/reports/shared deploy/web/reports/app deploy/web/reports/server deploy/web/reports/coverage/app deploy/web/reports/coverage/shared deploy/web/reports/coverage/server
             cp -R server/build/install/server/. deploy/server/
-            cp firebase-adminsdk.json deploy/server/bin/ 2>/dev/null || true
+            # Copiar o JSON para a raiz do deploy para que fique em /app/ no container
+            cp firebase-adminsdk.json deploy/server/ 2>/dev/null || true
             find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
 
             # Copiar Relatórios
