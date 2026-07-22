@@ -214,7 +214,7 @@ class SqliteBookingRepository : BookingRepository {
         if (serviceId.isNullOrBlank() && storeId.isNullOrBlank()) return@dbQuery emptyList()
 
         try {
-            val javaDate = java.time.LocalDate.of(date.year, date.month.number, date.day)
+            val javaDate = java.time.LocalDate.of(date.year, date.month.number, date.dayOfMonth)
             val startOfDay = javaDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
             val margin = 12 * 60 * 60 * 1000L
 

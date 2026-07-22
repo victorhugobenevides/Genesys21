@@ -56,7 +56,7 @@ fun ServiceBookingScreen(
 
     // Load initial slots
     LaunchedEffect(Unit) {
-        updateAvailableSlots(kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
+        updateAvailableSlots(kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
     }
 
     GenesysPage(
@@ -171,7 +171,7 @@ fun ServiceBookingScreen(
                                             BookingNote(
                                                 id = "",
                                                 content = customerNotes,
-                                                createdAt = kotlin.time.Clock.System.now().toEpochMilliseconds(),
+                                                createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                                                 authorName = customerName,
                                                 isPrivate = false
                                             )

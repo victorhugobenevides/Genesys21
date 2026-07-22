@@ -20,7 +20,7 @@ fun GenesysBookingEngine(
     onDateTimeSelected: (LocalDateTime) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val today = remember { kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    val today = remember { kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
     var selectedDateState by remember { mutableStateOf(selectedDateTime?.date ?: today) }
     var selectedTime by remember {
         mutableStateOf(

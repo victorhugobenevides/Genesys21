@@ -18,12 +18,12 @@ fun GenesysDatePicker(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
-    minDate: LocalDate = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
+    minDate: LocalDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
 ) {
     var currentMonth by remember { mutableStateOf(LocalDate(selectedDate.year, selectedDate.month, 1)) }
 
     val nextMonthDate = currentMonth.plus(1, DateTimeUnit.MONTH)
-    val daysInMonth = nextMonthDate.minus(1, DateTimeUnit.DAY).day
+    val daysInMonth = nextMonthDate.minus(1, DateTimeUnit.DAY).dayOfMonth
 
     val firstDayOfWeek = currentMonth.dayOfWeek.isoDayNumber // 1 (Mon) to 7 (Sun)
     val paddingDays = firstDayOfWeek - 1
@@ -85,7 +85,7 @@ fun GenesysDatePicker(
                         if (dayNumber in 1..daysInMonth) {
                             val date = LocalDate(currentMonth.year, currentMonth.month, dayNumber)
                             val isEnabled = date >= minDate
-                            val isToday = date == kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                            val isToday = date == kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
                             GenesysCalendarDay(
                                 day = dayNumber,

@@ -21,7 +21,6 @@ import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePic
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
-import kotlin.time.Clock
 import kotlinx.datetime.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,7 +35,7 @@ fun MerchantAgendaTabUI(
     val storeId = pages.firstOrNull()?.storeId ?: "admin"
     val availability by viewModel.availability.collectAsState()
 
-    val today = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
+    val today = remember { kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
     val selectedDate = state.selectedDate ?: today
 
     var showAvailabilityDialog by remember { mutableStateOf(false) }
@@ -228,7 +227,7 @@ private fun EditAppointmentDialog(
                                 val note = BookingNote(
                                     id = "", // Server generates
                                     content = newNoteContent,
-                                    createdAt = Clock.System.now().toEpochMilliseconds(),
+                                    createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                                     authorName = "Estabelecimento",
                                     isPrivate = isPrivateNote
                                 )
