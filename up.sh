@@ -8,7 +8,7 @@ docker builder prune -f
 docker image prune -f
 
 echo "🛑 Parando containers..."
-docker-compose down -v --remove-orphans
+docker compose down -v --remove-orphans || docker-compose down -v --remove-orphans
 
 echo "🧹 Limpando caches e banco de dados..."
 rm -rf kotlin-js-store
@@ -166,7 +166,7 @@ cat <<EOF > deploy/web/index.html
 EOF
 
 chmod -R 755 deploy/web
-docker-compose up --build -d
+docker compose up --build -d || docker-compose up --build -d
 
 echo "--------------------------------------------------------"
 echo "✨ Sistema online (WASM)!"

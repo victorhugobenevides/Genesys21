@@ -224,9 +224,11 @@ jobs:
               cd ~/app
               echo \"${OCI_AUTH_TOKEN}\" | sudo docker login ${OCI_REGION}.ocir.io -u \"${OCI_TENANCY_NAMESPACE}/${OCI_USER}\" --password-stdin
 
-              if sudo docker compose version >/dev/null 2>&1; then
-                DOCKER_CMD=\"sudo docker compose\"
-              else
+              # Força o uso do Docker Compose V2 (Plugin) para evitar erro 'ContainerConfig'
+              DOCKER_CMD=\"sudo docker compose\"
+
+              # Verifica se o comando existe, caso contrário tenta o binário antigo (menos provável de funcionar com imagens novas)
+              if ! \$DOCKER_CMD version >/dev/null 2>&1; then
                 DOCKER_CMD=\"sudo docker-compose\"
               fi
 
