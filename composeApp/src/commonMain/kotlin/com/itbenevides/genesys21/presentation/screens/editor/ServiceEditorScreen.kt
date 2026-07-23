@@ -161,7 +161,7 @@ fun ServiceEditorContent(
                     onClick = {
                         val newService = BookingService(
                             id = service?.id ?: (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
-                            storeId = "default", // Should be passed via props
+                            storeId = viewModel.pages.value.firstOrNull()?.storeId ?: "admin",
                             name = name,
                             description = description,
                             price = price.toDoubleOrNull() ?: 0.0,

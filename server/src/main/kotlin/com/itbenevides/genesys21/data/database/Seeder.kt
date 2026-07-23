@@ -54,7 +54,7 @@ object Seeder {
 
             val components = listOf(
                 PageComponent.Image(
-                    url = "https://github.com/victorhugobenevides.png",
+                    url = "https://ui-avatars.com/api/?name=Victor+Hugo&size=200&background=6200ee&color=fff",
                     size = 140,
                     isCircular = true
                 ),
