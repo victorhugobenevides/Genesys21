@@ -48,13 +48,12 @@ object Seeder {
                 }
             }
 
-            // 3. Create/Update CV Page (Versioned Seed)
+            // 3. Create/Update CV Page (Versioned Seed - Won't overwrite manual changes)
             val cvPageId = "victor-hugo-cv"
             val pageExists = PagesTable.selectAll().where { PagesTable.id eq cvPageId }.count() > 0
 
-            // Se a página já existe, não sobrescrevemos para preservar alterações manuais via editor
             if (pageExists) {
-                println("Seeder: CV Page already exists. Skipping seed to preserve manual edits.")
+                println("Seeder: CV Page already exists. Skipping seed to protect manual edits.")
                 return@transaction
             }
 
@@ -64,69 +63,72 @@ object Seeder {
                     size = 140,
                     isCircular = true
                 ),
-                PageComponent.Header(
-                    title = "Victor Hugo",
-                    textAlign = "CENTER",
-                    fontSize = 28,
-                    fontWeight = "EXTRA_BOLD"
-                ),
-                PageComponent.Text(
-                    content = "Especialista Android | 11+ Anos de Experiência Mobile",
-                    textAlign = "CENTER",
-                    fontSize = 16
-                ),
+                PageComponent.Header(title = "Victor Hugo", textAlign = "CENTER", fontSize = 28, fontWeight = "EXTRA_BOLD"),
+                PageComponent.Text(content = "Especialista Android | 12+ Anos de Experiência Mobile", textAlign = "CENTER", fontSize = 16),
 
                 PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
 
-                PageComponent.Header(title = "Resumo Profissional", fontSize = 24),
+                PageComponent.Header(title = "Sobre Mim", fontSize = 24),
                 PageComponent.Text(
-                    content = "Especialista Android com trajetória sólida em empresas de grande porte e produtos de alta escala. Especialista em transformar arquiteturas complexas em sistemas sustentáveis e liderar transições tecnológicas de alto impacto. Focado em qualidade de código, segurança financeira (PCI) e otimização de engenharia via IA.",
+                    content = "Especialista em desenvolvimento Android Nativo com 12 anos de trajetória. Atuei em projetos de alta complexidade para grandes players do mercado, desenvolvendo apps que escalam para milhões de usuários. Focado em arquitetura sustentável (Clean/MVVM/MVI), segurança cibernética (PCI/Dexguard) e excelência técnica.",
                     fontSize = 16
                 ),
 
-                PageComponent.Header(title = "Stack Técnica Core", fontSize = 24),
+                PageComponent.Header(title = "Core Stack", fontSize = 24),
                 PageComponent.Text(
-                    content = "• Android Nativo: Kotlin, Coroutines, Flow, Jetpack Compose, KMP (Multiplatform).\n" +
-                            "• Arquitetura: Clean Architecture, MVI, MVVM, SOLID, Modularização Dinâmica.\n" +
-                            "• Qualidade & DevSecOps: JUnit, MockK, CI/CD (CircleCI/GitHub Actions), Dexguard, Proguard.\n" +
-                            "• IA & Ferramentas: MCP, IA Generativa aplicada à codificação, Azure, Firebase.",
+                    content = "• Mobile: Kotlin, Java, Jetpack Compose, Coroutines, Flow, RxJava, Dagger/Koin.\n" +
+                            "• Arquitetura: Clean Architecture, MVI, MVVM, SOLID, Modularização.\n" +
+                            "• Segurança & DevOps: Dexguard, Certificação PCI, CI/CD (CircleCI/Fastlane), Firebase.\n" +
+                            "• Multiplataforma: Flutter e Kotlin Multiplatform (KMP).",
                     fontSize = 14,
                     fontWeight = "BOLD"
                 ),
 
-                PageComponent.Header(title = "Experiência de Impacto", fontSize = 24),
+                PageComponent.Header(title = "Experiência Profissional", fontSize = 24),
 
-                PageComponent.Header(title = "Sensedia (Getnet) | 2024 - Atualmente", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Header(title = "Sensedia (Getnet) | 2024 - Atual", fontSize = 18, usePrimaryColor = true),
                 PageComponent.Text(
-                    content = "• Desenvolvimento de SDKs de pagamentos para terminais POS em ambiente de missão crítica.\n" +
-                            "• Implementação de protocolos de segurança financeira e conformidade PCI.\n" +
-                            "• Otimização de processos de desenvolvimento utilizando IA generativa para redução de lead time.",
+                    content = "Desenvolvimento de SDKs de pagamentos para terminais POS em ambiente de missão crítica. Focado em segurança financeira e conformidade com protocolos PCI.",
                     fontSize = 15
                 ),
 
                 PageComponent.Header(title = "Dafiti Group | 2018 - 2024 (6 anos)", fontSize = 18, usePrimaryColor = true),
                 PageComponent.Text(
-                    content = "• Liderança técnica na migração estratégica de 100% dos apps nativos (Android/iOS) para Flutter.\n" +
-                            "• Sustentação e evolução da base Android Nativa (Kotlin) atendendo milhões de usuários ativos.\n" +
-                            "• Mentor de equipes e definição de padrões de arquitetura para escalabilidade do e-commerce.",
+                    content = "Liderança técnica de ponta a ponta: do levantamento de requisitos à publicação. Implementei MVVM e Clean Architecture garantindo alta escalabilidade. Configurei Dexguard para proteção avançada contra engenharia reversa (RASP) e atuei na adequação do app para certificação PCI. Estrategicamente, liderei a migração da base para Flutter.",
                     fontSize = 15
                 ),
 
-                PageComponent.Header(title = "MáximaTech | 2015 - 2018 (3 anos)", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Header(title = "It Lean | 2018 - 2019", fontSize = 18, usePrimaryColor = true),
                 PageComponent.Text(
-                    content = "• Especialista em soluções de força de vendas com foco em performance offline e sincronização SQLite.\n" +
-                            "• Desenvolvimento de aplicações robustas para automação comercial em larga escala.",
+                    content = "Atuação Sênior focada em arquitetura Android e persistência de dados local avançada com Room e SQLite.",
                     fontSize = 15
+                ),
+
+                PageComponent.Header(title = "MáximaTech | 2015 - 2018", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(
+                    content = "Desenvolvedor Android Pleno especializado em automação comercial e força de vendas, com foco em performance e sincronização offline.",
+                    fontSize = 15
+                ),
+
+                PageComponent.Header(title = "Onnet System | 2012 - 2015", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(
+                    content = "Desenvolvedor Android Júnior. Início da trajetória com foco em Java nativo e integração com APIs REST/Firebase.",
+                    fontSize = 15
+                ),
+
+                PageComponent.Header(title = "Formação Acadêmica", fontSize = 24),
+                PageComponent.Text(
+                    content = "Bacharelado em Ciência da Computação - PUC Goiás (2009 - 2013)",
+                    fontSize = 16
                 ),
 
                 PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
-                PageComponent.Header(title = "Redes & Portfólio", fontSize = 18, textAlign = "CENTER"),
+                PageComponent.Header(title = "Redes & Contato", fontSize = 18, textAlign = "CENTER"),
                 PageComponent.Button(text = "LinkedIn", url = "https://linkedin.com/in/victorhugobenevides", isPrimary = true),
                 PageComponent.Button(text = "GitHub", url = "https://github.com/victorhugobenevides", isPrimary = false),
                 PageComponent.Button(text = "WhatsApp", url = "https://wa.me/5511998104606", isPrimary = false),
                 PageComponent.Button(text = "E-mail", url = "mailto:victorkoto@gmail.com", isPrimary = false),
-                PageComponent.Button(text = "📐 Showcase", url = "/about", isPrimary = false),
-                PageComponent.Button(text = "📥 PDF", url = "print", isPrimary = false)
+                PageComponent.Button(text = "📥 Baixar PDF (Imprimir)", url = "print", isPrimary = false)
             )
 
             PagesTable.insert {
