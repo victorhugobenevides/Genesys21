@@ -48,14 +48,12 @@ object Seeder {
                 }
             }
 
-            // 3. Create/Update CV Page (Versioned Seed - Won't overwrite manual changes)
+            // 3. Create/Update CV Page (Force Refresh to apply improvements)
             val cvPageId = "victor-hugo-cv"
-            val pageExists = PagesTable.selectAll().where { PagesTable.id eq cvPageId }.count() > 0
 
-            if (pageExists) {
-                println("Seeder: CV Page already exists. Skipping seed to protect manual edits.")
-                return@transaction
-            }
+            // Deletamos a versão antiga para garantir que a nova estrutura (links no final) seja aplicada
+            PagesTable.deleteWhere { id eq cvPageId }
+            PageComponentsTable.deleteWhere { pageId eq cvPageId }
 
             val components = listOf(
                 PageComponent.Image(
@@ -137,6 +135,8 @@ object Seeder {
                 it[title] = "Currículo - Victor Hugo"
                 it[theme] = PageThemeConfig.MINIMAL.name
                 it[whatsapp] = "5511998104606"
+                it[createdAt] = System.currentTimeMillis()
+                it[updatedAt] = System.currentTimeMillis()
             }
 
             // Insere os componentes
