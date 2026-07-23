@@ -48,9 +48,15 @@ object Seeder {
                 }
             }
 
-            // 3. Create/Update CV Page
+            // 3. Create/Update CV Page (Versioned Seed)
             val cvPageId = "victor-hugo-cv"
             val pageExists = PagesTable.selectAll().where { PagesTable.id eq cvPageId }.count() > 0
+
+            // Se a página já existe, não sobrescrevemos para preservar alterações manuais via editor
+            if (pageExists) {
+                println("Seeder: CV Page already exists. Skipping seed to preserve manual edits.")
+                return@transaction
+            }
 
             val components = listOf(
                 PageComponent.Image(
@@ -65,87 +71,73 @@ object Seeder {
                     fontWeight = "EXTRA_BOLD"
                 ),
                 PageComponent.Text(
-                    content = "Desenvolvedor Android Especialista | Mobile & Flutter Expert",
+                    content = "Especialista Android | 11+ Anos de Experiência Mobile",
                     textAlign = "CENTER",
                     fontSize = 16
                 ),
 
+                PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
+
+                PageComponent.Header(title = "Resumo Profissional", fontSize = 24),
+                PageComponent.Text(
+                    content = "Especialista Android com trajetória sólida em empresas de grande porte e produtos de alta escala. Especialista em transformar arquiteturas complexas em sistemas sustentáveis e liderar transições tecnológicas de alto impacto. Focado em qualidade de código, segurança financeira (PCI) e otimização de engenharia via IA.",
+                    fontSize = 16
+                ),
+
+                PageComponent.Header(title = "Stack Técnica Core", fontSize = 24),
+                PageComponent.Text(
+                    content = "• Android Nativo: Kotlin, Coroutines, Flow, Jetpack Compose, KMP (Multiplatform).\n" +
+                            "• Arquitetura: Clean Architecture, MVI, MVVM, SOLID, Modularização Dinâmica.\n" +
+                            "• Qualidade & DevSecOps: JUnit, MockK, CI/CD (CircleCI/GitHub Actions), Dexguard, Proguard.\n" +
+                            "• IA & Ferramentas: MCP, IA Generativa aplicada à codificação, Azure, Firebase.",
+                    fontSize = 14,
+                    fontWeight = "BOLD"
+                ),
+
+                PageComponent.Header(title = "Experiência de Impacto", fontSize = 24),
+
+                PageComponent.Header(title = "Sensedia (Getnet) | 2024 - Atualmente", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(
+                    content = "• Desenvolvimento de SDKs de pagamentos para terminais POS em ambiente de missão crítica.\n" +
+                            "• Implementação de protocolos de segurança financeira e conformidade PCI.\n" +
+                            "• Otimização de processos de desenvolvimento utilizando IA generativa para redução de lead time.",
+                    fontSize = 15
+                ),
+
+                PageComponent.Header(title = "Dafiti Group | 2018 - 2024 (6 anos)", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(
+                    content = "• Liderança técnica na migração estratégica de 100% dos apps nativos (Android/iOS) para Flutter.\n" +
+                            "• Sustentação e evolução da base Android Nativa (Kotlin) atendendo milhões de usuários ativos.\n" +
+                            "• Mentor de equipes e definição de padrões de arquitetura para escalabilidade do e-commerce.",
+                    fontSize = 15
+                ),
+
+                PageComponent.Header(title = "MáximaTech | 2015 - 2018 (3 anos)", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(
+                    content = "• Especialista em soluções de força de vendas com foco em performance offline e sincronização SQLite.\n" +
+                            "• Desenvolvimento de aplicações robustas para automação comercial em larga escala.",
+                    fontSize = 15
+                ),
+
+                PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
                 PageComponent.Header(title = "Redes & Portfólio", fontSize = 18, textAlign = "CENTER"),
                 PageComponent.Button(text = "LinkedIn", url = "https://linkedin.com/in/victorhugobenevides", isPrimary = true),
                 PageComponent.Button(text = "GitHub", url = "https://github.com/victorhugobenevides", isPrimary = false),
                 PageComponent.Button(text = "WhatsApp", url = "https://wa.me/5511998104606", isPrimary = false),
                 PageComponent.Button(text = "E-mail", url = "mailto:victorkoto@gmail.com", isPrimary = false),
                 PageComponent.Button(text = "📐 Showcase", url = "/about", isPrimary = false),
-                PageComponent.Button(text = "📥 PDF", url = "print", isPrimary = false),
-
-                PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
-
-                PageComponent.Header(title = "Sobre mim", fontSize = 24),
-                PageComponent.Text(
-                    content = "Olá! Sou o Victor, Especialista Mobile com mais de 12 anos de experiência transformando ideias em aplicativos nativos de alta performance. Tenho um histórico sólido liderando projetos complexos em grandes empresas, focando sempre em arquiteturas escaláveis, segurança cibernética e, mais recentemente, integrando Inteligência Artificial no ciclo de vida do desenvolvimento para acelerar a inovação.",
-                    fontSize = 16
-                ),
-
-                PageComponent.Header(title = "Stack de Especialista", fontSize = 24),
-                PageComponent.Text(
-                    content = "• Mobile: Android Studio, Java, Kotlin, Swift, Flutter, Jetpack Compose, RxJava, Coroutines.\n" +
-                            "• Arquitetura & Qualidade: Clean Architecture, MVVM, MVI, SOLID, JUnit, Mockito.\n" +
-                            "• Segurança & DevOps: Dexguard, PCI Compliance, CircleCI, Fastlane, GitHub Actions.\n" +
-                            "• Cloud & IA: Azure, GitHub Copilot, Devin, MCP (Model Context Protocol), SDD guiado por IA.",
-                    fontSize = 14,
-                    fontWeight = "BOLD"
-                ),
-
-                PageComponent.Header(title = "Experiência Profissional", fontSize = 24),
-
-                PageComponent.Header(title = "Sensedia (Getnet)", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(
-                    content = "Especialista Android & Pagamentos | Atualmente\n" +
-                            "Focado no desenvolvimento de aplicativos de pagamento para terminais POS. Utilizo IA Generativa (Copilot, Devin) e arquitetura em nuvem (Azure) para otimizar processos de engenharia e garantir a robustez de transações financeiras.",
-                    fontSize = 15
-                ),
-
-                PageComponent.Header(title = "Dafiti Group", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(
-                    content = "Especialista Mobile | 2018 - 2024\n" +
-                            "Liderei a migração tecnológica de 100% dos aplicativos nativos (Android & iOS) para Flutter, garantindo paridade de funcionalidades e otimização de performance para milhões de usuários. Atuei intensamente com Kotlin e Swift (nativo), arquitetura MVVM/Clean, pipelines CI/CD e segurança avançada com Dexguard.",
-                    fontSize = 15
-                ),
-
-                PageComponent.Header(title = "It Lean", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(
-                    content = "Desenvolvedor Sênior | 2018 - 2019\nFoco em persistência local com Room/SQLite e arquitetura escalável para grandes clientes.",
-                    fontSize = 15
-                ),
-
-                PageComponent.Header(title = "MáximaTech", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(content = "Desenvolvedor Pleno | 2015 - 2018\nDesenvolvimento de soluções de força de vendas e automação comercial.", fontSize = 15),
-
-                PageComponent.Header(title = "Formação Acadêmica", fontSize = 24),
-                PageComponent.Text(
-                    content = "Ciência da Computação - PUC Goiás\nBacharelado (2009 - 2013)",
-                    fontSize = 16
-                )
+                PageComponent.Button(text = "📥 PDF", url = "print", isPrimary = false)
             )
 
-            if (!pageExists) {
-                PagesTable.insert {
-                    it[id] = cvPageId
-                    it[PagesTable.storeId] = storeId
-                    it[title] = "Currículo - Victor Hugo"
-                    it[theme] = PageThemeConfig.MINIMAL.name
-                    it[whatsapp] = "5511998104606"
-                }
-            } else {
-                PagesTable.update({ PagesTable.id eq cvPageId }) {
-                    it[PagesTable.storeId] = storeId
-                    it[title] = "Currículo - Victor Hugo"
-                    it[theme] = PageThemeConfig.MINIMAL.name
-                }
+            PagesTable.insert {
+                it[id] = cvPageId
+                it[PagesTable.storeId] = storeId
+                it[title] = "Currículo - Victor Hugo"
+                it[theme] = PageThemeConfig.MINIMAL.name
+                it[whatsapp] = "5511998104606"
             }
 
-            // Re-insere os componentes
-            PageComponentsTable.deleteWhere { pageId eq cvPageId }
+            // Insere os componentes
             components.forEachIndexed { index, component ->
                 PageComponentsTable.insert {
                     it[pageId] = cvPageId
@@ -156,6 +148,8 @@ object Seeder {
                     it[content] = json.encodeToString(component)
                 }
             }
+
+            println("Seeder: CV Page seeded successfully.")
 
             println("Seeder: Initial data and CV Page updated successfully.")
         }
