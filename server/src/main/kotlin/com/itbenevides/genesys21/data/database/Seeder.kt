@@ -62,13 +62,13 @@ object Seeder {
                     isCircular = true
                 ),
                 PageComponent.Header(title = "Victor Hugo", textAlign = "CENTER", fontSize = 28, fontWeight = "EXTRA_BOLD"),
-                PageComponent.Text(content = "Especialista Android | 12+ Anos de Experiência Mobile", textAlign = "CENTER", fontSize = 16),
+                PageComponent.Text(content = "Especialista Android | 14+ Anos de Experiência Mobile", textAlign = "CENTER", fontSize = 16),
 
                 PageComponent.Text(content = "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯", textAlign = "CENTER", usePrimaryColor = true),
 
                 PageComponent.Header(title = "Sobre Mim", fontSize = 24),
                 PageComponent.Text(
-                    content = "Especialista em desenvolvimento Android Nativo com 12 anos de trajetória. Atuei em projetos de alta complexidade para grandes players do mercado, desenvolvendo apps que escalam para milhões de usuários. Focado em arquitetura sustentável (Clean/MVVM/MVI), segurança cibernética (PCI/Dexguard) e excelência técnica.",
+                    content = "Especialista em desenvolvimento Android Nativo com 14 anos de trajetória. Atuei em projetos de alta complexidade para grandes players do mercado, desenvolvendo apps que escalam para milhões de usuários. Focado em arquitetura sustentável (Clean/MVVM/MVI), segurança cibernética (PCI/Dexguard) e excelência técnica.",
                     fontSize = 16
                 ),
 
