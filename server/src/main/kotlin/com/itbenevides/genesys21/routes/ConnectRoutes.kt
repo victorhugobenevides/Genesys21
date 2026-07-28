@@ -42,7 +42,11 @@ fun Route.connectRoutes(
                 }
 
                 try {
-                    Stripe.apiKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
+                    val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
+                    if (secretKey.isNullOrBlank() || secretKey.contains("default")) {
+                        return@post call.respond(HttpStatusCode.BadRequest, "Configuração do Stripe incompleta: Chave de API ausente ou inválida.")
+                    }
+                    Stripe.apiKey = secretKey
 
                     // Utilizando o padrão Accounts v2 com controle total da plataforma
                     // Merchant of Record: Lojista (Direct Charges)
@@ -75,6 +79,8 @@ fun Route.connectRoutes(
                     storeRepository.saveStore(updatedStore, principal.name)
 
                     call.respond(account.id)
+                } catch (e: com.stripe.exception.AuthenticationException) {
+                    call.respond(HttpStatusCode.Unauthorized, "Erro de Autenticação Stripe: Verifique suas chaves de API.")
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao criar conta Connect")
@@ -94,7 +100,11 @@ fun Route.connectRoutes(
                 }
 
                 try {
-                    Stripe.apiKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
+                    val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
+                    if (secretKey.isNullOrBlank() || secretKey.contains("default")) {
+                        return@post call.respond(HttpStatusCode.BadRequest, "Configuração do Stripe incompleta: Chave de API ausente ou inválida.")
+                    }
+                    Stripe.apiKey = secretKey
 
                     val params = AccountSessionCreateParams.builder()
                         .setAccount(accountId)
@@ -112,6 +122,8 @@ fun Route.connectRoutes(
 
                     val accountSession = AccountSession.create(params)
                     call.respond(AccountSessionResponse(clientSecret = accountSession.clientSecret))
+                } catch (e: com.stripe.exception.AuthenticationException) {
+                    call.respond(HttpStatusCode.Unauthorized, "Erro de Autenticação Stripe: Verifique suas chaves de API.")
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao criar sessão de conta")

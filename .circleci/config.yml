@@ -8,19 +8,19 @@ jobs:
     executor:
       name: android/android-machine
       resource-class: large
-      tag: 2024.01.1
+      tag: 2024.10.1
     steps:
       - checkout
       - run:
           name: Setup Java 21
           command: |
-            # Tenta selecionar o JDK 21 se estiver disponível no sistema
-            if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
-              echo "export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> "$BASH_ENV"
-            elif [ -d "/opt/jdk/jdk-21" ]; then
+            # Verifica se o Java 21 já é o padrão, caso contrário tenta configurar
+            if java -version 2>&1 | grep -q "21\."; then
+              echo "Java 21 already active"
+            else
               echo "export JAVA_HOME=/opt/jdk/jdk-21" >> "$BASH_ENV"
+              echo 'export PATH=$JAVA_HOME/bin:$PATH' >> "$BASH_ENV"
             fi
-            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> "$BASH_ENV"
             source "$BASH_ENV"
             java -version
       - run:

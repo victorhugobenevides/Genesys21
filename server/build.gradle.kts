@@ -11,6 +11,10 @@ application {
     mainClass.set("com.itbenevides.genesys21.ApplicationKt")
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 dependencies {
     implementation(projects.shared)
     implementation(libs.logback)
