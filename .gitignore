@@ -64,3 +64,11 @@ genesys21-32035-firebase-adminsdk.json
 
 # Local Assistant / Ollama
 .ollamassist/
+
+# Compiled files
+bin/
+**/bin/
+data/
+server.log
+ngrok.log
+*.db*
