@@ -49,11 +49,15 @@ fun Route.connectRoutes(
                     val client = StripeClient(secretKey)
 
                     // Utilizando o padrão Accounts v2
-                    // Merchant of Record: Lojista (Direct Charges)
-                    // Nas contas v2, as capacidades e responsabilidades devem ser configuradas corretamente
+                    // identity.country é OBRIGATÓRIO antes de definir configuration.merchant
                     val params = AccountCreateParams.builder()
                         .setContactEmail(request.email)
                         .setDashboard(AccountCreateParams.Dashboard.FULL)
+                        .setIdentity(
+                            AccountCreateParams.Identity.builder()
+                                .setCountry("BR") // Default para Brasil
+                                .build()
+                        )
                         .setDefaults(
                             AccountCreateParams.Defaults.builder()
                                 .setResponsibilities(
