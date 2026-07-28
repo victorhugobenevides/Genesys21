@@ -3,10 +3,10 @@ package com.itbenevides.genesys21.routes
 import com.itbenevides.genesys21.domain.repository.StoreRepository
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import com.stripe.Stripe
-import com.stripe.model.Account
+import com.stripe.StripeClient
 import com.stripe.model.AccountSession
-import com.stripe.param.AccountCreateParams
 import com.stripe.param.AccountSessionCreateParams
+import com.stripe.param.v2.core.AccountCreateParams
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -27,7 +27,6 @@ fun Route.connectRoutes(
     userRepository: UserRepository,
     storeRepository: StoreRepository
 ) {
-    // userRepository is maintained for dependency injection consistency even if not used in current routes
     authenticate("firebase") {
         route("/admin/connect") {
 
@@ -46,33 +45,26 @@ fun Route.connectRoutes(
                     if (secretKey.isNullOrBlank() || secretKey.contains("default")) {
                         return@post call.respond(HttpStatusCode.BadRequest, "Configuração do Stripe incompleta: Chave de API ausente ou inválida.")
                     }
-                    Stripe.apiKey = secretKey
 
-                    // Utilizando o padrão Accounts v2 com controle total da plataforma
+                    val client = StripeClient(secretKey)
+
+                    // Utilizando o padrão Accounts v2
                     // Merchant of Record: Lojista (Direct Charges)
+                    // Nas contas v2, as capacidades de pagamento são configuradas através do Merchant Configuration
                     val params = AccountCreateParams.builder()
-                        .setEmail(request.email)
-                        .setController(
-                            AccountCreateParams.Controller.builder()
-                                .setFees(AccountCreateParams.Controller.Fees.builder().setPayer(AccountCreateParams.Controller.Fees.Payer.ACCOUNT).build())
-                                .setLosses(AccountCreateParams.Controller.Losses.builder().setPayments(AccountCreateParams.Controller.Losses.Payments.STRIPE).build())
-                                .setRequirementCollection(AccountCreateParams.Controller.RequirementCollection.STRIPE)
-                                .setStripeDashboard(
-                                    AccountCreateParams.Controller.StripeDashboard.builder()
-                                        .setType(AccountCreateParams.Controller.StripeDashboard.Type.FULL)
+                        .setContactEmail(request.email)
+                        .setDashboard(AccountCreateParams.Dashboard.FULL)
+                        .setConfiguration(
+                            AccountCreateParams.Configuration.builder()
+                                .setMerchant(
+                                    AccountCreateParams.Configuration.Merchant.builder()
                                         .build()
                                 )
                                 .build()
                         )
-                        .setCapabilities(
-                            AccountCreateParams.Capabilities.builder()
-                                .setCardPayments(AccountCreateParams.Capabilities.CardPayments.builder().setRequested(true).build())
-                                .setTransfers(AccountCreateParams.Capabilities.Transfers.builder().setRequested(true).build())
-                                .build()
-                        )
                         .build()
 
-                    val account = Account.create(params)
+                    val account = client.v2().core().accounts().create(params)
 
                     // Salva o ID da conta no banco
                     val updatedStore = store.copy(stripeAccountId = account.id)
