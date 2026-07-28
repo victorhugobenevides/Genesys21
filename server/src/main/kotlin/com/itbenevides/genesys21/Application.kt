@@ -274,6 +274,7 @@ fun Application.module() {
             addressRoutes(addressRepository)
             storeRoutes(storeRepository)
             shippingRoutes(storeRepository)
+            connectRoutes(userRepository, storeRepository)
 
             authenticate("firebase") {
                 post("/upload") {

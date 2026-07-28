@@ -22,6 +22,7 @@ data class Store(
     val allowDelivery: Boolean = true,
     val stripePublicKey: String? = null,
     val stripeSecretKey: String? = null,
+    val stripeAccountId: String? = null, // ID da conta Stripe Connect
     val asaasApiKey: String? = null,
     val paymentGateway: String = "STRIPE", // "STRIPE" or "ASAAS"
     val customDomain: String? = null,

@@ -22,7 +22,7 @@ echo "🧪 2. Rodando Testes Unitários e Cobertura (Jacoco)..."
 
 echo "📦 3. Build de Produção (Server e WasmJS)..."
 # Simula o passo 'Build Project' da pipeline (Production Distribution)
-./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
+./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
 
 echo "📂 4. Organizando artefatos para Deploy Local..."
 mkdir -p deploy/server deploy/web/reports/paparazzi deploy/web/reports/shared deploy/web/reports/app deploy/web/reports/server deploy/web/reports/coverage/app deploy/web/reports/coverage/shared deploy/web/reports/coverage/server
@@ -37,10 +37,13 @@ if [ -n "$SERVER_INSTALL_DIR" ]; then
 fi
 
 # Copiar Web (WasmJS Production)
-# Nota: Caminho corrigido para productionExecutable
-find composeApp/build/dist/wasmJs/productionExecutable -type f \( \
-    -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \
-\) -exec cp -f {} deploy/web/ \;
+# Nota: Caminho corrigido para productionExecutable ou distribution
+WEB_DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -o -name "distribution" | head -n 1)
+if [ -n "$WEB_DIST_DIR" ]; then
+    find "$WEB_DIST_DIR" -type f \( \
+        -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \
+    \) -exec cp -f {} deploy/web/ \;
+fi
 
 # Copiar Relatórios (Igual a Pipeline)
 [ -d "screenshot-tests/build/reports/paparazzi/debug" ] && cp -R screenshot-tests/build/reports/paparazzi/debug/* deploy/web/reports/paparazzi/ || true

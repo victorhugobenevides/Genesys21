@@ -31,6 +31,7 @@ object StoresTable : BaseTable("stores") {
     val allowDelivery = bool("allow_delivery").default(true)
     val stripePublicKey = text("stripe_public_key").nullable()
     val stripeSecretKey = text("stripe_secret_key").nullable()
+    val stripeAccountId = varchar("stripe_account_id", 100).nullable()
     val asaasApiKey = text("asaas_api_key").nullable()
     val paymentGateway = varchar("payment_gateway", 20).default("STRIPE")
     val customDomain = varchar("custom_domain", 255).nullable().uniqueIndex("idx_stores_custom_domain")

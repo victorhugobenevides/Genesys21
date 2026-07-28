@@ -180,6 +180,18 @@ class FakeStoreRepository : StoreRepository {
         stores.add(store)
         return Result.success(Unit)
     }
+
+    override suspend fun createConnectAccount(storeId: String, email: String, token: String): Result<String> {
+        return Result.success("acct_mock_123")
+    }
+
+    override suspend fun getConnectOnboardingLink(storeId: String, token: String): Result<String> {
+        return Result.success("https://connect.stripe.com/setup/s/mock")
+    }
+
+    override suspend fun getConnectLoginLink(storeId: String, token: String): Result<String> {
+        return Result.success("https://connect.stripe.com/express/mock")
+    }
 }
 
 class FakeShippingRepository : ShippingRepository {

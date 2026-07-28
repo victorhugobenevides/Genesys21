@@ -2,6 +2,8 @@ package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Store
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.domain.repository.ConnectAccountRequest
+import com.itbenevides.genesys21.domain.repository.ConnectLinkResponse
 import com.itbenevides.genesys21.domain.repository.StoreRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -41,6 +43,53 @@ class KtorStoreRepository(
             Result.success(Unit)
         } else {
             Result.failure(Exception("Erro ao salvar loja"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun createConnectAccount(
+        storeId: String,
+        email: String,
+        token: String
+    ): Result<String> = try {
+        val response = client.post("$baseUrl/api/admin/connect/accounts") {
+            getHeaders().forEach { (k, v) -> header(k, v) }
+            contentType(ContentType.Application.Json)
+            setBody(ConnectAccountRequest(storeId, email))
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body())
+        } else {
+            Result.failure(Exception("Erro ao criar conta Stripe"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getConnectOnboardingLink(storeId: String, token: String): Result<String> = try {
+        val response = client.get("$baseUrl/api/admin/connect/onboarding-link") {
+            getHeaders().forEach { (k, v) -> header(k, v) }
+            url { parameters.append("storeId", storeId) }
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body<ConnectLinkResponse>().url)
+        } else {
+            Result.failure(Exception("Erro ao gerar link de onboarding"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getConnectLoginLink(storeId: String, token: String): Result<String> = try {
+        val response = client.get("$baseUrl/api/admin/connect/login-link") {
+            getHeaders().forEach { (k, v) -> header(k, v) }
+            url { parameters.append("storeId", storeId) }
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body<ConnectLinkResponse>().url)
+        } else {
+            Result.failure(Exception("Erro ao gerar link de dashboard"))
         }
     } catch (e: Exception) {
         Result.failure(e)

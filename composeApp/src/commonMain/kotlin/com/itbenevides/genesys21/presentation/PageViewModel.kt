@@ -969,12 +969,42 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val token = getCurrentUserToken() ?: return@launch
+                val token = authRepository.getCurrentUserToken() ?: return@launch
                 storeRepository.saveStore(store, token).onSuccess {
                     onComplete()
                 }.onFailure {
                     handleError("Erro ao salvar loja", it)
                 }
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun connectStripe(storeId: String, email: String, onUrlReady: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val token = authRepository.getCurrentUserToken() ?: return@launch
+                storeRepository.createConnectAccount(storeId, email, token).onSuccess {
+                    storeRepository.getConnectOnboardingLink(storeId, token).onSuccess { url ->
+                        onUrlReady(url)
+                    }.onFailure { handleError("Erro ao gerar link de cadastro", it) }
+                }.onFailure { handleError("Erro ao criar conta Stripe", it) }
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun openStripeDashboard(storeId: String, onUrlReady: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val token = authRepository.getCurrentUserToken() ?: return@launch
+                storeRepository.getConnectLoginLink(storeId, token).onSuccess { url ->
+                    onUrlReady(url)
+                }.onFailure { handleError("Erro ao abrir Dashboard Stripe", it) }
             } finally {
                 _isLoading.value = false
             }

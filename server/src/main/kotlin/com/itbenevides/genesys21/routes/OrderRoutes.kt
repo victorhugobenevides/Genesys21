@@ -103,7 +103,8 @@ fun Route.orderRoutes(
                                         order = order.copy(id = generatedId),
                                         secretKey = secretKey,
                                         successUrl = "$baseUrl/?orderId=$generatedId&status=success",
-                                        cancelUrl = "$baseUrl/?status=cancel"
+                                        cancelUrl = "$baseUrl/?status=cancel",
+                                        connectedAccountId = store.stripeAccountId
                                     )
                                     println("STRIPE: Checkout URL gerada com sucesso!")
                                     call.respond(HttpStatusCode.Created, OrderResponse(orderId = generatedId, checkoutUrl = checkoutUrl))

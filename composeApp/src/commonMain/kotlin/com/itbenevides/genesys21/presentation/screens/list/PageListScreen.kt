@@ -47,6 +47,7 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
+import com.itbenevides.genesys21.domain.model.UserProfile
 import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
@@ -201,7 +202,8 @@ fun PageListScreen(
         onShowcase = onShowcase,
         onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
         onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
-        onDeleteService = { viewModel.deleteBookingService(it) }
+        onDeleteService = { viewModel.deleteBookingService(it) },
+        uriHandler = uriHandler
     )
 }
 
@@ -219,6 +221,7 @@ private fun PageListContent(
     onAddService: () -> Unit,
     onEditService: (BookingService) -> Unit,
     onDeleteService: (String) -> Unit,
+    uriHandler: androidx.compose.ui.platform.UriHandler
 ) {
     val services by viewModel.services.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
@@ -272,7 +275,7 @@ private fun PageListContent(
                             1 -> OrdersHeaderUI(state, onEvent)
                             2 -> MerchantAgendaTabUI(state, viewModel, onEvent)
                             3 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
-                            4 -> StoreSettingsTabUI(viewModel)
+                            4 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler)
                             5 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
                         }
                     }
@@ -331,7 +334,11 @@ private fun PageListContent(
 }
 
 @Composable
-private fun StoreSettingsTabUI(viewModel: PageViewModel) {
+private fun StoreSettingsTabUI(
+    viewModel: PageViewModel,
+    userProfile: UserProfile?,
+    uriHandler: androidx.compose.ui.platform.UriHandler
+) {
     val pages by viewModel.pages.collectAsState()
     val firstPage = pages.firstOrNull()
     val storeId = firstPage?.storeId ?: "admin"
@@ -422,37 +429,97 @@ private fun StoreSettingsTabUI(viewModel: PageViewModel) {
 
         GenesysSpacer(GenesysSpacing.Large)
 
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(text = "Configurações de Pagamento (Gateway)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Medium)
+    GenesysCard {
+        GenesysColumn(usePadding = false) {
+            GenesysText(
+                text = "Pagamentos (Stripe Connect)",
+                style = GenesysTextStyle.Title,
+                fontWeight = GenesysFontWeight.Bold
+            )
+            GenesysText(
+                text = "Receba pagamentos diretamente em sua conta bancária.",
+                style = GenesysTextStyle.Label,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GenesysFilterChip(
-                        selected = selectedGateway == "STRIPE",
-                        onClick = { selectedGateway = "STRIPE" },
-                        label = "Stripe",
-                        modifier = Modifier.weight(1f)
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            if (store?.stripeAccountId.isNullOrBlank()) {
+                GenesysLoadingButton(
+                    text = "Conectar com Stripe",
+                    icon = GenesysIcons.Payments,
+                    onClick = {
+                        val userEmail = userProfile?.email ?: ""
+                        viewModel.connectStripe(storeId, userEmail) { url ->
+                            uriHandler.openUri(url)
+                        }
+                    },
+                    isLoading = isLoading,
+                    fillWidth = true
+                )
+            } else {
+                GenesysRow(
+                    modifier = Modifier.fillMaxWidth().background(
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        RoundedCornerShape(12.dp)
+                    ).padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    usePadding = false
+                ) {
+                    Icon(
+                        GenesysIcons.Check,
+                        null,
+                        tint = Color(0xFF34C759),
+                        modifier = Modifier.size(20.dp)
                     )
-                    GenesysFilterChip(
-                        selected = selectedGateway == "ASAAS",
-                        onClick = { selectedGateway = "ASAAS" },
-                        label = "Asaas",
-                        modifier = Modifier.weight(1f)
+                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysText(
+                        text = "Stripe Conectado",
+                        style = GenesysTextStyle.Body,
+                        fontWeight = GenesysFontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
 
                 GenesysSpacer(GenesysSpacing.Medium)
 
-                if (selectedGateway == "STRIPE") {
-                    GenesysTextField(value = stripePublic, onValueChange = { stripePublic = it }, label = "Stripe Public Key", placeholder = "pk_test_...")
-                    GenesysSpacer(GenesysSpacing.Medium)
-                    GenesysTextField(value = stripeSecret, onValueChange = { stripeSecret = it }, label = "Stripe Secret Key", placeholder = "sk_test_...")
-                } else {
-                    GenesysTextField(value = asaasKey, onValueChange = { asaasKey = it }, label = "Asaas API Key", placeholder = "$")
-                }
+                GenesysLoadingButton(
+                    text = "Abrir Dashboard Stripe",
+                    icon = GenesysIcons.Language,
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    onClick = {
+                        viewModel.openStripeDashboard(storeId) { url ->
+                            uriHandler.openUri(url)
+                        }
+                    },
+                    isLoading = isLoading,
+                    fillWidth = true
+                )
+
+                GenesysSpacer(GenesysSpacing.Small)
+                GenesysText(
+                    text = "Gerencie seus ganhos, reembolsos e dados bancários.",
+                    style = GenesysTextStyle.Label,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = GenesysTextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Manter campos extras apenas para o Asaas (ou remover se não usar mais)
+            if (selectedGateway == "ASAAS") {
+                GenesysSpacer(GenesysSpacing.Large)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysTextField(
+                    value = asaasKey,
+                    onValueChange = { asaasKey = it },
+                    label = "Asaas API Key",
+                    placeholder = "$"
+                )
             }
         }
+    }
 
         GenesysSpacer(GenesysSpacing.Huge)
 
@@ -475,8 +542,9 @@ private fun StoreSettingsTabUI(viewModel: PageViewModel) {
                     allowPayInApp = allowPayApp,
                     allowPickup = allowPickup,
                     allowDelivery = allowDelivery,
-                    stripePublicKey = stripePublic,
-                    stripeSecretKey = stripeSecret,
+                    stripePublicKey = if (selectedGateway == "STRIPE") stripePublic else null,
+                    stripeSecretKey = if (selectedGateway == "STRIPE") stripeSecret else null,
+                    stripeAccountId = currentStore.stripeAccountId, // Preserva o ID da conta Connect
                     asaasApiKey = asaasKey,
                     paymentGateway = selectedGateway
                 )

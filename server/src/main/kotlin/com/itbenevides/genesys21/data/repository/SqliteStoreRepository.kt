@@ -45,6 +45,7 @@ class SqliteStoreRepository : StoreRepository {
                     it[allowDelivery] = store.allowDelivery
                     it[stripePublicKey] = store.stripePublicKey
                     it[stripeSecretKey] = store.stripeSecretKey
+                    it[stripeAccountId] = store.stripeAccountId
                     it[asaasApiKey] = store.asaasApiKey
                     it[paymentGateway] = store.paymentGateway
                     it[customDomain] = store.customDomain
@@ -70,6 +71,7 @@ class SqliteStoreRepository : StoreRepository {
                     it[allowDelivery] = store.allowDelivery
                     it[stripePublicKey] = store.stripePublicKey
                     it[stripeSecretKey] = store.stripeSecretKey
+                    it[stripeAccountId] = store.stripeAccountId
                     it[asaasApiKey] = store.asaasApiKey
                     it[paymentGateway] = store.paymentGateway
                     it[customDomain] = store.customDomain
@@ -79,6 +81,19 @@ class SqliteStoreRepository : StoreRepository {
         }
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    override suspend fun createConnectAccount(storeId: String, email: String, token: String): Result<String> {
+        // Implementação delegada via rota/service no backend, mas o repo precisa do contrato
+        return Result.failure(Exception("Operação deve ser realizada via API Admin"))
+    }
+
+    override suspend fun getConnectOnboardingLink(storeId: String, token: String): Result<String> {
+        return Result.failure(Exception("Operação deve ser realizada via API Admin"))
+    }
+
+    override suspend fun getConnectLoginLink(storeId: String, token: String): Result<String> {
+        return Result.failure(Exception("Operação deve ser realizada via API Admin"))
     }
 
     private fun ResultRow.toStore() = Store(
@@ -100,6 +115,7 @@ class SqliteStoreRepository : StoreRepository {
         allowDelivery = this[StoresTable.allowDelivery],
         stripePublicKey = this[StoresTable.stripePublicKey],
         stripeSecretKey = this[StoresTable.stripeSecretKey],
+        stripeAccountId = this[StoresTable.stripeAccountId],
         asaasApiKey = this[StoresTable.asaasApiKey],
         paymentGateway = this[StoresTable.paymentGateway],
         customDomain = this[StoresTable.customDomain],

@@ -107,7 +107,12 @@ jobs:
             cp -R server/build/install/server/. deploy/server/
             # Copiar o JSON para a raiz do deploy para que fique em /app/ no container
             cp firebase-adminsdk.json deploy/server/ 2>/dev/null || true
-            find composeApp/build/dist/wasmJs/productionExecutable -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+
+            # Tenta encontrar o diretório de distribuição do WasmJS
+            WEB_DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -o -name "distribution" | head -n 1)
+            if [ -n "$WEB_DIST_DIR" ]; then
+                find "$WEB_DIST_DIR" -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+            fi
 
             # Copiar Relatórios
             [ -d "screenshot-tests/build/reports/paparazzi/debug" ] && cp -R screenshot-tests/build/reports/paparazzi/debug/* deploy/web/reports/paparazzi/ || true

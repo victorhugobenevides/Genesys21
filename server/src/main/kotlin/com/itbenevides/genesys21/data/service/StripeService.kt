@@ -12,7 +12,8 @@ class StripeService {
         order: Order,
         secretKey: String,
         successUrl: String,
-        cancelUrl: String
+        cancelUrl: String,
+        connectedAccountId: String? = null
     ): String {
         Stripe.apiKey = secretKey
 
@@ -22,6 +23,15 @@ class StripeService {
             .setCancelUrl(cancelUrl)
             .setClientReferenceId(order.id)
             .setCustomerEmail(if (order.customerId?.contains("@") == true) order.customerId else null)
+
+        // Se houver uma conta conectada (Direct Charges), a cobrança vai para ela
+        val requestOptions = if (!connectedAccountId.isNullOrBlank()) {
+            com.stripe.net.RequestOptions.builder()
+                .setStripeAccount(connectedAccountId)
+                .build()
+        } else {
+            null
+        }
 
         order.items.forEach { item ->
             paramsBuilder.addLineItem(
@@ -83,7 +93,11 @@ class StripeService {
             )
         }
 
-        val session = Session.create(paramsBuilder.build())
+        val session = if (requestOptions != null) {
+            Session.create(paramsBuilder.build(), requestOptions)
+        } else {
+            Session.create(paramsBuilder.build())
+        }
         return session.url
     }
 }
