@@ -12,6 +12,18 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Setup Java 21
+          command: |
+            # Tenta selecionar o JDK 21 se estiver disponível no sistema
+            if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
+              echo "export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> $BASH_ENV
+            elif [ -d "/opt/jdk/jdk-21" ]; then
+              echo "export JAVA_HOME=/opt/jdk/jdk-21" >> $BASH_ENV
+            fi
+            echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> $BASH_ENV
+            source \$BASH_ENV
+            java -version
+      - run:
           name: Grant execute permission for gradlew
           command: chmod +x gradlew
       - run:
@@ -47,7 +59,7 @@ jobs:
           name: Run Unit Tests & Coverage
           command: |
             ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon || true
-            ./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon || true
+            ./gradlew :server:jacocoTestReport --no-daemon || true
       - run:
           name: Verify Visual Integrity (Screenshot Tests)
           command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true

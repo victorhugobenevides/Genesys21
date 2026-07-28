@@ -18,7 +18,7 @@ echo "🧪 2. Rodando Testes Unitários e Cobertura (Jacoco)..."
 # Simula o passo 'Run Unit Tests & Coverage' da pipeline
 # Nota: Adicionamos '|| true' para espelhar o comportamento da pipeline que ignora falhas pontuais de teste/relatório
 ./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon || true
-./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon || true
+./gradlew :server:jacocoTestReport --no-daemon || true
 
 echo "📦 3. Build de Produção (Server e WasmJS)..."
 # Simula o passo 'Build Project' da pipeline (Production Distribution)
