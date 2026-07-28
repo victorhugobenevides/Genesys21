@@ -17,13 +17,29 @@ class KtorBookingRepository(
 ) : BookingRepository {
 
     override suspend fun getServices(): List<BookingService> {
-        return client.get("$baseUrl/api/booking/services").body()
+        return try {
+            val response = client.get("$baseUrl/api/booking/services")
+            if (response.status.isSuccess()) {
+                response.body()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     override suspend fun getServiceById(id: String): BookingService? {
-        val response = client.get("$baseUrl/api/booking/services/$id")
-        if (response.status == HttpStatusCode.NotFound) return null
-        return response.body()
+        return try {
+            val response = client.get("$baseUrl/api/booking/services/$id")
+            if (response.status.isSuccess()) {
+                response.body()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     override suspend fun saveService(service: BookingService, token: String) {
