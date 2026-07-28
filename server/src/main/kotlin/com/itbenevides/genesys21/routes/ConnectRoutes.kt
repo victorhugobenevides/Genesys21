@@ -8,7 +8,6 @@ import com.stripe.model.AccountSession
 import com.stripe.param.AccountCreateParams
 import com.stripe.param.AccountSessionCreateParams
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
@@ -22,15 +21,13 @@ data class ConnectAccountRequest(val storeId: String, val email: String)
 data class AccountSessionRequest(val storeId: String)
 
 @Serializable
-data class ConnectLinkResponse(val url: String)
-
-@Serializable
 data class AccountSessionResponse(val clientSecret: String)
 
 fun Route.connectRoutes(
     userRepository: UserRepository,
     storeRepository: StoreRepository
 ) {
+    // userRepository is maintained for dependency injection consistency even if not used in current routes
     authenticate("firebase") {
         route("/admin/connect") {
 
@@ -54,11 +51,11 @@ fun Route.connectRoutes(
                         .setController(
                             AccountCreateParams.Controller.builder()
                                 .setFees(AccountCreateParams.Controller.Fees.builder().setPayer(AccountCreateParams.Controller.Fees.Payer.ACCOUNT).build())
-                                .setLosses(AccountCreateParams.Controller.Losses.builder().setPayments(AccountCreateParams.Controller.Losses.Payments.ACCOUNT).build())
+                                .setLosses(AccountCreateParams.Controller.Losses.builder().setPayments(AccountCreateParams.Controller.Losses.Payments.STRIPE).build())
                                 .setRequirementCollection(AccountCreateParams.Controller.RequirementCollection.STRIPE)
-                                .setDashboard(
-                                    AccountCreateParams.Controller.Dashboard.builder()
-                                        .setType(AccountCreateParams.Controller.Dashboard.Type.FULL)
+                                .setStripeDashboard(
+                                    AccountCreateParams.Controller.StripeDashboard.builder()
+                                        .setType(AccountCreateParams.Controller.StripeDashboard.Type.FULL)
                                         .build()
                                 )
                                 .build()
