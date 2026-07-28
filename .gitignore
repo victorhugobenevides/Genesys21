@@ -68,7 +68,7 @@ genesys21-32035-firebase-adminsdk.json
 # Compiled files
 bin/
 **/bin/
-data/
+/data/
 server.log
 ngrok.log
 *.db*

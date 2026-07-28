@@ -58,11 +58,11 @@ jobs:
       - run:
           name: Run Unit Tests & Coverage
           command: |
-            ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon || true
-            ./gradlew :server:jacocoTestReport --no-daemon || true
+            ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon
+            ./gradlew :server:jacocoTestReport --no-daemon
       - run:
           name: Verify Visual Integrity (Screenshot Tests)
-          command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true
+          command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
       - persist_to_workspace:
           root: .
           paths:

@@ -29,12 +29,12 @@ jobs:
         run: chmod +x gradlew
 
       - name: Verify Visual Integrity (Screenshot Tests)
-        run: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true
+        run: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
 
       - name: Run Unit Tests & Coverage
         run: |
-          ./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon || true
-          ./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon || true
+          ./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon
+          ./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon
 
       - name: Decode Firebase Secrets
         run: |

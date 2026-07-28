@@ -12,13 +12,12 @@ rm -rf kotlin-js-store yarn.lock data/genesys21.db* deploy/
 
 echo "🎨 1. Verificando Integridade Visual (Screenshot Tests)..."
 # Simula o passo 'Verify Visual Integrity' da pipeline
-./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true
+./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
 
 echo "🧪 2. Rodando Testes Unitários e Cobertura (Jacoco)..."
 # Simula o passo 'Run Unit Tests & Coverage' da pipeline
-# Nota: Adicionamos '|| true' para espelhar o comportamento da pipeline que ignora falhas pontuais de teste/relatório
-./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon || true
-./gradlew :server:jacocoTestReport --no-daemon || true
+./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon
+./gradlew :server:jacocoTestReport --no-daemon
 
 echo "📦 3. Build de Produção (Server e WasmJS)..."
 # Simula o passo 'Build Project' da pipeline (Production Distribution)
