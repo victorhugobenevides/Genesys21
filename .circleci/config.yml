@@ -12,16 +12,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Setup Java 21
+          name: Setup Java
           command: |
-            # Tenta selecionar o JDK 21 se estiver disponível no sistema
-            if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
-              echo "export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> "$BASH_ENV"
-            elif [ -d "/opt/jdk/jdk-21" ]; then
-              echo "export JAVA_HOME=/opt/jdk/jdk-21" >> "$BASH_ENV"
-            fi
-            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> "$BASH_ENV"
-            source "$BASH_ENV"
+            # Gradle will automatically download JDK 21 thanks to foojay plugin.
+            # We just display the initial version for debugging.
             java -version
       - run:
           name: Grant execute permission for gradlew
