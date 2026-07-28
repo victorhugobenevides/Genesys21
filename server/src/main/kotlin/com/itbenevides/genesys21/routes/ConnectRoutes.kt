@@ -50,10 +50,20 @@ fun Route.connectRoutes(
 
                     // Utilizando o padrão Accounts v2
                     // Merchant of Record: Lojista (Direct Charges)
-                    // Nas contas v2, as capacidades de pagamento são configuradas através do Merchant Configuration
+                    // Nas contas v2, as capacidades e responsabilidades devem ser configuradas corretamente
                     val params = AccountCreateParams.builder()
                         .setContactEmail(request.email)
                         .setDashboard(AccountCreateParams.Dashboard.FULL)
+                        .setDefaults(
+                            AccountCreateParams.Defaults.builder()
+                                .setResponsibilities(
+                                    AccountCreateParams.Defaults.Responsibilities.builder()
+                                        .setFeesCollector(AccountCreateParams.Defaults.Responsibilities.FeesCollector.STRIPE)
+                                        .setLossesCollector(AccountCreateParams.Defaults.Responsibilities.LossesCollector.STRIPE)
+                                        .build()
+                                )
+                                .build()
+                        )
                         .setConfiguration(
                             AccountCreateParams.Configuration.builder()
                                 .setMerchant(
@@ -73,6 +83,9 @@ fun Route.connectRoutes(
                     call.respond(account.id)
                 } catch (e: com.stripe.exception.AuthenticationException) {
                     call.respond(HttpStatusCode.Unauthorized, "Erro de Autenticação Stripe: Verifique suas chaves de API.")
+                } catch (e: com.stripe.exception.InvalidRequestException) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.BadRequest, "Erro na requisição Stripe: ${e.message}")
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao criar conta Connect")
