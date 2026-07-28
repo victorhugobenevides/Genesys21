@@ -54,6 +54,10 @@ jobs:
           command: |
             ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon
             ./gradlew :server:jacocoTestReport --no-daemon
+
+            # Collect test results for CircleCI
+            mkdir -p /tmp/test-results/junit
+            find . -type f -name "*.xml" -path "*/build/test-results/*" -exec cp {} /tmp/test-results/junit/ \;
       - run:
           name: Verify Visual Integrity (Screenshot Tests)
           command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
