@@ -46,6 +46,7 @@ fun main() {
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
+    logger.info("SERVIDOR: Iniciando inicialização do sistema...")
 
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
@@ -157,6 +158,7 @@ fun Application.module() {
     }
 
     initFirebase(logger)
+    logger.info("SERVIDOR: Pronto e ouvindo na porta $SERVER_PORT")
 
     routing {
         // Aplica rate limit na rota de login e upload
