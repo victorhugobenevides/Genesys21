@@ -72,3 +72,5 @@ bin/
 server.log
 ngrok.log
 *.db*
+/.env
+/server/:memory:?cache=shared

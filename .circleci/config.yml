@@ -8,19 +8,19 @@ jobs:
     executor:
       name: android/android-machine
       resource-class: large
-      tag: 2024.10.1
+      tag: 2024.01.1
     steps:
       - checkout
       - run:
           name: Setup Java 21
           command: |
-            # Verifica se o Java 21 já é o padrão, caso contrário tenta configurar
-            if java -version 2>&1 | grep -q "21\."; then
-              echo "Java 21 already active"
-            else
+            # Tenta selecionar o JDK 21 se estiver disponível no sistema
+            if [ -d "/usr/lib/jvm/java-21-openjdk-amd64" ]; then
+              echo "export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64" >> "$BASH_ENV"
+            elif [ -d "/opt/jdk/jdk-21" ]; then
               echo "export JAVA_HOME=/opt/jdk/jdk-21" >> "$BASH_ENV"
-              echo 'export PATH=$JAVA_HOME/bin:$PATH' >> "$BASH_ENV"
             fi
+            echo 'export PATH=$JAVA_HOME/bin:$PATH' >> "$BASH_ENV"
             source "$BASH_ENV"
             java -version
       - run:
@@ -239,7 +239,7 @@ jobs:
 
             # 2. Gerar Docker Compose usando imagens do OCIR via printf
             REGISTRY="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}"
-            printf "services:\n  server:\n    image: ${REGISTRY}/genesys-server:latest\n    environment:\n      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\n      - PROD_MODE=true\n    volumes:\n      - ./data:/app/data\n      - ./uploads:/app/uploads\n    restart: unless-stopped\n    networks:\n      - genesys-network\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8080/\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  web:\n    image: ${REGISTRY}/genesys-web:latest\n    depends_on:\n      server:\n        condition: service_started\n" > docker-compose.yml
+            printf "services:\n  server:\n    image: ${REGISTRY}/genesys-server:latest\n    environment:\n      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}\n      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}\n      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\n      - PROD_MODE=true\n    volumes:\n      - ./data:/app/data\n      - ./uploads:/app/uploads\n    restart: unless-stopped\n    networks:\n      - genesys-network\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8080/\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  web:\n    image: ${REGISTRY}/genesys-web:latest\n    depends_on:\n      server:\n        condition: service_started\n" > docker-compose.yml
             printf "    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro\n      - ./uploads:/usr/share/nginx/html/uploads:ro\n      - ./certbot/conf:/etc/letsencrypt:ro\n      - ./certbot/www:/var/www/certbot:ro\n    restart: unless-stopped\n    networks:\n      - genesys-network\n  certbot:\n    image: certbot/certbot\n    volumes:\n      - ./certbot/conf:/etc/letsencrypt\n      - ./certbot/www:/var/www/certbot\n    networks:\n      - genesys-network\n    entrypoint: \"/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'\"\nnetworks:\n  genesys-network:\n    driver: bridge\n" >> docker-compose.yml
 
             # 3. Transferir arquivos e executar comandos via SSH

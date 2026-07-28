@@ -113,7 +113,7 @@ fun Application.module() {
         header("X-Frame-Options", "DENY")
         header("X-Content-Type-Options", "nosniff")
         header("X-XSS-Protection", "1; mode=block")
-        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos;")
+        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com;")
     }
 
     /*
