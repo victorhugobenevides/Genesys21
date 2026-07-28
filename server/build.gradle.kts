@@ -40,6 +40,9 @@ dependencies {
     // Manipulação de Imagem
     implementation(libs.thumbnailator)
 
+    // Pagamentos
+    implementation(libs.stripe.java)
+
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }

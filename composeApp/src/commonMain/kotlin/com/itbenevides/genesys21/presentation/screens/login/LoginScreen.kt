@@ -28,6 +28,7 @@ import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.AnimatedGradientBackground
+import com.itbenevides.genesys21.ui.util.LocalTestMode
 import com.itbenevides.genesys21.ui.util.glassmorphic
 
 @Composable
@@ -214,19 +215,29 @@ private fun LoginContent(
 
                             GenesysSpacer(GenesysSpacing.Medium)
 
-                            GoogleSignInButton(
-                                modifier = Modifier.fillMaxWidth(),
-                                onTokenReceived = { idToken, accessToken ->
-                                    viewModel.signInWithToken(
-                                        idToken = idToken,
-                                        accessToken = accessToken,
-                                        provider = "google",
-                                        onSuccess = onLoginSuccess,
-                                        onError = { onEvent(LoginEvent.OnError(it)) }
-                                    )
-                                },
-                                onError = { onEvent(LoginEvent.OnError(it)) }
-                            )
+                            if (!LocalTestMode.current) {
+                                GoogleSignInButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onTokenReceived = { idToken, accessToken ->
+                                        viewModel.signInWithToken(
+                                            idToken = idToken,
+                                            accessToken = accessToken,
+                                            provider = "google",
+                                            onSuccess = onLoginSuccess,
+                                            onError = { onEvent(LoginEvent.OnError(it)) }
+                                        )
+                                    },
+                                    onError = { onEvent(LoginEvent.OnError(it)) }
+                                )
+                            } else {
+                                // Em teste mostramos um botão placeholder para não crashar
+                                GenesysLoadingButton(
+                                    text = "Google Sign In (Test Mode)",
+                                    onClick = {},
+                                    fillWidth = true,
+                                    enabled = false
+                                )
+                            }
 
                             if (state.errorMessage.isNotEmpty()) {
                                 GenesysSpacer(GenesysSpacing.Medium)

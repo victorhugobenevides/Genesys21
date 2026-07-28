@@ -282,6 +282,88 @@ sealed class PageComponent {
         override val destinationUrl: String? = null,
     ) : PageComponent()
 
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Grid")
+    data class Grid(
+        val columns: Int = 2,
+        val items: List<GridItem> = emptyList(),
+        val title: String? = null,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    data class GridItem(
+        val components: List<PageComponent> = emptyList(),
+        val span: Int = 1
+    )
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.SingleProduct")
+    data class SingleProduct(
+        val product: Product,
+        val showPrice: Boolean = true,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.SingleService")
+    data class SingleService(
+        val service: BookingService,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Spacer")
+    data class Spacer(
+        val height: Int = 16,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Skills")
+    data class Skills(
+        val tags: List<String>,
+        val title: String? = null,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = true,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.Divider")
+    data class Divider(
+        val usePadding: Boolean = true,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
     companion object
 }
 

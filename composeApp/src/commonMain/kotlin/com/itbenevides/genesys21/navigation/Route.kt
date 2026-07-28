@@ -27,7 +27,7 @@ sealed class Route {
 
     data class Cart(val page: Page?) : Route()
 
-    data class OrderTracking(val orderId: String) : Route()
+    data class OrderTracking(val orderId: String, val status: String? = null) : Route()
 
     data class CustomerOrderHistory(val page: Page?) : Route()
 

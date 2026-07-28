@@ -1,76 +1,82 @@
 package com.itbenevides.genesys21.screenshot
 
-import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.presentation.screens.editor.DesignSystemShowcaseScreen
 import com.itbenevides.genesys21.presentation.screens.editor.TemplateShowcaseScreen
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import org.junit.Rule
 import org.junit.Test
 
 class DesignSystemSnapshotTest {
     @get:Rule
-    val paparazzi = createGenesysPaparazzi(deviceConfig = app.cash.paparazzi.DeviceConfig.PIXEL_5)
+    val paparazzi = createGenesysPaparazzi()
 
     @Test
-    fun testShowcaseArchitecture() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseArchitectureResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 0)
         }
     }
 
     @Test
-    fun testShowcaseFoundation() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseFoundationResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 1)
         }
     }
 
     @Test
-    fun testShowcaseInputs() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseTemplatesResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 2)
         }
     }
 
     @Test
-    fun testShowcaseActionNav() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseInputsResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 3)
         }
     }
 
     @Test
-    fun testShowcaseDisplay() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseActionNavResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 4)
         }
     }
 
     @Test
-    fun testShowcaseFeedback() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseDisplayResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 5)
         }
     }
 
     @Test
-    fun testShowcaseBooking() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseFeedbackResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 6)
         }
     }
 
     @Test
-    fun testShowcaseQuality() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseBookingResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 7)
         }
     }
 
     @Test
-    fun testTemplateShowcase() {
-        paparazzi.genesysSnapshot {
+    fun testShowcaseQualityResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 8)
+        }
+    }
+
+    @Test
+    fun testTemplateShowcaseResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             TemplateShowcaseScreen(onBack = {})
         }
     }

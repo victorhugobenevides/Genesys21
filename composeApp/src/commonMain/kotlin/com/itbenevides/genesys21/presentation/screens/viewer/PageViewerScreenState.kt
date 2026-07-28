@@ -33,6 +33,8 @@ sealed class PageViewerScreenEvent {
 
     object OnOpenHistoryClicked : PageViewerScreenEvent()
 
+    object OnOpenProfileClicked : PageViewerScreenEvent()
+
     object OnOpenAdminSettingsClicked : PageViewerScreenEvent()
 
     object OnShareClicked : PageViewerScreenEvent()

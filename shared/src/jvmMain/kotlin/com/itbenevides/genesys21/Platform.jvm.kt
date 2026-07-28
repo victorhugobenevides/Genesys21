@@ -9,3 +9,9 @@ actual fun getPlatform(): Platform = JVMPlatform()
 actual fun triggerPrint() {
     // Not implemented for JVM
 }
+
+actual fun openUrlInCurrentTab(url: String) {
+    // Not implemented for JVM
+}
+
+actual fun getUrlSearchParameters(): String = ""

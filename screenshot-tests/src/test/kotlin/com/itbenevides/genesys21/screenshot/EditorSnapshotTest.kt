@@ -1,23 +1,22 @@
 package com.itbenevides.genesys21.screenshot
 
-import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.TypographySet
 import com.itbenevides.genesys21.presentation.screens.editor.ThemeLabDialog
 import com.itbenevides.genesys21.presentation.screens.editor.ThemeSelectorBottomSheet
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import org.junit.Rule
 import org.junit.Test
 
 class EditorSnapshotTest {
     @get:Rule
-    val paparazzi = createGenesysPaparazzi(deviceConfig = DeviceConfig.PIXEL_5)
+    val paparazzi = createGenesysPaparazzi()
 
     @Test
-    fun testThemeLabDialog() {
-        paparazzi.genesysSnapshot {
+    fun testThemeLabDialogResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             ThemeLabDialog(
                 initialConfig =
                     CustomThemeConfig(
@@ -33,8 +32,8 @@ class EditorSnapshotTest {
     }
 
     @Test
-    fun testThemeSelectorBottomSheet() {
-        paparazzi.genesysSnapshot {
+    fun testThemeSelectorBottomSheetResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             ThemeSelectorBottomSheet(
                 currentTheme = PageThemeConfig.ROYAL,
                 onThemeSelected = {},

@@ -7,7 +7,7 @@ import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.screens.viewer.ProductCard
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysSearchBar
 import org.junit.Rule
@@ -30,7 +30,7 @@ class MoleculesSnapshotTest {
 
     @Test
     fun testProductCard() {
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             Box(Modifier.padding(16.dp).width(200.dp)) {
                 ProductCard(product = sampleProduct)
             }
@@ -39,7 +39,7 @@ class MoleculesSnapshotTest {
 
     @Test
     fun testSearchBar() {
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             Column(Modifier.padding(16.dp).fillMaxWidth()) {
                 GenesysSearchBar(
                     value = "",
@@ -58,7 +58,7 @@ class MoleculesSnapshotTest {
 
     @Test
     fun testGenesysCard() {
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             GenesysCard(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                 androidx.compose.material3.Text("This is a Genesys Card with custom content.")
             }
@@ -67,7 +67,7 @@ class MoleculesSnapshotTest {
 
     @Test
     fun testInputs() {
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             Column(Modifier.padding(16.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 com.itbenevides.genesys21.ui.components.molecules.input.GenesysColorField(
                     value = "#6200EE",

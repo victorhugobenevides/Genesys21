@@ -16,7 +16,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
@@ -103,10 +103,16 @@ kotlin {
             implementation(libs.peekaboo.image.picker)
         }
 
-        val wasmJsMain by getting {
-            kotlin.srcDirs("src/wasmJsMain/kotlin", "src/webMain/kotlin")
-            resources.srcDirs("src/wasmJsMain/resources", "src/webMain/resources")
+        val wasmJsMain by getting
+        val jsMain by getting
+
+        val webMain by creating {
+            dependsOn(commonMain.get())
+            kotlin.srcDirs("src/webMain/kotlin")
+            resources.srcDirs("src/webMain/resources")
         }
+        wasmJsMain.dependsOn(webMain)
+        jsMain.dependsOn(webMain)
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -129,6 +135,11 @@ android {
     }
     buildFeatures { buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+
+    tasks.withType<Copy> {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = true
@@ -138,8 +149,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 

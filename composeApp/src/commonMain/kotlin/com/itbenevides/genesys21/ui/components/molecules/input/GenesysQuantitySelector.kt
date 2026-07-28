@@ -25,6 +25,7 @@ fun GenesysQuantitySelector(
         QuantityCircleButton(
             icon = GenesysIcons.Remove,
             onClick = onDecrease,
+            contentDescription = "Diminuir quantidade"
         )
 
         GenesysSpacer(GenesysSpacing.Small)
@@ -40,6 +41,7 @@ fun GenesysQuantitySelector(
             icon = GenesysIcons.Add,
             onClick = onIncrease,
             isPrimary = true,
+            contentDescription = "Aumentar quantidade"
         )
     }
 }
@@ -49,6 +51,7 @@ private fun QuantityCircleButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
     isPrimary: Boolean = false,
+    contentDescription: String? = null,
 ) {
     Surface(
         onClick = onClick,
@@ -60,7 +63,7 @@ private fun QuantityCircleButton(
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = contentDescription,
                 modifier = Modifier.size(GenesysDimens.IconSmall),
             )
         }

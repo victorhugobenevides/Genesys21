@@ -57,16 +57,16 @@ actual fun syncUrlWithScreen(
 
 actual fun getInitialUrlPath(): String? = window.location.pathname
 
-@JsFun("(key) => new URLSearchParams(window.location.search).get(key)")
-private external fun jsGetParam(key: String): String?
-
 actual fun getUrlParams(): Map<String, String> {
     val params = mutableMapOf<String, String>()
-    listOf("utm_source", "utm_medium", "utm_campaign").forEach { key ->
+    listOf("utm_source", "utm_medium", "utm_campaign", "orderId", "status").forEach { key ->
         jsGetParam(key)?.let { params[key] = it }
     }
     return params
 }
+
+@JsFun("(key) => new URLSearchParams(window.location.search).get(key)")
+private external fun jsGetParam(key: String): String?
 
 actual fun getWebBaseUrl(): String = "${window.location.protocol}//${window.location.host}"
 

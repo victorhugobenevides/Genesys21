@@ -20,6 +20,8 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,6 +56,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.math.roundToLong
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @Composable
 fun PageComponentRenderer(
@@ -151,6 +155,12 @@ fun PageComponentRenderer(
                 is PageComponent.Hero -> !isCategoryFilterActive && (component.title.contains(filterQuery, ignoreCase = true) || component.subtitle?.contains(filterQuery, ignoreCase = true) == true)
                 is PageComponent.Benefits -> !isCategoryFilterActive && (component.title?.contains(filterQuery, ignoreCase = true) == true || component.items.any { it.title.contains(filterQuery, ignoreCase = true) })
                 is PageComponent.Testimonial -> !isCategoryFilterActive && component.quote.contains(filterQuery, ignoreCase = true)
+                is PageComponent.SingleProduct -> !isCategoryFilterActive && component.product.name.contains(filterQuery, ignoreCase = true)
+                is PageComponent.SingleService -> !isCategoryFilterActive && component.service.name.contains(filterQuery, ignoreCase = true)
+                is PageComponent.Skills -> {
+                    if (filterQuery.isBlank()) true
+                    else component.tags.any { it.contains(filterQuery, ignoreCase = true) }
+                }
                 else -> true
             }
         }
@@ -164,15 +174,37 @@ fun PageComponentRenderer(
                     remember(component.services, allServices) {
                         if (component.services.isEmpty()) allServices else component.services
                     }
+                val windowSizeClass = LocalWindowSizeClass.current
+                val isDesktop = windowSizeClass == GenesysWindowSizeClass.EXPANDED
+
                 GenesysColumn(usePadding = true) {
                     GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
                     GenesysSpacer(GenesysSpacing.Medium)
-                    servicesToDisplay.forEach { service ->
-                        ServiceCard(
-                            service = service,
-                            onClick = { onServiceClick?.invoke(service) },
-                        )
-                        GenesysSpacer(GenesysSpacing.Small)
+
+                    if (isDesktop) {
+                        // Grade de 2 colunas para serviços no Desktop
+                        servicesToDisplay.chunked(2).forEach { rowServices ->
+                            GenesysRow(usePadding = false, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                rowServices.forEach { service ->
+                                    GenesysWeightBox(1f) {
+                                        ServiceCard(
+                                            service = service,
+                                            onClick = { onServiceClick?.invoke(service) },
+                                        )
+                                    }
+                                }
+                                if (rowServices.size < 2) GenesysWeightSpacer(1f)
+                            }
+                            GenesysSpacer(GenesysSpacing.Small)
+                        }
+                    } else {
+                        servicesToDisplay.forEach { service ->
+                            ServiceCard(
+                                service = service,
+                                onClick = { onServiceClick?.invoke(service) },
+                            )
+                            GenesysSpacer(GenesysSpacing.Small)
+                        }
                     }
                 }
             }
@@ -185,29 +217,43 @@ fun PageComponentRenderer(
                 val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
                 val effectiveImageSize = if (isCompact) (component.imageSize * 0.8).toInt() else component.imageSize
 
-                Column(
+                GenesysColumn(
                     modifier = Modifier.fillMaxWidth().padding(vertical = if (isCompact) 16.dp else 24.dp).clickable { onComponentClick() },
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = GenesysAlignment.Center,
+                    usePadding = true
                 ) {
-                    GenesysImage(
-                        url = displayUrl,
-                        size = effectiveImageSize.dp,
-                        isCircular = component.isCircular,
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        // Halo decorativo
+                        Surface(
+                            modifier = Modifier.size((effectiveImageSize + 12).dp),
+                            shape = if (component.isCircular) CircleShape else RoundedCornerShape(24.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                        ) {}
+
+                        GenesysImage(
+                            url = displayUrl,
+                            size = effectiveImageSize.dp,
+                            isCircular = component.isCircular,
+                        )
+                    }
+
                     GenesysSpacer(GenesysSpacing.Medium)
+
                     GenesysText(
                         text = component.name,
                         style = if (isCompact) GenesysTextStyle.Title else GenesysTextStyle.Headline,
                         fontWeight = GenesysFontWeight.ExtraBold,
                         textAlign = GenesysTextAlign.Center,
                     )
+
                     if (component.bio.isNotBlank()) {
                         GenesysText(
                             text = component.bio,
                             style = GenesysTextStyle.Body,
                             textAlign = GenesysTextAlign.Center,
                             modifier = Modifier.padding(horizontal = if (isCompact) 16.dp else 32.dp),
-                            fontSize = if (isCompact) 14.sp else 16.sp
+                            fontSize = if (isCompact) 14.sp else 16.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -337,15 +383,18 @@ fun PageComponentRenderer(
             }
             is PageComponent.ProductList -> {
                 val productsToDisplay =
-                    if (filterQuery.isBlank() || !component.isFilterable) {
-                        component.products
-                    } else {
-                        if (isCategoryFilterActive) {
-                            component.products.filter { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
+                    remember(component.products, allProducts, filterQuery, isCategoryFilterActive) {
+                        val base = if (component.products.isEmpty()) allProducts else component.products
+                        if (filterQuery.isBlank() || !component.isFilterable) {
+                            base
                         } else {
-                            component.products.filter {
-                                it.name.contains(filterQuery, ignoreCase = true) ||
-                                    (it.categoryName?.contains(filterQuery, ignoreCase = true) == true)
+                            if (isCategoryFilterActive) {
+                                base.filter { it.categoryName?.equals(filterQuery, ignoreCase = true) == true }
+                            } else {
+                                base.filter {
+                                    it.name.contains(filterQuery, ignoreCase = true) ||
+                                        (it.categoryName?.contains(filterQuery, ignoreCase = true) == true)
+                                }
                             }
                         }
                     }
@@ -660,6 +709,157 @@ fun PageComponentRenderer(
                     }
                 }
             }
+            is PageComponent.Grid -> {
+                 GenesysColumn(usePadding = true) {
+                    component.title?.let {
+                        GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                    }
+
+                    // Calculamos as linhas com base nos spans
+                    val rows = mutableListOf<List<PageComponent.GridItem>>()
+                    var currentRow = mutableListOf<PageComponent.GridItem>()
+                    var currentSpan = 0
+
+                    component.items.forEach { item ->
+                        if (currentSpan + item.span > component.columns) {
+                            rows.add(currentRow)
+                            currentRow = mutableListOf()
+                            currentSpan = 0
+                        }
+                        currentRow.add(item)
+                        currentSpan += item.span
+                    }
+                    if (currentRow.isNotEmpty()) rows.add(currentRow)
+
+                    rows.forEach { rowItems ->
+                        GenesysRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            usePadding = false
+                        ) {
+                            rowItems.forEach { gridItem ->
+                                GenesysWeightBox(gridItem.span.toFloat()) {
+                                    Column {
+                                        gridItem.components.forEach { child ->
+                                            PageComponentRenderer(
+                                                component = child,
+                                                onProductClick = onProductClick,
+                                                onServiceClick = onServiceClick,
+                                                filterQuery = filterQuery,
+                                                onFilterQueryChange = onFilterQueryChange,
+                                                allAvailableCategories = allAvailableCategories,
+                                                allProducts = allProducts,
+                                                allServices = allServices,
+                                                isEditMode = isEditMode,
+                                                onEditClick = onEditClick
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            // Preenchimento caso a linha não esteja completa
+                            val rowSpan = rowItems.sumOf { it.span }
+                            if (rowSpan < component.columns) {
+                                GenesysWeightSpacer((component.columns - rowSpan).toFloat())
+                            }
+                        }
+                        GenesysSpacer(GenesysSpacing.Small)
+                    }
+                }
+            }
+
+            is PageComponent.SingleProduct -> {
+                ProductCard(
+                    product = component.product,
+                    showPrice = component.showPrice,
+                    onClick = onProductClick,
+                    onAddToCart = { router.viewModel.addToCart(component.product) },
+                    onHover = { router.viewModel.prefetchProductDetails(component.product) },
+                    isEditMode = isEditMode
+                )
+            }
+
+            is PageComponent.SingleService -> {
+                ServiceCard(
+                    service = component.service,
+                    onClick = { onServiceClick?.invoke(component.service) }
+                )
+            }
+
+            is PageComponent.Skills -> {
+                val filteredTags = remember(component.tags, filterQuery) {
+                    if (filterQuery.isBlank()) component.tags
+                    else component.tags.filter { it.contains(filterQuery, ignoreCase = true) }
+                }
+
+                if (filteredTags.isNotEmpty()) {
+                    GenesysColumn(usePadding = true) {
+                        component.title?.let {
+                            GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                            GenesysSpacer(GenesysSpacing.Medium)
+                        }
+                        @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            filteredTags.forEach { tag ->
+                                val tagColor = remember(tag) {
+                                    val t = tag.lowercase()
+                                    when {
+                                        // VERMELHO: iOS / Apple
+                                        t.contains("ios") || t.contains("swift") || t.contains("xcode") || t.contains("apple") -> Color(0xFFE57373)
+
+                                        // AMARELO: Multiplataforma
+                                        t.contains("multiplatform") || t.contains("kmp") || t.contains("flutter") ||
+                                        t.contains("dart") || t.contains("ktor") || t.contains("wasm") -> Color(0xFFFFD54F)
+
+                                        // VERDE: Android, CI/CD, IA, Infra, Segurança, Ferramentas de IA e IDEs
+                                        t.contains("android") || t.contains("compose") || t.contains("kotlin") ||
+                                        t.contains("java") || t.contains("ci/cd") || t.contains("docker") ||
+                                        t.contains("ia") || t.contains("ai") || t.contains("pci") ||
+                                        t.contains("dexguard") || t.contains("rasp") || t.contains("test") ||
+                                        t.contains("sql") || t.contains("firebase") || t.contains("analytics") ||
+                                        t.contains("mcp") || t.contains("devin") || t.contains("copilot") ||
+                                        t.contains("studio") || t.contains("windsurf") || t.contains("cascade") ||
+                                        t.contains("speckit") || t.contains("antigravity") -> Color(0xFF81C784)
+
+                                        // PADRÃO: Cinza/Azul suave
+                                        else -> Color.LightGray
+                                    }
+                                }
+
+                                Surface(
+                                    color = tagColor.copy(alpha = 0.2f),
+                                    contentColor = tagColor,
+                                    shape = CircleShape,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, tagColor.copy(alpha = 0.5f)),
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            is PageComponent.Spacer -> {
+                Spacer(Modifier.height(component.height.dp))
+            }
+
+            is PageComponent.Divider -> {
+                Box(modifier = Modifier.padding(vertical = if (component.usePadding) 16.dp else 0.dp)) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                }
+            }
         }
 
         if (isEditMode) {
@@ -752,6 +952,9 @@ fun ProductCard(
             modifier
                 .staggeredEntry(index)
                 .scale(interactionScale)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = "Produto: ${product.name}, Preço: ${GenesysStrings.PricePrefix}${product.price}"
+                }
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {

@@ -13,6 +13,10 @@ object BookingServicesTable : BaseTable("booking_services") {
     val bufferTimeMinutes = integer("buffer_time_minutes").default(0)
     val categoryId = varchar("category_id", 50).references(CategoriesTable.id, onDelete = ReferenceOption.SET_NULL).nullable()
     val isEnabled = bool("is_enabled").default(true)
+    val isOnline = bool("is_online").default(false)
+    val isHomeService = bool("is_home_service").default(false)
+    val maxParticipants = integer("max_participants").default(1)
+    val meetingLink = text("meeting_link").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }
@@ -62,6 +66,17 @@ object AppointmentsTable : BaseTable("appointments") {
     val startTime = long("start_time_ms")
     val endTime = long("end_time_ms")
     val status = varchar("status", 20).default("PENDING")
+    val meetingLink = text("meeting_link").nullable()
+    val travelFee = double("travel_fee").default(0.0)
+
+    // Endereço de atendimento (se domicílio)
+    val street = varchar("street", 255).nullable()
+    val number = varchar("number", 20).nullable()
+    val neighborhood = varchar("neighborhood", 100).nullable()
+    val city = varchar("city", 100).nullable()
+    val state = varchar("state", 50).nullable()
+    val zipCode = varchar("zip_code", 20).nullable()
+
     val orderId = varchar("order_id", 50).references(OrdersTable.id, onDelete = ReferenceOption.SET_NULL).nullable()
 
     override val primaryKey = PrimaryKey(id)

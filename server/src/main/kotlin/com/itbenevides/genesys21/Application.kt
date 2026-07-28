@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.repository.*
+import com.itbenevides.genesys21.data.service.StripeService
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.routes.*
 import io.ktor.http.*
@@ -62,12 +63,19 @@ fun Application.module() {
     val orderRepository = SqliteOrderRepository()
     val bookingRepository = SqliteBookingRepository()
     val userRepository = SqliteUserRepository()
+    val addressRepository = SqliteAddressRepository()
+    val storeRepository = SqliteStoreRepository()
+    val stripeService = StripeService()
 
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
     if (!uploadDir.exists()) uploadDir.mkdirs()
 
     install(StatusPages) {
+        exception<io.ktor.serialization.JsonConvertException> { call, cause ->
+            logger.error("ERRO DE SERIALIZAÇÃO (JSON): ${cause.message}")
+            call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados: ${cause.message}")
+        }
         exception<Throwable> { call, cause ->
             val isProd = System.getenv("PROD_MODE") == "true"
             logger.error("Erro Interno: ${cause.message}", cause)
@@ -94,6 +102,7 @@ fun Application.module() {
                 ignoreUnknownKeys = true
                 isLenient = true
                 encodeDefaults = true
+                coerceInputValues = true
             },
         )
     }
@@ -118,11 +127,7 @@ fun Application.module() {
     */
 
     install(CORS) {
-        val prodHosts = listOf("radarani.site", "victorbenevides.dev")
-        val stagingHosts = listOf("localhost:8081", "localhost:8080")
-
-        prodHosts.forEach { allowHost(it, schemes = listOf("https")) }
-        stagingHosts.forEach { allowHost(it, schemes = listOf("http", "https")) }
+        anyHost()
 
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
@@ -261,9 +266,12 @@ fun Application.module() {
             adminRoutes(userRepository)
             pageRoutes(pageRepository)
             cartRoutes(cartRepository)
-            orderRoutes(orderRepository)
+            orderRoutes(orderRepository, storeRepository, stripeService)
             categoryRoutes(pageRepository)
             bookingRoutes(bookingRepository)
+            addressRoutes(addressRepository)
+            storeRoutes(storeRepository)
+            shippingRoutes(storeRepository)
 
             authenticate("firebase") {
                 post("/upload") {

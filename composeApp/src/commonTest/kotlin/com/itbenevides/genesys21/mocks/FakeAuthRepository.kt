@@ -1,10 +1,16 @@
 package com.itbenevides.genesys21.mocks
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class FakeAuthRepository : AuthRepository {
     var shouldReturnError = false
     var mockToken: String? = "fake_token"
+
+    private val _authState = MutableStateFlow<String?>(null)
+    override val authState: Flow<String?> = _authState.asStateFlow()
 
     override suspend fun signIn(
         email: String,
@@ -50,5 +56,9 @@ class FakeAuthRepository : AuthRepository {
 
     override suspend fun signOut() {
         mockToken = null
+    }
+
+    override fun initializeOneTap() {
+        // Mock implementation
     }
 }

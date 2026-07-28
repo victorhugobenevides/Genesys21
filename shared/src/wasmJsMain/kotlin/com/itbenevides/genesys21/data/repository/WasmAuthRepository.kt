@@ -1,6 +1,9 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlin.js.Promise
 
 // Interop seguro: Se a função não existir no window, retorna um valor padrão em vez de crashar
@@ -43,7 +46,20 @@ external fun firebaseGetUserIdSafe(): Promise<JsString?>
 @JsFun("() => (typeof window.firebaseSignOut === 'function') ? window.firebaseSignOut() : Promise.resolve(null)")
 external fun firebaseSignOutSafe(): Promise<JsAny?>
 
+@JsFun("() => { if (typeof window.firebaseInitializeOneTap === 'function') window.firebaseInitializeOneTap(); }")
+external fun firebaseInitializeOneTapSafe()
+
+@JsFun("(callback) => { if (typeof window.firebaseOnAuthChanged === 'function') window.firebaseOnAuthChanged(callback); }")
+external fun firebaseOnAuthChangedSafe(callback: (JsString?) -> Unit)
+
 class WasmAuthRepository : AuthRepository {
+    override val authState: Flow<String?> = callbackFlow {
+        firebaseOnAuthChangedSafe { uid ->
+            trySend(uid?.toString())
+        }
+        awaitClose { }
+    }
+
     override suspend fun signIn(email: String, password: String): Result<String?> {
         println("DEBUG KOTLIN: Tentando login para $email")
         val promise = firebaseSignInSafe(email, password)
@@ -61,15 +77,21 @@ class WasmAuthRepository : AuthRepository {
     override suspend fun signIn(idToken: String, accessToken: String?, provider: String): Result<String?> {
         return try {
             if (provider == "google") {
-                println("WASM: Disparando login Google...")
-                val token = firebaseSignInGoogleSafe().await().toString()
-                println("WASM: Login Google sucesso! Token obtido.")
-                Result.success(token)
+                if (idToken.isNotBlank()) {
+                    // Se o token já foi obtido (ex: via GoogleSignInButton), não dispara o popup de novo
+                    println("WASM: Usando token Google existente.")
+                    Result.success(idToken)
+                } else {
+                    println("WASM: Disparando login Google (Token Vazio)...")
+                    val token = firebaseSignInGoogleSafe().await().toString()
+                    println("WASM: Login Google sucesso! Token obtido.")
+                    Result.success(token)
+                }
             } else {
                 Result.success(idToken)
             }
         } catch (e: Exception) {
-            println("WASM: Falha crítica no Login Google: ${e.message}")
+            println("WASM: Falha crítica no Login Google: \${e.message}")
             Result.failure(e)
         }
     }
@@ -97,6 +119,10 @@ class WasmAuthRepository : AuthRepository {
         } catch (e: Exception) {
             null
         }
+    }
+
+    override fun initializeOneTap() {
+        firebaseInitializeOneTapSafe()
     }
 
     override suspend fun signOut() {

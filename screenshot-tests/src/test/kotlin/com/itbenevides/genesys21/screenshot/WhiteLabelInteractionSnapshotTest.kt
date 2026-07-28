@@ -4,7 +4,7 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.screens.viewer.ComponentCatalogUI
 import com.itbenevides.genesys21.presentation.screens.viewer.WhiteLabelState
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import org.junit.Rule
 import org.junit.Test
 
@@ -13,14 +13,14 @@ class WhiteLabelInteractionSnapshotTest {
     val paparazzi = createGenesysPaparazzi()
 
     @Test
-    fun testComponentCatalogVisibility() {
+    fun testComponentCatalogResponsive() {
         val samplePage = Page(id = "test", storeId = "store-1", title = "Editor Test")
         val state = WhiteLabelState(
             page = samplePage,
             showCatalog = true
         )
 
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             // Testamos o componente do catálogo diretamente.
             // Se o código do catálogo sumir ou quebrar, este teste falhará no CI.
             ComponentCatalogUI(

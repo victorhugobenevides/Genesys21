@@ -57,8 +57,13 @@ abstract class BaseCartRepository(
 
     override suspend fun addToCart(item: CartItem): Result<Unit> {
         val current = _cartItems.value.toMutableList()
-        val existing = current.find { it.product.id == item.product.id }
-        if (existing != null) {
+        val itemId = item.product?.id ?: item.service?.id ?: ""
+
+        val existing = current.find {
+            (it.product?.id ?: it.service?.id ?: "") == itemId
+        }
+
+        if (existing != null && item.product != null) {
             val idx = current.indexOf(existing)
             current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
         } else {
@@ -69,21 +74,21 @@ abstract class BaseCartRepository(
         return syncWithServer()
     }
 
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        val updated = _cartItems.value.filter { it.product.id != productId }
+    override suspend fun removeFromCart(itemId: String): Result<Unit> {
+        val updated = _cartItems.value.filter { (it.product?.id ?: it.service?.id ?: "") != itemId }
         _cartItems.value = updated
         saveToLocal(updated)
         return syncWithServer()
     }
 
     override suspend fun updateQuantity(
-        productId: String,
+        itemId: String,
         quantity: Int,
     ): Result<Unit> {
-        if (quantity <= 0) return removeFromCart(productId)
+        if (quantity <= 0) return removeFromCart(itemId)
         val updated =
             _cartItems.value.map {
-                if (it.product.id == productId) it.copy(quantity = quantity) else it
+                if ((it.product?.id ?: it.service?.id ?: "") == itemId) it.copy(quantity = quantity) else it
             }
         _cartItems.value = updated
         saveToLocal(updated)

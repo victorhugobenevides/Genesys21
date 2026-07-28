@@ -1,10 +1,18 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.BrandingEffects
 import com.itbenevides.genesys21.domain.model.BookingService
@@ -20,6 +28,8 @@ import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.feedback.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
 
@@ -175,6 +185,24 @@ fun WhiteLabelScreen(
                     }
                 }
             }
+            is WhiteLabelEvent.OnMoveComponentToTop -> {
+                if (event.index > 0) {
+                    val newList = state.page.components.toMutableList()
+                    val item = newList.removeAt(event.index)
+                    newList.add(0, item)
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    state = state.copy(editingComponentIndex = 0)
+                }
+            }
+            is WhiteLabelEvent.OnMoveComponentToBottom -> {
+                if (event.index < state.page.components.size - 1) {
+                    val newList = state.page.components.toMutableList()
+                    val item = newList.removeAt(event.index)
+                    newList.add(item)
+                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    state = state.copy(editingComponentIndex = newList.size - 1)
+                }
+            }
         }
     }
 
@@ -259,12 +287,60 @@ fun ComponentCatalogUI(
     state: WhiteLabelState,
     onEvent: (WhiteLabelEvent) -> Unit,
 ) {
+    var selectedItem by remember { mutableStateOf<CatalogItem?>(null) }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
     GenesysBottomSheet(
         onDismiss = { onEvent(WhiteLabelEvent.OnShowCatalogChanged(false)) },
         title = "Adicionar Novo Bloco",
     ) {
-        GenesysColumn(usePadding = true) {
-            val catalogItems =
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f) // Aumentamos para caber o preview
+        ) {
+            // 1. ÁREA DE PREVIEW (Topo)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (isCompact) 200.dp else 250.dp)
+                    .padding(horizontal = 16.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center
+            ) {
+                selectedItem?.let { item ->
+                    val component = remember(item) { item.createComponent() }
+                    Box(modifier = Modifier.scale(if (isCompact) 0.8f else 0.9f)) {
+                        PageComponentRenderer(
+                            component = component,
+                            isEditMode = true
+                        )
+                    }
+                } ?: run {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            GenesysIcons.Magic,
+                            null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Selecione um bloco para ver o preview",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            // 2. GRADE DE ITENS (Scrollable)
+            val catalogItems = remember {
                 listOf(
                     CatalogItem("Cabeçalho", GenesysIcons.Description) { PageComponent.Header(title = "Novo Cabeçalho") },
                     CatalogItem("Texto", GenesysIcons.Edit) { PageComponent.Text(content = "Seu texto aqui...") },
@@ -279,38 +355,77 @@ fun ComponentCatalogUI(
                     CatalogItem("Carrinho", GenesysIcons.ShoppingBag) { PageComponent.CartComponent() },
                     CatalogItem("Rastreio", GenesysIcons.List) { PageComponent.OrderTrackingComponent() },
                     CatalogItem("Lista de Serviços", GenesysIcons.Schedule) { PageComponent.ServiceList() },
-                    CatalogItem("Banner Hero (Destaque)", GenesysIcons.Image) { PageComponent.Hero(title = "Destaque", imageUrl = "https://picsum.photos/1200/600") },
-                    CatalogItem("Benefícios/Vantagens", GenesysIcons.Check) { PageComponent.Benefits(items = listOf(PageComponent.BenefitItem("Título", "Descrição", "Check"))) },
+                    CatalogItem("Banner Hero", GenesysIcons.Image) { PageComponent.Hero(title = "Destaque", imageUrl = "https://picsum.photos/1200/600") },
+                    CatalogItem("Benefícios", GenesysIcons.Check) { PageComponent.Benefits(items = listOf(PageComponent.BenefitItem("Título", "Descrição", "Check"))) },
                     CatalogItem("Depoimento", GenesysIcons.Feedback) { PageComponent.Testimonial(quote = "Excelente serviço!", author = "Cliente Satisfeito") },
+                    CatalogItem("Grade Layout", GenesysIcons.GridView) {
+                        PageComponent.Grid(
+                            columns = 2,
+                            items = listOf(
+                                PageComponent.GridItem(components = listOf(PageComponent.Text(content = "Coluna 1"))),
+                                PageComponent.GridItem(components = listOf(PageComponent.Text(content = "Coluna 2")))
+                            )
+                        )
+                    },
                 )
+            }
 
-            catalogItems.chunked(2).forEach { rowItems ->
-                GenesysRow(modifier = Modifier.fillMaxWidth()) {
-                    rowItems.forEach { item ->
-                        GenesysWeightBox(1f) {
-                            GenesysCard(
-                                onClick = {
-                                    val newList = state.page.components + item.createComponent()
-                                    onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                                    onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
-                                },
-                                modifier = Modifier.height(100.dp),
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                ) {
-                                    Icon(item.icon, null, tint = MaterialTheme.colorScheme.primary)
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(item.name, style = MaterialTheme.typography.labelMedium)
-                                }
-                            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
+            ) {
+                items(catalogItems.size) { index ->
+                    val item = catalogItems[index]
+                    val isSelected = selectedItem?.name == item.name
+
+                    GenesysCard(
+                        onClick = { selectedItem = item },
+                        modifier = Modifier.height(90.dp),
+                        backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                item.icon,
+                                null,
+                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                item.name,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
-                    if (rowItems.size < 2) Spacer(Modifier.weight(weight = 1f))
                 }
-                GenesysSpacer(GenesysSpacing.Small)
+            }
+
+            // 3. BOTÃO DE CONFIRMAÇÃO (Fixo no Rodapé)
+            Box(modifier = Modifier.padding(16.dp)) {
+                GenesysLoadingButton(
+                    text = if (selectedItem != null) "Adicionar ${selectedItem?.name}" else "Selecione um Bloco",
+                    onClick = {
+                        selectedItem?.let { item ->
+                            val newList = state.page.components + item.createComponent()
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                            onEvent(WhiteLabelEvent.OnShowCatalogChanged(false))
+                        }
+                    },
+                    fillWidth = true,
+                    enabled = selectedItem != null,
+                    icon = GenesysIcons.Add
+                )
             }
         }
     }

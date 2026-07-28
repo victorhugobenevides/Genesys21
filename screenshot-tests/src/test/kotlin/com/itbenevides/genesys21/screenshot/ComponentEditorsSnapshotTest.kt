@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.screenshot
 
-import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.screens.editor.ButtonComponentEditor
@@ -10,17 +9,17 @@ import com.itbenevides.genesys21.presentation.screens.editor.ProfileHeaderCompon
 import com.itbenevides.genesys21.presentation.screens.editor.SocialLinksComponentEditor
 import com.itbenevides.genesys21.presentation.screens.editor.TextComponentEditor
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import org.junit.Rule
 import org.junit.Test
 
 class ComponentEditorsSnapshotTest {
     @get:Rule
-    val paparazzi = createGenesysPaparazzi(deviceConfig = DeviceConfig.PIXEL_5)
+    val paparazzi = createGenesysPaparazzi()
 
     @Test
-    fun testHeaderComponentEditor() {
-        paparazzi.genesysSnapshot {
+    fun testHeaderComponentEditorResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             HeaderComponentEditor(
                 component = PageComponent.Header(title = "Meu Título"),
                 onSave = {}
@@ -29,8 +28,8 @@ class ComponentEditorsSnapshotTest {
     }
 
     @Test
-    fun testTextComponentEditor() {
-        paparazzi.genesysSnapshot {
+    fun testTextComponentEditorResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             TextComponentEditor(
                 component = PageComponent.Text(content = "Este é um texto de exemplo para o editor."),
                 onSave = {}
@@ -39,8 +38,8 @@ class ComponentEditorsSnapshotTest {
     }
 
     @Test
-    fun testProfileHeaderComponentEditor() {
-        paparazzi.genesysSnapshot {
+    fun testProfileHeaderComponentEditorResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             ProfileHeaderComponentEditor(
                 component = PageComponent.ProfileHeader(
                     imageUrl = "https://github.com/victorhugobenevides.png",
@@ -54,8 +53,8 @@ class ComponentEditorsSnapshotTest {
     }
 
     @Test
-    fun testSocialLinksComponentEditor() {
-        paparazzi.genesysSnapshot {
+    fun testSocialLinksComponentEditorResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             SocialLinksComponentEditor(
                 component = PageComponent.SocialLinks(
                     email = "teste@exemplo.com",
@@ -67,12 +66,12 @@ class ComponentEditorsSnapshotTest {
     }
 
     @Test
-    fun testProductListComponentEditor() {
+    fun testProductListComponentEditorResponsive() {
         val sampleProducts = listOf(
             Product(id = "1", storeId = "s1", name = "Produto 1", price = 10.0, imageUrls = emptyList()),
             Product(id = "2", storeId = "s1", name = "Produto 2", price = 20.0, imageUrls = emptyList())
         )
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             ProductListComponentEditor(
                 component = PageComponent.ProductList(products = sampleProducts.take(1)),
                 allAvailableProducts = sampleProducts,
@@ -84,10 +83,28 @@ class ComponentEditorsSnapshotTest {
     }
 
     @Test
-    fun testButtonComponentEditor() {
-        paparazzi.genesysSnapshot {
+    fun testButtonComponentEditorResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             ButtonComponentEditor(
                 component = PageComponent.Button(text = "Clique Aqui", url = "https://example.com"),
+                onSave = {}
+            )
+        }
+    }
+
+    @Test
+    fun testGridComponentEditorResponsive() {
+        val grid = PageComponent.Grid(
+            columns = 2,
+            items = listOf(
+                PageComponent.GridItem(components = listOf(PageComponent.Text("Item 1"))),
+                PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://picsum.photos/100")))
+            )
+        )
+        paparazzi.genesysResponsiveSnapshot {
+            com.itbenevides.genesys21.presentation.screens.editor.GridComponentEditor(
+                component = grid,
+                allPageComponents = listOf(PageComponent.Header("H1"), PageComponent.Button("B1", "#")),
                 onSave = {}
             )
         }

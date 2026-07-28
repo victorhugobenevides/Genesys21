@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -24,9 +26,16 @@ fun GenesysLoadingButton(
     shape: Shape? = null,
     fillWidth: Boolean = false,
 ) {
+    val loadingText = "Carregando..." // Poderia vir de GenesysStrings
+
     Button(
         onClick = onClick,
-        modifier = if (fillWidth) modifier.fillMaxWidth() else modifier,
+        modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier)
+            .semantics {
+                if (isLoading) {
+                    contentDescription = "$text, $loadingText"
+                }
+            },
         enabled = enabled && !isLoading,
         shape = shape ?: MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(containerColor = containerColor),

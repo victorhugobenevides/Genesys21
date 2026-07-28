@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.screenshot
 
-import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
@@ -9,18 +8,25 @@ import com.itbenevides.genesys21.presentation.screens.editor.PageEditorState
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorContent
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorState
 import com.itbenevides.genesys21.presentation.screens.editor.ServiceEditorContent
+import com.itbenevides.genesys21.presentation.screens.editor.ServiceSelectionScreen
+import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
+import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
+import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.CustomerOrderHistoryScreen
+import com.itbenevides.genesys21.presentation.screens.viewer.OrderTrackingScreen
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import io.mockk.mockk
 import org.junit.Rule
 import org.junit.Test
 import org.koin.compose.koinInject
 
 class ScreensSnapshotTest {
     @get:Rule
-    val paparazzi = createGenesysPaparazzi(deviceConfig = DeviceConfig.PIXEL_5)
+    val paparazzi = createGenesysPaparazzi()
 
     private val samplePage = Page(id = "p1", storeId = "s1", title = "Minha Vitrine")
     private val sampleProduct = Product(
@@ -41,8 +47,37 @@ class ScreensSnapshotTest {
     )
 
     @Test
-    fun testProductEditorScreen() {
-        paparazzi.genesysSnapshot {
+    fun testLoginScreenResponsive() {
+        val mockViewModel = mockk<PageViewModel>(relaxed = true)
+        paparazzi.genesysResponsiveSnapshot {
+            LoginScreen(viewModel = mockViewModel, onLoginSuccess = {})
+        }
+    }
+
+    @Test
+    fun testAdminDashboardResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            PageListScreen(
+                viewModel = koinInject(),
+                onAddPage = {},
+                onEditPage = {},
+                onViewPage = {},
+                onLogout = {},
+                onShowcase = {}
+            )
+        }
+    }
+
+    @Test
+    fun testProfileScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            ProfileScreen(viewModel = koinInject(), router = koinInject())
+        }
+    }
+
+    @Test
+    fun testProductEditorScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             val mockViewModel: PageViewModel = koinInject()
             val state = remember { mutableStateOf(ProductEditorState.initial(sampleProduct)) }
 
@@ -60,8 +95,8 @@ class ScreensSnapshotTest {
     }
 
     @Test
-    fun testPageEditorScreen() {
-        paparazzi.genesysSnapshot {
+    fun testPageEditorScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             PageEditorContent(
                 state = PageEditorState(id = "p1", title = "Minha Loja", isEditing = true),
                 onEvent = {}
@@ -70,8 +105,8 @@ class ScreensSnapshotTest {
     }
 
     @Test
-    fun testServiceEditorScreen() {
-        paparazzi.genesysSnapshot {
+    fun testServiceEditorScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             val mockViewModel: PageViewModel = koinInject()
             ServiceEditorContent(
                 viewModel = mockViewModel,
@@ -82,6 +117,44 @@ class ScreensSnapshotTest {
                 onImageUrlsChange = {},
                 isUploading = false,
                 onPickImage = {}
+            )
+        }
+    }
+
+    @Test
+    fun testServiceSelectionScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            ServiceSelectionScreen(
+                viewModel = koinInject(),
+                selectedIds = emptyList(),
+                onConfirm = {},
+                onBack = {},
+                onAddNewService = {}
+            )
+        }
+    }
+
+    @Test
+    fun testOrderTrackingScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            OrderTrackingScreen(orderId = "order-123", status = "success", onBack = {})
+        }
+    }
+
+    @Test
+    fun testCustomerOrderHistoryScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            CustomerOrderHistoryScreen(onBack = {}, onOrderClick = {})
+        }
+    }
+
+    @Test
+    fun testTemplateCatalogScreenResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            com.itbenevides.genesys21.presentation.screens.editor.TemplateCatalogScreen(
+                viewModel = koinInject(),
+                onBack = {},
+                onTemplateSelected = {}
             )
         }
     }

@@ -4,6 +4,9 @@ import com.itbenevides.genesys21.data.repository.KtorBookingRepository
 import com.itbenevides.genesys21.data.repository.KtorOrderRepository
 import com.itbenevides.genesys21.data.repository.KtorPageRepository
 import com.itbenevides.genesys21.data.repository.KtorUserRepository
+import com.itbenevides.genesys21.data.repository.KtorAddressRepository
+import com.itbenevides.genesys21.data.repository.KtorShippingRepository
+import com.itbenevides.genesys21.data.repository.KtorStoreRepository
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
@@ -28,7 +31,14 @@ val dataModule =
         single {
             HttpClient {
                 install(ContentNegotiation) {
-                    json(get<Json>())
+                    json(
+                        Json {
+                            ignoreUnknownKeys = true
+                            isLenient = true
+                            encodeDefaults = true
+                            coerceInputValues = true
+                        }
+                    )
                 }
             }
         }
@@ -38,6 +48,9 @@ val dataModule =
         single<OrderRepository> { KtorOrderRepository(get(), getBaseUrl()) }
         single<BookingRepository> { KtorBookingRepository(get(), getBaseUrl()) }
         single<UserRepository> { KtorUserRepository(get(), getBaseUrl()) }
+        single<AddressRepository> { KtorAddressRepository(get(), getBaseUrl(), get()) }
+        single<ShippingRepository> { KtorShippingRepository(get(), getBaseUrl()) }
+        single<StoreRepository> { KtorStoreRepository(get(), getBaseUrl(), get()) }
         single { GoogleCalendarService(get(), get()) }
 
         // UseCases
@@ -70,6 +83,10 @@ val dataModule =
         single { GetCategoriesUseCase(get()) }
         single { SaveCategoryUseCase(get()) }
         single { DeleteCategoryUseCase(get()) }
+        single { GetAddressesUseCase(get()) }
+        single { SaveAddressUseCase(get()) }
+        single { DeleteAddressUseCase(get()) }
+        single { CalculateShippingUseCase(get()) }
     }
 
 expect fun getAuthRepository(): AuthRepository

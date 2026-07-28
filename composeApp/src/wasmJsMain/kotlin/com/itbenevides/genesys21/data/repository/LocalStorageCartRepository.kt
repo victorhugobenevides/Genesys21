@@ -73,17 +73,21 @@ class LocalStorageCartRepository(
 
     override suspend fun addToCart(item: CartItem): Result<Unit> {
         val current = _cartItems.value.toMutableList()
-        val existing = current.find { it.product.id == item.product.id }
+        val itemId = item.product?.id ?: item.service?.id ?: ""
 
-        // VALIDAÇÃO DE ESTOQUE
-        val newQuantity = if (existing != null) existing.quantity + item.quantity else item.quantity
-        if (newQuantity > item.product.stock) {
-            return Result.failure(Exception("Quantidade indisponível em estoque"))
+        val existing = current.find { (it.product?.id ?: it.service?.id ?: "") == itemId }
+
+        // VALIDAÇÃO DE ESTOQUE (apenas para produtos)
+        item.product?.let { prod ->
+            val newQuantity = if (existing != null) existing.quantity + item.quantity else item.quantity
+            if (newQuantity > prod.stock) {
+                return Result.failure(Exception("Quantidade indisponível em estoque"))
+            }
         }
 
-        if (existing != null) {
+        if (existing != null && item.product != null) {
             val idx = current.indexOf(existing)
-            current[idx] = existing.copy(quantity = newQuantity)
+            current[idx] = existing.copy(quantity = existing.quantity + item.quantity)
         } else {
             current.add(item)
         }
@@ -92,25 +96,29 @@ class LocalStorageCartRepository(
         return syncWithServer()
     }
 
-    override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filter { it.product.id != productId }
+    override suspend fun removeFromCart(itemId: String): Result<Unit> {
+        _cartItems.value = _cartItems.value.filter { (it.product?.id ?: it.service?.id ?: "") != itemId }
         saveToLocal()
         return syncWithServer()
     }
 
     override suspend fun updateQuantity(
-        productId: String,
+        itemId: String,
         quantity: Int,
     ): Result<Unit> {
-        if (quantity <= 0) return removeFromCart(productId)
+        if (quantity <= 0) return removeFromCart(itemId)
 
-        // VALIDAÇÃO DE ESTOQUE NA ATUALIZAÇÃO
-        val item = _cartItems.value.find { it.product.id == productId }
-        if (item != null && quantity > item.product.stock) {
-            return Result.failure(Exception("Quantidade indisponível em estoque"))
+        // VALIDAÇÃO DE ESTOQUE NA ATUALIZAÇÃO (apenas para produtos)
+        val item = _cartItems.value.find { (it.product?.id ?: it.service?.id ?: "") == itemId }
+        item?.product?.let { prod ->
+            if (quantity > prod.stock) {
+                return Result.failure(Exception("Quantidade indisponível em estoque"))
+            }
         }
 
-        _cartItems.value = _cartItems.value.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
+        _cartItems.value = _cartItems.value.map {
+            if ((it.product?.id ?: it.service?.id ?: "") == itemId) it.copy(quantity = quantity) else it
+        }
         saveToLocal()
         return syncWithServer()
     }

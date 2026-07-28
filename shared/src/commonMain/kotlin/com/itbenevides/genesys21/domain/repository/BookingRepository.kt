@@ -15,6 +15,8 @@ interface BookingRepository {
     suspend fun saveAvailability(availability: MerchantAvailability, token: String)
 
     suspend fun getAppointments(serviceId: String?, storeId: String?, date: LocalDate): List<Appointment>
+    suspend fun getAllAppointments(storeId: String): List<Appointment>
+    suspend fun getUpcomingAppointments(storeId: String): List<Appointment>
     suspend fun getAppointmentsByPhone(phone: String): List<Appointment>
     suspend fun createAppointment(appointment: Appointment)
     suspend fun updateAppointment(appointment: Appointment, token: String)

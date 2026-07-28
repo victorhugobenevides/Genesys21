@@ -14,6 +14,12 @@ enum class GenesysWindowSizeClass {
 
 val LocalWindowSizeClass = compositionLocalOf { GenesysWindowSizeClass.COMPACT }
 
+/**
+ * Local que indica se o App está rodando em ambiente de teste (como Paparazzi ou Testes de UI).
+ * Útil para desabilitar componentes que dependem de APIs do sistema que crasham em teste.
+ */
+val LocalTestMode = compositionLocalOf { false }
+
 @Composable
 fun ProvideWindowSizeClass(width: Dp, content: @Composable () -> Unit) {
     val sizeClass = when {

@@ -5,6 +5,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -241,6 +244,7 @@ private fun PageListContent(
                     GenesysTabData(GenesysStrings.OrdersTab, GenesysIcons.List, badgeCount = state.pendingOrdersCount),
                     GenesysTabData("Agenda", GenesysIcons.Schedule),
                     GenesysTabData("Serviços", GenesysIcons.Inventory),
+                    GenesysTabData("Loja", GenesysIcons.Settings),
                 )
 
                 if (isSuperAdmin) {
@@ -268,7 +272,8 @@ private fun PageListContent(
                             1 -> OrdersHeaderUI(state, onEvent)
                             2 -> MerchantAgendaTabUI(state, viewModel, onEvent)
                             3 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
-                            4 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
+                            4 -> StoreSettingsTabUI(viewModel)
+                            5 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
                         }
                     }
                 }
@@ -326,6 +331,178 @@ private fun PageListContent(
 }
 
 @Composable
+private fun StoreSettingsTabUI(viewModel: PageViewModel) {
+    val pages by viewModel.pages.collectAsState()
+    val firstPage = pages.firstOrNull()
+    val storeId = firstPage?.storeId ?: "admin"
+
+    var store by remember { mutableStateOf<com.itbenevides.genesys21.domain.model.Store?>(null) }
+
+    var originZip by remember { mutableStateOf("") }
+    var originStreet by remember { mutableStateOf("") }
+    var originNumber by remember { mutableStateOf("") }
+    var originNeighborhood by remember { mutableStateOf("") }
+    var originCity by remember { mutableStateOf("") }
+    var originState by remember { mutableStateOf("") }
+
+    var allowPayLocal by remember { mutableStateOf(true) }
+    var allowPayApp by remember { mutableStateOf(true) }
+    var allowPickup by remember { mutableStateOf(true) }
+    var allowDelivery by remember { mutableStateOf(true) }
+
+    var stripePublic by remember { mutableStateOf("") }
+    var stripeSecret by remember { mutableStateOf("") }
+    var asaasKey by remember { mutableStateOf("") }
+    var selectedGateway by remember { mutableStateOf("STRIPE") }
+
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(storeId) {
+        viewModel.getStore(storeId).onSuccess { s ->
+            store = s
+            originZip = s.originZipCode ?: ""
+            originStreet = s.originStreet ?: ""
+            originNumber = s.originNumber ?: ""
+            originNeighborhood = s.originNeighborhood ?: ""
+            originCity = s.originCity ?: ""
+            originState = s.originState ?: ""
+            allowPayLocal = s.allowPayOnLocation
+            allowPayApp = s.allowPayInApp
+            allowPickup = s.allowPickup
+            allowDelivery = s.allowDelivery
+            stripePublic = s.stripePublicKey ?: ""
+            stripeSecret = s.stripeSecretKey ?: ""
+            asaasKey = s.asaasApiKey ?: ""
+            selectedGateway = s.paymentGateway
+        }
+    }
+
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+        GenesysSpacer(GenesysSpacing.Large)
+        GenesysText(text = "Configurações da Loja", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+        GenesysText(text = "Configure os dados de remetente e as opções do checkout.", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        GenesysSpacer(GenesysSpacing.Large)
+
+        GenesysCard {
+            GenesysColumn(usePadding = false) {
+                GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                GenesysTextField(value = originZip, onValueChange = { originZip = it }, label = "CEP de Origem", icon = GenesysIcons.Search)
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysTextField(value = originStreet, onValueChange = { originStreet = it }, label = "Rua/Logradouro")
+                GenesysSpacer(GenesysSpacing.Medium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(1f)) { GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número") }
+                    Box(Modifier.weight(2f)) { GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro") }
+                }
+                GenesysSpacer(GenesysSpacing.Medium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.weight(2f)) { GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade") }
+                    Box(Modifier.weight(1f)) { GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF") }
+                }
+            }
+        }
+
+        GenesysSpacer(GenesysSpacing.Large)
+
+        GenesysCard {
+            GenesysColumn(usePadding = false) {
+                GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { allowPayLocal = it }
+                ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { allowPayApp = it }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                ToggleOptionRow("Permitir Retirada no Local", allowPickup) { allowPickup = it }
+                ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { allowDelivery = it }
+            }
+        }
+
+        GenesysSpacer(GenesysSpacing.Large)
+
+        GenesysCard {
+            GenesysColumn(usePadding = false) {
+                GenesysText(text = "Configurações de Pagamento (Gateway)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GenesysFilterChip(
+                        selected = selectedGateway == "STRIPE",
+                        onClick = { selectedGateway = "STRIPE" },
+                        label = "Stripe",
+                        modifier = Modifier.weight(1f)
+                    )
+                    GenesysFilterChip(
+                        selected = selectedGateway == "ASAAS",
+                        onClick = { selectedGateway = "ASAAS" },
+                        label = "Asaas",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                if (selectedGateway == "STRIPE") {
+                    GenesysTextField(value = stripePublic, onValueChange = { stripePublic = it }, label = "Stripe Public Key", placeholder = "pk_test_...")
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysTextField(value = stripeSecret, onValueChange = { stripeSecret = it }, label = "Stripe Secret Key", placeholder = "sk_test_...")
+                } else {
+                    GenesysTextField(value = asaasKey, onValueChange = { asaasKey = it }, label = "Asaas API Key", placeholder = "$")
+                }
+            }
+        }
+
+        GenesysSpacer(GenesysSpacing.Huge)
+
+        GenesysLoadingButton(
+            text = "Salvar Configurações",
+            onClick = {
+                val currentStore = store ?: com.itbenevides.genesys21.domain.model.Store(
+                    id = storeId,
+                    ownerId = "",
+                    name = "Minha Loja"
+                )
+                val updated = currentStore.copy(
+                    originZipCode = originZip,
+                    originStreet = originStreet,
+                    originNumber = originNumber,
+                    originNeighborhood = originNeighborhood,
+                    originCity = originCity,
+                    originState = originState,
+                    allowPayOnLocation = allowPayLocal,
+                    allowPayInApp = allowPayApp,
+                    allowPickup = allowPickup,
+                    allowDelivery = allowDelivery,
+                    stripePublicKey = stripePublic,
+                    stripeSecretKey = stripeSecret,
+                    asaasApiKey = asaasKey,
+                    paymentGateway = selectedGateway
+                )
+                viewModel.saveStore(updated) {
+                    // Feedback opcional
+                }
+            },
+            fillWidth = true,
+            isLoading = isLoading
+        )
+    }
+}
+
+@Composable
+private fun ToggleOptionRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        GenesysText(text = label, style = GenesysTextStyle.Body)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
 private fun PagesTabUI(
     state: PageListState,
     onEvent: (PageListEvent) -> Unit,
@@ -378,6 +555,9 @@ private fun ServicesTabUI(
     onEditService: (BookingService) -> Unit,
     onDeleteService: (String) -> Unit,
 ) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
         GenesysSpacer(GenesysSpacing.Large)
         Row(
@@ -386,17 +566,18 @@ private fun ServicesTabUI(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                GenesysText(text = "Catálogo de Serviços", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+                GenesysText(text = "Gestão de Serviços", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
                 GenesysText(
-                    text = "Gerencie os serviços oferecidos em suas vitrines.",
+                    text = "Configure os tratamentos e preços do seu negócio.",
                     style = GenesysTextStyle.Body,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             GenesysLoadingButton(
-                text = "Novo Serviço",
+                text = if (isCompact) "" else "Novo Serviço",
                 icon = GenesysIcons.Add,
-                onClick = onAddService
+                onClick = onAddService,
+                fillWidth = false
             )
         }
         GenesysSpacer(GenesysSpacing.Large)
@@ -411,21 +592,35 @@ private fun ServicesTabUI(
                 }
             )
         } else {
-            services.forEach { service ->
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    ServiceCard(
-                        service = service,
-                        onClick = { onEditService(service) }
-                    )
-                    Row(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-                        GenesysIconButton(
-                            icon = GenesysIcons.Delete,
-                            tint = Color.Red.copy(alpha = 0.6f),
-                            onClick = { onDeleteService(service.id) }
-                        )
+            val columns = if (isCompact) 1 else 2
+
+            Column {
+                services.chunked(columns).forEach { rowServices ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        rowServices.forEach { service ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                ServiceCard(
+                                    service = service,
+                                    onClick = { onEditService(service) }
+                                )
+                                Row(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                                    GenesysIconButton(
+                                        icon = GenesysIcons.Delete,
+                                        tint = Color.Red.copy(alpha = 0.6f),
+                                        onClick = { onDeleteService(service.id) }
+                                    )
+                                }
+                            }
+                        }
+                        if (rowServices.size < columns) {
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
-                GenesysSpacer(GenesysSpacing.Small)
             }
         }
     }
@@ -487,6 +682,7 @@ private fun OrdersHeaderUI(
                     val label =
                         when (status) {
                             OrderStatus.PENDING -> GenesysStrings.StatusPending
+                            OrderStatus.AWAITING_PAYMENT -> "Aguardando Pagamento"
                             OrderStatus.PROCESSING -> GenesysStrings.StatusProcessing
                             OrderStatus.COMPLETED -> GenesysStrings.StatusCompleted
                             OrderStatus.CANCELLED -> GenesysStrings.StatusCancelled
@@ -603,13 +799,13 @@ private fun OrderCardUI(
                         modifier = Modifier.width(28.dp),
                     )
                     Text(
-                        text = item.product.name,
+                        text = item.name,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
+                    val subtotal = (item.price * item.quantity * 100.0).roundToLong() / 100.0
                     Text(
                         text = "${GenesysStrings.PricePrefix}$subtotal",
                         style = MaterialTheme.typography.bodyMedium,

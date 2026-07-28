@@ -8,10 +8,10 @@ interface CartRepository {
 
     suspend fun addToCart(item: CartItem): Result<Unit>
 
-    suspend fun removeFromCart(productId: String): Result<Unit>
+    suspend fun removeFromCart(itemId: String): Result<Unit>
 
     suspend fun updateQuantity(
-        productId: String,
+        itemId: String,
         quantity: Int,
     ): Result<Unit>
 

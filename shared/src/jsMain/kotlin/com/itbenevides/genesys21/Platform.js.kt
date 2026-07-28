@@ -11,3 +11,9 @@ actual fun getPlatform(): Platform = JsPlatform()
 actual fun triggerPrint() {
     window.print()
 }
+
+actual fun openUrlInCurrentTab(url: String) {
+    window.location.href = url
+}
+
+actual fun getUrlSearchParameters(): String = window.location.search

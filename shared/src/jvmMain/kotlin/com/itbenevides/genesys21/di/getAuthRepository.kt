@@ -5,6 +5,8 @@ import com.itbenevides.genesys21.domain.repository.AuthRepository
 // Implementação dummy para o Servidor (JVM), que usa Firebase Admin nativamente
 actual fun getAuthRepository(): AuthRepository =
     object : AuthRepository {
+        override val authState: kotlinx.coroutines.flow.Flow<String?> = kotlinx.coroutines.flow.emptyFlow()
+
         override suspend fun signIn(
             email: String,
             password: String,
@@ -24,6 +26,8 @@ actual fun getAuthRepository(): AuthRepository =
         override suspend fun getCurrentUserToken(): String? = null
 
         override suspend fun getCurrentUserId(): String? = null
+
+        override fun initializeOneTap() {}
 
         override suspend fun signOut() {}
     }

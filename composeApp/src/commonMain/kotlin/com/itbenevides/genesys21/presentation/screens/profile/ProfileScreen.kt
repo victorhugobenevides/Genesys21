@@ -11,7 +11,7 @@ import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.ui.components.atoms.images.GenesysAvatar
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
@@ -26,6 +26,15 @@ fun ProfileScreen(
     router: Router
 ) {
     val userProfile by viewModel.userProfile.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val addresses by viewModel.userAddresses.collectAsState()
+
+    // Redirecionamento se deslogado
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            router.navigateTo(Route.Login, replace = true)
+        }
+    }
 
     GenesysPage(
         topBar = {
@@ -41,9 +50,12 @@ fun ProfileScreen(
             usePadding = true
         ) {
             userProfile?.let { profile ->
-                GenesysAvatar(
-                    icon = GenesysIcons.Person,
-                    modifier = Modifier.size(120.dp)
+                val displayAvatarUrl = profile.avatarUrl ?: "https://ui-avatars.com/api/?name=${profile.name.replace(" ", "+")}&size=300&background=000&color=fff"
+
+                com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage(
+                    url = displayAvatarUrl,
+                    size = 120.dp,
+                    isCircular = true
                 )
 
                 GenesysSpacer(GenesysSpacing.Large)
@@ -56,45 +68,110 @@ fun ProfileScreen(
 
                 GenesysText(
                     text = profile.email,
-                    style = GenesysTextStyle.Body
+                    style = GenesysTextStyle.Body,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 GenesysSpacer(GenesysSpacing.Medium)
 
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                 ) {
                     GenesysText(
                         text = profile.role.name,
                         style = GenesysTextStyle.Label,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = GenesysFontWeight.Bold
                     )
                 }
 
                 GenesysSpacer(GenesysSpacing.Huge)
 
-                GenesysCard(modifier = Modifier.fillMaxWidth()) {
-                    GenesysColumn(usePadding = false) {
-                        ProfileMenuItem(
+                // Quick Actions Grid
+                GenesysRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    GenesysWeightBox(1f) {
+                        ActionCard(
+                            icon = GenesysIcons.ShoppingCart,
+                            title = "Carrinho",
+                            onClick = {
+                                val firstPage = viewModel.pages.value.firstOrNull()
+                                if (firstPage != null) {
+                                    router.navigateTo(Route.Cart(firstPage))
+                                } else {
+                                    // Fallback if no page loaded yet, though unlikely in profile
+                                }
+                            }
+                        )
+                    }
+                    GenesysWeightBox(1f) {
+                        ActionCard(
                             icon = GenesysIcons.History,
-                            title = "Meus Pedidos e Agendamentos",
+                            title = "Pedidos",
                             onClick = { router.navigateTo(Route.CustomerOrderHistory(null)) }
                         )
-
-                        if (profile.role == UserRole.MERCHANT || profile.role == UserRole.SUPERADMIN) {
-                            GenesysDivider()
-                            ProfileMenuItem(
-                                icon = GenesysIcons.Dashboard,
-                                title = "Painel do Vendedor",
-                                onClick = { router.navigateTo(Route.PageList) }
-                            )
-                        }
                     }
                 }
 
                 GenesysSpacer(GenesysSpacing.Large)
+
+                GenesysCard(modifier = Modifier.fillMaxWidth()) {
+                    GenesysColumn(usePadding = false) {
+                        if (profile.role == UserRole.MERCHANT || profile.role == UserRole.SUPERADMIN) {
+                            ProfileMenuItem(
+                                icon = GenesysIcons.Dashboard,
+                                title = "Painel Administrativo",
+                                onClick = { router.navigateTo(Route.PageList) }
+                            )
+                            GenesysDivider()
+                        }
+
+                        ProfileMenuItem(
+                            icon = GenesysIcons.Person,
+                            title = "Editar Meus Dados",
+                            onClick = { /* TODO */ }
+                        )
+                    }
+                }
+
+                GenesysSpacer(GenesysSpacing.Large)
+
+                // Meus Endereços
+                GenesysText(
+                    text = "Meus Endereços",
+                    style = GenesysTextStyle.Title,
+                    fontWeight = GenesysFontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                if (addresses.isEmpty()) {
+                    GenesysText(
+                        text = "Nenhum endereço cadastrado.",
+                        style = GenesysTextStyle.Label,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    addresses.forEach { address ->
+                        GenesysCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    GenesysText(text = "${address.street}, ${address.number}", fontWeight = GenesysFontWeight.Bold)
+                                    GenesysText(text = "${address.neighborhood} - ${address.city}/${address.state}", style = GenesysTextStyle.Label)
+                                    GenesysText(text = address.zipCode, style = GenesysTextStyle.Label)
+                                }
+                                GenesysIconButton(
+                                    icon = GenesysIcons.Delete,
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                    onClick = { viewModel.deleteAddress(address.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                GenesysSpacer(GenesysSpacing.Huge)
 
                 GenesysLoadingButton(
                     text = "Sair da Conta",
@@ -102,12 +179,43 @@ fun ProfileScreen(
                         viewModel.signOut()
                         router.navigateTo(Route.Login, replace = true)
                     },
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                    shape = CircleShape,
                     fillWidth = true
                 )
             } ?: run {
                 GenesysText(text = "Carregando perfil...")
             }
+        }
+    }
+}
+
+@Composable
+private fun ActionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    onClick: () -> Unit
+) {
+    GenesysCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            GenesysSpacer(GenesysSpacing.Small)
+            GenesysText(
+                text = title,
+                style = GenesysTextStyle.Label,
+                fontWeight = GenesysFontWeight.Bold
+            )
         }
     }
 }

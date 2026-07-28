@@ -1,6 +1,10 @@
 package com.itbenevides.genesys21.domain.repository
 
+import kotlinx.coroutines.flow.Flow
+
 interface AuthRepository {
+    val authState: Flow<String?> // Retorna o UID do usuário ou null
+
     suspend fun signIn(
         email: String,
         password: String,
@@ -20,6 +24,8 @@ interface AuthRepository {
     suspend fun getCurrentUserToken(): String?
 
     suspend fun getCurrentUserId(): String?
+
+    fun initializeOneTap()
 
     suspend fun signOut()
 }

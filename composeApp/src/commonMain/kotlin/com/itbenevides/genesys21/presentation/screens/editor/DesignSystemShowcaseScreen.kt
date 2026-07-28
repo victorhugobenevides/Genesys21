@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
@@ -199,64 +200,98 @@ private fun TemplatesTabShowcase() {
 
 @Composable
 private fun ArchitectureShowcase() {
-    ShowcaseSection("Atomic Design Architecture", "The structural levels of our Design System.") {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    ShowcaseSection("System Ecosystem", "A 10,000-foot view of Genesys21 Infrastructure.") {
         GenesysCard(modifier = Modifier.fillMaxWidth()) {
             GenesysColumn(usePadding = true) {
                 ArchitectureLevel(
-                    "1. Atoms",
-                    "Basic tokens: Typography, Colors, Spacers, Icons.",
-                    GenesysIcons.Numbers
+                    "Client (Android / Wasm)",
+                    "Compose Multiplatform UI with MVI state management, communicating via Ktor Client.",
+                    GenesysIcons.Magic
                 )
-                GenesysDivider()
                 ArchitectureLevel(
-                    "2. Molecules",
-                    "Combined atoms: Buttons with icons, Input fields with labels.",
-                    GenesysIcons.Category
+                    "Server (Kotlin JVM)",
+                    "High-performance Ktor backend on Netty. Uses Exposed ORM with SQLite for persistence.",
+                    GenesysIcons.CloudUpload
                 )
-                GenesysDivider()
                 ArchitectureLevel(
-                    "3. Organisms",
-                    "Complex components: Product lists, Booking engine, Top bars.",
-                    GenesysIcons.GridView
-                )
-                GenesysDivider()
-                ArchitectureLevel(
-                    "4. Templates",
-                    "Page layouts: The GenesysPage shell.",
-                    GenesysIcons.Web
-                )
-                GenesysDivider()
-                ArchitectureLevel(
-                    "5. Responsive Adaptation",
-                    "Adaptive layouts for Mobile, Tablet and Desktop using WindowSizeClass.",
-                    GenesysIcons.Dashboard
+                    "External (Firebase & Oracle)",
+                    "Firebase for native Auth and Analytics. Oracle Cloud for 24/7 high-availability hosting.",
+                    GenesysIcons.Settings
                 )
             }
         }
     }
 
-    ShowcaseSection("Clean Architecture (KMP)", "Layered logic for cross-platform stability.") {
-        GenesysCard(modifier = Modifier.fillMaxWidth()) {
-            GenesysColumn(usePadding = true) {
-                ArchitectureLevel("UI Layer", "Compose Multiplatform + ViewModels", GenesysIcons.Magic)
-                ArchitectureLevel("Domain Layer", "UseCases, Entities, and Repository Interfaces", GenesysIcons.Straighten)
-                ArchitectureLevel("Data Layer", "Ktor API implementations, SQLDelight/Settings", GenesysIcons.CloudUpload)
+    ShowcaseSection("Cross-Platform Stack (KMP)", "How we achieve 95% code sharing across platforms.") {
+        if (isCompact) {
+            StackLayerCard("UI Layer", "Compose Multiplatform, ViewModels, Atomic Design", "Kotlin 2.1.x / Compose 1.7.x")
+            Spacer(Modifier.height(12.dp))
+            StackLayerCard("Domain Layer", "Business Logic, UseCases, Repositories", "Pure Kotlin (Shared)")
+            Spacer(Modifier.height(12.dp))
+            StackLayerCard("Data Layer", "Ktor Client, Serialization, LocalStorage", "JSON / SQL")
+        } else {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                StackLayerCard("UI Layer", "Compose Multiplatform, ViewModels", "UI Target", Modifier.weight(1f))
+                StackLayerCard("Domain Layer", "UseCases & Repositories", "Core Logic", Modifier.weight(1f))
+                StackLayerCard("Data Layer", "Ktor HTTP & Serialization", "Infra", Modifier.weight(1f))
             }
         }
     }
 
-    ShowcaseSection("Quality & Visual Regression", "Automation for structural and visual integrity.") {
+    ShowcaseSection("Backend Architecture", "Ktor-powered API engine.") {
+        GenesysCard(modifier = Modifier.fillMaxWidth()) {
+            GenesysColumn(usePadding = true) {
+                ArchitectureLevel("Routing Engine", "Type-safe DSL for Cart, Page, Booking, and Admin endpoints.", GenesysIcons.Straighten)
+                ArchitectureLevel("ORM & Persistence", "Exposed + SQLite with automated DatabaseFactory migration.", GenesysIcons.Inventory)
+                ArchitectureLevel("Auth Middleware", "Bearer Firebase token validation with native Admin SDK.", GenesysIcons.AdminPanelSettings)
+                ArchitectureLevel("Image Processing", "Thumbnailator for server-side resizing and quality optimization.", GenesysIcons.Image)
+            }
+        }
+    }
+
+    ShowcaseSection("DevOps & Reliability", "Ensuring stability from commit to production.") {
         GenesysCard(modifier = Modifier.fillMaxWidth()) {
             GenesysColumn(usePadding = true) {
                 ArchitectureLevel(
-                    "Visual Regression",
-                    "Paparazzi snapshots for Android, Tablet and Desktop views.",
+                    "CI/CD Pipeline",
+                    "CircleCI automated builds for WasmJs and Docker containers.",
                     GenesysIcons.Check
                 )
                 ArchitectureLevel(
-                    "Unit Testing",
-                    "Cross-platform logic validation in Common/JVM/WasmJS.",
-                    GenesysIcons.Straighten
+                    "Visual Quality",
+                    "Paparazzi-powered regression testing for Phone, Tablet, and Desktop views.",
+                    GenesysIcons.Numbers
+                )
+                ArchitectureLevel(
+                    "Monitoring",
+                    "Firebase Crashlytics and Perf monitoring integrated into the Shared module.",
+                    GenesysIcons.Settings
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StackLayerCard(title: String, description: String, tech: String, modifier: Modifier = Modifier) {
+    GenesysCard(modifier = modifier) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(4.dp))
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(8.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Text(
+                    text = tech,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }
@@ -493,6 +528,7 @@ private fun DisplayShowcase() {
 
     ShowcaseSection("Cards & Stats", "Information display containers.") {
         if (isCompact) {
+
             GenesysStatsCard(label = "Daily Sales", value = "$1,280", color = Color(0xFF4CAF50), modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
             GenesysStatsCard(label = "Active Orders", value = "12", color = Color(0xFFFF9800), modifier = Modifier.fillMaxWidth())

@@ -29,6 +29,10 @@ data class BookingService(
     val categoryId: String? = null, // Refactor to String (UUID)
     val imageUrls: List<String> = emptyList(),
     val isEnabled: Boolean = true,
+    val isOnline: Boolean = false,
+    val isHomeService: Boolean = false,
+    val maxParticipants: Int = 1,
+    val meetingLink: String? = null, // Hidden from public list
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
     val deletedAt: Long? = null
@@ -81,6 +85,9 @@ data class Appointment(
     @Serializable(with = SafeInstantSerializer::class)
     val endTime: Instant,
     val status: BookingStatus = BookingStatus.PENDING,
+    val meetingLink: String? = null, // Only visible to the customer and merchant
+    val address: Address? = null, // For home services
+    val travelFee: Double = 0.0, // Calculated round trip cost
     val notes: List<BookingNote> = emptyList(),
     val createdAt: Long = 0,
     val updatedAt: Long = 0,

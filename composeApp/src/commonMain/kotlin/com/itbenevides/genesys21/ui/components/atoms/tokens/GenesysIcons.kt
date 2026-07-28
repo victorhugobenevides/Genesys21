@@ -7,6 +7,8 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.FormatAlignLeft
 import androidx.compose.material.icons.automirrored.filled.FormatAlignRight
 import androidx.compose.material.icons.automirrored.filled.ListAlt
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 
 object GenesysIcons {
@@ -38,6 +40,8 @@ object GenesysIcons {
     val ExpandMore = Icons.Default.ExpandMore
     val ArrowUp = Icons.Default.ArrowUpward
     val ArrowDown = Icons.Default.ArrowDownward
+    val KeyboardDoubleArrowUp = Icons.Default.KeyboardDoubleArrowUp
+    val KeyboardDoubleArrowDown = Icons.Default.KeyboardDoubleArrowDown
     val Check = Icons.Default.Check
     val Dashboard = Icons.Default.Dashboard
     val AdminPanelSettings = Icons.Default.AdminPanelSettings
@@ -55,6 +59,9 @@ object GenesysIcons {
     val Feedback = Icons.Default.Feedback
     val Notifications = Icons.Default.Notifications
     val ViewModule = Icons.Default.ViewModule
+    val People = Icons.Default.People
+    val Receipt = Icons.AutoMirrored.Filled.ReceiptLong
+    val Assignment = Icons.AutoMirrored.Filled.Assignment
 
     // Ícones de Navegação
     val ArrowLeft = Icons.AutoMirrored.Filled.ArrowBack

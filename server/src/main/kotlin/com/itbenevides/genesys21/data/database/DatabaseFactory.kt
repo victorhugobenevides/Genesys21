@@ -83,6 +83,7 @@ object DatabaseFactory {
                 BlockedDatesTable,
                 AppointmentsTable,
                 AppointmentNotesTable,
+                AddressesTable,
                 MediaTable,
                 AuditLogsTable,
             )
@@ -114,6 +115,7 @@ object DatabaseFactory {
                 BlockedDatesTable,
                 AppointmentsTable,
                 AppointmentNotesTable,
+                AddressesTable,
                 MediaTable,
                 AuditLogsTable,
             )

@@ -1,13 +1,14 @@
 package com.itbenevides.genesys21.domain.repository
 
 import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderResponse
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import kotlinx.coroutines.flow.Flow
 
 interface OrderRepository {
     fun getOrders(token: String): Flow<List<Order>>
 
-    suspend fun createOrder(order: Order): Result<Unit>
+    suspend fun createOrder(order: Order): Result<OrderResponse>
 
     suspend fun updateOrderStatus(
         token: String,

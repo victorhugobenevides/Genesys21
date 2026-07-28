@@ -59,6 +59,11 @@ class PageViewModel(
     private val updateUserRoleUseCase: UpdateUserRoleUseCase,
     private val updateUserStatusUseCase: UpdateUserStatusUseCase,
     private val getTemplatesUseCase: GetTemplatesUseCase,
+    private val getAddressesUseCase: com.itbenevides.genesys21.domain.usecase.GetAddressesUseCase,
+    private val saveAddressUseCase: com.itbenevides.genesys21.domain.usecase.SaveAddressUseCase,
+    private val deleteAddressUseCase: com.itbenevides.genesys21.domain.usecase.DeleteAddressUseCase,
+    private val calculateShippingUseCase: com.itbenevides.genesys21.domain.usecase.CalculateShippingUseCase,
+    private val storeRepository: com.itbenevides.genesys21.domain.repository.StoreRepository,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -66,7 +71,10 @@ class PageViewModel(
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
-    val isLoggedIn = _userProfile.map { it != null }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    private val _userAddresses = MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
+    val userAddresses: StateFlow<List<com.itbenevides.genesys21.domain.model.Address>> = _userAddresses.asStateFlow()
+
+    val isLoggedIn: StateFlow<Boolean> = _userProfile.map { it != null }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _allUsers = MutableStateFlow<List<UserProfile>>(emptyList())
     val allUsers: StateFlow<List<UserProfile>> = _allUsers.asStateFlow()
@@ -89,11 +97,17 @@ class PageViewModel(
     private val _appointments = MutableStateFlow<List<Appointment>>(emptyList())
     val appointments: StateFlow<List<Appointment>> = _appointments.asStateFlow()
 
+    private val _upcomingAppointments = MutableStateFlow<List<Appointment>>(emptyList())
+    val upcomingAppointments: StateFlow<List<Appointment>> = _upcomingAppointments.asStateFlow()
+
     private val _availability = MutableStateFlow<MerchantAvailability?>(null)
     val availability: StateFlow<MerchantAvailability?> = _availability.asStateFlow()
 
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
+
+    private val _isWaitingForPaymentSignal = MutableStateFlow(false)
+    val isWaitingForPaymentSignal: StateFlow<Boolean> = _isWaitingForPaymentSignal.asStateFlow()
 
     private val _templates = MutableStateFlow<List<PageTemplate>>(emptyList())
     val templates: StateFlow<List<PageTemplate>> = _templates.asStateFlow()
@@ -111,16 +125,28 @@ class PageViewModel(
     val customerPhone = customerRepository.customerPhone
 
     init {
-        loadPages()
         loadCategories()
         loadBookingServices()
         loadTemplates()
+
         viewModelScope.launch {
             customerRepository.loadData()
             cartRepository.loadInitialCart()
 
-            authRepository.getCurrentUserId()?.let { uid ->
-                loadUserProfile(uid)
+            // Reage a mudanças na autenticação (Permanecer Logado)
+            authRepository.authState.distinctUntilChanged().collect { uid ->
+                if (uid != null) {
+                    loadUserProfile(uid)
+                    loadPages()
+                    loadOrders()
+                } else {
+                    _userProfile.value = null
+                    _pages.value = emptyList()
+                    _orders.value = emptyList()
+
+                    // Tenta One Tap se estiver deslogado
+                    authRepository.initializeOneTap()
+                }
             }
         }
     }
@@ -155,20 +181,36 @@ class PageViewModel(
 
     val cartTotal: StateFlow<Double> =
         cart.map { items ->
-            items.sumOf { it.product.price * it.quantity }
+            items.sumOf { it.price * it.quantity }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     val cartCount = cart.map { it.sumOf { item -> item.quantity } }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     fun addToCart(product: Product): Boolean {
         viewModelScope.launch {
-            cartRepository.addToCart(CartItem(product, 1))
+            cartRepository.addToCart(CartItem(product = product, quantity = 1))
         }
         return true
     }
 
+    fun addServiceToCart(service: BookingService, appointment: Appointment) {
+        viewModelScope.launch {
+            cartRepository.addToCart(
+                CartItem(
+                    service = service,
+                    appointment = appointment,
+                    quantity = 1
+                )
+            )
+        }
+    }
+
     fun removeFromCart(productId: String) {
         viewModelScope.launch { cartRepository.removeFromCart(productId) }
+    }
+
+    fun clearCart() {
+        viewModelScope.launch { cartRepository.clearCart() }
     }
 
     fun updateCartQuantity(
@@ -193,11 +235,15 @@ class PageViewModel(
     fun loadCustomerOrders() {
         val sessionId = cartRepository.getSessionId()
         val phone = customerPhone.value
+
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Carrega pedidos
-                getCustomerOrdersUseCase(sessionId).onSuccess {
+                val currentUserId = authRepository.getCurrentUserId()
+                val targetId = currentUserId ?: sessionId
+
+                // Carrega pedidos (usa UID se logado, senão SessionID)
+                getCustomerOrdersUseCase(targetId).onSuccess {
                     _customerOrders.value = it
                 }.onFailure {
                     handleError("Erro ao carregar histórico de pedidos", it)
@@ -221,8 +267,13 @@ class PageViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                getOrderByIdUseCase(orderId).onSuccess {
-                    _trackedOrder.value = it
+                getOrderByIdUseCase(orderId).onSuccess { order ->
+                    _trackedOrder.value = order
+
+                    // Se o pedido está aguardando sinal do Webhook (AWAITING_PAYMENT), inicia polling
+                    if (order.status == OrderStatus.AWAITING_PAYMENT) {
+                        pollOrderStatus(orderId)
+                    }
                 }.onFailure {
                     handleError("Erro ao rastrear pedido", it)
                 }
@@ -232,29 +283,87 @@ class PageViewModel(
         }
     }
 
+    private fun pollOrderStatus(orderId: String) {
+        viewModelScope.launch {
+            _isWaitingForPaymentSignal.value = true
+            var attempts = 0
+            val maxAttempts = 20 // ~40 segundos (2s por poll)
+
+            while (attempts < maxAttempts) {
+                attempts++
+                kotlinx.coroutines.delay(2000)
+
+                getOrderByIdUseCase(orderId).onSuccess { updatedOrder ->
+                    _trackedOrder.value = updatedOrder
+                    // Se o status mudou, o Webhook bateu!
+                    if (updatedOrder.status != OrderStatus.AWAITING_PAYMENT) {
+                        _isWaitingForPaymentSignal.value = false
+                        return@launch
+                    }
+                }
+            }
+            // Timeout plausível atingido sem sinal do Webhook
+            _isWaitingForPaymentSignal.value = false
+        }
+    }
+
     fun submitOrder(
         page: Page?,
-        paymentMethod: String = "CASH",
+        paymentMethod: PaymentMethod = PaymentMethod.LOCAL,
+        shippingAddress: com.itbenevides.genesys21.domain.model.Address? = null,
+        shippingPrice: Double = 0.0,
+        shippingMethod: String? = null,
         onSuccess: (String) -> Unit,
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 val currentUserId = authRepository.getCurrentUserId()
+                val currentSessionId = cartRepository.getSessionId()
+
+                // Se a página for nula (acesso direto ao carrinho), tenta pegar o storeId do primeiro item do carrinho
+                val inferredStoreId = page?.storeId ?: cart.value.firstOrNull()?.product?.storeId
+                    ?: cart.value.firstOrNull()?.service?.storeId
+                    ?: ""
+
                 val order =
                     Order(
                         id = "",
-                        storeId = page?.storeId ?: "",
-                        customerId = currentUserId ?: cartRepository.getSessionId(),
+                        storeId = inferredStoreId,
+                        customerId = currentUserId, // UID real se logado (ou null)
+                        sessionId = currentSessionId, // ID da sessão para visitantes
                         customerName = customerName.value,
                         customerPhone = customerPhone.value,
                         items = cart.value,
                         total = cartTotal.value,
-                        status = OrderStatus.PENDING,
+                        status = if (paymentMethod == PaymentMethod.APP) OrderStatus.AWAITING_PAYMENT else OrderStatus.PENDING,
+                        paymentMethod = paymentMethod,
+                        shippingAddress = shippingAddress,
+                        shippingPrice = shippingPrice,
+                        shippingMethod = shippingMethod,
+                        whatsappContact = page?.whatsapp,
+                        theme = page?.theme ?: PageThemeConfig.ROYAL
                     )
-                submitOrderUseCase(order).onSuccess { _ ->
-                    cartRepository.clearCart()
-                    onSuccess("Pedido enviado!")
+                submitOrderUseCase(order).onSuccess { response ->
+                    // Se houver serviços no carrinho, precisamos criar os Appointments REAIS no servidor
+                    order.items.filter { it.service != null && it.appointment != null }.forEach { item ->
+                        createAppointmentUseCase(item.appointment!!)
+                    }
+
+                    // Limpa o carrinho apenas se for pagamento LOCAL
+                    // Para pagamentos via APP (Stripe), limpamos apenas após a confirmação de sucesso
+                    // para permitir que o usuário volte ao carrinho se cancelar o pagamento.
+                    if (paymentMethod == PaymentMethod.LOCAL) {
+                        cartRepository.clearCart()
+                    }
+
+                    val checkoutUrl = response.checkoutUrl
+                    if (checkoutUrl != null) {
+                        // Se houver URL de checkout (Stripe), redireciona o usuário
+                        onSuccess(checkoutUrl)
+                    } else {
+                        onSuccess(response.orderId)
+                    }
                 }.onFailure {
                     handleError("Erro ao enviar pedido", it)
                 }
@@ -538,8 +647,8 @@ class PageViewModel(
                         continue
                     }
 
-                    val hasOverlap =
-                        existing.any { appt ->
+                    val overlappingAppts =
+                        existing.filter { appt ->
                             val apptStart = appt.startTime.toEpochMilliseconds()
                             val apptEnd = appt.endTime.toEpochMilliseconds()
 
@@ -548,7 +657,20 @@ class PageViewModel(
                                 (slotStart <= apptStart && slotEnd >= apptEnd)
                         }
 
-                    if (!hasOverlap) {
+                    val isBlockedByOtherService = overlappingAppts.any { it.serviceId != service.id }
+                    val currentParticipants = overlappingAppts.count { it.serviceId == service.id }
+
+                    val isAvailable = if (isBlockedByOtherService) {
+                        false
+                    } else if (currentParticipants > 0) {
+                        // Se já tem gente, só permite se for o mesmo serviço e tiver vaga
+                        currentParticipants < service.maxParticipants
+                    } else {
+                        // Slot livre
+                        true
+                    }
+
+                    if (isAvailable) {
                         val time = Instant.fromEpochMilliseconds(currentMs).toLocalDateTime(TimeZone.currentSystemDefault()).time
                         availableSlots.add("${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}")
                     }
@@ -576,6 +698,21 @@ class PageViewModel(
                 _appointments.value = getAppointmentsUseCase(null, storeId, date)
             } catch (e: Exception) {
                 handleError("Erro ao carregar agenda", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadUpcomingAppointments(storeId: String = "admin") {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // Atualizamos tanto o dia quanto o global para garantir consistência
+                _upcomingAppointments.value = getAppointmentsUseCase.upcoming(storeId)
+                _appointments.value = getAppointmentsUseCase.all(storeId)
+            } catch (e: Exception) {
+                handleError("Erro ao carregar agendamentos", e)
             } finally {
                 _isLoading.value = false
             }
@@ -669,6 +806,10 @@ class PageViewModel(
         println("Prefetching details for: ${product.name}")
     }
 
+    suspend fun calculateShipping(storeId: String, zipCode: String): List<com.itbenevides.genesys21.domain.model.ShippingOption> {
+        return calculateShippingUseCase(storeId, zipCode).getOrDefault(emptyList())
+    }
+
     fun getCurrentUserToken(): String? {
         return null // Should be handled by suspend calls
     }
@@ -677,6 +818,31 @@ class PageViewModel(
         viewModelScope.launch {
             getUserProfileUseCase(userId).onSuccess {
                 _userProfile.value = it
+                loadUserAddresses(userId)
+            }
+        }
+    }
+
+    private fun loadUserAddresses(userId: String) {
+        viewModelScope.launch {
+            _userAddresses.value = getAddressesUseCase(userId)
+        }
+    }
+
+    fun saveAddress(address: com.itbenevides.genesys21.domain.model.Address) {
+        viewModelScope.launch {
+            val userId = _userProfile.value?.id ?: return@launch
+            saveAddressUseCase(address.copy(userId = userId)).onSuccess {
+                loadUserAddresses(userId)
+            }
+        }
+    }
+
+    fun deleteAddress(addressId: String) {
+        viewModelScope.launch {
+            val userId = _userProfile.value?.id ?: return@launch
+            deleteAddressUseCase(addressId).onSuccess {
+                loadUserAddresses(userId)
             }
         }
     }
@@ -794,6 +960,24 @@ class PageViewModel(
         viewModelScope.launch {
             authRepository.signOut()
             _pages.value = emptyList()
+        }
+    }
+
+    suspend fun getStore(id: String) = storeRepository.getStore(id)
+
+    fun saveStore(store: com.itbenevides.genesys21.domain.model.Store, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val token = getCurrentUserToken() ?: return@launch
+                storeRepository.saveStore(store, token).onSuccess {
+                    onComplete()
+                }.onFailure {
+                    handleError("Erro ao salvar loja", it)
+                }
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 }

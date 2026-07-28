@@ -17,7 +17,7 @@ class FakeCartRepository : CartRepository {
     }
 
     override suspend fun removeFromCart(productId: String): Result<Unit> {
-        _cartItems.value = _cartItems.value.filter { it.product.id != productId }
+        _cartItems.value = _cartItems.value.filter { (it.product?.id ?: it.service?.id) != productId }
         return Result.success(Unit)
     }
 
@@ -27,7 +27,7 @@ class FakeCartRepository : CartRepository {
     ): Result<Unit> {
         _cartItems.value =
             _cartItems.value.map {
-                if (it.product.id == productId) it.copy(quantity = quantity) else it
+                if ((it.product?.id ?: it.service?.id) == productId) it.copy(quantity = quantity) else it
             }
         return Result.success(Unit)
     }
@@ -64,7 +64,7 @@ class FakeCustomerRepository : CustomerRepository {
 class FakeOrderRepository : OrderRepository {
     override fun getOrders(token: String) = flowOf(emptyList<Order>())
 
-    override suspend fun createOrder(order: Order) = Result.success(Unit)
+    override suspend fun createOrder(order: Order) = Result.success(OrderResponse(orderId = "fake-order-id"))
 
     override suspend fun getCustomerOrders(sessionId: String) = Result.success(emptyList<Order>())
 
@@ -106,6 +106,10 @@ class FakeBookingRepository : BookingRepository {
         date: LocalDate,
     ): List<Appointment> = appointmentsList
 
+    override suspend fun getAllAppointments(storeId: String): List<Appointment> = appointmentsList
+
+    override suspend fun getUpcomingAppointments(storeId: String): List<Appointment> = appointmentsList
+
     override suspend fun createAppointment(appointment: Appointment) {
         appointmentsList.add(appointment)
     }
@@ -143,5 +147,43 @@ class FakeUserRepository : UserRepository {
 
     override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> {
         return Result.success(Unit)
+    }
+}
+
+class FakeAddressRepository : AddressRepository {
+    private val addresses = mutableListOf<Address>()
+
+    override suspend fun getAddresses(userId: String): List<Address> {
+        return addresses.filter { it.userId == userId }
+    }
+
+    override suspend fun saveAddress(address: Address): Result<String> {
+        addresses.add(address)
+        return Result.success(address.id)
+    }
+
+    override suspend fun deleteAddress(addressId: String): Result<Unit> {
+        addresses.removeAll { it.id == addressId }
+        return Result.success(Unit)
+    }
+}
+
+class FakeStoreRepository : StoreRepository {
+    private val stores = mutableListOf<Store>()
+
+    override suspend fun getStore(id: String): Result<Store> {
+        return stores.find { it.id == id }?.let { Result.success(it) }
+            ?: Result.failure(Exception("Store not found"))
+    }
+
+    override suspend fun saveStore(store: Store, token: String): Result<Unit> {
+        stores.add(store)
+        return Result.success(Unit)
+    }
+}
+
+class FakeShippingRepository : ShippingRepository {
+    override suspend fun calculateShipping(storeId: String, zipCode: String): Result<List<ShippingOption>> {
+        return Result.success(listOf(ShippingOption("1", "Sedex", 15.0, 2)))
     }
 }

@@ -7,9 +7,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import app.cash.paparazzi.DeviceConfig
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -19,11 +18,11 @@ import org.junit.Test
 
 class AtomsSnapshotTest {
     @get:Rule
-    val paparazzi = createGenesysPaparazzi(deviceConfig = DeviceConfig.PIXEL_5)
+    val paparazzi = createGenesysPaparazzi()
 
     @Test
-    fun testTypography() {
-        paparazzi.genesysSnapshot {
+    fun testTypographyResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysText(text = "Headline Large", style = GenesysTextStyle.Headline)
                 GenesysText(text = "Title Medium", style = GenesysTextStyle.Title)
@@ -35,8 +34,8 @@ class AtomsSnapshotTest {
     }
 
     @Test
-    fun testBadges() {
-        paparazzi.genesysSnapshot {
+    fun testBadgesResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysBadge(label = "New", color = Color(0xFF2CB1FF))
                 GenesysBadge(label = "Sale", color = Color(0xFFD81159), showDot = false)
@@ -46,8 +45,8 @@ class AtomsSnapshotTest {
     }
 
     @Test
-    fun testIconButtons() {
-        paparazzi.genesysSnapshot {
+    fun testIconButtonsResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysIconButton(icon = Icons.Default.ShoppingCart, onClick = {})
                 GenesysIconButton(icon = Icons.Default.Favorite, onClick = {}, tint = Color.Red)

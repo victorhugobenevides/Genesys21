@@ -25,6 +25,7 @@ kotlin {
                 implementation(compose.materialIconsExtended)
                 implementation(libs.mockk)
                 implementation(libs.androidx.lifecycle.viewmodelCompose)
+                implementation(libs.androidx.activity.compose)
             }
         }
         val commonTest by getting {
@@ -45,8 +46,17 @@ kotlin {
 
 android {
     namespace = "com.itbenevides.genesys21.screenshot"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig {
         minSdk = 24
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    kotlin {
+        jvmToolchain(21)
     }
 }

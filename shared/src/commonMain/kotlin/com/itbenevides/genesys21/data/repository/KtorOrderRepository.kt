@@ -1,11 +1,13 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.domain.model.OrderResponse
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.domain.repository.OrderRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -32,7 +34,7 @@ class KtorOrderRepository(
             }
         }
 
-    override suspend fun createOrder(order: Order): Result<Unit> {
+    override suspend fun createOrder(order: Order): Result<OrderResponse> {
         return try {
             val response =
                 client.post("$baseUrl/api/public/orders") {
@@ -40,7 +42,7 @@ class KtorOrderRepository(
                     setBody(order)
                 }
             if (response.status.isSuccess()) {
-                Result.success(Unit)
+                Result.success(response.body())
             } else {
                 Result.failure(Exception("Erro ao criar pedido: ${response.status}"))
             }

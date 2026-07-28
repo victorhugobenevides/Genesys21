@@ -11,7 +11,9 @@ object CartsTable : Table("carts") {
 object CartItemsTable : Table("cart_items") {
     val id = integer("id").autoIncrement()
     val userId = varchar("user_id", 100).references(CartsTable.userId, onDelete = ReferenceOption.CASCADE)
-    val productId = varchar("product_id", 50)
+    val productId = varchar("product_id", 50).nullable()
+    val serviceId = varchar("service_id", 50).nullable()
+    val appointmentData = text("appointment_data").nullable()
     val quantity = integer("quantity")
 
     override val primaryKey = PrimaryKey(id)

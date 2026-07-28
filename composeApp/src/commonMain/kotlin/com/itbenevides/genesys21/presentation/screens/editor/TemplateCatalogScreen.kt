@@ -1,13 +1,17 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageTemplate
@@ -40,48 +44,13 @@ fun TemplateCatalogScreen(
     onTemplateSelected: (PageTemplate) -> Unit
 ) {
     val templates by viewModel.templates.collectAsState()
+    val allProducts by viewModel.allAvailableProducts.collectAsState()
+    val allServices by viewModel.services.collectAsState()
+    val allCategories by viewModel.allAvailableCategories.collectAsState()
+
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
     var previewTemplate by remember { mutableStateOf<PageTemplate?>(null) }
-
-    GenesysPage(
-        topBar = {
-            GenesysTopAppBar(
-                title = "Catálogo de Templates",
-                onBack = onBack
-            )
-        }
-    ) {
-        GenesysColumn(usePadding = true, modifier = Modifier.fillMaxSize()) {
-            GenesysText(
-                text = "Escolha um ponto de partida",
-                style = GenesysTextStyle.Headline,
-                fontWeight = GenesysFontWeight.ExtraBold
-            )
-            GenesysText(
-                text = "Selecione um layout pronto para começar a vender em minutos.",
-                style = GenesysTextStyle.Body,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            GenesysSpacer(GenesysSpacing.Large)
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = if (isCompact) 160.dp else 280.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(templates) { template ->
-                    TemplateCard(
-                        template = template,
-                        onSelect = { onTemplateSelected(template) },
-                        onPreview = { previewTemplate = template }
-                    )
-                }
-            }
-        }
-    }
 
     if (previewTemplate != null) {
         val template = previewTemplate!!
@@ -89,34 +58,72 @@ fun TemplateCatalogScreen(
             PageTemplateRegistry.createPageFromTemplate(template.id, "preview", "preview")
         }
 
-        GenesysDialog(
-            onDismissRequest = { previewTemplate = null },
-            title = "Preview: ${template.title}",
-            confirmButton = {
-                GenesysLoadingButton(
-                    text = "Usar este Template",
-                    onClick = {
-                        onTemplateSelected(template)
-                        previewTemplate = null
-                    },
-                    fillWidth = true
+        AppTheme(themeConfig = previewPage.theme, customTheme = previewPage.customTheme) {
+            GenesysPage(
+                topBar = {
+                    GenesysTopAppBar(
+                        title = "Preview: ${template.title}",
+                        onBack = { previewTemplate = null },
+                        actions = {
+                            GenesysLoadingButton(
+                                text = if (isCompact) "Usar" else "Usar este Template",
+                                onClick = {
+                                    onTemplateSelected(template)
+                                    previewTemplate = null
+                                }
+                            )
+                        }
+                    )
+                }
+            ) {
+                PageViewerContent(
+                    state = PageViewerScreenState(page = previewPage),
+                    currentFilterQuery = "",
+                    isCompact = isCompact,
+                    allProducts = allProducts,
+                    allServices = allServices,
+                    allCategories = allCategories,
+                    onEvent = {}
                 )
-            },
-            dismissButton = {
-                GenesysTextButton(
-                    text = "Fechar",
-                    onClick = { previewTemplate = null }
+            }
+        }
+    } else {
+        GenesysPage(
+            topBar = {
+                GenesysTopAppBar(
+                    title = "Catálogo de Templates",
+                    onBack = onBack
                 )
             }
         ) {
-            AppTheme(themeConfig = previewPage.theme, customTheme = previewPage.customTheme) {
-                Box(modifier = Modifier.fillMaxWidth().height(400.dp)) {
-                    PageViewerContent(
-                        state = PageViewerScreenState(page = previewPage),
-                        currentFilterQuery = "",
-                        isCompact = isCompact,
-                        onEvent = {}
-                    )
+            GenesysColumn(usePadding = true, modifier = Modifier.fillMaxSize()) {
+                GenesysText(
+                    text = "Escolha um ponto de partida",
+                    style = GenesysTextStyle.Headline,
+                    fontWeight = GenesysFontWeight.ExtraBold
+                )
+                GenesysText(
+                    text = "Selecione um layout pronto para começar a vender em minutos.",
+                    style = GenesysTextStyle.Body,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                GenesysSpacer(GenesysSpacing.Large)
+
+                LazyVerticalGrid(
+                    columns = if (isCompact) GridCells.Fixed(1) else GridCells.Adaptive(minSize = 300.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 24.dp)
+                ) {
+                    items(templates) { template ->
+                        TemplateCard(
+                            template = template,
+                            onSelect = { onTemplateSelected(template) },
+                            onPreview = { previewTemplate = template }
+                        )
+                    }
                 }
             }
         }

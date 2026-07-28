@@ -23,6 +23,9 @@ class PageViewModelTest {
     private lateinit var fakeOrderRepository: FakeOrderRepository
     private lateinit var fakeBookingRepository: FakeBookingRepository
     private lateinit var fakeUserRepository: FakeUserRepository
+    private lateinit var fakeAddressRepository: FakeAddressRepository
+    private lateinit var fakeStoreRepository: FakeStoreRepository
+    private lateinit var fakeShippingRepository: FakeShippingRepository
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -38,6 +41,9 @@ class PageViewModelTest {
         fakeOrderRepository = FakeOrderRepository()
         fakeBookingRepository = FakeBookingRepository()
         fakeUserRepository = FakeUserRepository()
+        fakeAddressRepository = FakeAddressRepository()
+        fakeStoreRepository = FakeStoreRepository()
+        fakeShippingRepository = FakeShippingRepository()
 
         viewModel =
             PageViewModel(
@@ -74,7 +80,12 @@ class PageViewModelTest {
                 getAllUsersUseCase = GetAllUsersUseCase(fakeUserRepository),
                 updateUserRoleUseCase = UpdateUserRoleUseCase(fakeUserRepository),
                 updateUserStatusUseCase = UpdateUserStatusUseCase(fakeUserRepository),
-                getTemplatesUseCase = GetTemplatesUseCase()
+                getTemplatesUseCase = GetTemplatesUseCase(),
+                getAddressesUseCase = GetAddressesUseCase(fakeAddressRepository),
+                saveAddressUseCase = SaveAddressUseCase(fakeAddressRepository),
+                deleteAddressUseCase = DeleteAddressUseCase(fakeAddressRepository),
+                calculateShippingUseCase = CalculateShippingUseCase(fakeShippingRepository),
+                storeRepository = fakeStoreRepository
             )
     }
 
@@ -133,7 +144,7 @@ class PageViewModelTest {
     fun `loadBookingServices should update services state`() =
         runTest {
             val service = BookingService("s1", "s1", "Cabelo", "Corte", 50.0, 30)
-            fakeBookingRepository.saveService(service)
+            fakeBookingRepository.saveService(service, "token")
 
             viewModel.loadBookingServices()
             advanceUntilIdle()
@@ -240,10 +251,18 @@ class PageViewModelTest {
             advanceUntilIdle()
 
             var orderIdResult = ""
-            viewModel.submitOrder(null, "PIX") { orderIdResult = it }
+            viewModel.submitOrder(null, PaymentMethod.APP) { orderIdResult = it }
             advanceUntilIdle()
 
             assertNotNull(orderIdResult)
+            // No caso de PaymentMethod.APP, o carrinho NÃO é limpo imediatamente.
+            // Ele é limpo apenas após o webhook ou confirmação.
+            // Para pagamentos LOCAL, o carrinho é limpo.
+
+            // Vamos testar com LOCAL para garantir que a lógica de limpeza funciona
+            viewModel.addToCart(product)
+            viewModel.submitOrder(null, PaymentMethod.LOCAL) { orderIdResult = it }
+            advanceUntilIdle()
             assertTrue(viewModel.cart.value.isEmpty())
         }
 

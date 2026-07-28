@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -162,7 +163,8 @@ fun WhiteLabelContent(
                                 maxWidth = GenesysDimens.ViewerMaxWidth,
                                 usePadding = true,
                                 spacing = GenesysSpacing.Medium,
-                                key = { _, component -> component.hashCode() },
+                                // CORREÇÃO: Usar o index como chave para evitar crash com componentes idênticos (ex: divisores)
+                                key = { index, _ -> index },
                             ) { index, component ->
                                 val isEditing = state.editingComponentIndex == index
                                 ComponentWrapperUI(
@@ -180,10 +182,17 @@ fun WhiteLabelContent(
                 }
 
                 if (isExpanded) {
-                    GenesysWeightBox(0.35f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .widthIn(min = 350.dp, max = 500.dp)
+                            .padding(vertical = 16.dp, horizontal = 8.dp)
+                    ) {
                         GenesysCard(
-                            modifier = Modifier.fillMaxHeight().padding(16.dp),
-                            elevation = GenesysDimens.ElevationMedium,
+                            modifier = Modifier.fillMaxSize(),
+                            elevation = GenesysDimens.ElevationHigh,
+                            backgroundColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                            shape = RoundedCornerShape(24.dp)
                         ) {
                             state.editingComponentIndex?.let { index ->
                                 ComponentEditorUI(
@@ -278,6 +287,11 @@ private fun ComponentWrapperUI(
             ) {
                 Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
                     GenesysIconButton(
+                        icon = GenesysIcons.KeyboardDoubleArrowUp,
+                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentToTop(index)) },
+                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    GenesysIconButton(
                         icon = GenesysIcons.ArrowUp,
                         onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
                         tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -285,6 +299,16 @@ private fun ComponentWrapperUI(
                     GenesysIconButton(
                         icon = GenesysIcons.ArrowDown,
                         onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
+                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    GenesysIconButton(
+                        icon = GenesysIcons.KeyboardDoubleArrowDown,
+                        onClick = { onEvent(WhiteLabelEvent.OnMoveComponentToBottom(index)) },
+                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    GenesysIconButton(
+                        icon = GenesysIcons.Copy,
+                        onClick = { onEvent(WhiteLabelEvent.OnDuplicateComponent(index)) },
                         tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     GenesysIconButton(
@@ -311,87 +335,138 @@ internal fun ComponentEditorUI(
     val allServices by viewModel.services.collectAsState()
     val userPages by viewModel.pages.collectAsState()
 
-    GenesysColumn(usePadding = true, modifier = Modifier.heightIn(max = 600.dp)) {
-        when (component) {
-            is PageComponent.Header -> {
-                HeaderComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 1. CABEÇALHO DO EDITOR (Fixo)
+        GenesysRow(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            usePadding = false
+        ) {
+            val icon = when (component) {
+                is PageComponent.Header -> GenesysIcons.Description
+                is PageComponent.Text -> GenesysIcons.Edit
+                is PageComponent.Image -> GenesysIcons.Image
+                is PageComponent.Button -> GenesysIcons.Language
+                is PageComponent.Grid -> GenesysIcons.GridView
+                is PageComponent.ProductList -> GenesysIcons.Inventory
+                is PageComponent.ServiceList -> GenesysIcons.Schedule
+                else -> GenesysIcons.Magic
             }
-            is PageComponent.Text -> {
-                TextComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                )
-            }
-            is PageComponent.Image -> {
-                ImageComponentEditor(
-                    component = component,
-                    userPages = userPages,
-                    isUploading = state.isUploading,
-                    onPickImage = onPickImage,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                )
-            }
-            is PageComponent.Button -> {
-                ButtonComponentEditor(
-                    component = component,
-                    onSave = { updated ->
-                        val newList = state.page.components.toMutableList().apply { set(index, updated) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                )
-            }
-            is PageComponent.ProductList -> {
-                ProductListComponentEditor(
-                    component = component,
-                    allAvailableProducts = allProducts,
-                    onEditProduct = { product ->
-                        onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
-                    },
-                    onProductsUpdated = { updatedList ->
-                        val updatedComp = component.copy(products = updatedList)
-                        val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                    onSaveLabel = { label, isHorizontal ->
-                        val updatedComp = component.copy(customLabel = label, isHorizontal = isHorizontal)
-                        val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                )
-            }
-            is PageComponent.ServiceList -> {
-                ServiceListComponentEditor(
-                    component = component,
-                    allAvailableServices = allServices,
-                    onEditService = { service ->
-                        onEvent(WhiteLabelEvent.OnEditServiceClicked(service, index))
-                    },
-                    onServicesUpdated = { updatedList ->
-                        val updatedComp = component.copy(services = updatedList)
-                        val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    },
-                    onSaveTitle = { title ->
-                        val updatedComp = component.copy(title = title)
-                        val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
-                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                    }
-                )
-            }
-            else -> {
-                GenesysText("Este componente ainda não possui editor avançado.", style = GenesysTextStyle.Body)
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysText(
+                text = "Editar: ${component::class.simpleName ?: "Bloco"}",
+                style = GenesysTextStyle.Label,
+                fontWeight = GenesysFontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+            GenesysIconButton(
+                icon = GenesysIcons.Close,
+                onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) }
+            )
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+        // 2. CONTEÚDO DO EDITOR (Scrollable)
+        GenesysColumn(
+            usePadding = true,
+            useScroll = true,
+            modifier = Modifier.weight(1f)
+        ) {
+            when (component) {
+                is PageComponent.Header -> {
+                    HeaderComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Text -> {
+                    TextComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Image -> {
+                    ImageComponentEditor(
+                        component = component,
+                        userPages = userPages,
+                        isUploading = state.isUploading,
+                        onPickImage = onPickImage,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Button -> {
+                    ButtonComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.ProductList -> {
+                    ProductListComponentEditor(
+                        component = component,
+                        allAvailableProducts = allProducts,
+                        onEditProduct = { product ->
+                            onEvent(WhiteLabelEvent.OnEditProductClicked(product, index))
+                        },
+                        onProductsUpdated = { updatedList ->
+                            val updatedComp = component.copy(products = updatedList)
+                            val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                        onSaveLabel = { label, isHorizontal ->
+                            val updatedComp = component.copy(customLabel = label, isHorizontal = isHorizontal)
+                            val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.ServiceList -> {
+                    ServiceListComponentEditor(
+                        component = component,
+                        allAvailableServices = allServices,
+                        onEditService = { service ->
+                            onEvent(WhiteLabelEvent.OnEditServiceClicked(service, index))
+                        },
+                        onServicesUpdated = { updatedList ->
+                            val updatedComp = component.copy(services = updatedList)
+                            val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                        onSaveTitle = { title ->
+                            val updatedComp = component.copy(title = title)
+                            val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        }
+                    )
+                }
+                is PageComponent.Grid -> {
+                    GridComponentEditor(
+                        component = component,
+                        allPageComponents = state.page.components,
+                        allProducts = allProducts,
+                        allServices = allServices,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        }
+                    )
+                }
+                else -> {
+                    GenesysText("Este componente ainda não possui editor avançado.", style = GenesysTextStyle.Body)
+                }
             }
         }
     }

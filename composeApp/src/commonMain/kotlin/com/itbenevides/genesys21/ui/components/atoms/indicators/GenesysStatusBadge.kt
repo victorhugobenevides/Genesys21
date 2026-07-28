@@ -9,6 +9,7 @@ fun GenesysStatusBadge(status: OrderStatus) {
     val color =
         when (status) {
             OrderStatus.PENDING -> Color(0xFFFBC02D)
+            OrderStatus.AWAITING_PAYMENT -> Color(0xFF9575CD)
             OrderStatus.PROCESSING -> Color(0xFF1976D2)
             OrderStatus.COMPLETED -> Color(0xFF388E3C)
             OrderStatus.CANCELLED -> Color(0xFFD32F2F)
@@ -16,6 +17,7 @@ fun GenesysStatusBadge(status: OrderStatus) {
     val label =
         when (status) {
             OrderStatus.PENDING -> "PENDENTE"
+            OrderStatus.AWAITING_PAYMENT -> "AGUARD. PAGAMENTO"
             OrderStatus.PROCESSING -> "EM ANDAMENTO"
             OrderStatus.COMPLETED -> "CONCLUÍDO"
             OrderStatus.CANCELLED -> "CANCELADO"

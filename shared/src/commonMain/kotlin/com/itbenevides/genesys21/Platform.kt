@@ -7,3 +7,7 @@ interface Platform {
 expect fun getPlatform(): Platform
 
 expect fun triggerPrint()
+
+expect fun openUrlInCurrentTab(url: String)
+
+expect fun getUrlSearchParameters(): String

@@ -4,9 +4,15 @@ import com.itbenevides.genesys21.domain.repository.AuthRepository
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.GoogleAuthProvider
 import dev.gitlive.firebase.auth.auth
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class AndroidAuthRepository : AuthRepository {
     private val auth = Firebase.auth
+
+    override val authState: Flow<String?> = flow {
+        emit(auth.currentUser?.uid)
+    }
 
     override suspend fun signIn(
         email: String,
@@ -56,6 +62,10 @@ class AndroidAuthRepository : AuthRepository {
 
     override suspend fun getCurrentUserId(): String? {
         return auth.currentUser?.uid
+    }
+
+    override fun initializeOneTap() {
+        // Implementar via Credential Manager se necessário
     }
 
     override suspend fun signOut() {

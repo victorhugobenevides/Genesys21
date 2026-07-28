@@ -32,6 +32,10 @@ class GetAppointmentsUseCase(private val repository: BookingRepository) {
     suspend operator fun invoke(serviceId: String?, storeId: String?, date: LocalDate): List<Appointment> =
         repository.getAppointments(serviceId, storeId, date)
 
+    suspend fun all(storeId: String): List<Appointment> = repository.getAllAppointments(storeId)
+
+    suspend fun upcoming(storeId: String): List<Appointment> = repository.getUpcomingAppointments(storeId)
+
     suspend fun byPhone(phone: String): List<Appointment> = repository.getAppointmentsByPhone(phone)
 }
 

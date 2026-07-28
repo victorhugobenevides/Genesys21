@@ -1,20 +1,18 @@
 package com.itbenevides.genesys21.screenshot
 
-import app.cash.paparazzi.DeviceConfig
-import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.screens.viewer.CartContent
 import com.itbenevides.genesys21.presentation.screens.viewer.CartScreenState
 import com.itbenevides.genesys21.presentation.screens.viewer.ProductDetailsContent
 import com.itbenevides.genesys21.presentation.screens.viewer.ProductDetailsState
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import org.junit.Rule
 import org.junit.Test
 
 class ResponsivenessSnapshotTest {
     @get:Rule
-    val paparazzi = createGenesysPaparazzi(deviceConfig = DeviceConfig.PIXEL_5)
+    val paparazzi = createGenesysPaparazzi()
 
     private val sampleProduct =
         Product(
@@ -27,12 +25,9 @@ class ResponsivenessSnapshotTest {
             stock = 15,
         )
 
-    private val samplePage = Page(id = "test", storeId = "store-1", title = "My Store")
-
     @Test
-    fun testProductDetailsMobile() {
-        paparazzi.unsafeUpdateConfig(DeviceConfig.PIXEL_5)
-        paparazzi.genesysSnapshot {
+    fun testProductDetailsResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             ProductDetailsContent(
                 state = ProductDetailsState(product = sampleProduct),
                 backendUrl = "",
@@ -42,36 +37,11 @@ class ResponsivenessSnapshotTest {
     }
 
     @Test
-    fun testProductDetailsDesktop() {
-        // Simulating Desktop width
-        paparazzi.unsafeUpdateConfig(DeviceConfig.NEXUS_10.copy(screenWidth = 1200))
-        paparazzi.genesysSnapshot {
-            ProductDetailsContent(
-                state = ProductDetailsState(product = sampleProduct),
-                backendUrl = "",
-                onEvent = {},
-            )
-        }
-    }
-
-    @Test
-    fun testCartMobile() {
-        paparazzi.unsafeUpdateConfig(DeviceConfig.PIXEL_5)
-        paparazzi.genesysSnapshot {
+    fun testCartResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
             CartContent(
                 state = CartScreenState(total = 899.90),
-                backendUrl = "",
-                onEvent = {},
-            )
-        }
-    }
-
-    @Test
-    fun testCartDesktop() {
-        paparazzi.unsafeUpdateConfig(DeviceConfig.NEXUS_10.copy(screenWidth = 1200))
-        paparazzi.genesysSnapshot {
-            CartContent(
-                state = CartScreenState(total = 899.90),
+                store = null,
                 backendUrl = "",
                 onEvent = {},
             )

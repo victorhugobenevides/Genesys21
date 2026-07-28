@@ -16,13 +16,13 @@ fun Route.bookingRoutes(repository: BookingRepository) {
     route("/booking") {
         // Rotas Públicas
         get("/services") {
-            val services = repository.getServices()
+            val services = repository.getServices().map { it.copy(meetingLink = null) }
             call.respond(services)
         }
 
         get("/services/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val service = repository.getServiceById(id)
+            val service = repository.getServiceById(id)?.copy(meetingLink = null)
             if (service != null) call.respond(service) else call.respond(HttpStatusCode.NotFound)
         }
 
@@ -34,6 +34,18 @@ fun Route.bookingRoutes(repository: BookingRepository) {
             } else {
                 call.respond(HttpStatusCode.NotFound, "Disponibilidade não configurada")
             }
+        }
+
+        get("/appointments/all") {
+            val storeId = call.request.queryParameters["storeId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val appointments = repository.getAllAppointments(storeId)
+            call.respond(appointments)
+        }
+
+        get("/appointments/upcoming") {
+            val storeId = call.request.queryParameters["storeId"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val appointments = repository.getUpcomingAppointments(storeId)
+            call.respond(appointments)
         }
 
         get("/appointments") {
@@ -52,6 +64,18 @@ fun Route.bookingRoutes(repository: BookingRepository) {
                 call.respond(appointments)
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.InternalServerError, "Erro ao buscar agendamentos")
+            }
+        }
+
+        // POST: Criar agendamento (Público, usado no checkout)
+        post("/appointments") {
+            try {
+                val appointment = call.receive<Appointment>()
+                repository.createAppointment(appointment)
+                call.respond(HttpStatusCode.Created)
+            } catch (e: Exception) {
+                println("ERRO AO CRIAR AGENDAMENTO: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, "Erro ao criar agendamento")
             }
         }
 
@@ -76,16 +100,6 @@ fun Route.bookingRoutes(repository: BookingRepository) {
                 val availability = call.receive<MerchantAvailability>()
                 repository.saveAvailability(availability, principal.name)
                 call.respond(HttpStatusCode.OK)
-            }
-
-            post("/appointments") {
-                try {
-                    val appointment = call.receive<Appointment>()
-                    repository.createAppointment(appointment)
-                    call.respond(HttpStatusCode.Created)
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Erro ao criar agendamento")
-                }
             }
 
             put("/appointments/{id}") {

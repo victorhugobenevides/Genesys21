@@ -240,10 +240,12 @@ fun App() {
                                 is Route.OrderTracking ->
                                     OrderTrackingScreen(
                                         orderId = route.orderId,
+                                        status = route.status,
                                         onBack = { router.goBack() },
                                     )
                                 is Route.CustomerOrderHistory ->
                                     CustomerOrderHistoryScreen(
+                                        status = router.currentUrlParameters.split("status=").getOrNull(1)?.split("&")?.getOrNull(0),
                                         onBack = { router.goBack() },
                                         onOrderClick = { order ->
                                             router.navigateTo(Route.OrderTracking(order.id))

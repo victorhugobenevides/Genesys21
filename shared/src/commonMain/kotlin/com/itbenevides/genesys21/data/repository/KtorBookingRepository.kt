@@ -86,6 +86,28 @@ class KtorBookingRepository(
         }
     }
 
+    override suspend fun getAllAppointments(storeId: String): List<Appointment> {
+        return try {
+            val response = client.get("$baseUrl/api/booking/appointments/all") {
+                parameter("storeId", storeId)
+            }
+            if (response.status.isSuccess()) response.body() else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun getUpcomingAppointments(storeId: String): List<Appointment> {
+        return try {
+            val response = client.get("$baseUrl/api/booking/appointments/upcoming") {
+                parameter("storeId", storeId)
+            }
+            if (response.status.isSuccess()) response.body() else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     override suspend fun getAppointmentsByPhone(phone: String): List<Appointment> {
         return try {
             val response = client.get("$baseUrl/api/booking/appointments") {

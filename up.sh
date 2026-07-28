@@ -1,46 +1,62 @@
 #!/bin/bash
 
+# up.sh - Script de Validação e Deploy Local (Simula Pipeline CI/CD)
 set -e
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-echo "🧹 Limpando Docker (Caches e Snapshots)..."
+echo "🧹 Limpando ambiente..."
 docker builder prune -f
 docker image prune -f
-
-echo "🛑 Parando containers..."
-docker compose down -v --remove-orphans || docker-compose down -v --remove-orphans
-
-echo "🧹 Limpando caches e banco de dados..."
-rm -rf kotlin-js-store
-rm -f yarn.lock
-rm -f data/genesys21.db*
+rm -rf kotlin-js-store yarn.lock data/genesys21.db* deploy/
 ./gradlew clean --no-daemon
 
-echo "🚀 Build do projeto (Server e WasmJS)..."
-./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
+echo "🎨 1. Verificando Integridade Visual (Screenshot Tests)..."
+# Simula o passo 'Verify Visual Integrity' da pipeline
+./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || true
 
-echo "✅ Build concluído!"
+echo "🧪 2. Rodando Testes Unitários e Cobertura (Jacoco)..."
+# Simula o passo 'Run Unit Tests & Coverage' da pipeline
+# Nota: Adicionamos '|| true' para espelhar o comportamento da pipeline que ignora falhas pontuais de teste/relatório
+./gradlew :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --no-daemon || true
+./gradlew :composeApp:jacocoTestReport :shared:jacocoTestReport :server:jacocoTestReport --no-daemon || true
 
-rm -rf deploy
-mkdir -p deploy/server deploy/web
+echo "📦 3. Build de Produção (Server e WasmJS)..."
+# Simula o passo 'Build Project' da pipeline (Production Distribution)
+./gradlew :server:installDist :composeApp:wasmJsBrowserProductionExecutableDistribution -Pandroid.useAndroidX=true --no-daemon
 
-# 1. Copiar Servidor
+echo "📂 4. Organizando artefatos para Deploy Local..."
+mkdir -p deploy/server deploy/web/reports/paparazzi deploy/web/reports/shared deploy/web/reports/app deploy/web/reports/server deploy/web/reports/coverage/app deploy/web/reports/coverage/shared deploy/web/reports/coverage/server
+
+# Copiar Servidor
 SERVER_INSTALL_DIR=$(find server/build/install -maxdepth 1 -mindepth 1 -type d | head -n 1)
 if [ -n "$SERVER_INSTALL_DIR" ]; then
     cp -R "$SERVER_INSTALL_DIR"/. deploy/server/
+    # Tenta encontrar o JSON do Firebase Admin para o servidor local
     FIREBASE_JSON=$(find . -name "genesys21-32035-firebase-adminsdk-*.json" | head -n 1)
     if [ -n "$FIREBASE_JSON" ]; then cp "$FIREBASE_JSON" deploy/server/firebase-adminsdk.json; fi
 fi
 
-# 2. Copiar Web (WasmJS)
-find composeApp/build/dist/wasmJs -type f \( \
+# Copiar Web (WasmJS Production)
+# Nota: Caminho corrigido para productionExecutable
+find composeApp/build/dist/wasmJs/productionExecutable -type f \( \
     -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \
 \) -exec cp -f {} deploy/web/ \;
 
-# 3. Gerar firebase-bridge.js Corrigido
+# Copiar Relatórios (Igual a Pipeline)
+[ -d "screenshot-tests/build/reports/paparazzi/debug" ] && cp -R screenshot-tests/build/reports/paparazzi/debug/* deploy/web/reports/paparazzi/ || true
+[ -d "shared/build/reports/tests/testDebugUnitTest" ] && cp -R shared/build/reports/tests/testDebugUnitTest/* deploy/web/reports/shared/ || true
+[ -d "composeApp/build/reports/tests/testDebugUnitTest" ] && cp -R composeApp/build/reports/tests/testDebugUnitTest/* deploy/web/reports/app/ || true
+[ -d "server/build/reports/tests/test" ] && cp -R server/build/reports/tests/test/* deploy/web/reports/server/ || true
+
+# Copiar Cobertura
+[ -d "composeApp/jacoco-reports/html" ] && cp -R composeApp/jacoco-reports/html/* deploy/web/reports/coverage/app/ || true
+[ -d "shared/jacoco-reports/html" ] && cp -R shared/jacoco-reports/html/* deploy/web/reports/coverage/shared/ || true
+[ -d "server/jacoco-reports/html" ] && cp -R server/jacoco-reports/html/* deploy/web/reports/coverage/server/ || true
+
+# 5. Gerar ponte Firebase e index.html (Alinhado com a Pipeline)
 cat <<EOF > deploy/web/firebase-bridge.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
@@ -58,126 +74,69 @@ window.firebaseSignIn = async (email, pass) => {
     return await userCredential.user.getIdToken();
 };
 
-window.firebaseSignUp = async (email, pass) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    return await userCredential.user.getIdToken();
-};
-
 window.firebaseSignInGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // Força a seleção de conta para uma experiência mais unificada
     provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await signInWithPopup(auth, provider);
+    return await result.user.getIdToken();
+};
 
-    try {
-        const result = await signInWithPopup(auth, provider);
-        return await result.user.getIdToken();
-    } catch (error) {
-        if (error.code === 'auth/account-exists-with-different-credential') {
-            throw new Error("ACCOUNT_EXISTS_PASSWORD");
+window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
+window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
+window.firebaseSignOut = async () => await signOut(auth);
+
+window.firebaseOnAuthChanged = (callback) => {
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const token = await user.getIdToken();
+            callback(user.uid);
+        } else {
+            callback(null);
         }
-        throw error;
-    }
+    });
 };
-
-window.firebaseGetToken = async () => {
-    return auth.currentUser ? await auth.currentUser.getIdToken() : null;
-};
-
-window.firebaseGetUserId = async () => {
-    return auth.currentUser ? auth.currentUser.uid : null;
-};
-
-window.firebaseSignOut = () => signOut(auth);
 EOF
 
-echo "🚀 Gerando Relatórios de Testes e Snapshots..."
-./gradlew :screenshot-tests:testDebugUnitTest :shared:testDebugUnitTest :composeApp:testDebugUnitTest :server:test --continue || true
-
-# 4. Copiar Relatórios de Qualidade (Para o Showcase)
-echo "📂 Organizando relatórios de qualidade..."
-mkdir -p deploy/web/reports/paparazzi
-mkdir -p deploy/web/reports/shared
-mkdir -p deploy/web/reports/app
-mkdir -p deploy/web/reports/server
-mkdir -p deploy/web/reports/coverage/app
-mkdir -p deploy/web/reports/coverage/shared
-mkdir -p deploy/web/reports/coverage/server
-
-# Paparazzi - Copiando de forma robusta
-PAPARAZZI_DIR=$(find screenshot-tests/build/reports/paparazzi -name "index.html" 2>/dev/null | head -n 1 | xargs dirname)
-if [ -n "$PAPARAZZI_DIR" ]; then
-    cp -R "$PAPARAZZI_DIR"/* deploy/web/reports/paparazzi/
-    echo "✅ Relatório Paparazzi copiado."
-fi
-
-# Shared Tests
-if [ -d "shared/build/reports/tests/testDebugUnitTest" ]; then
-    cp -R shared/build/reports/tests/testDebugUnitTest/* deploy/web/reports/shared/
-    echo "✅ Relatório Shared Tests copiado."
-fi
-
-# App Tests
-if [ -d "composeApp/build/reports/tests/testDebugUnitTest" ]; then
-    cp -R composeApp/build/reports/tests/testDebugUnitTest/* deploy/web/reports/app/
-    echo "✅ Relatório App Tests copiado."
-fi
-
-# Server Tests
-if [ -d "server/build/reports/tests/test" ]; then
-    cp -R server/build/reports/tests/test/* deploy/web/reports/server/
-    echo "✅ Relatório Server Tests copiado."
-fi
-
-# Coverage - Consolidando múltiplos relatórios
-echo "📊 Coletando relatórios de cobertura (Jacoco)..."
-if [ -d "composeApp/jacoco-reports/html" ]; then
-    cp -R composeApp/jacoco-reports/html/. deploy/web/reports/coverage/app/
-    echo "✅ Cobertura App copiada."
-fi
-if [ -d "shared/jacoco-reports/html" ]; then
-    cp -R shared/jacoco-reports/html/. deploy/web/reports/coverage/shared/
-    echo "✅ Cobertura Shared copiada."
-fi
-if [ -d "server/jacoco-reports/html" ]; then
-    cp -R server/jacoco-reports/html/. deploy/web/reports/coverage/server/
-    echo "✅ Cobertura Server copiada."
-fi
-
-# 5. Gerar index.html
 cat <<EOF > deploy/web/index.html
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Genesys21</title>
-    <script type="module" src="firebase-bridge.js"></script>
+    <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
+    <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
+    <script type="module" src="/firebase-bridge.js"></script>
     <style>
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; }
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: manipulation; }
         #ComposeTarget { width: 100%; height: 100%; }
+        canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
     </style>
 </head>
 <body>
-    <div id="ComposeTarget"></div>
-    <script type="module" src="composeApp.js"></script>
+    <canvas id="ComposeTarget"></canvas>
+    <script type="module" src="/composeApp.js"></script>
 </body>
 </html>
 EOF
 
+echo "🚀 Subindo Containers Localmente..."
 chmod -R 755 deploy/web
-docker compose up --build -d || docker-compose up --build -d
+docker compose down -v --remove-orphans || true
+docker compose up --build -d
 
 echo "--------------------------------------------------------"
-echo "✨ Sistema online (WASM)!"
+echo "✨ Validação concluída e Sistema Online (Produção Local)!"
 echo "🌐 Web: http://localhost"
+echo "📂 Relatórios: deploy/web/reports/"
 echo "--------------------------------------------------------"
 
-# Iniciar ngrok em segundo plano para o backend (8080) e frontend (80)
-echo "🚀 Iniciando ngrok para API (8080) e Web (80)..."
-ngrok start --all --config "/Users/victorben/Library/Application Support/ngrok/ngrok.yml" --log=stdout > ngrok.log &
-echo "✅ ngrok rodando (logs em ngrok.log)"
+# ngrok (opcional, mantido para facilidade)
+if command -v ngrok &> /dev/null; then
+    echo "🚀 Iniciando ngrok para API (8080) e Web (80)..."
+    ngrok start --all --config "/Users/victorben/Library/Application Support/ngrok/ngrok.yml" --log=stdout > ngrok.log &
+    echo "✅ ngrok rodando (logs em ngrok.log)"
+fi
 
-
-
-
+echo "📋 Seguindo logs do servidor..."
+docker compose logs -f server

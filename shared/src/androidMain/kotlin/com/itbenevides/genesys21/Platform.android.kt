@@ -11,3 +11,9 @@ actual fun getPlatform(): Platform = AndroidPlatform()
 actual fun triggerPrint() {
     // Not implemented for Android
 }
+
+actual fun openUrlInCurrentTab(url: String) {
+    // No Android sempre abre em navegador externo ou WebView
+}
+
+actual fun getUrlSearchParameters(): String = ""

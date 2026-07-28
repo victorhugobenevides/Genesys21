@@ -28,6 +28,7 @@ object PageTemplateRegistry {
         professionalVitrine,
         bioProfile,
         barberShop,
+        showcasePortfolio,
         proDesign,
         blogPost,
         emptyTemplate
@@ -35,144 +36,211 @@ object PageTemplateRegistry {
 
     private val professionalVitrine get() = PageTemplate(
         id = "professional_vitrine",
-        title = "Vitrine Profissional",
-        description = "Focada em produtos e vendas rápidas com banner de impacto e busca.",
+        title = "Vitrine de Luxo",
+        description = "Experiência de e-commerce premium com banner de impacto, benefícios em grade e vitrine otimizada.",
         category = TemplateCategory.SALES,
-        thumbnailUrl = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=400",
+        thumbnailUrl = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=600",
         defaultTheme = PageThemeConfig.OCEAN,
         components = listOf(
             PageComponent.Hero(
-                title = "Nova Coleção 2025",
-                subtitle = "Descubra as tendências que vão dominar o ano.",
-                imageUrl = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200",
-                buttonText = "Ver Novidades",
-                height = 500
+                title = "Estilo & Performance",
+                subtitle = "A coleção 2025 chegou para redefinir seus padrões de elegância.",
+                imageUrl = "https://images.unsplash.com/photo-1441984908746-d47b8b24eabc?q=80&w=1200",
+                buttonText = "Explorar Coleção",
+                height = 550
             ),
-            PageComponent.Benefits(
+            PageComponent.Grid(
+                columns = 3,
+                title = "Por que escolher nossa marca?",
                 items = listOf(
-                    PageComponent.BenefitItem("Frete Grátis", "Para compras acima de R$ 200", "Inventory"),
-                    PageComponent.BenefitItem("Pagamento Seguro", "Parcele em até 12x sem juros", "Payments"),
-                    PageComponent.BenefitItem("Qualidade Garantida", "Troca grátis em até 30 dias", "Check")
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Header(title = "Envio Expresso", fontSize = 18, textAlign = "CENTER"),
+                        PageComponent.Text(content = "Entrega em até 48h para capitais.", textAlign = "CENTER", fontSize = 14)
+                    )),
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Header(title = "Segurança Total", fontSize = 18, textAlign = "CENTER"),
+                        PageComponent.Text(content = "Pagamento 100% criptografado.", textAlign = "CENTER", fontSize = 14)
+                    )),
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Header(title = "Suporte 24/7", fontSize = 18, textAlign = "CENTER"),
+                        PageComponent.Text(content = "Time especializado à sua disposição.", textAlign = "CENTER", fontSize = 14)
+                    ))
                 )
             ),
-            PageComponent.Filter(),
+            PageComponent.Filter(placeholder = "Busque por nome ou categoria..."),
             PageComponent.CategoryFilter(),
-            PageComponent.ProductList(customLabel = "Destaques da Semana", isHorizontal = true),
+            PageComponent.ProductList(customLabel = "🔥 Mais Vendidos", isHorizontal = true),
             PageComponent.Testimonial(
-                quote = "A melhor experiência de compra que já tive. O layout é lindo e o atendimento impecável!",
-                author = "Ana Silva",
-                authorTitle = "Cliente VIP"
+                quote = "Os produtos são de uma qualidade absurda. O processo de compra foi extremamente simples e fluido.",
+                author = "Isabela Martins",
+                authorTitle = "Fashion Blogger"
             ),
-            PageComponent.ProductList(customLabel = "Todos os Itens")
+            PageComponent.ProductList(customLabel = "Nossa Vitrine Completa")
         )
     )
 
     private val bioProfile get() = PageTemplate(
         id = "bio_profile",
-        title = "Link na Bio",
-        description = "Minimalista, ideal para redes sociais e cartões de visita digitais.",
+        title = "Bio Digital PRO",
+        description = "Transforme seus seguidores em clientes com um hub de links moderno e organizado em grade.",
         category = TemplateCategory.PERSONAL,
-        thumbnailUrl = "https://picsum.photos/seed/profile/400/400",
+        thumbnailUrl = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=600",
         defaultTheme = PageThemeConfig.RADARANI,
         components = listOf(
             PageComponent.ProfileHeader(
-                imageUrl = "https://picsum.photos/seed/profile/300/300",
-                name = "Seu Nome Aqui",
-                bio = "Desenvolvedor & Criador de Conteúdo. Bem-vindo aos meus links oficiais!",
+                imageUrl = "https://ui-avatars.com/api/?name=Genesys+User&size=200&background=random&color=fff",
+                name = "Seu Nome / Marca",
+                bio = "Estrategista Digital | Especialista em Conversão. Criando experiências que conectam.",
             ),
             PageComponent.SocialLinks(
-                instagram = "https://instagram.com",
-                whatsapp = "https://wa.me/5500000000000",
-                email = "seuemail@exemplo.com",
+                instagram = "#", whatsapp = "#", youtube = "#", email = "contato@exemplo.com",
             ),
-            PageComponent.Header(title = "Conteúdo Exclusivo", fontSize = 22, textAlign = "CENTER"),
-            PageComponent.Button(text = "📚 Meu Curso Online", url = "https://exemplo.com/curso"),
-            PageComponent.Button(text = "🎙️ Podcast Semanal", url = "https://exemplo.com/podcast"),
-            PageComponent.Button(text = "🛍️ Minha Loja", url = "https://exemplo.com/loja")
+            PageComponent.Header(title = "Meus Canais", fontSize = 20, textAlign = "CENTER"),
+            PageComponent.Grid(
+                columns = 2,
+                items = listOf(
+                    PageComponent.GridItem(components = listOf(PageComponent.Button(text = "🚀 Mentoria", url = "#"))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Button(text = "📚 E-books", url = "#"))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Button(text = "🎙️ Podcast", url = "#"))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Button(text = "🛍️ Minha Loja", url = "#")))
+                )
+            ),
+            PageComponent.Testimonial(
+                quote = "Acompanho o trabalho há anos e a entrega é sempre acima da média.",
+                author = "Lucas Silva",
+                rating = 5
+            )
         )
     )
 
     private val barberShop get() = PageTemplate(
         id = "barber_shop",
-        title = "Barbearia & Serviços",
-        description = "Layout focado em agendamentos, lista de serviços e produtos de cuidado.",
+        title = "Classic Barber & Grooming",
+        description = "O mestre dos agendamentos. Focado em serviços, horários e experiência do cliente.",
         category = TemplateCategory.SERVICES,
-        thumbnailUrl = "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=400",
+        thumbnailUrl = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=600",
         defaultTheme = PageThemeConfig.ROYAL,
         components = listOf(
             PageComponent.Hero(
-                title = "O Estilo que Você Merece",
-                subtitle = "Barba, Cabelo e Bigode com excelência desde 1990.",
-                imageUrl = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1200",
-                buttonText = "Agendar Agora",
-                height = 450
+                title = "Muito Mais que um Corte",
+                subtitle = "Tradição e modernidade para o homem de bom gosto.",
+                imageUrl = "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=1200",
+                buttonText = "Garantir meu Horário",
+                height = 500
             ),
-            PageComponent.Benefits(
+            PageComponent.Header(title = "Nossos Serviços", fontSize = 26, fontWeight = "EXTRA_BOLD", textAlign = "CENTER"),
+            PageComponent.ServiceList(title = "Selecione o tratamento", customLabel = "Menu de Serviços"),
+            PageComponent.Grid(
+                columns = 2,
+                title = "Experiência Premium",
                 items = listOf(
-                    PageComponent.BenefitItem("Profissionais Tops", "Especialistas em cortes clássicos e modernos", "Magic"),
-                    PageComponent.BenefitItem("Conforto Total", "Cerveja gelada e ambiente climatizado", "Check")
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Image(url = "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=400", isRounded = true),
+                        PageComponent.Text(content = "Ambiente Climatizado", textAlign = "CENTER", fontWeight = "BOLD")
+                    )),
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Image(url = "https://images.unsplash.com/photo-1532713109658-f9ca9f07f282?q=80&w=400", isRounded = true),
+                        PageComponent.Text(content = "Open Bar Cortesia", textAlign = "CENTER", fontWeight = "BOLD")
+                    ))
                 )
             ),
-            PageComponent.Header(title = "Nossos Serviços", fontSize = 24),
-            PageComponent.ServiceList(title = "Escolha o seu trato", customLabel = "Serviços de Barbearia"),
             PageComponent.Testimonial(
-                quote = "Ambiente nota 10 e os barbeiros são realmente feras. Recomendo de olhos fechados!",
-                author = "Marcos Oliveira"
+                quote = "Melhor barbearia da cidade. Atendimento nota mil!",
+                author = "Felipe Amaral",
+                rating = 5
             ),
-            PageComponent.Header(title = "Produtos Premium", fontSize = 24),
-            PageComponent.ProductList(customLabel = "Leve a Barbearia para Casa", isHorizontal = true),
-            PageComponent.SocialLinks(instagram = "https://instagram.com", whatsapp = "https://wa.me/5500000000000")
+            PageComponent.Header(title = "Linha de Cuidados", fontSize = 24),
+            PageComponent.ProductList(customLabel = "Produtos de Uso Profissional", isHorizontal = true),
+            PageComponent.SocialLinks(instagram = "#", whatsapp = "#")
+        )
+    )
+
+    private val showcasePortfolio get() = PageTemplate(
+        id = "showcase_portfolio",
+        title = "Portfólio de Impacto",
+        description = "Perfeito para agências e criativos. Exiba seus projetos em grades elegantes e capture leads.",
+        category = TemplateCategory.CONTENT,
+        thumbnailUrl = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600",
+        defaultTheme = PageThemeConfig.MODERN,
+        components = listOf(
+            PageComponent.Header(title = "Criatividade Sem Limites", fontSize = 36, fontWeight = "EXTRA_BOLD"),
+            PageComponent.Text(content = "Ajudamos marcas a se destacarem no mundo digital através de design e tecnologia de ponta.", fontSize = 18),
+            PageComponent.Grid(
+                columns = 2,
+                title = "Nossos Cases",
+                items = listOf(
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Image(url = "https://images.unsplash.com/photo-1551288049-bbbda5366392?q=80&w=600", isRounded = true),
+                        PageComponent.Header(title = "Projeto Alpha", fontSize = 20),
+                        PageComponent.Text(content = "Branding & Web Design")
+                    )),
+                    PageComponent.GridItem(components = listOf(
+                        PageComponent.Image(url = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600", isRounded = true),
+                        PageComponent.Header(title = "Projeto Beta", fontSize = 20),
+                        PageComponent.Text(content = "Campanha de Performance")
+                    ))
+                )
+            ),
+            PageComponent.Benefits(
+                title = "Nossa Expertise",
+                items = listOf(
+                    PageComponent.BenefitItem("Design UI/UX", "Interfaces centradas no usuário.", "Magic"),
+                    PageComponent.BenefitItem("Performance", "Sites velozes e otimizados.", "Check")
+                )
+            ),
+            PageComponent.Button(text = "Solicitar Orçamento", url = "#", isPrimary = true)
         )
     )
 
     private val proDesign get() = PageTemplate(
         id = "pro_design",
-        title = "Design PRO 💎",
-        description = "Alta performance visual com glassmorfismo e cores modernas.",
+        title = "Dark Mode Premium",
+        description = "Focado em produtos de alto valor com interface escura, fontes luxuosas e glassmorfismo.",
         category = TemplateCategory.SALES,
-        thumbnailUrl = "https://picsum.photos/seed/pro/400/400",
+        thumbnailUrl = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=600",
         defaultTheme = PageThemeConfig.MODERN,
         customTheme = CustomThemeConfig(
-            primaryColor = "#FF5722",
-            backgroundColor = "#F5F5F5",
-            cornerRadius = 12,
-            glassIntensity = 0.3f,
+            primaryColor = "#BB86FC",
+            backgroundColor = "#121212",
+            cornerRadius = 16,
+            glassIntensity = 0.5f,
             typographySet = TypographySet.MODERN_SANS,
         ),
         components = listOf(
-            PageComponent.ProfileHeader(
-                imageUrl = "https://picsum.photos/seed/pro/400/400",
-                name = "Marca Premium",
-                bio = "Elegância e Performance em cada detalhe.",
-                isCircular = false,
+            PageComponent.Hero(
+                title = "O Futuro é Agora",
+                subtitle = "Tecnologia e design em perfeita harmonia.",
+                imageUrl = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200",
+                buttonText = "Ver Detalhes",
+                height = 600
             ),
-            PageComponent.Header(title = "Produtos Selecionados", fontSize = 28),
+            PageComponent.Header(title = "Exclusive Tech", fontSize = 32, usePrimaryColor = true, textAlign = "CENTER"),
             PageComponent.ProductList(isHorizontal = true),
-            PageComponent.SocialLinks(instagram = "https://instagram.com")
+            PageComponent.SocialLinks(instagram = "#")
         )
     )
 
     private val blogPost get() = PageTemplate(
         id = "blog_post",
-        title = "Artigo de Blog",
-        description = "Ideal para publicações longas, guias e storytelling.",
+        title = "Storytelling Minimal",
+        description = "Foco total na leitura. Tipografia equilibrada e layout limpo para conteúdos longos.",
         category = TemplateCategory.CONTENT,
-        thumbnailUrl = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=400",
+        thumbnailUrl = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=600",
         defaultTheme = PageThemeConfig.MINIMAL,
         components = listOf(
-            PageComponent.Header(title = "Título do Post", textAlign = "LEFT", fontSize = 32),
+            PageComponent.Header(title = "Como escalar seu negócio em 2025", textAlign = "LEFT", fontSize = 34, fontWeight = "EXTRA_BOLD"),
             PageComponent.ProfileHeader(
-                imageUrl = "https://picsum.photos/seed/author/150/150",
-                name = "Autor do Artigo",
-                bio = "Publicado recentemente • 5 min de leitura",
-                imageSize = 40
+                imageUrl = "https://ui-avatars.com/api/?name=Author&size=100&background=000&color=fff",
+                name = "Victor Hugo",
+                bio = "Escrito em 10 de Junho • 8 min de leitura",
+                imageSize = 44
             ),
             PageComponent.Image(url = "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200", isFullWidth = true, isRounded = true),
-            PageComponent.Text(content = "Seu conteúdo começa aqui...", fontSize = 18),
-            PageComponent.Header(title = "Subtítulo", fontSize = 24),
-            PageComponent.Text(content = "Mais detalhes sobre o seu pensamento.", fontSize = 18),
-            PageComponent.SocialLinks(instagram = "https://instagram.com", whatsapp = "https://wa.me/5500000000000"),
-            PageComponent.Button(text = "💬 Comentar no WhatsApp", url = "https://wa.me/5500000000000")
+            PageComponent.Text(content = "O segredo para o sucesso no novo cenário digital não é apenas tecnologia, mas como você conecta as pessoas ao seu propósito...", fontSize = 19),
+            PageComponent.Header(title = "A Era da Inteligência Artificial", fontSize = 26),
+            PageComponent.Text(content = "Estamos vivendo a maior transformação tecnológica da história recente. Adaptar-se não é mais uma opção, é sobrevivência.", fontSize = 19),
+            PageComponent.SocialLinks(instagram = "#", whatsapp = "#"),
+            PageComponent.Button(text = "Entrar na Comunidade", url = "#")
         )
     )
 

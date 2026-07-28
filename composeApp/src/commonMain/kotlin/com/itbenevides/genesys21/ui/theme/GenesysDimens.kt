@@ -39,6 +39,6 @@ object GenesysDimens {
     // Screen Specific
     val LoginMaxWidth = 400.dp
     val ContentMaxWidth = 1000.dp
-    val ViewerMaxWidth = 1300.dp
+    val ViewerMaxWidth = 1000.dp
     val EditorMaxWidth = 800.dp
 }

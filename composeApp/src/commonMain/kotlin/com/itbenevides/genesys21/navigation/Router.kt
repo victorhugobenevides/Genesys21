@@ -13,6 +13,8 @@ import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.syncUrlWithScreen
 import com.itbenevides.genesys21.util.AnalyticsManager
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Router re-arquitetado: O Navegador é o Boss.
@@ -26,6 +28,9 @@ class Router(val viewModel: PageViewModel) {
         private set
 
     private val historyStack = mutableListOf<Route>()
+
+    val currentUrlParameters: String
+        get() = com.itbenevides.genesys21.getUrlSearchParameters()
 
     fun getHistory(): List<Route> = historyStack.toList()
 
@@ -156,6 +161,15 @@ class Router(val viewModel: PageViewModel) {
         navigationJob?.cancel()
         navigationJob =
             navigationScope.launch {
+                // Aguarda o Firebase sinalizar o login por até 2 segundos antes de decidir a rota
+                try {
+                    withTimeout(2.seconds) {
+                        viewModel.isLoggedIn.first { it }
+                    }
+                } catch (e: Exception) {
+                    // Timeout ou erro, prossegue com o estado atual
+                }
+
                 val urlPath = getInitialUrlPath() ?: "/"
                 val params = getUrlParams()
 
@@ -167,9 +181,39 @@ class Router(val viewModel: PageViewModel) {
                 val token = viewModel.getCurrentUserToken()
                 val isLoggedIn = token != null
 
+                // NOVO: Verifica se voltou da Stripe com sucesso
+                val stripeOrderId = params["orderId"]
+                val stripeStatus = params["status"]
+
+                if (stripeStatus == "success" && !stripeOrderId.isNullOrBlank()) {
+                    viewModel.clearCart() // Limpa o carrinho IMEDIATAMENTE
+                    applyRouteState(Route.CustomerOrderHistory(null)) // Vai para o Histórico como solicitado
+                    forceSyncUrl()
+                    return@launch
+                }
+
+                if (stripeStatus == "cancel") {
+                    applyRouteState(Route.Cart(null))
+                    forceSyncUrl()
+                    return@launch
+                }
+
                 val orderId = urlPath.extractId("/track/")
                 if (orderId != null) {
-                    applyRouteState(Route.OrderTracking(orderId))
+                    val status = params["status"]
+                    applyRouteState(Route.OrderTracking(orderId, status))
+                    forceSyncUrl()
+                    return@launch
+                }
+
+                if (urlPath.contains("/history")) {
+                    applyRouteState(Route.CustomerOrderHistory(null))
+                    forceSyncUrl()
+                    return@launch
+                }
+
+                if (urlPath.contains("/cart")) {
+                    applyRouteState(Route.Cart(null))
                     forceSyncUrl()
                     return@launch
                 }

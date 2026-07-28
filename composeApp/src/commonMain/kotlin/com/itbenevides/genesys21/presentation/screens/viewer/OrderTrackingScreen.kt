@@ -1,21 +1,19 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysLoadingOverlay
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
@@ -38,6 +36,7 @@ import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.util.shimmerBrush
 import com.itbenevides.genesys21.util.AnalyticsManager
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToLong
@@ -45,11 +44,13 @@ import kotlin.math.roundToLong
 @Composable
 fun OrderTrackingScreen(
     orderId: String,
+    status: String? = null,
     onBack: () -> Unit,
 ) {
     val viewModel: PageViewModel = koinViewModel()
     val order by viewModel.trackedOrder.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isWaitingForSignal by viewModel.isWaitingForPaymentSignal.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     val uriHandler = LocalUriHandler.current
 
@@ -59,13 +60,17 @@ fun OrderTrackingScreen(
     state =
         state.copy(
             order = order,
-            isLoading = isLoading,
+            isLoading = isLoading || isWaitingForSignal,
         )
 
     LaunchedEffect(orderId) {
         viewModel.trackOrder(orderId)
         AnalyticsManager.trackPageView("${GenesysStrings.TrackOrderTitle} - $orderId")
         AnalyticsManager.logEvent("view_order_status", mapOf("order_id" to orderId))
+
+        if (status == "success") {
+            viewModel.clearCart()
+        }
     }
 
     // 2. Event Handler
@@ -86,10 +91,14 @@ fun OrderTrackingScreen(
 
     // 3. Render
     AppTheme(themeConfig = themeToUse) {
-        OrderTrackingContent(state, onEvent, onContactStore = { phone ->
-            val message = "Olá, estou acompanhando meu pedido #${state.order?.id} e gostaria de falar com a loja."
-            uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
-        })
+        OrderTrackingContent(
+            state = state,
+            onEvent = onEvent,
+            onContactStore = { phone ->
+                val message = "Olá, estou acompanhando meu pedido #${state.order?.id} e gostaria de falar com a loja."
+                uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
+            },
+        )
     }
 }
 
@@ -116,7 +125,7 @@ private fun OrderTrackingContent(
             // Container responsivo com largura controlada pelo DS
             GenesysWeightBox(1f) {
                 if (state.isLoading) {
-                    GenesysLoadingOverlay()
+                    OrderTrackingShimmer()
                 } else {
                     GenesysColumn(
                         maxWidth = GenesysDimens.ContentMaxWidth,
@@ -135,7 +144,7 @@ private fun OrderTrackingContent(
                                 },
                             )
                         } else {
-                            val currentOrder = state.order!!
+                            val currentOrder = state.order
 
                             // DESTAQUE: Card de Status Principal
                             GenesysCard(elevation = GenesysDimens.ElevationMedium) {
@@ -177,6 +186,27 @@ private fun OrderTrackingContent(
                             GenesysSpacer(GenesysSpacing.Large)
 
                             // EVOLUÇÃO UX: Linha do tempo de acompanhamento
+                            val isWaitingForSignal = currentOrder.status == com.itbenevides.genesys21.domain.model.OrderStatus.AWAITING_PAYMENT
+
+                            if (isWaitingForSignal) {
+                                GenesysCard {
+                                    GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
+                                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                                        GenesysSpacer(GenesysSpacing.Medium)
+                                        GenesysText(
+                                            text = "Aguardando confirmação de pagamento...",
+                                            style = GenesysTextStyle.Body,
+                                            fontWeight = GenesysFontWeight.Bold
+                                        )
+                                        GenesysText(
+                                            text = "Isso pode levar alguns segundos após a conclusão na Stripe.",
+                                            style = GenesysTextStyle.Label
+                                        )
+                                    }
+                                }
+                                GenesysSpacer(GenesysSpacing.Large)
+                            }
+
                             GenesysTrackingTimeline(currentStatus = currentOrder.status)
 
                             GenesysSpacer(GenesysSpacing.Large)
@@ -190,10 +220,10 @@ private fun OrderTrackingContent(
                                     currentOrder.items.forEach { item ->
                                         GenesysRow {
                                             GenesysWeightBox(1f) {
-                                                GenesysText(text = "${item.quantity}x ${item.product.name}")
+                                                GenesysText(text = "${item.quantity}x ${item.name}")
                                             }
                                             // ARREDONDAMENTO: Subtotal por item
-                                            val subtotal = (item.product.price * item.quantity * 100.0).roundToLong() / 100.0
+                                            val subtotal = (item.price * item.quantity * 100.0).roundToLong() / 100.0
                                             GenesysText(
                                                 text = "${GenesysStrings.PricePrefix}$subtotal",
                                                 fontWeight = GenesysFontWeight.Bold,
@@ -216,7 +246,7 @@ private fun OrderTrackingContent(
                                             text = "${GenesysStrings.PricePrefix}$totalFormatted",
                                             style = GenesysTextStyle.Title,
                                             fontWeight = GenesysFontWeight.ExtraBold,
-                                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                            color = MaterialTheme.colorScheme.primary,
                                         )
                                     }
                                 }
@@ -225,6 +255,67 @@ private fun OrderTrackingContent(
 
                         GenesysSpacer(GenesysSpacing.Huge)
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderTrackingShimmer() {
+    GenesysColumn(
+        maxWidth = GenesysDimens.ContentMaxWidth,
+        usePadding = true,
+        verticalArrangement = Arrangement.spacedBy(GenesysSpacing.Large.value)
+    ) {
+        // Card de Status Shimmer
+        GenesysCard {
+            GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
+                Box(modifier = Modifier.size(100.dp, 20.dp).clip(RoundedCornerShape(8.dp)).background(shimmerBrush()))
+                GenesysSpacer(GenesysSpacing.Medium)
+                Box(modifier = Modifier.size(150.dp, 32.dp).clip(RoundedCornerShape(16.dp)).background(shimmerBrush()))
+                GenesysSpacer(GenesysSpacing.Large)
+                Box(modifier = Modifier.size(200.dp, 24.dp).clip(RoundedCornerShape(8.dp)).background(shimmerBrush()))
+                GenesysSpacer(GenesysSpacing.Medium)
+                Box(modifier = Modifier.fillMaxWidth().height(48.dp).clip(RoundedCornerShape(12.dp)).background(shimmerBrush()))
+            }
+        }
+
+        // Timeline Shimmer
+        GenesysCard {
+            GenesysColumn(usePadding = true) {
+                repeat(4) {
+                    GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(24.dp).clip(androidx.compose.foundation.shape.CircleShape).background(shimmerBrush()))
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        Box(modifier = Modifier.size(120.dp, 16.dp).clip(RoundedCornerShape(4.dp)).background(shimmerBrush()))
+                    }
+                    if (it < 3) {
+                        Box(modifier = Modifier.padding(start = 11.dp).size(2.dp, 20.dp).background(shimmerBrush()))
+                    }
+                }
+            }
+        }
+
+        // Summary Shimmer
+        GenesysCard {
+            GenesysColumn(usePadding = true) {
+                Box(modifier = Modifier.size(150.dp, 20.dp).clip(RoundedCornerShape(8.dp)).background(shimmerBrush()))
+                GenesysSpacer(GenesysSpacing.Large)
+                repeat(3) {
+                    GenesysRow {
+                        Box(modifier = Modifier.size(100.dp, 16.dp).clip(RoundedCornerShape(4.dp)).background(shimmerBrush()))
+                        Spacer(modifier = Modifier.weight(1f))
+                        Box(modifier = Modifier.size(60.dp, 16.dp).clip(RoundedCornerShape(4.dp)).background(shimmerBrush()))
+                    }
+                    GenesysSpacer(GenesysSpacing.Medium)
+                }
+                GenesysDivider()
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysRow {
+                    Box(modifier = Modifier.size(80.dp, 24.dp).clip(RoundedCornerShape(8.dp)).background(shimmerBrush()))
+                    Spacer(modifier = Modifier.weight(1f))
+                    Box(modifier = Modifier.size(100.dp, 24.dp).clip(RoundedCornerShape(8.dp)).background(shimmerBrush()))
                 }
             }
         }

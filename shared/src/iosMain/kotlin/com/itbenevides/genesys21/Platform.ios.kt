@@ -11,3 +11,9 @@ actual fun getPlatform(): Platform = IOSPlatform()
 actual fun triggerPrint() {
     // Not implemented for iOS
 }
+
+actual fun openUrlInCurrentTab(url: String) {
+    // Not implemented for iOS
+}
+
+actual fun getUrlSearchParameters(): String = ""

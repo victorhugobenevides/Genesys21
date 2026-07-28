@@ -70,6 +70,12 @@ fun ServiceEditorContent(
     var duration by remember { mutableStateOf(service?.durationMinutes?.toString() ?: "30") }
     var buffer by remember { mutableStateOf(service?.bufferTimeMinutes?.toString() ?: "0") }
 
+    // Novos campos para Serviço Online/Grupo/Domicílio
+    var isOnline by remember { mutableStateOf(service?.isOnline ?: false) }
+    var isHomeService by remember { mutableStateOf(service?.isHomeService ?: false) }
+    var maxParticipants by remember { mutableStateOf(service?.maxParticipants?.toString() ?: "1") }
+    var meetingLink by remember { mutableStateOf(service?.meetingLink ?: "") }
+
     val isLoading by viewModel.isLoading.collectAsState()
 
     GenesysPage(
@@ -134,6 +140,59 @@ fun ServiceEditorContent(
 
                 GenesysSpacer(GenesysSpacing.Large)
 
+                // Configurações Online
+                GenesysText(text = "Configurações de Entrega", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
+                GenesysSpacer(GenesysSpacing.Small)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        GenesysText(text = "Serviço Online", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                        GenesysText(text = "Marque se a sessão for via reunião de vídeo", style = GenesysTextStyle.Label)
+                    }
+                    Switch(checked = isOnline, onCheckedChange = { isOnline = it })
+                }
+
+                if (isOnline) {
+                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysTextField(
+                        value = meetingLink,
+                        onValueChange = { meetingLink = it },
+                        label = "Link da Reunião (Zoom, Google Meet, etc)",
+                        icon = GenesysIcons.Language,
+                        placeholder = "https://meet.google.com/..."
+                    )
+                }
+
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        GenesysText(text = "Atendimento a Domicílio", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+                        GenesysText(text = "O serviço ocorre no endereço do cliente", style = GenesysTextStyle.Label)
+                    }
+                    Switch(checked = isHomeService, onCheckedChange = { isHomeService = it })
+                }
+
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                GenesysTextField(
+                    value = maxParticipants,
+                    onValueChange = { maxParticipants = it },
+                    label = "Limite de Participantes por sessão",
+                    icon = GenesysIcons.People,
+                    placeholder = "1"
+                )
+
+                GenesysSpacer(GenesysSpacing.Large)
+
                 // Imagens do Serviço
                 GenesysText(text = "Fotos do Serviço", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
                 GenesysSpacer(GenesysSpacing.Small)
@@ -167,6 +226,10 @@ fun ServiceEditorContent(
                             price = price.toDoubleOrNull() ?: 0.0,
                             durationMinutes = duration.toIntOrNull() ?: 30,
                             bufferTimeMinutes = buffer.toIntOrNull() ?: 0,
+                            isOnline = isOnline,
+                            isHomeService = isHomeService,
+                            maxParticipants = maxParticipants.toIntOrNull() ?: 1,
+                            meetingLink = if (isOnline) meetingLink else null,
                             imageUrls = imageUrls
                         )
                         onSave(newService)

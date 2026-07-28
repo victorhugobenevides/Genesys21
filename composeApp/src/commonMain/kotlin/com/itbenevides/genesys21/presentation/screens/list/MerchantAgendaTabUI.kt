@@ -1,6 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +20,8 @@ import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingBu
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabData
+import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabRow
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import kotlinx.datetime.*
 
@@ -31,9 +33,12 @@ fun MerchantAgendaTabUI(
     onEvent: (PageListEvent) -> Unit,
 ) {
     val appointments by viewModel.appointments.collectAsState()
+    val upcomingAppointments by viewModel.upcomingAppointments.collectAsState()
     val pages by viewModel.pages.collectAsState()
     val storeId = pages.firstOrNull()?.storeId ?: "admin"
     val availability by viewModel.availability.collectAsState()
+
+    var agendaViewMode by remember { mutableStateOf(0) } // 0: Vista Diária, 1: Todos, 2: Disponibilidade
 
     val today = remember { kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
     val selectedDate = state.selectedDate ?: today
@@ -41,9 +46,12 @@ fun MerchantAgendaTabUI(
     var showAvailabilityDialog by remember { mutableStateOf(false) }
     var selectedAppointmentForEdit by remember { mutableStateOf<Appointment?>(null) }
 
-    LaunchedEffect(selectedDate, storeId) {
-        viewModel.loadAppointments(selectedDate, storeId)
-        viewModel.loadAvailability(storeId)
+    LaunchedEffect(selectedDate, storeId, agendaViewMode) {
+        when (agendaViewMode) {
+            0 -> viewModel.loadAppointments(selectedDate, storeId)
+            1 -> viewModel.loadUpcomingAppointments(storeId)
+            2 -> viewModel.loadAvailability(storeId)
+        }
     }
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
@@ -54,9 +62,9 @@ fun MerchantAgendaTabUI(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                GenesysText(text = "Agenda de Serviços", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+                GenesysText(text = "Gestão de Agenda", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.Bold)
                 GenesysText(
-                    text = "Gerencie seus horários e agendamentos.",
+                    text = "Acompanhe e configure seus atendimentos.",
                     style = GenesysTextStyle.Body,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -66,54 +74,36 @@ fun MerchantAgendaTabUI(
                 onClick = { showAvailabilityDialog = true }
             )
         }
-        GenesysSpacer(GenesysSpacing.Large)
-
-        GenesysCard(modifier = Modifier.fillMaxWidth()) {
-            GenesysColumn(usePadding = true) {
-                GenesysDatePicker(
-                    selectedDate = selectedDate,
-                    onDateSelected = { onEvent(PageListEvent.OnDateSelected(it)) },
-                )
-            }
-        }
 
         GenesysSpacer(GenesysSpacing.Large)
 
-        GenesysText(
-            text = "Agendamentos para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}/${selectedDate.year}",
-            style = GenesysTextStyle.Label,
-            fontWeight = GenesysFontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+        // Seletor de Visualização
+        GenesysTabRow(
+            selectedTabIndex = agendaViewMode,
+            tabs = listOf(
+                GenesysTabData("Vista Diária", GenesysIcons.Schedule),
+                GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
+                GenesysTabData("Horários", GenesysIcons.Settings)
+            ),
+            onTabSelected = { agendaViewMode = it }
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysSpacing.Large)
 
-        if (appointments.isEmpty() && !state.isLoading) {
-            GenesysEmptyState(
-                icon = GenesysIcons.Schedule,
-                title = "Nenhum agendamento",
-                description = "Não há clientes agendados para esta data.",
-            )
-        } else {
-            appointments.sortedBy { it.startTime }.forEach { appointment ->
-                AppointmentCard(
-                    appointment = appointment,
-                    onClick = { selectedAppointmentForEdit = appointment }
+        when (agendaViewMode) {
+            0 -> {
+                DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
+            }
+            1 -> {
+                UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
+            }
+            2 -> {
+                AvailabilityManagementView(
+                    initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
+                    onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
                 )
-                GenesysSpacer(GenesysSpacing.Small)
             }
         }
-    }
-
-    if (showAvailabilityDialog) {
-        AvailabilitySettingsDialog(
-            initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-            onDismiss = { showAvailabilityDialog = false },
-            onSave = {
-                viewModel.saveAvailability(it.copy(storeId = storeId))
-                showAvailabilityDialog = false
-            }
-        )
     }
 
     if (selectedAppointmentForEdit != null) {
@@ -148,18 +138,23 @@ private fun EditAppointmentDialog(
         onDismissRequest = onDismiss,
         title = "Gerenciar Agendamento",
         confirmButton = {
-            GenesysLoadingButton(text = "Salvar Alterações", onClick = {
-                onSave(appointment.copy(
-                    notes = currentNotes,
-                    status = status
-                ))
-            })
+            GenesysLoadingButton(
+                text = "Salvar Alterações",
+                fillWidth = true,
+                onClick = {
+                    onSave(appointment.copy(
+                        notes = currentNotes,
+                        status = status
+                    ))
+                }
+            )
         },
         dismissButton = {
             if (appointment.status != BookingStatus.CANCELLED) {
                 GenesysLoadingButton(
-                    text = "Cancelar Agendamento",
+                    text = "Cancelar", // Encurtei para caber melhor no mobile
                     containerColor = MaterialTheme.colorScheme.error,
+                    fillWidth = true,
                     onClick = onCancel
                 )
             }
@@ -173,7 +168,10 @@ private fun EditAppointmentDialog(
 
             // Status Selector
             GenesysText(text = "Status Atual", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 BookingStatus.entries.forEach { s ->
                     FilterChip(
                         selected = status == s,
@@ -271,99 +269,181 @@ private fun NoteItem(note: BookingNote) {
 }
 
 @Composable
-private fun AvailabilitySettingsDialog(
+private fun DailyAgendaView(
+    selectedDate: LocalDate,
+    appointments: List<Appointment>,
+    state: PageListState,
+    onEvent: (PageListEvent) -> Unit,
+    onEdit: (Appointment) -> Unit
+) {
+    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+        GenesysColumn(usePadding = true) {
+            com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker(
+                selectedDate = selectedDate,
+                onDateSelected = { onEvent(PageListEvent.OnDateSelected(it)) },
+            )
+        }
+    }
+
+    GenesysSpacer(GenesysSpacing.Large)
+
+    GenesysText(
+        text = "Agenda para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}/${selectedDate.year}",
+        style = GenesysTextStyle.Label,
+        fontWeight = GenesysFontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+    )
+
+    GenesysSpacer(GenesysSpacing.Medium)
+
+    if (appointments.isEmpty() && !state.isLoading) {
+        GenesysEmptyState(
+            icon = GenesysIcons.Schedule,
+            title = "Nenhum agendamento",
+            description = "Não há clientes agendados para esta data.",
+        )
+    } else {
+        appointments.sortedBy { it.startTime }.forEach { appointment ->
+            AppointmentCard(
+                appointment = appointment,
+                onClick = { onEdit(appointment) }
+            )
+            GenesysSpacer(GenesysSpacing.Small)
+        }
+    }
+}
+
+@Composable
+private fun UpcomingAgendaView(
+    upcomingAppointments: List<Appointment>,
+    state: PageListState,
+    onEdit: (Appointment) -> Unit
+) {
+    if (upcomingAppointments.isEmpty() && !state.isLoading) {
+        GenesysEmptyState(
+            icon = GenesysIcons.List,
+            title = "Agenda vazia",
+            description = "Você não possui agendamentos futuros no momento.",
+        )
+    } else {
+        // Agrupado por data
+        val grouped = upcomingAppointments.groupBy {
+            it.startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        }
+
+        grouped.forEach { (date, appts) ->
+            GenesysText(
+                text = "${date.dayOfMonth} de ${date.month.name} de ${date.year}",
+                style = GenesysTextStyle.Label,
+                fontWeight = GenesysFontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            appts.forEach { appointment ->
+                AppointmentCard(
+                    appointment = appointment,
+                    onClick = { onEdit(appointment) }
+                )
+                GenesysSpacer(GenesysSpacing.Small)
+            }
+            GenesysSpacer(GenesysSpacing.Medium)
+        }
+    }
+}
+
+@Composable
+private fun AvailabilityManagementView(
     initialAvailability: MerchantAvailability,
-    onDismiss: () -> Unit,
     onSave: (MerchantAvailability) -> Unit
 ) {
     var availabilityState by remember { mutableStateOf(initialAvailability) }
 
-    GenesysDialog(
-        onDismissRequest = onDismiss,
-        title = "Configurar Disponibilidade",
-        confirmButton = {
-            GenesysLoadingButton(text = "Salvar", onClick = { onSave(availabilityState) })
-        }
-    ) {
-        GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 500.dp), useScroll = true) {
-            GenesysText(text = "Defina os dias e intervalos de horário que você atende.", style = GenesysTextStyle.Body)
-            GenesysSpacer(GenesysSpacing.Medium)
+    GenesysColumn(usePadding = false) {
+        GenesysText(text = "Defina os dias e intervalos de horário que você atende.", style = GenesysTextStyle.Body)
+        GenesysSpacer(GenesysSpacing.Medium)
 
-            val days = listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo")
+        val days = listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo")
 
-            days.forEachIndexed { index, day ->
-                val dayOfWeekNumber = index + 1
-                val dayConfig = availabilityState.weeklyConfig.find { it.dayOfWeek == dayOfWeekNumber }
-                    ?: DayConfig(dayOfWeek = dayOfWeekNumber, isClosed = true)
+        days.forEachIndexed { index, day ->
+            val dayOfWeekNumber = index + 1
+            val dayConfig = availabilityState.weeklyConfig.find { it.dayOfWeek == dayOfWeekNumber }
+                ?: DayConfig(dayOfWeek = dayOfWeekNumber, isClosed = true)
 
-                GenesysCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(day, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                            Switch(
-                                checked = !dayConfig.isClosed,
-                                onCheckedChange = { isOpen ->
-                                    val newConfig = if (isOpen) {
-                                        dayConfig.copy(
-                                            isClosed = false,
-                                            slots = if (dayConfig.slots.isEmpty()) listOf(TimeSlotRange("08:00", "18:00")) else dayConfig.slots
-                                        )
-                                    } else {
-                                        dayConfig.copy(isClosed = true)
-                                    }
-
-                                    val newList = availabilityState.weeklyConfig.toMutableList()
-                                    newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
-                                    newList.add(newConfig)
-                                    availabilityState = availabilityState.copy(weeklyConfig = newList.sortedBy { it.dayOfWeek })
-                                }
-                            )
-                        }
-
-                        if (!dayConfig.isClosed) {
-                            GenesysSpacer(GenesysSpacing.Small)
-                            dayConfig.slots.forEachIndexed { slotIndex, slot ->
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    OutlinedTextField(
-                                        value = slot.startTime,
-                                        onValueChange = { newTime ->
-                                            val newSlots = dayConfig.slots.toMutableList()
-                                            newSlots[slotIndex] = slot.copy(startTime = newTime)
-                                            val newList = availabilityState.weeklyConfig.toMutableList()
-                                            newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
-                                            newList.add(dayConfig.copy(slots = newSlots))
-                                            availabilityState = availabilityState.copy(weeklyConfig = newList)
-                                        },
-                                        label = { Text("Início") },
-                                        modifier = Modifier.weight(1f),
-                                        placeholder = { Text("08:00") }
+            GenesysCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(day, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        Switch(
+                            checked = !dayConfig.isClosed,
+                            onCheckedChange = { isOpen ->
+                                val newConfig = if (isOpen) {
+                                    dayConfig.copy(
+                                        isClosed = false,
+                                        slots = if (dayConfig.slots.isEmpty()) listOf(TimeSlotRange("08:00", "18:00")) else dayConfig.slots
                                     )
-                                    GenesysSpacer(GenesysSpacing.Small)
-                                    OutlinedTextField(
-                                        value = slot.endTime,
-                                        onValueChange = { newTime ->
-                                            val newSlots = dayConfig.slots.toMutableList()
-                                            newSlots[slotIndex] = slot.copy(endTime = newTime)
-                                            val newList = availabilityState.weeklyConfig.toMutableList()
-                                            newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
-                                            newList.add(dayConfig.copy(slots = newSlots))
-                                            availabilityState = availabilityState.copy(weeklyConfig = newList)
-                                        },
-                                        label = { Text("Fim") },
-                                        modifier = Modifier.weight(1f),
-                                        placeholder = { Text("18:00") }
-                                    )
+                                } else {
+                                    dayConfig.copy(isClosed = true)
                                 }
+
+                                val newList = availabilityState.weeklyConfig.toMutableList()
+                                newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
+                                newList.add(newConfig)
+                                availabilityState = availabilityState.copy(weeklyConfig = newList.sortedBy { it.dayOfWeek })
+                            }
+                        )
+                    }
+
+                    if (!dayConfig.isClosed) {
+                        GenesysSpacer(GenesysSpacing.Small)
+                        dayConfig.slots.forEachIndexed { slotIndex, slot ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = slot.startTime,
+                                    onValueChange = { newTime ->
+                                        val newSlots = dayConfig.slots.toMutableList()
+                                        newSlots[slotIndex] = slot.copy(startTime = newTime)
+                                        val newList = availabilityState.weeklyConfig.toMutableList()
+                                        newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
+                                        newList.add(dayConfig.copy(slots = newSlots))
+                                        availabilityState = availabilityState.copy(weeklyConfig = newList)
+                                    },
+                                    label = { Text("Início") },
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = { Text("08:00") }
+                                )
+                                GenesysSpacer(GenesysSpacing.Small)
+                                OutlinedTextField(
+                                    value = slot.endTime,
+                                    onValueChange = { newTime ->
+                                        val newSlots = dayConfig.slots.toMutableList()
+                                        newSlots[slotIndex] = slot.copy(endTime = newTime)
+                                        val newList = availabilityState.weeklyConfig.toMutableList()
+                                        newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
+                                        newList.add(dayConfig.copy(slots = newSlots))
+                                        availabilityState = availabilityState.copy(weeklyConfig = newList)
+                                    },
+                                    label = { Text("Fim") },
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = { Text("18:00") }
+                                )
                             }
                         }
                     }
                 }
             }
         }
+
+        GenesysSpacer(GenesysSpacing.Large)
+        GenesysLoadingButton(
+            text = "Salvar Alterações de Horário",
+            onClick = { onSave(availabilityState) },
+            fillWidth = true
+        )
     }
 }
 

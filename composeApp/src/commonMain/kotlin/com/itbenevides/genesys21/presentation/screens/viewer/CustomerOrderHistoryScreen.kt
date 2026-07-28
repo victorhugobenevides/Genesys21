@@ -7,14 +7,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalUriHandler
 import com.itbenevides.genesys21.domain.model.Appointment
 import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.navigation.Route
+import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
@@ -37,10 +42,12 @@ import kotlinx.datetime.toLocalDateTime
 
 @Composable
 fun CustomerOrderHistoryScreen(
+    status: String? = null,
     onBack: () -> Unit,
     onOrderClick: (Order) -> Unit,
 ) {
     val viewModel: PageViewModel = koinViewModel()
+    val router: Router = org.koin.compose.koinInject()
     val orders by viewModel.customerOrders.collectAsState()
     val appointments by viewModel.customerAppointments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -48,6 +55,10 @@ fun CustomerOrderHistoryScreen(
     LaunchedEffect(Unit) {
         viewModel.loadCustomerOrders()
         AnalyticsManager.trackPageView(GenesysStrings.OrderHistoryTitle)
+
+        if (status == "success") {
+            viewModel.clearCart()
+        }
     }
 
     GenesysPage(
@@ -55,6 +66,12 @@ fun CustomerOrderHistoryScreen(
             GenesysTopAppBar(
                 title = GenesysStrings.OrderHistoryTitle,
                 onBack = onBack,
+                actions = {
+                    GenesysIconButton(
+                        icon = GenesysIcons.Person,
+                        onClick = { router.navigateTo(Route.Profile) }
+                    )
+                }
             )
         },
     ) {
@@ -117,6 +134,7 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
     val startTime = appointment.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
     val dateStr = "${startTime.dayOfMonth.toString().padStart(2, '0')}/${startTime.monthNumber.toString().padStart(2, '0')}/${startTime.year}"
     val timeStr = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')}"
+    val uriHandler = LocalUriHandler.current
 
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         GenesysColumn(usePadding = true) {
@@ -147,6 +165,25 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall
                     )
+                }
+            }
+
+            // Link de Reunião (Apenas se disponível)
+            appointment.meetingLink?.let { link ->
+                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysCard(
+                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                    onClick = { uriHandler.openUri(link) }
+                ) {
+                    GenesysRow(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(GenesysIcons.Language, null, tint = MaterialTheme.colorScheme.tertiary)
+                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
+                            GenesysText(text = "Link da Reunião", fontWeight = GenesysFontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
+                            GenesysText(text = "Clique para acessar a sala", style = GenesysTextStyle.Label)
+                        }
+                        Icon(GenesysIcons.ArrowRight, null, tint = MaterialTheme.colorScheme.tertiary)
+                    }
                 }
             }
 

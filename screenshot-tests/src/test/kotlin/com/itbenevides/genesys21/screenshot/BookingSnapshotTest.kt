@@ -4,30 +4,23 @@ import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.presentation.screens.viewer.ServiceBookingScreen
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
+import org.koin.compose.koinInject
 
 class BookingSnapshotTest {
     @get:Rule
     val paparazzi = createGenesysPaparazzi()
 
     @Test
-    fun testServiceBookingScreen() {
-        val mockViewModel = mockk<com.itbenevides.genesys21.presentation.PageViewModel>(relaxed = true)
-        every { mockViewModel.isLoading } returns MutableStateFlow(false)
-        every { mockViewModel.customerName } returns MutableStateFlow("Victor Test")
-        every { mockViewModel.customerPhone } returns MutableStateFlow("11999999999")
-        every { mockViewModel.appointments } returns MutableStateFlow(emptyList())
-
-        // Mocking available slots for deterministic UI
-        val sampleSlots = listOf("09:00", "10:00", "11:00", "14:00", "15:00")
-        io.mockk.coEvery {
-            mockViewModel.getAvailableSlots(any(), any(), any())
-        } returns sampleSlots
+    fun testServiceBookingScreenResponsive() {
+        // We use the koinInject from our helper's mock context if possible,
+        // but here we need specific mocks for deterministic behavior.
+        // Actually genesysResponsiveSnapshot uses getMockModule() internally.
 
         val sampleService = BookingService(
             id = "s1",
@@ -39,12 +32,12 @@ class BookingSnapshotTest {
         )
         val samplePage = Page(id = "p1", storeId = "store-1", title = "Barbearia Teste")
 
-        paparazzi.genesysSnapshot {
+        paparazzi.genesysResponsiveSnapshot {
             ServiceBookingScreen(
                 service = sampleService,
                 page = samplePage,
                 router = mockk(relaxed = true),
-                viewModel = mockViewModel
+                viewModel = koinInject()
             )
         }
     }

@@ -34,6 +34,10 @@ class SqliteBookingRepository : BookingRepository {
                 bufferTimeMinutes = row[BookingServicesTable.bufferTimeMinutes],
                 categoryId = row[BookingServicesTable.categoryId],
                 isEnabled = row[BookingServicesTable.isEnabled],
+                isOnline = row[BookingServicesTable.isOnline],
+                isHomeService = row[BookingServicesTable.isHomeService],
+                maxParticipants = row[BookingServicesTable.maxParticipants],
+                meetingLink = row[BookingServicesTable.meetingLink],
                 imageUrls = imageUrls,
                 createdAt = row[BookingServicesTable.createdAt],
                 updatedAt = row[BookingServicesTable.updatedAt],
@@ -59,6 +63,10 @@ class SqliteBookingRepository : BookingRepository {
                 bufferTimeMinutes = row[BookingServicesTable.bufferTimeMinutes],
                 categoryId = row[BookingServicesTable.categoryId],
                 isEnabled = row[BookingServicesTable.isEnabled],
+                isOnline = row[BookingServicesTable.isOnline],
+                isHomeService = row[BookingServicesTable.isHomeService],
+                maxParticipants = row[BookingServicesTable.maxParticipants],
+                meetingLink = row[BookingServicesTable.meetingLink],
                 imageUrls = imageUrls,
                 createdAt = row[BookingServicesTable.createdAt],
                 updatedAt = row[BookingServicesTable.updatedAt],
@@ -85,6 +93,10 @@ class SqliteBookingRepository : BookingRepository {
                     it[bufferTimeMinutes] = service.bufferTimeMinutes
                     it[categoryId] = service.categoryId
                     it[isEnabled] = service.isEnabled
+                    it[isOnline] = service.isOnline
+                    it[isHomeService] = service.isHomeService
+                    it[maxParticipants] = service.maxParticipants
+                    it[meetingLink] = service.meetingLink
                     it[updatedAt] = System.currentTimeMillis()
                 }
             } else {
@@ -98,6 +110,10 @@ class SqliteBookingRepository : BookingRepository {
                     it[bufferTimeMinutes] = service.bufferTimeMinutes
                     it[categoryId] = service.categoryId
                     it[isEnabled] = service.isEnabled
+                    it[isOnline] = service.isOnline
+                    it[isHomeService] = service.isHomeService
+                    it[maxParticipants] = service.maxParticipants
+                    it[meetingLink] = service.meetingLink
                 }
             }
 
@@ -263,6 +279,16 @@ class SqliteBookingRepository : BookingRepository {
                         } catch (e: Exception) {
                             BookingStatus.PENDING
                         },
+                        meetingLink = row[AppointmentsTable.meetingLink],
+                        travelFee = row[AppointmentsTable.travelFee],
+                        address = if (row[AppointmentsTable.zipCode] != null) Address(
+                            street = row[AppointmentsTable.street] ?: "",
+                            number = row[AppointmentsTable.number] ?: "",
+                            neighborhood = row[AppointmentsTable.neighborhood] ?: "",
+                            city = row[AppointmentsTable.city] ?: "",
+                            state = row[AppointmentsTable.state] ?: "",
+                            zipCode = row[AppointmentsTable.zipCode] ?: ""
+                        ) else null,
                         notes = notes,
                         createdAt = row[AppointmentsTable.createdAt],
                         updatedAt = row[AppointmentsTable.updatedAt],
@@ -272,6 +298,73 @@ class SqliteBookingRepository : BookingRepository {
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    override suspend fun getUpcomingAppointments(storeId: String): List<Appointment> = dbQuery {
+        val now = System.currentTimeMillis()
+        AppointmentsTable.selectAll()
+            .where { (AppointmentsTable.storeId eq storeId) and (AppointmentsTable.startTime greaterEq now) and (AppointmentsTable.deletedAt.isNull()) }
+            .orderBy(AppointmentsTable.startTime to SortOrder.ASC)
+            .map { row ->
+                val apptId = row[AppointmentsTable.id]
+                Appointment(
+                    id = apptId,
+                    storeId = row[AppointmentsTable.storeId],
+                    serviceId = row[AppointmentsTable.serviceId],
+                    customerName = row[AppointmentsTable.customerName],
+                    customerPhone = row[AppointmentsTable.customerPhone],
+                    startTime = Instant.fromEpochMilliseconds(row[AppointmentsTable.startTime]),
+                    endTime = Instant.fromEpochMilliseconds(row[AppointmentsTable.endTime]),
+                    status = try {
+                        BookingStatus.valueOf(row[AppointmentsTable.status])
+                    } catch (e: Exception) {
+                        BookingStatus.PENDING
+                    },
+                    meetingLink = row[AppointmentsTable.meetingLink],
+                    travelFee = row[AppointmentsTable.travelFee],
+                    address = if (row[AppointmentsTable.zipCode] != null) Address(
+                        street = row[AppointmentsTable.street] ?: "",
+                        number = row[AppointmentsTable.number] ?: "",
+                        neighborhood = row[AppointmentsTable.neighborhood] ?: "",
+                        city = row[AppointmentsTable.city] ?: "",
+                        state = row[AppointmentsTable.state] ?: "",
+                        zipCode = row[AppointmentsTable.zipCode] ?: ""
+                    ) else null
+                )
+            }
+    }
+
+    override suspend fun getAllAppointments(storeId: String): List<Appointment> = dbQuery {
+        AppointmentsTable.selectAll()
+            .where { (AppointmentsTable.storeId eq storeId) and (AppointmentsTable.deletedAt.isNull()) }
+            .orderBy(AppointmentsTable.startTime to SortOrder.DESC)
+            .map { row ->
+                val apptId = row[AppointmentsTable.id]
+                Appointment(
+                    id = apptId,
+                    storeId = row[AppointmentsTable.storeId],
+                    serviceId = row[AppointmentsTable.serviceId],
+                    customerName = row[AppointmentsTable.customerName],
+                    customerPhone = row[AppointmentsTable.customerPhone],
+                    startTime = Instant.fromEpochMilliseconds(row[AppointmentsTable.startTime]),
+                    endTime = Instant.fromEpochMilliseconds(row[AppointmentsTable.endTime]),
+                    status = try {
+                        BookingStatus.valueOf(row[AppointmentsTable.status])
+                    } catch (e: Exception) {
+                        BookingStatus.PENDING
+                    },
+                    meetingLink = row[AppointmentsTable.meetingLink],
+                    travelFee = row[AppointmentsTable.travelFee],
+                    address = if (row[AppointmentsTable.zipCode] != null) Address(
+                        street = row[AppointmentsTable.street] ?: "",
+                        number = row[AppointmentsTable.number] ?: "",
+                        neighborhood = row[AppointmentsTable.neighborhood] ?: "",
+                        city = row[AppointmentsTable.city] ?: "",
+                        state = row[AppointmentsTable.state] ?: "",
+                        zipCode = row[AppointmentsTable.zipCode] ?: ""
+                    ) else null
+                )
+            }
     }
 
     override suspend fun getAppointmentsByPhone(phone: String): List<Appointment> = dbQuery {
@@ -308,6 +401,16 @@ class SqliteBookingRepository : BookingRepository {
                     } catch (e: Exception) {
                         BookingStatus.PENDING
                     },
+                    meetingLink = row[AppointmentsTable.meetingLink],
+                    travelFee = row[AppointmentsTable.travelFee],
+                    address = if (row[AppointmentsTable.zipCode] != null) Address(
+                        street = row[AppointmentsTable.street] ?: "",
+                        number = row[AppointmentsTable.number] ?: "",
+                        neighborhood = row[AppointmentsTable.neighborhood] ?: "",
+                        city = row[AppointmentsTable.city] ?: "",
+                        state = row[AppointmentsTable.state] ?: "",
+                        zipCode = row[AppointmentsTable.zipCode] ?: ""
+                    ) else null,
                     notes = notes,
                     createdAt = row[AppointmentsTable.createdAt],
                     updatedAt = row[AppointmentsTable.updatedAt],
@@ -321,6 +424,11 @@ class SqliteBookingRepository : BookingRepository {
             try {
                 val aid = appointment.id.ifBlank { java.util.UUID.randomUUID().toString() }
 
+                // Busca o link de reunião do serviço (se houver)
+                val meetingLink = BookingServicesTable.select(BookingServicesTable.meetingLink)
+                    .where { BookingServicesTable.id eq appointment.serviceId }
+                    .firstOrNull()?.get(BookingServicesTable.meetingLink)
+
                 AppointmentsTable.insert {
                     it[id] = aid
                     it[storeId] = appointment.storeId
@@ -331,6 +439,14 @@ class SqliteBookingRepository : BookingRepository {
                     it[startTime] = appointment.startTime.toEpochMilliseconds()
                     it[endTime] = appointment.endTime.toEpochMilliseconds()
                     it[status] = appointment.status.name
+                    it[AppointmentsTable.meetingLink] = meetingLink
+                    it[travelFee] = appointment.travelFee
+                    it[street] = appointment.address?.street
+                    it[number] = appointment.address?.number
+                    it[neighborhood] = appointment.address?.neighborhood
+                    it[city] = appointment.address?.city
+                    it[state] = appointment.address?.state
+                    it[zipCode] = appointment.address?.zipCode
                 }
 
                 appointment.notes.forEach { note ->

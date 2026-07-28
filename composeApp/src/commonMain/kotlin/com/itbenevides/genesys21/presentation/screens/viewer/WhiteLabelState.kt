@@ -64,4 +64,8 @@ sealed class WhiteLabelEvent {
     data class OnMoveComponentUp(val index: Int) : WhiteLabelEvent()
 
     data class OnMoveComponentDown(val index: Int) : WhiteLabelEvent()
+
+    data class OnMoveComponentToTop(val index: Int) : WhiteLabelEvent()
+
+    data class OnMoveComponentToBottom(val index: Int) : WhiteLabelEvent()
 }

@@ -39,8 +39,12 @@ fun GenesysTopAppBar(
         modifier = if (isTranslucent) Modifier.background(Color.Transparent) else Modifier,
         title = {
             Text(
-                if (isCompact && title.length > 20) title.take(17) + "..." else title,
-                style = if (isCompact) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                text = title,
+                style = if (isCompact) {
+                    MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                } else {
+                    MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+                },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

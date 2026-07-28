@@ -25,6 +25,7 @@ fun GenesysTrackingTimeline(currentStatus: OrderStatus) {
     val steps =
         listOf(
             OrderStatus.PENDING to "Pedido Recebido",
+            OrderStatus.AWAITING_PAYMENT to "Aguardando Pagamento",
             OrderStatus.PROCESSING to "Em Preparação",
             OrderStatus.COMPLETED to "Pedido Concluído",
         )
@@ -35,15 +36,17 @@ fun GenesysTrackingTimeline(currentStatus: OrderStatus) {
                 when (currentStatus) {
                     OrderStatus.CANCELLED -> false
                     OrderStatus.PENDING -> index == 0
-                    OrderStatus.PROCESSING -> index <= 1
+                    OrderStatus.AWAITING_PAYMENT -> index <= 1
+                    OrderStatus.PROCESSING -> index <= 2
                     OrderStatus.COMPLETED -> true
                 }
 
             val isActive =
                 when (currentStatus) {
                     OrderStatus.PENDING -> index == 0
-                    OrderStatus.PROCESSING -> index == 1
-                    OrderStatus.COMPLETED -> index == 2
+                    OrderStatus.AWAITING_PAYMENT -> index == 1
+                    OrderStatus.PROCESSING -> index == 2
+                    OrderStatus.COMPLETED -> index == 3
                     else -> false
                 }
 
