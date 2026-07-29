@@ -11,6 +11,7 @@ import com.stripe.net.Webhook
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -94,20 +95,27 @@ fun Route.orderRoutes(
 
                             if (!secretKey.isNullOrBlank()) {
                                 try {
-                                    val host = call.request.header(HttpHeaders.Host) ?: "localhost:8081"
-                                    val scheme = if (host.contains("localhost")) "http" else "https"
-                                    val baseUrl = "$scheme://$host"
+                                    val baseUrl = "${call.request.origin.scheme}://${call.request.origin.serverHost}"
+                                    val finalBaseUrl = if (call.request.origin.serverPort != 80 && call.request.origin.serverPort != 443) {
+                                        "$baseUrl:${call.request.origin.serverPort}"
+                                    } else {
+                                        baseUrl
+                                    }
 
                                     // IMPORTANTE: Passar o pedido com o ID gerado para a Stripe
                                     val checkoutUrl = stripeService.createCheckoutSession(
                                         order = order.copy(id = generatedId),
                                         secretKey = secretKey,
-                                        successUrl = "$baseUrl/?orderId=$generatedId&status=success",
-                                        cancelUrl = "$baseUrl/?status=cancel",
+                                        successUrl = "$finalBaseUrl/?orderId=$generatedId&status=success",
+                                        cancelUrl = "$finalBaseUrl/?status=cancel",
                                         connectedAccountId = store.stripeAccountId
                                     )
                                     println("STRIPE: Checkout URL gerada com sucesso!")
                                     call.respond(HttpStatusCode.Created, OrderResponse(orderId = generatedId, checkoutUrl = checkoutUrl))
+                                } catch (e: com.stripe.exception.StripeException) {
+                                    val msg = "STRIPE ERROR: ${e.message}"
+                                    println(msg)
+                                    call.respond(HttpStatusCode.BadRequest, "Erro na Stripe: $msg. Verifique se o lojista completou o cadastro.")
                                 } catch (e: Exception) {
                                     val msg = "STRIPE ERROR: ${e.message}"
                                     println(msg)

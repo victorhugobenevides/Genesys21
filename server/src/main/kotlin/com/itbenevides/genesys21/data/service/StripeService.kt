@@ -1,10 +1,11 @@
 package com.itbenevides.genesys21.data.service
 
 import com.stripe.Stripe
+import com.stripe.StripeClient
 import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
 import com.itbenevides.genesys21.domain.model.Order
-import com.itbenevides.genesys21.domain.model.CartItem
+import com.stripe.net.RequestOptions
 
 class StripeService {
 
@@ -15,7 +16,7 @@ class StripeService {
         cancelUrl: String,
         connectedAccountId: String? = null
     ): String {
-        Stripe.apiKey = secretKey
+        val client = StripeClient(secretKey)
 
         val paramsBuilder = SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.PAYMENT)
@@ -26,7 +27,7 @@ class StripeService {
 
         // Se houver uma conta conectada (Direct Charges), a cobrança vai para ela
         val requestOptions = if (!connectedAccountId.isNullOrBlank()) {
-            com.stripe.net.RequestOptions.builder()
+            RequestOptions.builder()
                 .setStripeAccount(connectedAccountId)
                 .build()
         } else {
@@ -94,10 +95,11 @@ class StripeService {
         }
 
         val session = if (requestOptions != null) {
-            Session.create(paramsBuilder.build(), requestOptions)
+            client.v1().checkout().sessions().create(paramsBuilder.build(), requestOptions)
         } else {
-            Session.create(paramsBuilder.build())
+            client.v1().checkout().sessions().create(paramsBuilder.build())
         }
+
         return session.url
     }
 }
