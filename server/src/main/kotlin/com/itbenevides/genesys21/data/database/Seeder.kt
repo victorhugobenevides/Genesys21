@@ -165,6 +165,14 @@ object Seeder {
 
                 PageComponent.Divider(),
 
+                PageComponent.Header(title = "Sobre Mim", fontSize = 28, fontWeight = "EXTRA_BOLD"),
+                PageComponent.Text(
+                    content = "Engenheiro de Software focado no ecossistema mobile com longa trajetória em projetos de alta escala. Atuação profunda em arquitetura sustentável (Clean/MVI), segurança cibernética e performance em ambientes de missão crítica.",
+                    fontSize = 17
+                ),
+
+                PageComponent.Divider(),
+
                 PageComponent.Header(title = "Experiência Profissional", fontSize = 28, fontWeight = "EXTRA_BOLD"),
 
                 PageComponent.Grid(
