@@ -5,8 +5,11 @@ import com.itbenevides.genesys21.domain.repository.UserRepository
 import com.stripe.Stripe
 import com.stripe.StripeClient
 import com.stripe.model.AccountSession
+import com.stripe.model.LoginLink
 import com.stripe.param.AccountSessionCreateParams
+import com.stripe.param.LoginLinkCreateOnAccountParams
 import com.stripe.param.v2.core.AccountCreateParams
+import com.stripe.param.v2.core.AccountLinkCreateParams
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -22,6 +25,9 @@ data class AccountSessionRequest(val storeId: String)
 
 @Serializable
 data class AccountSessionResponse(val clientSecret: String)
+
+@Serializable
+data class ConnectLinkResponse(val url: String)
 
 fun Route.connectRoutes(
     userRepository: UserRepository,
@@ -93,6 +99,74 @@ fun Route.connectRoutes(
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao criar conta Connect")
+                }
+            }
+
+            // Gerar Link de Onboarding (Accounts v2)
+            get("/onboarding-link") {
+                val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val storeId = call.request.queryParameters["storeId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "storeId ausente")
+
+                val store = storeRepository.getStore(storeId).getOrNull()
+                val accountId = store?.stripeAccountId
+
+                if (accountId == null || store.ownerId != principal.name) {
+                    return@get call.respond(HttpStatusCode.Forbidden, "Conta Connect não encontrada")
+                }
+
+                try {
+                    val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
+                    val client = StripeClient(secretKey)
+
+                    val publicHost = System.getenv("PUBLIC_HOST") ?: "http://localhost"
+
+                    val params = AccountLinkCreateParams.builder()
+                        .setAccount(accountId)
+                        .setUseCase(
+                            AccountLinkCreateParams.UseCase.builder()
+                                .setType(AccountLinkCreateParams.UseCase.Type.ACCOUNT_ONBOARDING)
+                                .setAccountOnboarding(
+                                    AccountLinkCreateParams.UseCase.AccountOnboarding.builder()
+                                        .addConfiguration(AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration.MERCHANT)
+                                        .setRefreshUrl("$publicHost/list")
+                                        .setReturnUrl("$publicHost/list")
+                                        .build()
+                                )
+                                .build()
+                        )
+                        .build()
+
+                    val accountLink = client.v2().core().accountLinks().create(params)
+                    call.respond(ConnectLinkResponse(url = accountLink.url))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao gerar link de onboarding")
+                }
+            }
+
+            // Gerar Link de Login para o Dashboard
+            get("/login-link") {
+                val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val storeId = call.request.queryParameters["storeId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "storeId ausente")
+
+                val store = storeRepository.getStore(storeId).getOrNull()
+                val accountId = store?.stripeAccountId
+
+                if (accountId == null || store.ownerId != principal.name) {
+                    return@get call.respond(HttpStatusCode.Forbidden, "Conta Connect não encontrada")
+                }
+
+                try {
+                    val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
+                    Stripe.apiKey = secretKey
+
+                    val params = LoginLinkCreateOnAccountParams.builder().build()
+                    val loginLink = LoginLink.createOnAccount(accountId, params)
+
+                    call.respond(ConnectLinkResponse(url = loginLink.url))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao gerar link de login")
                 }
             }
 
