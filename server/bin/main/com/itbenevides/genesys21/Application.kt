@@ -16,7 +16,6 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.CORS
@@ -62,8 +61,8 @@ fun Application.module() {
 
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
+    val orderRepository = SqliteOrderRepository()
     val bookingRepository = SqliteBookingRepository()
-    val orderRepository = SqliteOrderRepository(bookingRepository)
     val userRepository = SqliteUserRepository()
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()
@@ -109,18 +108,12 @@ fun Application.module() {
         )
     }
 
-    // Configuração para suportar Nginx Proxy (Headers X-Forwarded-*)
-    // No Ktor 3, XForwardedHeaders é a forma recomendada para ler Host/Proto do Nginx
-    install(XForwardedHeaders) {
-        // Confia nos headers padrões enviados pelo Nginx no docker-compose/circleci
-    }
-
     install(DefaultHeaders) {
         header(HttpHeaders.Server, "GenesysServer")
         header("X-Frame-Options", "DENY")
         header("X-Content-Type-Options", "nosniff")
         header("X-XSS-Protection", "1; mode=block")
-        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com;")
+        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos;")
     }
 
     /*

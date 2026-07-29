@@ -345,11 +345,6 @@ class PageViewModel(
                         theme = page?.theme ?: PageThemeConfig.ROYAL
                     )
                 submitOrderUseCase(order).onSuccess { response ->
-                    // Se houver serviços no carrinho, precisamos criar os Appointments REAIS no servidor
-                    order.items.filter { it.service != null && it.appointment != null }.forEach { item ->
-                        createAppointmentUseCase(item.appointment!!)
-                    }
-
                     // Limpa o carrinho apenas se for pagamento LOCAL
                     // Para pagamentos via APP (Stripe), limpamos apenas após a confirmação de sucesso
                     // para permitir que o usuário volte ao carrinho se cancelar o pagamento.

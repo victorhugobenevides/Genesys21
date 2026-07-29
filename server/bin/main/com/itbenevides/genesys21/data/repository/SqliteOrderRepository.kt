@@ -9,9 +9,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class SqliteOrderRepository(
-    private val bookingRepository: com.itbenevides.genesys21.domain.repository.BookingRepository
-) : OrderRepository {
+class SqliteOrderRepository : OrderRepository {
     override fun getOrders(token: String): Flow<List<Order>> =
         flow {
             val orders =
@@ -118,19 +116,6 @@ class SqliteOrderRepository(
                         ProductsTable.update({ ProductsTable.id eq prod.id }) {
                             it.update(stock, stock minus item.quantity)
                         }
-                    }
-
-                    // AGENDAMENTO: Se for um serviço, cria o Appointment real de forma atômica
-                    val appt = item.appointment
-                    if (item.service != null && appt != null) {
-                        bookingRepository.createAppointment(
-                            appt.copy(
-                                customerId = order.customerId ?: appt.customerId,
-                                customerName = order.customerName ?: appt.customerName,
-                                customerPhone = order.customerPhone ?: appt.customerPhone,
-                                status = if (order.paymentMethod == PaymentMethod.APP) BookingStatus.PENDING else BookingStatus.CONFIRMED
-                            )
-                        )
                     }
                 }
 

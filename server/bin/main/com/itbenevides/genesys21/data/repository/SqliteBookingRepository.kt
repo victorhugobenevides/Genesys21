@@ -424,26 +424,6 @@ class SqliteBookingRepository : BookingRepository {
             try {
                 val aid = appointment.id.ifBlank { java.util.UUID.randomUUID().toString() }
 
-                // 1. VALIDAÇÃO DE DISPONIBILIDADE (Lado do Servidor / Atomicidade)
-                val start = appointment.startTime.toEpochMilliseconds()
-                val end = appointment.endTime.toEpochMilliseconds()
-
-                val hasOverlap = AppointmentsTable.selectAll()
-                    .where {
-                        (AppointmentsTable.storeId eq appointment.storeId) and
-                        (AppointmentsTable.deletedAt.isNull()) and
-                        (
-                            (AppointmentsTable.startTime greaterEq start and (AppointmentsTable.startTime less start.plus(1))) or // Exato início
-                            (AppointmentsTable.startTime greaterEq start and (AppointmentsTable.startTime less end)) or // Algum agendamento inicia durante este
-                            (AppointmentsTable.endTime greater start and (AppointmentsTable.endTime lessEq end)) or // Algum agendamento termina durante este
-                            (AppointmentsTable.startTime lessEq start and (AppointmentsTable.endTime greaterEq end)) // Este agendamento está dentro de outro
-                        )
-                    }.count() > 0
-
-                if (hasOverlap) {
-                    throw Exception("CONFLITO: O horário selecionado (${appointment.startTime}) já foi ocupado.")
-                }
-
                 // Busca o link de reunião do serviço (se houver)
                 val meetingLink = BookingServicesTable.select(BookingServicesTable.meetingLink)
                     .where { BookingServicesTable.id eq appointment.serviceId }
@@ -456,8 +436,8 @@ class SqliteBookingRepository : BookingRepository {
                     it[customerId] = appointment.customerId
                     it[customerName] = appointment.customerName
                     it[customerPhone] = appointment.customerPhone
-                    it[startTime] = start
-                    it[endTime] = end
+                    it[startTime] = appointment.startTime.toEpochMilliseconds()
+                    it[endTime] = appointment.endTime.toEpochMilliseconds()
                     it[status] = appointment.status.name
                     it[AppointmentsTable.meetingLink] = meetingLink
                     it[travelFee] = appointment.travelFee

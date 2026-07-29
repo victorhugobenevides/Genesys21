@@ -63,7 +63,7 @@ object DatabaseFactory {
 
     private fun runMigrations() {
         transaction {
-            SchemaUtils.createMissingTablesAndColumns(
+            SchemaUtils.create(
                 UsersTable,
                 StoresTable,
                 CategoriesTable,
