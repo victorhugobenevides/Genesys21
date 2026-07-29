@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.koin.compose.koinInject
@@ -21,6 +22,8 @@ class BookingSnapshotTest {
         // We use the koinInject from our helper's mock context if possible,
         // but here we need specific mocks for deterministic behavior.
         // Actually genesysResponsiveSnapshot uses getMockModule() internally.
+
+        val fixedDate = LocalDate(2026, 7, 28)
 
         val sampleService = BookingService(
             id = "s1",
@@ -37,7 +40,8 @@ class BookingSnapshotTest {
                 service = sampleService,
                 page = samplePage,
                 router = mockk(relaxed = true),
-                viewModel = koinInject()
+                viewModel = koinInject(),
+                today = fixedDate
             )
         }
     }

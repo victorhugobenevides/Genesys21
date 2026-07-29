@@ -32,6 +32,7 @@ fun ServiceBookingScreen(
     page: Page,
     router: Router,
     viewModel: PageViewModel,
+    today: LocalDate? = null,
 ) {
     var selectedDateTime by remember { mutableStateOf<LocalDateTime?>(null) }
     val isLoading by viewModel.isLoading.collectAsState()
@@ -51,6 +52,8 @@ fun ServiceBookingScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showLoginDialog by remember { mutableStateOf(false) }
 
+    val currentToday = remember { today ?: kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
+
     // Logic to load available slots when date changes
     val updateAvailableSlots = { date: LocalDate ->
         coroutineScope.launch {
@@ -62,7 +65,7 @@ fun ServiceBookingScreen(
 
     // Load initial slots
     LaunchedEffect(Unit) {
-        updateAvailableSlots(kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date)
+        updateAvailableSlots(currentToday)
     }
 
     GenesysPage(
@@ -238,6 +241,7 @@ fun ServiceBookingScreen(
                     availableSlots = availableSlotsForDate,
                     onDateSelected = { updateAvailableSlots(it) },
                     onDateTimeSelected = { selectedDateTime = it },
+                    today = currentToday
                 )
 
                 GenesysSpacer(GenesysSpacing.Huge)

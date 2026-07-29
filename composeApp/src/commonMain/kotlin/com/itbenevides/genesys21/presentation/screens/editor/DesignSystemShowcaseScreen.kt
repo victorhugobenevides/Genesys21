@@ -50,6 +50,7 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.GenesysBrandPresets
 import com.itbenevides.genesys21.util.toColor
 import com.itbenevides.genesys21.getWebBaseUrl
+import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -645,7 +646,8 @@ private fun BookingShowcase() {
             selectedDateTime = null,
             availableSlots = listOf("09:00", "11:00", "15:00"),
             onDateSelected = {},
-            onDateTimeSelected = {}
+            onDateTimeSelected = {},
+            today = LocalDate(2026, 7, 28)
         )
         Spacer(Modifier.height(24.dp))
         ServiceCard(service = sampleService, onClick = {})
