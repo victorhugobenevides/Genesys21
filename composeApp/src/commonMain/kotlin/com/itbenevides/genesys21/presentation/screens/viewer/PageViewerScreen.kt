@@ -105,78 +105,77 @@ fun PageViewerContent(
 ) {
     GenesysPage(
         topBar = {
-            GenesysTopAppBar(
-                title = if (isCompact) state.page.title.take(20).let { if (it.length < state.page.title.length) "$it..." else it } else state.page.title,
+             GenesysTopAppBar(
+                title = if (isCompact) state.page.title.take(15).let { if (it.length < state.page.title.length) "$it..." else it } else state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
-                    // COMPARTILHAR (Sempre visível)
-                    GenesysIconButton(
-                        icon = GenesysIcons.Share,
-                        onClick = { onEvent(PageViewerScreenEvent.OnShareClicked) },
-                    )
-
-                    // MEUS PEDIDOS
-                    if (!isCompact) {
-                        OutlinedButton(
-                            onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
-                            modifier = Modifier.padding(horizontal = 4.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                            border = androidx.compose.foundation.BorderStroke(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        // COMPARTILHAR
+                        FilledTonalIconButton(
+                            onClick = { onEvent(PageViewerScreenEvent.OnShareClicked) },
+                            modifier = Modifier.size(40.dp),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             )
                         ) {
-                            Icon(
-                                GenesysIcons.History,
-                                null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Meus Pedidos", color = MaterialTheme.colorScheme.primary)
+                            Icon(GenesysIcons.Share, null, modifier = Modifier.size(20.dp))
                         }
-                    } else {
-                        GenesysIconButton(
-                            icon = GenesysIcons.History,
+
+                        // HISTÓRICO / MEUS PEDIDOS
+                        FilledTonalIconButton(
                             onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                            modifier = Modifier.size(40.dp),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Icon(GenesysIcons.History, null, modifier = Modifier.size(20.dp))
+                        }
 
-                    // PERFIL
-                    GenesysIconButton(
-                        icon = GenesysIcons.Person,
-                        onClick = { onEvent(PageViewerScreenEvent.OnOpenProfileClicked) },
-                    )
+                        // PERFIL
+                        FilledTonalIconButton(
+                            onClick = { onEvent(PageViewerScreenEvent.OnOpenProfileClicked) },
+                            modifier = Modifier.size(40.dp),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Icon(GenesysIcons.Person, null, modifier = Modifier.size(20.dp))
+                        }
 
-                    // CARRINHO (Destaque no TopBar apenas se não for Mobile ou se o carrinho estiver vazio)
-                    if (!isCompact || cartCount == 0) {
+                        // CARRINHO (Sempre visível e sugestivo)
                         BadgedBox(
                             badge = {
                                 if (cartCount > 0) {
                                     Badge(
                                         containerColor = MaterialTheme.colorScheme.primary,
-                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                                     ) { Text(cartCount.toString()) }
                                 }
-                            },
-                            modifier = Modifier.padding(start = 4.dp)
+                            }
                         ) {
-                            if (!isCompact) {
-                                Button(
-                                    onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                                ) {
-                                    Icon(GenesysIcons.ShoppingCart, null, modifier = Modifier.size(20.dp))
+                            Button(
+                                onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
+                                shape = androidx.compose.foundation.shape.CircleShape,
+                                contentPadding = PaddingValues(
+                                    horizontal = if (isCompact && cartCount == 0) 12.dp else 16.dp,
+                                    vertical = 8.dp
+                                ),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier.height(40.dp)
+                            ) {
+                                Icon(GenesysIcons.ShoppingCart, null, modifier = Modifier.size(20.dp))
+                                if (!isCompact || cartCount > 0) {
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Carrinho")
+                                    Text("Carrinho", style = MaterialTheme.typography.labelLarge)
                                 }
-                            } else {
-                                GenesysIconButton(
-                                    icon = GenesysIcons.ShoppingCart,
-                                    onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
                             }
                         }
                     }

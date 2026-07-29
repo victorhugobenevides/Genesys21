@@ -137,8 +137,8 @@ object Seeder {
                 PageComponent.ProfileHeader(
                     imageUrl = "https://ui-avatars.com/api/?name=Victor+Hugo&size=300&background=000&color=fff",
                     name = "Victor Hugo",
-                    bio = "Engenheiro de Software Mobile | Especialista em Arquitetura & Segurança",
-                    imageSize = 140
+                    bio = "Engenheiro de Software com foco em ambientes mobile | 14+ Anos de Experiência",
+                    imageSize = 160
                 ),
 
                 PageComponent.SocialLinks(
@@ -147,25 +147,27 @@ object Seeder {
                     email = "victorkoto@gmail.com"
                 ),
 
-                PageComponent.Hero(
-                    title = "Transformando Ideias em Experiências Mobile de Alta Escala",
-                    subtitle = "Especialista em ecossistemas Android e iOS com foco em Clean Architecture, MVI e Segurança Bancária.",
-                    imageUrl = "https://picsum.photos/seed/mobile-dev/1200/600",
-                    height = 300
-                ),
+                PageComponent.Divider(),
 
-                PageComponent.Benefits(
-                    title = "Pilares de Atuação",
-                    items = listOf(
-                        PageComponent.BenefitItem("Arquitetura Sustentável", "Foco em Clean Architecture, MVI e Modularização para projetos escaláveis.", "Magic"),
-                        PageComponent.BenefitItem("Segurança & PCI", "Implementação de RASP, Dexguard e conformidade com padrões de pagamentos.", "Check"),
-                        PageComponent.BenefitItem("Performance Crítica", "Otimização de tempo de inicialização, renderização e consumo de memória.", "Inventory")
+                PageComponent.Filter(placeholder = "Buscar ferramenta ou tecnologia (ex: Kotlin, PCI)..."),
+
+                PageComponent.Skills(
+                    title = "Tech Stack & Expertise",
+                    tags = listOf(
+                        "Kotlin", "Java", "Swift", "Dart", "SQL",
+                        "Jetpack Compose", "Flutter", "SwiftUI", "KMP", "Ktor",
+                        "Clean Architecture", "MVI", "MVVM", "SOLID",
+                        "PCI Compliance", "Dexguard", "RASP", "Firebase Auth",
+                        "CI/CD", "CircleCI", "Docker", "Exposed ORM", "SQLite",
+                        "Paparazzi", "Unit Testing", "Analytics",
+                        "AI (IA)", "MCP", "Devin", "Copilot", "Android Studio",
+                        "Visual Studio", "Windsurf", "Cascade", "SpecKit", "Antigravity"
                     )
                 ),
 
                 PageComponent.Divider(),
 
-                PageComponent.Header(title = "Sobre Mim", fontSize = 28, fontWeight = "EXTRA_BOLD"),
+                PageComponent.Header(title = "Sobre Mim", fontSize = 26, fontWeight = "EXTRA_BOLD"),
                 PageComponent.Text(
                     content = "Engenheiro de Software focado no ecossistema mobile com longa trajetória em projetos de alta escala. Atuação profunda em arquitetura sustentável (Clean/MVI), segurança cibernética e performance em ambientes de missão crítica.",
                     fontSize = 17
@@ -173,73 +175,47 @@ object Seeder {
 
                 PageComponent.Divider(),
 
-                PageComponent.Header(title = "Experiência Profissional", fontSize = 28, fontWeight = "EXTRA_BOLD"),
+                PageComponent.Header(title = "Experiência Profissional", fontSize = 26, fontWeight = "EXTRA_BOLD"),
 
-                PageComponent.Grid(
-                    columns = 2,
-                    items = listOf(
-                        PageComponent.GridItem(listOf(
-                            PageComponent.Header(title = "Sensedia (Getnet)", fontSize = 20, usePrimaryColor = true),
-                            PageComponent.Text("Software Engineer - Payments (2024 - Atualmente)", fontSize = 14, fontWeight = "BOLD"),
-                            PageComponent.Text("Atuação no core de pagamentos mobile, garantindo estabilidade e segurança em transações de alto volume.")
-                        )),
-                        PageComponent.GridItem(listOf(
-                            PageComponent.Header(title = "Dafiti Group", fontSize = 20, usePrimaryColor = true),
-                            PageComponent.Text("Software Engineer - Mobile (2018 - 2024)", fontSize = 14, fontWeight = "BOLD"),
-                            PageComponent.Text("Liderança técnica em features de checkout e catálogo para os apps Android e iOS do maior e-commerce de moda da AL.")
-                        )),
-                        PageComponent.GridItem(listOf(
-                            PageComponent.Header(title = "It Lean", fontSize = 20, usePrimaryColor = true),
-                            PageComponent.Text("Software Engineer (2018 - 2019)", fontSize = 14, fontWeight = "BOLD"),
-                            PageComponent.Text("Desenvolvimento de soluções enterprise focadas em agilidade e performance.")
-                        )),
-                        PageComponent.GridItem(listOf(
-                            PageComponent.Header(title = "MáximaTech", fontSize = 20, usePrimaryColor = true),
-                            PageComponent.Text("Android Developer (2015 - 2018)", fontSize = 14, fontWeight = "BOLD"),
-                            PageComponent.Text("Criação de aplicativos robustos para força de vendas e logística.")
-                        ))
+                PageComponent.Header(title = "Sensedia (Getnet) | 2024 - Atual", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(content = "Software Engineer - Payments", fontSize = 14),
+
+                PageComponent.Header(title = "Dafiti Group | 2018 - 2024", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(content = "Software Engineer - Mobile", fontSize = 14),
+
+                PageComponent.Header(title = "It Lean | 2018 - 2019", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(content = "Software Engineer - Android", fontSize = 14),
+
+                PageComponent.Header(title = "MáximaTech | 2015 - 2018", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(content = "Android Developer", fontSize = 14),
+
+                PageComponent.Header(title = "Onnet System | 2012 - 2015", fontSize = 18, usePrimaryColor = true),
+                PageComponent.Text(content = "Android Developer", fontSize = 14),
+
+                PageComponent.Divider(),
+
+                PageComponent.Header(title = "Mentoria & Consultoria", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                PageComponent.SingleService(
+                    service = com.itbenevides.genesys21.domain.model.BookingService(
+                        id = mentoriaId,
+                        storeId = defaultStoreId,
+                        name = "Mentoria em Engenharia de Software Mobile",
+                        price = 250.0,
+                        durationMinutes = 60,
+                        description = "Mentoria técnica e estratégica."
                     )
                 ),
 
                 PageComponent.Divider(),
 
-                PageComponent.Header(title = "Tech Stack & Ferramentas", fontSize = 28, fontWeight = "EXTRA_BOLD"),
-                PageComponent.Skills(
-                    tags = listOf(
-                        "Kotlin", "Swift", "Dart", "Jetpack Compose", "SwiftUI", "Flutter",
-                        "KMP", "Ktor", "Clean Architecture", "MVI", "MVVM", "SOLID",
-                        "PCI Compliance", "Dexguard", "RASP", "CircleCI", "Docker", "SQLite",
-                        "Exposed", "Paparazzi", "Unit Testing", "AI/IA", "Windsurf", "Android Studio"
-                    )
-                ),
-
-                PageComponent.Divider(),
-
-                PageComponent.Header(title = "Mentoria & Consultoria", fontSize = 28, fontWeight = "EXTRA_BOLD"),
-                PageComponent.ServiceList(
-                    title = "Agende uma sessão técnica",
-                    services = listOf(
-                        com.itbenevides.genesys21.domain.model.BookingService(
-                            id = mentoriaId,
-                            storeId = defaultStoreId,
-                            name = "Mentoria 1-to-1",
-                            price = 250.0,
-                            durationMinutes = 60,
-                            description = "Engenharia de Software e Carreira Mobile."
-                        ),
-                        com.itbenevides.genesys21.domain.model.BookingService(
-                            id = consultoriaId,
-                            storeId = defaultStoreId,
-                            name = "Consultoria Enterprise",
-                            price = 500.0,
-                            durationMinutes = 120,
-                            description = "Arquitetura e Segurança de Sistemas."
-                        )
-                    )
+                PageComponent.Header(title = "Produtos & Materiais", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                PageComponent.ProductList(
+                    customLabel = "Materiais de Engenharia Mobile",
+                    isHorizontal = true
                 ),
 
                 PageComponent.Spacer(height = 40),
-                PageComponent.Button(text = "📥 Baixar Currículo Completo (PDF)", url = "print", isPrimary = true)
+                PageComponent.Button(text = "📥 Baixar CV Completo (PDF)", url = "print", isPrimary = true)
             )
 
             PagesTable.insert {
@@ -274,7 +250,7 @@ object Seeder {
                 }
             }
 
-            println("Seeder: Professional CV Page updated with Grid and modern components.")
+            println("Seeder: Initial data and CV Page updated successfully.")
         }
     }
 }
