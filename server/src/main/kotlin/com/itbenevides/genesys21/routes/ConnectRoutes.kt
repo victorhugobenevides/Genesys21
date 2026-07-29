@@ -118,7 +118,10 @@ fun Route.connectRoutes(
                     val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
                     val client = StripeClient(secretKey)
 
-                    val publicHost = System.getenv("PUBLIC_HOST") ?: "http://localhost"
+                    // Garantir que a URL de retorno tenha protocolo (Stripe exige http/https)
+                    val rawHost = System.getenv("PUBLIC_HOST") ?: "localhost"
+                    val protocol = if (rawHost.contains("localhost") || rawHost.contains("127.0.0.1")) "http" else "https"
+                    val baseUrl = if (rawHost.startsWith("http")) rawHost else "$protocol://$rawHost"
 
                     val params = AccountLinkCreateParams.builder()
                         .setAccount(accountId)
@@ -128,8 +131,8 @@ fun Route.connectRoutes(
                                 .setAccountOnboarding(
                                     AccountLinkCreateParams.UseCase.AccountOnboarding.builder()
                                         .addConfiguration(AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration.MERCHANT)
-                                        .setRefreshUrl("$publicHost/list")
-                                        .setReturnUrl("$publicHost/list")
+                                        .setRefreshUrl("$baseUrl/list")
+                                        .setReturnUrl("$baseUrl/list")
                                         .build()
                                 )
                                 .build()
@@ -138,6 +141,9 @@ fun Route.connectRoutes(
 
                     val accountLink = client.v2().core().accountLinks().create(params)
                     call.respond(ConnectLinkResponse(url = accountLink.url))
+                } catch (e: com.stripe.exception.InvalidRequestException) {
+                    e.printStackTrace()
+                    call.respond(HttpStatusCode.BadRequest, "Erro na requisição Stripe: ${e.message}")
                 } catch (e: Exception) {
                     e.printStackTrace()
                     call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao gerar link de onboarding")
