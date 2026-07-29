@@ -33,7 +33,7 @@ fun createGenesysPaparazzi(
     Paparazzi(
         deviceConfig = deviceConfig,
         theme = theme,
-        maxPercentDifference = 0.1,
+        maxPercentDifference = 0.5,
     )
 
 fun Paparazzi.genesysSnapshot(

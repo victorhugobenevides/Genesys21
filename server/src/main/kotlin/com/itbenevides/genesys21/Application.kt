@@ -109,7 +109,7 @@ fun Application.module() {
         )
     }
 
-    install(ForwardedHeaders)
+    // Configuração para suportar Nginx Proxy (Headers X-Forwarded-*)
     install(XForwardedHeaders)
 
     install(DefaultHeaders) {
