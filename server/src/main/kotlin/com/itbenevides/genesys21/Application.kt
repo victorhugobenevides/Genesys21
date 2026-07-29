@@ -16,6 +16,7 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.CORS
@@ -107,6 +108,9 @@ fun Application.module() {
             },
         )
     }
+
+    install(ForwardedHeaders)
+    install(XForwardedHeaders)
 
     install(DefaultHeaders) {
         header(HttpHeaders.Server, "GenesysServer")

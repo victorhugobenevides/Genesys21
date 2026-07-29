@@ -12,6 +12,7 @@ import com.stripe.param.v2.core.AccountCreateParams
 import com.stripe.param.v2.core.AccountLinkCreateParams
 import io.ktor.http.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -118,10 +119,15 @@ fun Route.connectRoutes(
                     val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
                     val client = StripeClient(secretKey)
 
-                    // Garantir que a URL de retorno tenha protocolo (Stripe exige http/https)
-                    val rawHost = System.getenv("PUBLIC_HOST") ?: "localhost"
-                    val protocol = if (rawHost.contains("localhost") || rawHost.contains("127.0.0.1")) "http" else "https"
-                    val baseUrl = if (rawHost.startsWith("http")) rawHost else "$protocol://$rawHost"
+                    // Garantir que a URL de retorno seja baseada na requisição atual (dinâmico)
+                    val baseUrl = "${call.request.origin.scheme}://${call.request.origin.serverHost}"
+                    // Se houver porta não padrão que o Nginx está redirecionando, o ForwardedHeaders cuida disso.
+                    // No entanto, para Stripe, portas como 8080 em localhost são aceitas.
+                    val finalUrl = if (call.request.origin.serverPort != 80 && call.request.origin.serverPort != 443) {
+                        "$baseUrl:${call.request.origin.serverPort}"
+                    } else {
+                        baseUrl
+                    }
 
                     val params = AccountLinkCreateParams.builder()
                         .setAccount(accountId)
@@ -131,8 +137,8 @@ fun Route.connectRoutes(
                                 .setAccountOnboarding(
                                     AccountLinkCreateParams.UseCase.AccountOnboarding.builder()
                                         .addConfiguration(AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration.MERCHANT)
-                                        .setRefreshUrl("$baseUrl/list")
-                                        .setReturnUrl("$baseUrl/list")
+                                        .setRefreshUrl("$finalUrl/list")
+                                        .setReturnUrl("$finalUrl/list")
                                         .build()
                                 )
                                 .build()

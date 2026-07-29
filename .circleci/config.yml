@@ -21,6 +21,12 @@ jobs:
           name: Grant execute permission for gradlew
           command: chmod +x gradlew
       - run:
+          name: Clean Corrupted SDK components
+          command: |
+            # Remove potentially corrupted downloads
+            rm -rf /opt/android/sdk/platforms/android-35
+            rm -rf /opt/android/sdk/build-tools/35.0.0
+      - run:
           name: Decode Google Services JSON (Android)
           command: |
             if [ -z "$GOOGLE_SERVICES_JSON_ANDROID" ]; then

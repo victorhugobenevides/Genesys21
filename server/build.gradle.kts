@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.ktor.serverRateLimit)
     implementation(libs.ktor.serverDefaultHeaders)
     implementation(libs.ktor.serverStatusPages)
+    implementation(libs.ktor.serverForwardedHeader)
 
     implementation(libs.ktor.server.compression)
     implementation(libs.ktor.server.caching.headers)
