@@ -10,6 +10,9 @@ import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
 import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import org.junit.Rule
 import org.junit.Test
 
@@ -59,12 +62,16 @@ class OrganismsSnapshotTest {
 
     @Test
     fun testBookingEngine() {
+        val fixedDate = LocalDate(2026, 7, 28)
+        val fixedDateTime = LocalDateTime(fixedDate, LocalTime(9, 0))
+
         paparazzi.genesysResponsiveSnapshot {
             com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine(
-                selectedDateTime = null,
+                selectedDateTime = fixedDateTime,
                 availableSlots = listOf("09:00", "11:00", "15:00"),
                 onDateSelected = {},
-                onDateTimeSelected = {}
+                onDateTimeSelected = {},
+                today = fixedDate
             )
         }
     }
