@@ -110,7 +110,10 @@ fun Application.module() {
     }
 
     // Configuração para suportar Nginx Proxy (Headers X-Forwarded-*)
-    install(XForwardedHeaders)
+    // No Ktor 3, XForwardedHeaders é a forma recomendada para ler Host/Proto do Nginx
+    install(XForwardedHeaders) {
+        // Confia nos headers padrões enviados pelo Nginx no docker-compose/circleci
+    }
 
     install(DefaultHeaders) {
         header(HttpHeaders.Server, "GenesysServer")
