@@ -5,6 +5,7 @@ import com.stripe.StripeClient
 import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
 import com.itbenevides.genesys21.domain.model.Order
+import com.itbenevides.genesys21.util.CurrencyUtils
 import com.stripe.net.RequestOptions
 
 class StripeService {
@@ -41,7 +42,7 @@ class StripeService {
                     .setPriceData(
                         SessionCreateParams.LineItem.PriceData.builder()
                             .setCurrency("brl")
-                            .setUnitAmount(Math.round(item.price * 100)) // Stripe em centavos (arredondado)
+                            .setUnitAmount(CurrencyUtils.toStripeCents(item.price))
                             .setProductData(
                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                     .setName(item.name)
@@ -61,7 +62,7 @@ class StripeService {
                     .setPriceData(
                         SessionCreateParams.LineItem.PriceData.builder()
                             .setCurrency("brl")
-                            .setUnitAmount(Math.round(order.shippingPrice * 100))
+                            .setUnitAmount(CurrencyUtils.toStripeCents(order.shippingPrice))
                             .setProductData(
                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                     .setName("Entrega / Frete")
@@ -82,7 +83,7 @@ class StripeService {
                     .setPriceData(
                         SessionCreateParams.LineItem.PriceData.builder()
                             .setCurrency("brl")
-                            .setUnitAmount(Math.round(totalTravelFees * 100))
+                            .setUnitAmount(CurrencyUtils.toStripeCents(totalTravelFees))
                             .setProductData(
                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                     .setName("Taxas de Deslocamento")

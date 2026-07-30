@@ -26,18 +26,6 @@ class LocalStorageCartRepository(
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
     private val CART_STORAGE_KEY = "genesys21_cart"
     private val SESSION_STORAGE_KEY = "genesys21_session_id"
-    private var cachedSessionId: String? = null
-
-    override fun getSessionId(): String {
-        cachedSessionId?.let { return it }
-        var id = jsGetItem(SESSION_STORAGE_KEY)
-        if (id == null) {
-            id = "sess_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-            jsSetItem(SESSION_STORAGE_KEY, id)
-        }
-        cachedSessionId = id
-        return id
-    }
 
     override suspend fun saveToLocal(items: List<CartItem>) {
         jsSetItem(CART_STORAGE_KEY, json.encodeToString(items))
@@ -54,7 +42,6 @@ class LocalStorageCartRepository(
 
     override suspend fun saveSessionId(id: String) {
         jsSetItem(SESSION_STORAGE_KEY, id)
-        cachedSessionId = id
     }
 
     override suspend fun loadSessionId(): String? {
