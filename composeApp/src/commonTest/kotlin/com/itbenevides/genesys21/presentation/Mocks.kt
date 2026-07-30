@@ -39,6 +39,8 @@ class FakeCartRepository : CartRepository {
 
     override suspend fun syncWithServer(): Result<Unit> = Result.success(Unit)
 
+    override suspend fun mergeWithServer(): Result<Unit> = Result.success(Unit)
+
     override suspend fun loadInitialCart() {}
 
     override suspend fun getSessionId(): String = "test-session"
