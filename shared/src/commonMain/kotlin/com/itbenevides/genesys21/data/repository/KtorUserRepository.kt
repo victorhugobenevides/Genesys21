@@ -79,4 +79,15 @@ class KtorUserRepository(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    override suspend fun deleteUser(userId: String): Result<Unit> = try {
+        val response = client.delete("$baseUrl/api/admin/users/$userId")
+        if (response.status.isSuccess()) {
+            Result.success(Unit)
+        } else {
+            Result.failure(Exception("Erro ao deletar usuário"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }
