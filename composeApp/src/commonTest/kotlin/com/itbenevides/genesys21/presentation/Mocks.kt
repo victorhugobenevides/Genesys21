@@ -152,6 +152,11 @@ class FakeUserRepository : UserRepository {
     override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> {
         return Result.success(Unit)
     }
+
+    override suspend fun deleteUser(userId: String): Result<Unit> {
+        users.removeAll { it.id == userId }
+        return Result.success(Unit)
+    }
 }
 
 class FakeAddressRepository : AddressRepository {
