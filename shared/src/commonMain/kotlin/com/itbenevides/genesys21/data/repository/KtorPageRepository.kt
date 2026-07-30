@@ -208,7 +208,7 @@ class KtorPageRepository(
         if (token.isBlank()) return Result.failure(Exception("Não autenticado"))
         return try {
             val response =
-                if (category.id != null) {
+                if (category.id.isNotBlank()) {
                     client.put("$baseUrl/api/categories") {
                         header(HttpHeaders.Authorization, "Bearer $token")
                         contentType(ContentType.Application.Json)

@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
@@ -14,7 +15,7 @@ object DatabaseFactory {
     private var database: Database? = null
 
     fun init(
-        jdbcUrl: String = "jdbc:sqlite:data/genesys21.db",
+        jdbcUrl: String = "jdbc:sqlite:data/genesys21.db?journal_mode=WAL&busy_timeout=10000",
         rebuild: Boolean = true,
     ) {
         if (rebuild && jdbcUrl.contains("data/")) {
@@ -26,7 +27,7 @@ object DatabaseFactory {
 
         if (jdbcUrl.contains("data/")) {
             setupDatabaseDirectory()
-            applySqliteOptimizations(jdbcUrl)
+            applySqliteOptimizations()
         }
 
         val dataSource = hikari(jdbcUrl)
@@ -47,8 +48,13 @@ object DatabaseFactory {
         if (!dataFolder.exists()) dataFolder.mkdirs()
     }
 
-    private fun applySqliteOptimizations(jdbcUrl: String) {
-        // Removido temporariamente para evitar SQLException: Query returns results
+    private fun applySqliteOptimizations() {
+        // WAL mode e Busy Timeout já estão no JDBC URL default, mas reforçamos aqui via PRAGMA
+        transaction(database) {
+            exec("PRAGMA journal_mode=WAL;")
+            exec("PRAGMA busy_timeout=10000;")
+            exec("PRAGMA synchronous=NORMAL;")
+        }
     }
 
     private fun hikari(jdbcUrl: String): HikariDataSource {
@@ -91,7 +97,12 @@ object DatabaseFactory {
         }
     }
 
-    suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
+    suspend fun <T> dbQuery(block: suspend () -> T): T =
+        if (TransactionManager.currentOrNull() != null) {
+            block()
+        } else {
+            newSuspendedTransaction(Dispatchers.IO, db = database) { block() }
+        }
 
     fun dropAndRebuild() {
         transaction {
