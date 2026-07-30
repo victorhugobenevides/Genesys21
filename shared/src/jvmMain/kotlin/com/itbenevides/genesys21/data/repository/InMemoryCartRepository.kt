@@ -14,11 +14,6 @@ class InMemoryCartRepository(
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
     private var session: String? = null
 
-    override fun getSessionId(): String {
-        if (session == null) session = "sess_mem_" + (1..8).map { (0..9).random() }.joinToString("")
-        return session!!
-    }
-
     override suspend fun saveToLocal(items: List<CartItem>) {
         // Just in memory
     }

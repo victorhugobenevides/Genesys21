@@ -19,7 +19,9 @@ interface CartRepository {
 
     suspend fun syncWithServer(): Result<Unit>
 
+    suspend fun mergeWithServer(): Result<Unit>
+
     suspend fun loadInitialCart()
 
-    fun getSessionId(): String
+    suspend fun getSessionId(): String
 }

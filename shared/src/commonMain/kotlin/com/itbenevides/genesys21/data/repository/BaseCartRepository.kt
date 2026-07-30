@@ -29,6 +29,15 @@ abstract class BaseCartRepository(
 
     protected abstract suspend fun loadSessionId(): String?
 
+    override suspend fun getSessionId(): String {
+        val cached = loadSessionId()
+        if (cached != null) return cached
+
+        val newId = "sess_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
+        saveSessionId(newId)
+        return newId
+    }
+
     override suspend fun loadInitialCart() {
         val local = loadFromLocal()
         _cartItems.value = local
@@ -99,6 +108,55 @@ abstract class BaseCartRepository(
         _cartItems.value = emptyList()
         saveToLocal(emptyList())
         return syncWithServer()
+    }
+
+    override suspend fun mergeWithServer(): Result<Unit> {
+        return try {
+            val token = authRepository.getCurrentUserToken() ?: return Result.failure(Exception("Not logged in"))
+
+            // 1. Get current local items
+            val localItems = _cartItems.value
+
+            // 2. Fetch server items for the authenticated user
+            val response = httpClient.get("$baseUrl/api/cart") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+
+            if (response.status.isSuccess()) {
+                val serverItems: List<CartItem> = response.body()
+
+                // 3. Merge lists
+                val mergedList = localItems.toMutableList()
+                serverItems.forEach { serverItem ->
+                    val serverItemId = serverItem.product?.id ?: serverItem.service?.id ?: ""
+                    val existing = mergedList.find { (it.product?.id ?: it.service?.id ?: "") == serverItemId }
+
+                    if (existing != null) {
+                        val idx = mergedList.indexOf(existing)
+                        // Sum quantities for products
+                        if (serverItem.product != null) {
+                            mergedList[idx] = existing.copy(quantity = existing.quantity + serverItem.quantity)
+                        } else {
+                            // For services/appointments, we keep the latest or one of them (usually 1 quantity anyway)
+                            mergedList[idx] = serverItem
+                        }
+                    } else {
+                        mergedList.add(serverItem)
+                    }
+                }
+
+                // 4. Update local state and persistence
+                _cartItems.value = mergedList
+                saveToLocal(mergedList)
+
+                // 5. Push merged list back to server
+                syncWithServer()
+            } else {
+                Result.failure(Exception("Failed to fetch server cart for merge"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun syncWithServer(): Result<Unit> {

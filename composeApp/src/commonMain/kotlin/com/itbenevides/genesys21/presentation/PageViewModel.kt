@@ -139,6 +139,7 @@ class PageViewModel(
                     loadUserProfile(uid)
                     loadPages()
                     loadOrders()
+                    cartRepository.mergeWithServer()
                 } else {
                     _userProfile.value = null
                     _pages.value = emptyList()
@@ -233,10 +234,10 @@ class PageViewModel(
     }
 
     fun loadCustomerOrders() {
-        val sessionId = cartRepository.getSessionId()
-        val phone = customerPhone.value
-
         viewModelScope.launch {
+            val sessionId = cartRepository.getSessionId()
+            val phone = customerPhone.value
+
             _isLoading.value = true
             try {
                 val currentUserId = authRepository.getCurrentUserId()

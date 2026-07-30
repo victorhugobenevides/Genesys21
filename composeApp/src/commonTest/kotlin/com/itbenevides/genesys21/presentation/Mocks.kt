@@ -41,7 +41,7 @@ class FakeCartRepository : CartRepository {
 
     override suspend fun loadInitialCart() {}
 
-    override fun getSessionId(): String = "test-session"
+    override suspend fun getSessionId(): String = "test-session"
 }
 
 class FakeCustomerRepository : CustomerRepository {
