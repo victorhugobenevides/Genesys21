@@ -61,8 +61,12 @@ object DatabaseFactory {
         val config = HikariConfig()
         config.driverClassName = "org.sqlite.JDBC"
         config.jdbcUrl = jdbcUrl
-        config.maximumPoolSize = if (jdbcUrl.contains(":memory:")) 1 else 3
+        // Para SQLite, o mais estável para evitar BusyException é usar apenas 1 conexão de escrita.
+        // O modo WAL já permite múltiplas leituras, mas Exposed/Hikari gerenciam melhor com pool de 1.
+        config.maximumPoolSize = 1
         config.isAutoCommit = true
+        // Adiciona um gancho para garantir PRAGMAs em cada conexão do pool
+        config.connectionInitSql = "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=10000; PRAGMA synchronous=NORMAL;"
         config.validate()
         return HikariDataSource(config)
     }

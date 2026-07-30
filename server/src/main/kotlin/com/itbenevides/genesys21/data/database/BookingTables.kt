@@ -63,7 +63,7 @@ object AppointmentsTable : BaseTable("appointments") {
     val customerId = varchar("customer_id", 100).references(UsersTable.id, onDelete = ReferenceOption.SET_NULL).nullable()
     val customerName = varchar("customer_name", 255)
     val customerPhone = varchar("customer_phone", 50)
-    val startTime = long("start_time_ms")
+    val startTime = long("start_time_ms").index("idx_appointments_start_time")
     val endTime = long("end_time_ms")
     val status = varchar("status", 20).default("PENDING")
     val meetingLink = text("meeting_link").nullable()

@@ -4,8 +4,8 @@ import org.jetbrains.exposed.sql.ReferenceOption
 
 object OrdersTable : BaseTable("orders") {
     val id = varchar("id", 50) // UUID
-    val storeId = varchar("store_id", 50).references(StoresTable.id, onDelete = ReferenceOption.RESTRICT)
-    val customerId = varchar("customer_id", 100).references(UsersTable.id, onDelete = ReferenceOption.SET_NULL).nullable()
+    val storeId = varchar("store_id", 50).references(StoresTable.id, onDelete = ReferenceOption.RESTRICT).index("idx_orders_store_id")
+    val customerId = varchar("customer_id", 100).references(UsersTable.id, onDelete = ReferenceOption.SET_NULL).nullable().index("idx_orders_customer_id")
     val sessionId = varchar("session_id", 100).nullable()
     val customerName = varchar("customer_name", 255).nullable()
     val customerPhone = varchar("customer_phone", 50).nullable()
