@@ -29,6 +29,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.launch
 import net.coobird.thumbnailator.Thumbnails
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream
@@ -165,6 +166,17 @@ fun Application.module() {
     }
 
     initFirebase(logger)
+
+    // LGPD: Cleanup old audit logs on startup
+    (this as kotlinx.coroutines.CoroutineScope).launch {
+        try {
+            com.itbenevides.genesys21.data.service.AuditLogger.cleanupOldLogs(months = 12)
+            logger.info("AUDITORIA: Limpeza de logs antigos concluída.")
+        } catch (e: Exception) {
+            logger.error("AUDITORIA: Erro ao limpar logs: ${e.message}")
+        }
+    }
+
     logger.info("SERVIDOR: Pronto e ouvindo na porta $SERVER_PORT")
 
     routing {

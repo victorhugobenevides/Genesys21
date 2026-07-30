@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.data.repository
 
+import com.itbenevides.genesys21.data.database.AuditLogsTable
 import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
 import com.itbenevides.genesys21.data.database.UsersTable
 import com.itbenevides.genesys21.domain.model.UserProfile
@@ -71,8 +72,6 @@ class SqliteUserRepository : UserRepository {
     }
 
     override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = try {
-        // Validação de SuperAdmin deve ser feita no nível da Rota/UseCase,
-        // mas aqui retornamos todos os usuários.
         dbQuery {
             Result.success(UsersTable.selectAll().map { it.toUserProfile() })
         }
@@ -116,6 +115,22 @@ class SqliteUserRepository : UserRepository {
                     details = "Status alterado para ${status.name}"
                 )
             }
+            Result.success(Unit)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun deleteUser(userId: String): Result<Unit> = try {
+        dbQuery {
+            // LGPD: Anonimização de dados pessoais em logs de auditoria vinculados
+            AuditLogsTable.update({ AuditLogsTable.userId eq userId }) {
+                it[this.userId] = null
+                it[details] = "User data deleted (LGPD)"
+            }
+
+            // Hard delete do usuário
+            UsersTable.deleteWhere { id eq userId }
             Result.success(Unit)
         }
     } catch (e: Exception) {

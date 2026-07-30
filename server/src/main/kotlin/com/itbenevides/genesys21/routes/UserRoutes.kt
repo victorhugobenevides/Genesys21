@@ -49,6 +49,29 @@ fun Route.userRoutes(userRepository: UserRepository) {
                     call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar perfil")
                 }
             }
+
+            // LGPD: Direito de Exclusão
+            delete("/profile") {
+                val principal = call.principal<UserIdPrincipal>() ?: return@delete call.respond(HttpStatusCode.Unauthorized)
+                val userId = principal.name
+
+                // 1. Loga a intenção antes de apagar
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = userId,
+                    storeId = null,
+                    action = "DELETE_ACCOUNT_REQUEST",
+                    entityName = "User",
+                    entityId = userId,
+                    details = "Usuário solicitou exclusão de conta"
+                )
+
+                // 2. Executa a exclusão e anonimização
+                userRepository.deleteUser(userId).onSuccess {
+                    call.respond(HttpStatusCode.OK, "Conta excluída com sucesso. Seus logs foram anonimizados.")
+                }.onFailure {
+                    call.respond(HttpStatusCode.InternalServerError, "Erro ao processar exclusão: ${it.message}")
+                }
+            }
         }
     }
 }
