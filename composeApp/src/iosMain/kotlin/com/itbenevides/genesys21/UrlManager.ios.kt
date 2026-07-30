@@ -7,6 +7,7 @@ actual fun syncUrlWithScreen(
     pageId: String?,
     productId: String?,
     title: String?,
+    replace: Boolean,
 ) { }
 
 actual fun getInitialUrlPath(): String? = null

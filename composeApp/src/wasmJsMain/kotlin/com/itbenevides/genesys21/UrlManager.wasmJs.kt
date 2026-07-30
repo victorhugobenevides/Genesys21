@@ -13,6 +13,7 @@ actual fun syncUrlWithScreen(
     pageId: String?,
     productId: String?,
     title: String?,
+    replace: Boolean,
 ) {
     // Splash não gera histórico para evitar que o botão voltar caia numa tela branca
     if (screen == Screen.Splash) return
@@ -49,9 +50,13 @@ actual fun syncUrlWithScreen(
     val targetPath = path.removeSuffix("/")
 
     // Se a UI mudou e a URL ainda não reflete isso, atualizamos a URL sem disparar eventos circulares
-    if (currentPath != targetPath) {
-        println("WASM_LOG: [UI -> Browser] URL atualizada para: $path")
-        window.history.pushState(null, "", path)
+    if (currentPath != targetPath || replace) {
+        println("WASM_LOG: [UI -> Browser] URL atualizada para: $path (replace=$replace)")
+        if (replace) {
+            window.history.replaceState(null, "", path)
+        } else {
+            window.history.pushState(null, "", path)
+        }
     }
 }
 

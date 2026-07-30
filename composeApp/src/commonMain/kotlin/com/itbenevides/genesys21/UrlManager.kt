@@ -7,6 +7,7 @@ expect fun syncUrlWithScreen(
     pageId: String? = null,
     productId: String? = null,
     title: String? = null,
+    replace: Boolean = false,
 )
 
 expect fun getInitialUrlPath(): String?

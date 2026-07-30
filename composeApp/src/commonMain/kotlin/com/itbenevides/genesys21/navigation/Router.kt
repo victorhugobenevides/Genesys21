@@ -101,7 +101,7 @@ class Router(val viewModel: PageViewModel) {
         AnalyticsManager.trackPageView(pageName)
     }
 
-    fun forceSyncUrl() {
+    fun forceSyncUrl(replace: Boolean = false) {
         val current = currentRoute
         if (current is Route.Splash) return
 
@@ -154,7 +154,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.ServiceBooking -> Screen.ServiceBooking
             }
 
-        syncUrlWithScreen(screen, pageId, productId, title ?: "Genesys21")
+        syncUrlWithScreen(screen, pageId, productId, title ?: "Genesys21", replace = replace)
     }
 
     fun handleDeepLink() {
@@ -188,13 +188,13 @@ class Router(val viewModel: PageViewModel) {
                 if (stripeStatus == "success" && !stripeOrderId.isNullOrBlank()) {
                     viewModel.clearCart() // Limpa o carrinho IMEDIATAMENTE
                     applyRouteState(Route.CustomerOrderHistory(null)) // Vai para o Histórico como solicitado
-                    forceSyncUrl()
+                    forceSyncUrl(replace = true)
                     return@launch
                 }
 
                 if (stripeStatus == "cancel") {
                     applyRouteState(Route.Cart(null))
-                    forceSyncUrl()
+                    forceSyncUrl(replace = true)
                     return@launch
                 }
 
