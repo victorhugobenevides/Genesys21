@@ -128,6 +128,19 @@ object Seeder {
                 it[isHomeService] = true
             }
 
+            val fofocaId = "serv_fofoca_gratis"
+            BookingServicesTable.deleteWhere { id eq fofocaId }
+            BookingServicesTable.insert {
+                it[id] = fofocaId
+                it[storeId] = defaultStoreId
+                it[name] = "me conte uma fofoca"
+                it[price] = 0.0
+                it[durationMinutes] = 15
+                it[description] = "Um momento para relaxar e compartilhar histórias."
+                it[isEnabled] = true
+                it[isOnline] = true
+            }
+
             // 3. Create/Update CV Page
             val cvPageId = "victor-hugo-cv"
             PagesTable.deleteWhere { id eq cvPageId }
@@ -208,10 +221,25 @@ object Seeder {
 
                 PageComponent.Divider(),
 
-                PageComponent.Header(title = "Produtos & Materiais", fontSize = 26, fontWeight = "EXTRA_BOLD"),
-                PageComponent.ProductList(
-                    customLabel = "Materiais de Engenharia Mobile",
-                    isHorizontal = true
+                PageComponent.ValuedAction(
+                    title = "Pague minha cerveja",
+                    description = "Gostou do conteúdo ou do currículo? Contribua com uma breja!",
+                    suggestedValues = listOf(10.0, 20.0, 50.0),
+                    buttonText = "Pagar Cerveja"
+                ),
+
+                PageComponent.Divider(),
+
+                PageComponent.Header(title = "Interação", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                PageComponent.SingleService(
+                    service = com.itbenevides.genesys21.domain.model.BookingService(
+                        id = fofocaId,
+                        storeId = defaultStoreId,
+                        name = "me conte uma fofoca",
+                        price = 0.0,
+                        durationMinutes = 15,
+                        description = "Vamos bater um papo descontraído."
+                    )
                 ),
 
                 PageComponent.Spacer(height = 40),
