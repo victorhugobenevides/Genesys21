@@ -44,7 +44,8 @@ class KtorOrderRepository(
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                Result.failure(Exception("Erro ao criar pedido: ${response.status}"))
+                val errorBody = try { response.bodyAsText() } catch (e: Exception) { "" }
+                Result.failure(Exception("Erro ao criar pedido: ${response.status} - $errorBody"))
             }
         } catch (e: Exception) {
             Result.failure(e)

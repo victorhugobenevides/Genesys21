@@ -56,6 +56,8 @@ class CartRepositoryTest {
         override suspend fun signUp(email: String, password: String) = Result.success(token)
         override suspend fun getCurrentUserToken(): String? = token
         override suspend fun getCurrentUserId(): String? = userId
+        override suspend fun getCurrentUserEmail(): String? = if (userId != null) "test@example.com" else null
+        override suspend fun getCurrentUserName(): String? = if (userId != null) "Test User" else null
         override fun initializeOneTap() {}
         override suspend fun signOut() { authState.value = null }
     }

@@ -25,6 +25,10 @@ interface AuthRepository {
 
     suspend fun getCurrentUserId(): String?
 
+    suspend fun getCurrentUserEmail(): String?
+
+    suspend fun getCurrentUserName(): String?
+
     fun initializeOneTap()
 
     suspend fun signOut()

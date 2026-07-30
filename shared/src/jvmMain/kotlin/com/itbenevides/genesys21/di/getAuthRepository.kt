@@ -27,6 +27,10 @@ actual fun getAuthRepository(): AuthRepository =
 
         override suspend fun getCurrentUserId(): String? = null
 
+        override suspend fun getCurrentUserEmail(): String? = null
+
+        override suspend fun getCurrentUserName(): String? = null
+
         override fun initializeOneTap() {}
 
         override suspend fun signOut() {}

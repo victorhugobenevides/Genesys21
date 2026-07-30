@@ -815,6 +815,26 @@ class PageViewModel(
             getUserProfileUseCase(userId).onSuccess {
                 _userProfile.value = it
                 loadUserAddresses(userId)
+            }.onFailure {
+                // Se o perfil não existe no servidor (ex: primeiro login social),
+                // cria um registro básico automaticamente para garantir integridade no banco.
+                val email = authRepository.getCurrentUserEmail() ?: ""
+                val name = authRepository.getCurrentUserName() ?: email.substringBefore("@")
+
+                val newProfile = UserProfile(
+                    id = userId,
+                    email = email,
+                    name = name,
+                    role = UserRole.CUSTOMER,
+                    status = UserStatus.APPROVED
+                )
+
+                saveUserProfileUseCase(newProfile).onSuccess {
+                    _userProfile.value = newProfile
+                    loadUserAddresses(userId)
+                }.onFailure { e ->
+                    handleError("Erro ao sincronizar perfil", e)
+                }
             }
         }
     }

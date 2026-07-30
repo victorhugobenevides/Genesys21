@@ -64,6 +64,14 @@ class IosAuthRepository : AuthRepository {
         return auth.currentUser?.uid
     }
 
+    override suspend fun getCurrentUserEmail(): String? {
+        return auth.currentUser?.email
+    }
+
+    override suspend fun getCurrentUserName(): String? {
+        return auth.currentUser?.displayName
+    }
+
     override fun initializeOneTap() {}
 
     override suspend fun signOut() {

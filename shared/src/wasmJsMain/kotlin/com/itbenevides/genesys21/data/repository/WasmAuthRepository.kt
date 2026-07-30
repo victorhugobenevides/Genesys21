@@ -43,6 +43,12 @@ external fun firebaseGetTokenSafe(): Promise<JsString?>
 @JsFun("() => (typeof window.firebaseGetUserId === 'function') ? window.firebaseGetUserId() : Promise.resolve(null)")
 external fun firebaseGetUserIdSafe(): Promise<JsString?>
 
+@JsFun("() => (typeof window.firebaseGetUserEmail === 'function') ? window.firebaseGetUserEmail() : Promise.resolve(null)")
+external fun firebaseGetUserEmailSafe(): Promise<JsString?>
+
+@JsFun("() => (typeof window.firebaseGetUserName === 'function') ? window.firebaseGetUserName() : Promise.resolve(null)")
+external fun firebaseGetUserNameSafe(): Promise<JsString?>
+
 @JsFun("() => (typeof window.firebaseSignOut === 'function') ? window.firebaseSignOut() : Promise.resolve(null)")
 external fun firebaseSignOutSafe(): Promise<JsAny?>
 
@@ -116,6 +122,22 @@ class WasmAuthRepository : AuthRepository {
     override suspend fun getCurrentUserId(): String? {
         return try {
             firebaseGetUserIdSafe().await()?.toString()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun getCurrentUserEmail(): String? {
+        return try {
+            firebaseGetUserEmailSafe().await()?.toString()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun getCurrentUserName(): String? {
+        return try {
+            firebaseGetUserNameSafe().await()?.toString()
         } catch (e: Exception) {
             null
         }

@@ -38,6 +38,14 @@ class JsAuthRepository : AuthRepository {
         return null
     }
 
+    override suspend fun getCurrentUserEmail(): String? {
+        return null
+    }
+
+    override suspend fun getCurrentUserName(): String? {
+        return null
+    }
+
     override fun initializeOneTap() {}
 
     override suspend fun signOut() {

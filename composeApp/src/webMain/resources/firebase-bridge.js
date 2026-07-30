@@ -43,6 +43,20 @@ window.firebaseGetUserId = () => {
     return Promise.resolve(null);
 };
 
+window.firebaseGetUserEmail = () => {
+    if (auth.currentUser) {
+        return Promise.resolve(auth.currentUser.email);
+    }
+    return Promise.resolve(null);
+};
+
+window.firebaseGetUserName = () => {
+    if (auth.currentUser) {
+        return Promise.resolve(auth.currentUser.displayName);
+    }
+    return Promise.resolve(null);
+};
+
 window.firebaseSignOut = () => {
     return auth.signOut();
 };

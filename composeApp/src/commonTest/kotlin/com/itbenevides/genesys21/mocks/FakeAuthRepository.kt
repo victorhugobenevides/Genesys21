@@ -50,6 +50,10 @@ class FakeAuthRepository : AuthRepository {
 
     override suspend fun getCurrentUserId(): String? = if (mockToken != null) "test_user_id" else null
 
+    override suspend fun getCurrentUserEmail(): String? = if (mockToken != null) "test@example.com" else null
+
+    override suspend fun getCurrentUserName(): String? = if (mockToken != null) "Test User" else null
+
     fun setToken(token: String?) {
         mockToken = token
     }
