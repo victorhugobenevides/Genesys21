@@ -120,19 +120,19 @@ class SqlitePageRepository : PageRepository {
                 PageComponentsTable.deleteWhere { pageId eq page.id }
 
                 page.components.forEachIndexed { index, component ->
-                    val componentId =
-                        PageComponentsTable.insertAndGetId {
-                            it[pageId] = page.id
-                            it[type] = component::class.simpleName ?: "Unknown"
-                            it[customLabel] = component.customLabel
-                            it[isFilterable] = component.isFilterable
-                            it[order] = index
-                            it[content] = json.encodeToString(component)
-                        }
+                    val componentId = java.util.UUID.randomUUID().toString()
+                    PageComponentsTable.insert {
+                        it[id] = componentId
+                        it[pageId] = page.id
+                        it[type] = component::class.simpleName ?: "Unknown"
+                        it[customLabel] = component.customLabel
+                        it[isFilterable] = component.isFilterable
+                        it[order] = index
+                        it[content] = json.encodeToString(component)
+                    }
 
-                    val finalComponentId = componentId
                     if (component is PageComponent.ProductList) {
-                        saveProductsForComponent(finalComponentId.value, component.products, page.storeId)
+                        saveProductsForComponent(componentId, component.products, page.storeId)
                     }
                 }
 
@@ -151,7 +151,18 @@ class SqlitePageRepository : PageRepository {
                 val updated = PagesTable.update({ (PagesTable.id eq id) and (StoresTable.ownerId eq token) }) {
                     it[deletedAt] = System.currentTimeMillis()
                 }
-                if (updated > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir"))
+
+                if (updated > 0) {
+                    com.itbenevides.genesys21.data.service.AuditLogger.log(
+                        userId = token,
+                        storeId = null,
+                        action = "DELETE",
+                        entityName = "Page",
+                        entityId = id,
+                        details = "Página excluída pelo usuário"
+                    )
+                    Result.success(Unit)
+                } else Result.failure(Exception("Falha ao excluir"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -284,7 +295,7 @@ class SqlitePageRepository : PageRepository {
         }
 
     private fun saveProductsForComponent(
-        componentId: Int,
+        componentId: String,
         products: List<Product>,
         storeId: String,
     ) {
@@ -355,7 +366,7 @@ class SqlitePageRepository : PageRepository {
             .where { PageComponentsTable.pageId eq pageId }
             .orderBy(PageComponentsTable.order to SortOrder.ASC)
             .map { row ->
-                val componentId = row[PageComponentsTable.id].value
+                val componentId = row[PageComponentsTable.id]
                 val content = row[PageComponentsTable.content] ?: "{}"
                 val component = json.decodeFromString<PageComponent>(content)
 
@@ -368,7 +379,7 @@ class SqlitePageRepository : PageRepository {
             }
     }
 
-    private fun fetchProductsForComponent(componentId: Int): List<Product> {
+    private fun fetchProductsForComponent(componentId: String): List<Product> {
         return (ComponentProductsTable innerJoin ProductsTable)
             .join(CategoriesTable, JoinType.LEFT, ProductsTable.categoryId, CategoriesTable.id)
             .selectAll().where { ComponentProductsTable.componentId eq componentId }

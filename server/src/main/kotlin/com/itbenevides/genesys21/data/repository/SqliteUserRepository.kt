@@ -75,8 +75,18 @@ class SqliteUserRepository : UserRepository {
 
     override suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit> = try {
         dbQuery {
-            UsersTable.update({ UsersTable.id eq userId }) {
+            val updated = UsersTable.update({ UsersTable.id eq userId }) {
                 it[UsersTable.role] = role.name
+            }
+            if (updated > 0) {
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = token,
+                    storeId = null,
+                    action = "UPDATE_ROLE",
+                    entityName = "User",
+                    entityId = userId,
+                    details = "Cargo alterado para ${role.name}"
+                )
             }
             Result.success(Unit)
         }
@@ -86,8 +96,18 @@ class SqliteUserRepository : UserRepository {
 
     override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> = try {
         dbQuery {
-            UsersTable.update({ UsersTable.id eq userId }) {
+            val updated = UsersTable.update({ UsersTable.id eq userId }) {
                 it[UsersTable.status] = status.name
+            }
+            if (updated > 0) {
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = token,
+                    storeId = null,
+                    action = "UPDATE_STATUS",
+                    entityName = "User",
+                    entityId = userId,
+                    details = "Status alterado para ${status.name}"
+                )
             }
             Result.success(Unit)
         }

@@ -1,12 +1,20 @@
 package com.itbenevides.genesys21.data.repository
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import io.ktor.client.*
-import java.util.UUID
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "genesys21_cart_prefs")
 
 class AndroidCartRepository(
     private val context: Context,
@@ -15,28 +23,32 @@ class AndroidCartRepository(
     json: Json,
     authRepository: AuthRepository,
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
-    private val prefs = context.getSharedPreferences("genesys21_cart_prefs", Context.MODE_PRIVATE)
-    private val CART_STORAGE_KEY = "genesys21_cart"
-    private val SESSION_STORAGE_KEY = "genesys21_session_id"
+
+    private val CART_KEY = stringPreferencesKey("genesys21_cart")
+    private val SESSION_KEY = stringPreferencesKey("genesys21_session_id")
 
     override suspend fun saveToLocal(items: List<CartItem>) {
-        prefs.edit().putString(CART_STORAGE_KEY, json.encodeToString(items)).apply()
+        context.dataStore.edit { preferences ->
+            preferences[CART_KEY] = json.encodeToString(items)
+        }
     }
 
     override suspend fun loadFromLocal(): List<CartItem> {
-        val cached = prefs.getString(CART_STORAGE_KEY, null) ?: return emptyList()
+        val jsonString = context.dataStore.data.map { it[CART_KEY] }.first() ?: return emptyList()
         return try {
-            json.decodeFromString(cached)
+            json.decodeFromString(jsonString)
         } catch (e: Exception) {
             emptyList()
         }
     }
 
     override suspend fun saveSessionId(id: String) {
-        prefs.edit().putString(SESSION_STORAGE_KEY, id).apply()
+        context.dataStore.edit { preferences ->
+            preferences[SESSION_KEY] = id
+        }
     }
 
     override suspend fun loadSessionId(): String? {
-        return prefs.getString(SESSION_STORAGE_KEY, null)
+        return context.dataStore.data.map { it[SESSION_KEY] }.first()
     }
 }

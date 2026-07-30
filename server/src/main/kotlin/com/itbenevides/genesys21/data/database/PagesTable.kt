@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.data.database
 
-import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 
 object PagesTable : BaseTable("pages") {
@@ -14,11 +13,14 @@ object PagesTable : BaseTable("pages") {
     override val primaryKey = PrimaryKey(id)
 }
 
-object PageComponentsTable : IntIdTable("page_components") {
+object PageComponentsTable : BaseTable("page_components") {
+    val id = varchar("id", 50) // UUID
     val pageId = varchar("page_id", 50).references(PagesTable.id, onDelete = ReferenceOption.CASCADE)
     val type = varchar("type", 50)
     val customLabel = varchar("custom_label", 100).nullable()
     val isFilterable = bool("is_filterable").default(true)
     val order = integer("order_index")
     val content = text("content").nullable()
+
+    override val primaryKey = PrimaryKey(id)
 }

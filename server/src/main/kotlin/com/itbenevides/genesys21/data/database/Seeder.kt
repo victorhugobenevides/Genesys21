@@ -230,7 +230,9 @@ object Seeder {
 
             components.forEachIndexed { index, component ->
                 val contentJson = json.encodeToString(component)
-                val compId = PageComponentsTable.insertAndGetId {
+                val componentId = java.util.UUID.randomUUID().toString()
+                PageComponentsTable.insert {
+                    it[id] = componentId
                     it[pageId] = cvPageId
                     it[type] = component::class.simpleName ?: "Unknown"
                     it[customLabel] = component.customLabel
@@ -242,7 +244,7 @@ object Seeder {
                 if (component is PageComponent.ProductList) {
                     productData.forEachIndexed { pIdx, (pid, _, _) ->
                         ComponentProductsTable.insert {
-                            it[componentId] = compId
+                            it[ComponentProductsTable.componentId] = componentId
                             it[productId] = pid
                             it[order] = pIdx
                         }

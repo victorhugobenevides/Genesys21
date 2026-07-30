@@ -32,7 +32,7 @@ object ProductImagesTable : BaseTable("product_images") {
  */
 object ComponentProductsTable : Table("component_products") {
     val id = integer("id").autoIncrement()
-    val componentId = reference("component_id", PageComponentsTable, onDelete = ReferenceOption.CASCADE)
+    val componentId = varchar("component_id", 50).references(PageComponentsTable.id, onDelete = ReferenceOption.CASCADE)
     val productId = varchar("product_id", 50).references(ProductsTable.id, onDelete = ReferenceOption.CASCADE)
     val order = integer("product_order")
 
