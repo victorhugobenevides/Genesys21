@@ -30,6 +30,7 @@ sqlite-jdbc = "3.49.0.0"
 thumbnailator = "0.4.20"
 kotlinx-datetime = "0.6.1"
 androidxDatastore = "1.1.2"
+androidxSecurity = "1.1.0-alpha06"
 stripe-java = "33.1.0"
 ktlint = "12.1.2"
 detekt = "1.23.8"
@@ -96,6 +97,7 @@ stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe-java" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 windowSizeClass = { module = "androidx.compose.material3:material3-window-size-class", version = "1.2.1" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidxDatastore" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurity" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

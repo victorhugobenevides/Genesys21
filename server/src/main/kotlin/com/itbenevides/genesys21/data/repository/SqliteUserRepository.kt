@@ -46,6 +46,13 @@ class SqliteUserRepository : UserRepository {
                     it[phone] = profile.phone
                     it[updatedAt] = System.currentTimeMillis()
                 }
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = profile.id,
+                    storeId = null,
+                    action = "UPDATE_PROFILE",
+                    entityName = "User",
+                    entityId = profile.id
+                )
             } else {
                 UsersTable.insert {
                     it[id] = profile.id

@@ -98,6 +98,13 @@ class SqlitePageRepository : PageRepository {
                         it[whatsapp] = formattedWhatsapp
                         it[updatedAt] = System.currentTimeMillis()
                     }
+                    com.itbenevides.genesys21.data.service.AuditLogger.log(
+                        userId = token,
+                        storeId = page.storeId,
+                        action = "UPDATE_PAGE",
+                        entityName = "Page",
+                        entityId = page.id
+                    )
                 } else {
                     PagesTable.insert {
                         it[id] = page.id
@@ -107,6 +114,13 @@ class SqlitePageRepository : PageRepository {
                         it[customDomain] = formattedDomain
                         it[whatsapp] = formattedWhatsapp
                     }
+                    com.itbenevides.genesys21.data.service.AuditLogger.log(
+                        userId = token,
+                        storeId = page.storeId,
+                        action = "CREATE_PAGE",
+                        entityName = "Page",
+                        entityId = page.id
+                    )
                 }
 
                 // CORREÇÃO: Sincroniza apenas o WhatsApp globalmente para a LOJA.
@@ -250,6 +264,14 @@ class SqlitePageRepository : PageRepository {
                         it[color] = category.color
                     }
                 }
+
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = token,
+                    storeId = category.storeId,
+                    action = if (exists) "UPDATE_CATEGORY" else "CREATE_CATEGORY",
+                    entityName = "Category",
+                    entityId = category.id
+                )
                 Result.success(Unit)
             }
         } catch (e: Exception) {

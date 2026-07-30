@@ -49,6 +49,7 @@ kotlin {
             implementation(libs.firebase.crashlytics)
             implementation(libs.koin.android)
             implementation(libs.androidx.datastore.preferences)
+            implementation(libs.androidx.security.crypto)
             implementation("dev.gitlive:firebase-analytics:2.1.0")
         }
 
