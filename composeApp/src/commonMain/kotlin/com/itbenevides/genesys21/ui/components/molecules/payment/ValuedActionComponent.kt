@@ -6,7 +6,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
@@ -14,6 +13,7 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -39,7 +39,7 @@ fun ValuedActionComponent(
             GenesysText(
                 text = component.title,
                 style = GenesysTextStyle.Title,
-                fontWeight = FontWeight.Bold
+                fontWeight = GenesysFontWeight.Bold
             )
 
             component.description?.let {
@@ -76,7 +76,7 @@ fun ValuedActionComponent(
                     FilterChip(
                         selected = isCustomSelected,
                         onClick = { selectedValue = null },
-                        label = { Text(GenesysStrings.CustomValue ?: "Outro Valor") },
+                        label = { Text(GenesysStrings.CustomValue) },
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }

@@ -1,87 +1,64 @@
-# Especificação: Ambiente de Pré-Produção na Oracle Cloud (OCI)
+# Plano de Implementação: Componente de Valor Dinâmico (Doações/Cotas)
 
-Este documento detalha a infraestrutura e o processo de implantação para criar um ambiente de pré-produção robusto e escalável para o ecossistema Genesys21 na Oracle Cloud Infrastructure (OCI).
-
-## Objetivos
-*   Espelhar o ambiente de produção o mais fielmente possível.
-*   Garantir persistência de dados (SQLite e Uploads).
-*   Configurar SSL automático com Certbot.
-*   Utilizar Docker para isolamento e facilidade de deploy.
-
-## Arquitetura Proposta
-
-### 1. Computação (Compute)
-*   **Instância VM:** `VM.Standard.E4.Flex` (ou `VM.Standard.A1.Flex` se ARM for preferível pela eficiência de custo).
-*   **Sistema Operacional:** Oracle Linux 8 ou 9 (otimizado para OCI).
-*   **Engine:** Docker + Docker Compose instalado.
-
-### 2. Rede (Networking - VCN)
-*   **VCN:** `vcn-genesys21-preprod`
-*   **Sub-rede:** Pública com Internet Gateway.
-*   **Security List (Ingress):**
-    *   `TCP 22` (SSH - restrito a IPs específicos se possível).
-    *   `TCP 80` (HTTP - para redirecionamento e validação Certbot).
-    *   `TCP 443` (HTTPS - tráfego seguro do usuário).
-    *   `TCP 8080` (Opcional: Acesso direto à API para debug, se necessário).
-
-### 3. Armazenamento (Storage)
-*   **OCI Block Volume:** 50GB+ montado em `/mnt/genesys_data`.
-*   **Mapeamento Docker:**
-    *   `/mnt/genesys_data/sqlite:/app/data`
-    *   `/mnt/genesys_data/uploads:/app/uploads`
-*   **Backups:** Política de backup automático (Silver/Gold) configurada no OCI.
-
-### 4. Segurança e Identidade
-*   **IAM:** Compartimento dedicado `genesys21-preprod`.
-*   **Secret Management:** Uso do **OCI Vault** para armazenar `STRIPE_SECRET_KEY` e outras chaves sensíveis, injetando-as como variáveis de ambiente no deploy.
-
----
-
-## Processo de Implantação (Deploy)
-
-### Passo 1: Preparação da Imagem
-O CI/CD (ex: CircleCI ou GitHub Actions) deve gerar as imagens Docker e enviá-las para o **OCI Container Registry (OCIR)**.
-
-### Passo 2: Configuração da Instância
-Script de provisionamento (User Data) para:
-1.  Instalar Docker e Docker Compose.
-2.  Formatar e montar o Block Volume.
-3.  Autenticar no OCIR.
-
-### Passo 3: Orquestração (docker-compose.yml)
-Ajustar o `docker-compose.yml` para pré-produção:
-```yaml
-services:
-  server:
-    image: <region>.ocir.io/<tenancy>/genesys21/server:preprod
-    environment:
-      - STRIPE_SECRET_KEY=${PREPROD_STRIPE_SECRET}
-      - PUBLIC_HOST=preprod.genesys21.com
-    volumes:
-      - /mnt/genesys_data/sqlite:/app/data
-      - /mnt/genesys_data/uploads:/app/uploads
-
-  web:
-    image: <region>.ocir.io/<tenancy>/genesys21/web:preprod
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /mnt/genesys_data/certbot/conf:/etc/letsencrypt
-```
-
----
+Este plano descreve a criação de um novo componente de página que permite aos usuários escolherem um valor (doação, cota, contribuição) e seguirem diretamente para o fluxo de pagamento.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Domínio:** Precisamos de um subdomínio (ex: `preprod.itbenevides.com.br`) apontando para o IP Público da instância na Oracle.
+> O componente permitirá valores pré-definidos (sugestões) e um campo para valor personalizado.
+> Os itens serão adicionados ao carrinho com um nome customizado (ex: "Doação para o Canal") e o preço selecionado.
 
-> [!CAUTION]
-> **Persistência SQLite:** Como estamos usando SQLite, não podemos escalar horizontalmente o serviço `server` sem migrar para um banco externo (ex: OCI MySQL ou PostgreSQL). Para pré-produção, o Block Volume resolve a persistência em uma única instância.
+## Proposed Changes
 
-## Próximos Passos
-1.  Aprovação desta especificação.
-2.  Criação do script Terraform (opcional) ou manual via OCI Console.
-3.  Configuração das Variáveis de Ambiente no Painel OCI.
-4.  Execução do primeiro deploy.
+### 1. Módulo Shared (:shared)
+
+#### [MODIFY] [CartItem.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/model/CartItem.kt)
+*   Adicionar campos `customName: String?` e `customPrice: Double?`.
+*   Atualizar os getters `name` e `price` para priorizar esses campos.
+
+#### [MODIFY] [Page.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/model/Page.kt)
+*   Adicionar `PageComponent.ValuedAction` ao sealed class com os campos:
+    *   `title: String`
+    *   `description: String?`
+    *   `suggestedValues: List<Double>`
+    *   `allowCustomValue: Boolean`
+    *   `buttonText: String` (ex: "Contribuir", "Doar")
+
+---
+
+### 2. Módulo Server (:server)
+
+#### [MODIFY] [SqliteOrderRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteOrderRepository.kt)
+*   Atualizar o método `fetchOrderItems` para carregar `customName` e `customPrice` das colunas `product_name` e `product_price` da tabela `order_items`, garantindo que itens dinâmicos sejam restaurados corretamente no histórico de pedidos.
+
+---
+
+### 3. Módulo Compose App (:composeApp)
+
+#### [MODIFY] [PageViewModel.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/PageViewModel.kt)
+*   Adicionar função `addValuedActionToCart(name: String, price: Double)` para facilitar a inclusão desses itens.
+
+#### [NEW] [ValuedActionComponent.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/ValuedActionComponent.kt)
+*   Implementar o componente visual que exibe:
+    *   Título e descrição.
+    *   Chips/Botões para valores sugeridos.
+    *   Campo de texto para valor customizado (se habilitado).
+    *   Botão de ação que adiciona ao carrinho e redireciona.
+
+#### [MODIFY] [PublicViewer.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/PublicViewer.kt) (ou equivalente)
+*   Registrar o novo componente no renderizador de páginas.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+*   **Unit Test:** Validar que um `CartItem` com `customPrice` calcula o total corretamente.
+*   **Integration Test:** Criar um pedido com um item de valor dinâmico e verificar se o valor persiste no banco de dados.
+
+### Manual Verification
+1.  No Editor de Página, adicionar o componente "Ação com Valor".
+2.  Configurar valores sugeridos (ex: 10, 20, 50).
+3.  No Visualizador Público, selecionar um valor e clicar no botão.
+4.  Verificar se o item aparece no carrinho com o valor correto.
+5.  Finalizar a compra (simulado ou Stripe test mode) e verificar o pedido gerado.

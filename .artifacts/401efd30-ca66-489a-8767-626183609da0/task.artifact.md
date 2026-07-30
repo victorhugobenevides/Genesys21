@@ -1,4 +1,6 @@
-- [x] Implementar auto-criação de perfil no `PageViewModel` ao falhar o carregamento do perfil existente.
-- [x] Melhorar logs de erro no `KtorOrderRepository` para facilitar depuração.
-- [x] Corrigir erro `SQLITE_BUSY` (Database Locked) habilitando modo WAL e otimizando `dbQuery`.
-- [ ] Validar a correção simulando um login e criação de pedido.
+- [ ] Implementar `customName` e `customPrice` em `CartItem` (:shared)
+- [ ] Criar `PageComponent.ValuedAction` em `Page.kt` (:shared)
+- [ ] Atualizar `SqliteOrderRepository` para suportar itens dinâmicos (:server)
+- [ ] Adicionar lógica ao `PageViewModel` para suportar doações (:composeApp)
+- [ ] Criar componente visual `ValuedActionComponent` (:composeApp)
+- [ ] Integrar novo componente no visualizador público (:composeApp)

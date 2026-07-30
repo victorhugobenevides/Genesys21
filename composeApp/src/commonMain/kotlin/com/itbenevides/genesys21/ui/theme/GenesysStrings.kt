@@ -151,4 +151,7 @@ object GenesysStrings {
     const val NoProductsInCatalog = "Nenhum outro produto no catálogo."
     const val SaveLabel = "Salvar"
     const val HorizontalListLabel = "Lista Horizontal?"
+
+    // Payments & Valued Action
+    const val CustomValue = "Outro Valor"
 }

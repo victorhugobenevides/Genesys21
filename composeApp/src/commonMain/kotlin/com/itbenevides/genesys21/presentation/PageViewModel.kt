@@ -206,6 +206,18 @@ class PageViewModel(
         }
     }
 
+    fun addValuedActionToCart(name: String, price: Double) {
+        viewModelScope.launch {
+            cartRepository.addToCart(
+                CartItem(
+                    customName = name,
+                    customPrice = price,
+                    quantity = 1
+                )
+            )
+        }
+    }
+
     fun removeFromCart(productId: String) {
         viewModelScope.launch { cartRepository.removeFromCart(productId) }
     }

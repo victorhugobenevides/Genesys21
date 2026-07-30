@@ -44,6 +44,7 @@ import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysSearchBar
+import com.itbenevides.genesys21.ui.components.molecules.payment.ValuedActionComponent
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
@@ -859,6 +860,15 @@ fun PageComponentRenderer(
                 Box(modifier = Modifier.padding(vertical = if (component.usePadding) 16.dp else 0.dp)) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
+            }
+
+            is PageComponent.ValuedAction -> {
+                ValuedActionComponent(
+                    component = component,
+                    onActionClick = { name, price ->
+                        router.viewModel.addValuedActionToCart(name, price)
+                    }
+                )
             }
         }
 

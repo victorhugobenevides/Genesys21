@@ -8,7 +8,9 @@ data class CartItem(
     val quantity: Int = 1,
     val service: BookingService? = null,
     val appointment: Appointment? = null,
+    val customName: String? = null,
+    val customPrice: Double? = null,
 ) {
-    val price: Double get() = product?.price ?: service?.price ?: 0.0
-    val name: String get() = product?.name ?: service?.name ?: "Desconhecido"
+    val price: Double get() = customPrice ?: product?.price ?: service?.price ?: 0.0
+    val name: String get() = customName ?: product?.name ?: service?.name ?: "Desconhecido"
 }

@@ -364,6 +364,23 @@ sealed class PageComponent {
         override val destinationUrl: String? = null,
     ) : PageComponent()
 
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.ValuedAction")
+    data class ValuedAction(
+        val title: String,
+        val description: String? = null,
+        val suggestedValues: List<Double> = listOf(10.0, 20.0, 50.0, 100.0),
+        val allowCustomValue: Boolean = true,
+        val buttonText: String = "Contribuir",
+        val imageUrl: String? = null,
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
     companion object
 }
 

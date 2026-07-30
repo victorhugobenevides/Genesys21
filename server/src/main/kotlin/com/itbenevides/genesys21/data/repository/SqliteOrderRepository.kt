@@ -204,7 +204,9 @@ class SqliteOrderRepository(
                             startTime = kotlinx.datetime.Instant.fromEpochMilliseconds(0),
                             endTime = kotlinx.datetime.Instant.fromEpochMilliseconds(0)
                         )
-                    }
+                    },
+                    customName = if (productId == null && serviceId == null) row[OrderItemsTable.productName] else null,
+                    customPrice = if (productId == null && serviceId == null) row[OrderItemsTable.productPrice] else null
                 )
             }
     }
