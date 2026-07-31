@@ -12,6 +12,23 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Decode Google Services JSON (Android)
+          command: |
+            if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
+              CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
+              echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
+              echo "✓ decoded google-services.json"
+            fi
+      - run:
+          name: Decode Firebase Admin JSON (Server)
+          command: |
+            if [ -n "$FIREBASE_ADMIN_JSON" ]; then
+              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
+              mkdir -p server/src/main/resources
+              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/firebase-adminsdk.json
+              echo "✓ decoded firebase-adminsdk.json"
+            fi
+      - run:
           name: Setup Java
           command: |
             java -version
@@ -23,9 +40,18 @@ jobs:
           command: |
             ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon
             ./gradlew :server:jacocoTestReport --no-daemon
+
+            # Coleta resultados
+            mkdir -p /tmp/test-results/junit
+            find . -type f -name "*.xml" -path "*/build/test-results/*" -exec cp {} /tmp/test-results/junit/ \;
       - run:
           name: Verify Visual Integrity (Screenshot Tests)
           command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
+      - store_test_results:
+          path: /tmp/test-results
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: tr
 
   deploy:
     docker:
@@ -37,6 +63,19 @@ jobs:
         default: "staging"
     steps:
       - checkout
+      - run:
+          name: Decode Google Services JSON (Android)
+          command: |
+            if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
+              CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
+              echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
+            fi
+      - run:
+          name: Decode Firebase Admin JSON (Server)
+          command: |
+            if [ -n "$FIREBASE_ADMIN_JSON" ]; then
+              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
+            fi
       - setup_remote_docker:
           version: 20.10.24
       - run:
