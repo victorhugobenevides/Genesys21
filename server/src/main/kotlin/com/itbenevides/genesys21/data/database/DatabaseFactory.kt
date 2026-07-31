@@ -13,11 +13,18 @@ import kotlinx.coroutines.Dispatchers
 
 object DatabaseFactory {
     private var database: Database? = null
+    private var dataSource: HikariDataSource? = null
 
     fun init(
         jdbcUrl: String = "jdbc:sqlite:data/genesys21.db?journal_mode=WAL&busy_timeout=10000",
         rebuild: Boolean = true,
     ) {
+        if (database != null && !rebuild) return
+
+        // Fecha o pool anterior se existir para evitar vazamento de conexões
+        // e travas no SQLite (especialmente em memória compartilhada)
+        dataSource?.close()
+
         if (rebuild && jdbcUrl.contains("data/")) {
             val path = jdbcUrl.removePrefix("jdbc:sqlite:")
             File(path).delete()
@@ -30,8 +37,9 @@ object DatabaseFactory {
             applySqliteOptimizations()
         }
 
-        val dataSource = hikari(jdbcUrl)
-        database = Database.connect(dataSource)
+        val ds = hikari(jdbcUrl)
+        dataSource = ds
+        database = Database.connect(ds)
 
         if (rebuild) {
             dropAndRebuild()

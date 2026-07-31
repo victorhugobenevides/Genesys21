@@ -54,7 +54,9 @@ fun Application.module() {
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
     if (isTesting) {
-        DatabaseFactory.init("jdbc:sqlite::memory:?cache=shared", rebuild = true)
+        // Usamos um identificador único para o banco em memória para evitar colisões entre testes
+        val testDbId = System.nanoTime()
+        DatabaseFactory.init("jdbc:sqlite:file:testdb-$testDbId?mode=memory&cache=shared", rebuild = true)
     } else {
         logger.info("Inicializando Banco de Dados (rebuild=$shouldRebuild)...")
         DatabaseFactory.init(rebuild = shouldRebuild)
