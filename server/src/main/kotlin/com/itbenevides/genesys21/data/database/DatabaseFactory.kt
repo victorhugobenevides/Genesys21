@@ -34,12 +34,15 @@ object DatabaseFactory {
 
         if (jdbcUrl.contains("data/")) {
             setupDatabaseDirectory()
-            applySqliteOptimizations()
         }
 
         val ds = hikari(jdbcUrl)
         dataSource = ds
         database = Database.connect(ds)
+
+        if (jdbcUrl.contains("data/")) {
+            applySqliteOptimizations()
+        }
 
         if (rebuild) {
             dropAndRebuild()
