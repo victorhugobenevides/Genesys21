@@ -40,10 +40,6 @@ object DatabaseFactory {
         dataSource = ds
         database = Database.connect(ds)
 
-        if (jdbcUrl.contains("data/")) {
-            applySqliteOptimizations()
-        }
-
         if (rebuild) {
             dropAndRebuild()
             Seeder.seedInitialData()
@@ -57,15 +53,6 @@ object DatabaseFactory {
     private fun setupDatabaseDirectory() {
         val dataFolder = File("data")
         if (!dataFolder.exists()) dataFolder.mkdirs()
-    }
-
-    private fun applySqliteOptimizations() {
-        // WAL mode e Busy Timeout já estão no JDBC URL default, mas reforçamos aqui via PRAGMA
-        transaction(database) {
-            exec("PRAGMA journal_mode=WAL;")
-            exec("PRAGMA busy_timeout=10000;")
-            exec("PRAGMA synchronous=NORMAL;")
-        }
     }
 
     private fun hikari(jdbcUrl: String): HikariDataSource {
