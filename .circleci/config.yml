@@ -198,6 +198,39 @@ jobs:
             docker push $REGISTRY/genesys-server:latest
             docker push $REGISTRY/genesys-web:latest
       - run:
+          name: Smoke Test (Boot Check)
+          command: |
+            REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
+            # Rodar em modo teste para evitar carregar configs de prod pesadas, mas validar o boot
+            docker run -d --name smoke-test-server -p 8081:8080 -e "ktor.testing=true" $REGISTRY/genesys-server:latest
+
+            SUCCESS=0
+            for i in $(seq 1 30); do
+              if curl -s http://localhost:8081/ > /dev/null; then
+                echo "✓ Server boot successful!"
+                SUCCESS=1
+                break
+              fi
+
+              # Verifica se o container morreu
+              if [ "$(docker inspect -f '{{.State.Running}}' smoke-test-server)" = "false" ]; then
+                echo "ERROR: Server container crashed during boot!"
+                docker logs smoke-test-server
+                exit 1
+              fi
+
+              echo "Waiting for server... ($i/30)"
+              sleep 1
+            done
+
+            [ $SUCCESS -eq 0 ] && docker logs smoke-test-server
+            docker rm -f smoke-test-server
+
+            if [ $SUCCESS -eq 0 ]; then
+              echo "CRITICAL: Server timed out during smoke test!"
+              exit 1
+            fi
+      - run:
           name: Setup SSH Key
           command: |
             mkdir -p ~/.ssh
@@ -243,7 +276,7 @@ jobs:
 
             # 2. Gerar Docker Compose usando imagens do OCIR via printf
             REGISTRY="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}"
-            printf "services:\n  server:\n    image: ${REGISTRY}/genesys-server:latest\n    environment:\n      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}\n      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}\n      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\n      - PROD_MODE=true\n    volumes:\n      - ./data:/app/data\n      - ./uploads:/app/uploads\n    restart: unless-stopped\n    networks:\n      - genesys-network\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8080/\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  web:\n    image: ${REGISTRY}/genesys-web:latest\n    depends_on:\n      server:\n        condition: service_started\n" > docker-compose.yml
+            printf "services:\n  server:\n    image: ${REGISTRY}/genesys-server:latest\n    environment:\n      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}\n      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}\n      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\n      - PROD_MODE=true\n    volumes:\n      - ./data:/app/data\n      - ./uploads:/app/uploads\n    restart: unless-stopped\n    networks:\n      - genesys-network\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8080/\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  web:\n    image: ${REGISTRY}/genesys-web:latest\n    depends_on:\n      server:\n        condition: service_healthy\n" > docker-compose.yml
             printf "    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro\n      - ./uploads:/usr/share/nginx/html/uploads:ro\n      - ./certbot/conf:/etc/letsencrypt:ro\n      - ./certbot/www:/var/www/certbot:ro\n    restart: unless-stopped\n    networks:\n      - genesys-network\n  certbot:\n    image: certbot/certbot\n    volumes:\n      - ./certbot/conf:/etc/letsencrypt\n      - ./certbot/www:/var/www/certbot\n    networks:\n      - genesys-network\n    entrypoint: \"/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'\"\nnetworks:\n  genesys-network:\n    driver: bridge\n" >> docker-compose.yml
 
             # 3. Transferir arquivos e executar comandos via SSH
