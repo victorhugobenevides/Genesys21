@@ -56,7 +56,7 @@ kotlin {
         val iosMain by getting {
             dependencies {
                 implementation(libs.firebase.auth.kmp)
-                implementation("dev.gitlive:firebase-analytics:2.1.0")
+                // implementation("dev.gitlive:firebase-analytics:2.1.0")
             }
         }
 
@@ -70,7 +70,7 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+            implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.clientMock)
         }
     }

@@ -117,8 +117,7 @@ kotlin {
 
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            // Alterado de 1.10.1 para 1.9.0 para garantir a resolução do artefato
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

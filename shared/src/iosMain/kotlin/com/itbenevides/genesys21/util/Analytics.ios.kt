@@ -1,34 +1,19 @@
 package com.itbenevides.genesys21.util
 
-import cocoapods.FirebaseAnalytics.FIRAnalytics
-import kotlinx.cinterop.ExperimentalForeignApi
-
 /**
- * Implementação do Analytics para iOS usando Firebase Nativo (via CocoaPods).
+ * Implementação do Analytics para iOS (No-op temporário devido a limitações do ambiente).
  */
-@OptIn(ExperimentalForeignApi::class)
 actual val AnalyticsManager: Analytics =
     object : Analytics {
         override fun logEvent(
             name: String,
             params: Map<String, Any>,
         ) {
-            val nsParams =
-                params.map { (key, value) ->
-                    key as Any? to value as Any?
-                }.toMap()
-
-            FIRAnalytics.logEventWithName(name, nsParams)
+            println("iOS Analytics: $name - $params")
         }
 
         override fun trackPageView(pageName: String) {
-            FIRAnalytics.logEventWithName(
-                "screen_view",
-                mapOf(
-                    "screen_name" to pageName,
-                    "screen_class" to "ComposeUIViewController",
-                ),
-            )
+            println("iOS Analytics: PageView -> $pageName")
         }
 
         override fun recordError(
@@ -36,7 +21,6 @@ actual val AnalyticsManager: Analytics =
             throwable: Throwable?,
             extraParams: Map<String, String>,
         ) {
-            // FIRCrashlytics não está mapeado no cinterop atual, enviando como evento
             val errorParams =
                 mutableMapOf<String, Any>(
                     "error_title" to title,

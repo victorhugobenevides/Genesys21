@@ -19,13 +19,14 @@ import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.CurrencyUtils
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ValuedActionComponent(
     component: PageComponent.ValuedAction,
     onActionClick: (String, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedValue by remember { mutableStateOf<Double?>(component.suggestedValues.firstOrNull()) }
+    var selectedValue by remember { mutableStateOf<Double?>(if (component.suggestedValues.isNotEmpty()) component.suggestedValues.first() else null) }
     var customValueText by remember { mutableStateOf("") }
     val isCustomSelected = component.allowCustomValue && selectedValue == null
 
@@ -54,13 +55,12 @@ fun ValuedActionComponent(
             GenesysSpacer(GenesysSpacing.Medium)
 
             // Valores sugeridos
-            @OptIn(ExperimentalLayoutApi::class)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                component.suggestedValues.forEach { value ->
+                for (value in component.suggestedValues) {
                     FilterChip(
                         selected = selectedValue == value,
                         onClick = {
