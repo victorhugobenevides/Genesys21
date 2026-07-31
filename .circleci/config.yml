@@ -202,11 +202,12 @@ jobs:
           command: |
             REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
             # Rodar em modo teste para evitar carregar configs de prod pesadas, mas validar o boot
-            docker run -d --name smoke-test-server -p 8081:8080 -e "ktor.testing=true" $REGISTRY/genesys-server:latest
+            docker run -d --name smoke-test-server -e "ktor.testing=true" $REGISTRY/genesys-server:latest
 
             SUCCESS=0
             for i in $(seq 1 30); do
-              if curl -s http://localhost:8081/ > /dev/null; then
+              # No CircleCI o docker roda remoto, por isso usamos 'docker exec' para testar via localhost interno do container
+              if docker exec smoke-test-server curl -s -f http://localhost:8080/ > /dev/null; then
                 echo "✓ Server boot successful!"
                 SUCCESS=1
                 break

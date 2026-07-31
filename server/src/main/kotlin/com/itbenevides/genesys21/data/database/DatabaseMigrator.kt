@@ -83,6 +83,7 @@ object DatabaseMigrator {
 
                 if (hasStrictFK || !tableSql.contains("merchant_id", true) || !tableSql.contains("start_time_ms", true) || tableSql.contains("customer_notes", true)) {
                     println("DatabaseMigrator: Reconstruindo tabela 'appointments' para o novo formato...")
+                    exec("DROP INDEX IF EXISTS idx_appointments_start_time")
                     exec("DROP TABLE IF EXISTS appointment_notes")
                     exec("DROP TABLE IF EXISTS appointments_old")
                     exec("ALTER TABLE appointments RENAME TO appointments_old")
