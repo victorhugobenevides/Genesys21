@@ -14,304 +14,229 @@ jobs:
       - run:
           name: Setup Java
           command: |
-            # Gradle will automatically download JDK 21 thanks to foojay plugin.
-            # We just display the initial version for debugging.
             java -version
       - run:
           name: Grant execute permission for gradlew
           command: chmod +x gradlew
       - run:
-          name: Clean Corrupted SDK components
-          command: |
-            # Remove potentially corrupted downloads
-            rm -rf /opt/android/sdk/platforms/android-35
-            rm -rf /opt/android/sdk/build-tools/35.0.0
-      - run:
-          name: Decode Google Services JSON (Android)
-          command: |
-            if [ -z "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
-              echo "Error: GOOGLE_SERVICES_JSON_ANDROID environment variable is not set."
-              exit 1
-            fi
-            CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
-            DECODED=$(echo "$CLEAN_VAR" | base64 --decode 2>/dev/null || echo "failed")
-            if echo "$DECODED" | grep -q "project_info"; then
-              echo "$DECODED" > composeApp/google-services.json
-              echo "✓ Decoded from Base64"
-            elif echo "$GOOGLE_SERVICES_JSON_ANDROID" | grep -q "project_info"; then
-              echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
-              echo "✓ Used raw text (contains project_info)"
-            else
-              echo "CRITICAL ERROR: Variable content does not appear to be a valid google-services.json."
-              exit 1
-            fi
-      - run:
-          name: Decode Firebase Admin JSON (Server)
-          command: |
-            if [ -z "$FIREBASE_ADMIN_JSON" ]; then
-              echo "Warning: FIREBASE_ADMIN_JSON not set. Server tests might fail."
-            else
-              mkdir -p server/src/main/resources
-              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/firebase-adminsdk.json
-              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
-            fi
-      - run:
           name: Run Unit Tests & Coverage
           command: |
             ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon
             ./gradlew :server:jacocoTestReport --no-daemon
-
-            # Collect test results for CircleCI
-            mkdir -p /tmp/test-results/junit
-            find . -type f -name "*.xml" -path "*/build/test-results/*" -exec cp {} /tmp/test-results/junit/ \;
       - run:
           name: Verify Visual Integrity (Screenshot Tests)
           command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
-      - persist_to_workspace:
-          root: .
-          paths:
-            - screenshot-tests/build/reports/paparazzi
-            - composeApp/jacoco-reports
-            - shared/jacoco-reports
-            - server/jacoco-reports
-            - shared/build/reports/tests
-            - composeApp/build/reports/tests
-            - server/build/reports/tests
-      - store_test_results:
-          path: /tmp/test-results
 
-  deploy-to-oracle:
+  deploy:
     docker:
       - image: cimg/openjdk:21.0
-    environment:
-      DOCKER_API_VERSION: "1.41"
+    parameters:
+      environment_name:
+        type: enum
+        enum: ["prod", "staging"]
+        default: "staging"
     steps:
       - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Decode Firebase Admin JSON (Server)
-          command: |
-            if [ -z "$FIREBASE_ADMIN_JSON" ]; then
-              echo "ERROR: FIREBASE_ADMIN_JSON is not set in deploy job!"
-              exit 1
-            else
-              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
-            fi
       - setup_remote_docker:
           version: 20.10.24
-          docker_layer_caching: true
       - run:
           name: Build Distribution
           command: ./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
       - run:
-          name: Prepare Deploy Content & Docker Push
+          name: Prepare and Push Docker Images
           command: |
-            mkdir -p deploy/server deploy/web/reports/paparazzi deploy/web/reports/shared deploy/web/reports/app deploy/web/reports/server deploy/web/reports/coverage/app deploy/web/reports/coverage/shared deploy/web/reports/coverage/server
-            cp -R server/build/install/server/. deploy/server/
-            # Copiar o JSON para a raiz do deploy para que fique em /app/ no container
-            cp firebase-adminsdk.json deploy/server/ 2>/dev/null || true
+            REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
+            TAG=<< parameters.environment_name >>
+            [ "$TAG" = "prod" ] && TAG="latest"
 
-            # Tenta encontrar o diretório de distribuição do WasmJS
-            WEB_DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -o -name "distribution" | head -n 1)
-            if [ -n "$WEB_DIST_DIR" ]; then
-                find "$WEB_DIST_DIR" -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
-            fi
-
-            # Copiar Relatórios
-            [ -d "screenshot-tests/build/reports/paparazzi/debug" ] && cp -R screenshot-tests/build/reports/paparazzi/debug/* deploy/web/reports/paparazzi/ || true
-            [ -d "shared/build/reports/tests/testDebugUnitTest" ] && cp -R shared/build/reports/tests/testDebugUnitTest/* deploy/web/reports/shared/ || true
-            [ -d "composeApp/build/reports/tests/testDebugUnitTest" ] && cp -R composeApp/build/reports/tests/testDebugUnitTest/* deploy/web/reports/app/ || true
-            [ -d "server/build/reports/tests/test" ] && cp -R server/build/reports/tests/test/* deploy/web/reports/server/ || true
-
-            # Coverage
-            [ -d "composeApp/jacoco-reports/html" ] && cp -R composeApp/jacoco-reports/html/* deploy/web/reports/coverage/app/ || true
-            [ -d "shared/jacoco-reports/html" ] && cp -R shared/jacoco-reports/html/* deploy/web/reports/coverage/shared/ || true
-            [ -d "server/jacoco-reports/html" ] && cp -R server/jacoco-reports/html/* deploy/web/reports/coverage/server/ || true
-
-            # Gerar ponte Firebase
-            cat \<<EOF > deploy/web/firebase-bridge.js
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-            import { getAuth, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-            const firebaseConfig = {
-                apiKey: "AIzaSyCq22tklAK0iQd4jWDINkJZAS9-I_-dLSY",
-                authDomain: "genesys21-32035.firebaseapp.com",
-                projectId: "genesys21-32035",
-                storageBucket: "genesys21-32035.firebasestorage.app",
-                appId: "1:674755208954:web:26e7b20a54f9ceb0dc4b43"
-            };
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            window.firebaseSignIn = async (email, pass) => {
-                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-                return await userCredential.user.getIdToken();
-            };
-            window.firebaseSignInGoogle = async () => {
-                const provider = new GoogleAuthProvider();
-                const result = await signInWithPopup(auth, provider);
-                return await result.user.getIdToken();
-            };
-            window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
-            window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
-            window.firebaseSignOut = async () => await signOut(auth);
-            EOF
-
-            # Gerar index.html
-            cat \<<EOF > deploy/web/index.html
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-                <title>Genesys21</title>
-                <link rel="preload" href="/composeApp.wasm" as="fetch" type="application/wasm" crossorigin>
-                <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW7Y13Y2M8"></script>
-                <script>
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', 'G-LW7Y13Y2M8');
-                </script>
-                <script>if(!window.crypto.randomUUID){window.crypto.randomUUID=function(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));};}</script>
-                <script type="module" src="/firebase-bridge.js"></script>
-                <style>
-                    html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: manipulation; }
-                    #ComposeTarget { width: 100%; height: 100%; }
-                    canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
-                    input, textarea { font-size: 16px !important; }
-                </style>
-            </head>
-            <body>
-                <canvas id="ComposeTarget"></canvas>
-                <script type="module" src="/composeApp.js"></script>
-            </body>
-            </html>
-            EOF
-
-            # Docker Login OCIR
             echo "$OCI_AUTH_TOKEN" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
-            # Build and Push
-            REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
-            docker build -t $REGISTRY/genesys-server:latest -f Dockerfile.server .
-            docker build -t $REGISTRY/genesys-web:latest -f Dockerfile.web .
-            docker push $REGISTRY/genesys-server:latest
-            docker push $REGISTRY/genesys-web:latest
+            docker build -t $REGISTRY/genesys-server:$TAG -f Dockerfile.server .
+            docker build -t $REGISTRY/genesys-web:$TAG -f Dockerfile.web .
+            docker push $REGISTRY/genesys-server:$TAG
+            docker push $REGISTRY/genesys-web:$TAG
       - run:
           name: Smoke Test (Boot Check)
           command: |
             REGISTRY=${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}
-            # Rodar em modo teste para evitar carregar configs de prod pesadas, mas validar o boot
-            docker run -d --name smoke-test-server -e "ktor.testing=true" $REGISTRY/genesys-server:latest
+            TAG=<< parameters.environment_name >>
+            [ "$TAG" = "prod" ] && TAG="latest"
+
+            docker run -d --name smoke-test-server -e "ktor.testing=true" $REGISTRY/genesys-server:$TAG
 
             SUCCESS=0
             for i in $(seq 1 30); do
-              # No CircleCI o docker roda remoto, por isso usamos 'docker exec' para testar via localhost interno do container
               if docker exec smoke-test-server curl -s -f http://localhost:8080/ > /dev/null; then
                 echo "✓ Server boot successful!"
                 SUCCESS=1
                 break
               fi
-
-              # Verifica se o container morreu
-              if [ "$(docker inspect -f '{{.State.Running}}' smoke-test-server)" = "false" ]; then
-                echo "ERROR: Server container crashed during boot!"
-                docker logs smoke-test-server
-                exit 1
-              fi
-
-              echo "Waiting for server... ($i/30)"
               sleep 1
             done
-
-            [ $SUCCESS -eq 0 ] && docker logs smoke-test-server
             docker rm -f smoke-test-server
-
-            if [ $SUCCESS -eq 0 ]; then
-              echo "CRITICAL: Server timed out during smoke test!"
-              exit 1
-            fi
+            [ $SUCCESS -eq 0 ] && exit 1 || true
       - run:
-          name: Setup SSH Key
+          name: Setup SSH
           command: |
             mkdir -p ~/.ssh
-            CLEAN_HOST=$(echo "${OCI_HOST}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's|https://||' -e 's|http://||' -e 's|/.*||')
-            echo "export CLEAN_HOST=${CLEAN_HOST}" >> $BASH_ENV
-
-            if [ -z "${OCI_SSH_KEY}" ]; then
-              echo "ERROR: OCI_SSH_KEY is empty!"
-              exit 1
-            fi
-
-            # Usa Python para reconstruir a chave de forma robusta (Base64 ou Raw)
-            python3 -c "
-            import os, base64
-            key = os.environ['OCI_SSH_KEY'].strip()
-            path = os.path.expanduser('~/.ssh/oracle_key')
-            with open(path, 'wb') as f:
-                try:
-                    # Tenta decodificar como base64
-                    f.write(base64.b64decode(key))
-                except:
-                    # Se falhar, assume que é a chave bruta
-                    f.write(key.encode())
-            "
-
+            python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
             chmod 600 ~/.ssh/oracle_key
+            ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
+      - run:
+          name: Remote Deploy via SSH
+          command: |
+            ENV=<< parameters.environment_name >>
+            REGISTRY="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}"
 
-            if ! grep -q "PRIVATE KEY" ~/.ssh/oracle_key; then
-              echo "ERROR: The key file is invalid or it is a PUBLIC key instead of PRIVATE."
-              echo "Check if OCI_SSH_KEY in CircleCI is correct."
-              exit 1
+            if [ "$ENV" = "prod" ]; then
+              TAG="latest"
+              TARGET_DIR="~/app"
+              CONTAINER_NAME="app-server-1"
+            else
+              TAG="staging"
+              TARGET_DIR="~/staging"
+              CONTAINER_NAME="staging-server-1"
             fi
 
-            ssh-keygen -l -f ~/.ssh/oracle_key
-            ssh-keyscan -H "${CLEAN_HOST}" >> ~/.ssh/known_hosts
-      - run:
-          name: SSH Deploy to Oracle Cloud
-          command: |
-            source $BASH_ENV
+            # Gerar Nginx Config Localmente
+            cat \<<EOF > nginx.conf
+            user  nginx;
+            worker_processes  auto;
+            events { worker_connections  1024; }
+            http {
+                include /etc/nginx/mime.types;
+                types { application/wasm wasm; }
+                default_type application/octet-stream;
+                client_max_body_size 50M;
+                gzip on;
 
-            # 1. Gerar Nginx de Produção (HTTPS Ativado)
-            printf "user  nginx;\nworker_processes  auto;\nevents { worker_connections  1024; }\nhttp {\n    include /etc/nginx/mime.types;\n    types { application/wasm wasm; }\n    default_type application/octet-stream;\n    client_max_body_size 50M;\n    gzip on;\n    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/wasm;\n    server {\n        listen 80;\n        server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;\n        location /.well-known/acme-challenge/ {\n            root /var/www/certbot;\n        }\n        location / {\n            return 301 https://\$host\$request_uri;\n        }\n    }\n    server {\n        listen 443 ssl default_server;\n        server_name victorbenevides.dev www.victorbenevides.dev radarani.site www.radarani.site;\n        ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;\n        ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;\n        ssl_protocols TLSv1.2 TLSv1.3;\n        ssl_ciphers HIGH:!aNULL:!MD5;\n        ssl_prefer_server_ciphers on;\n        root /usr/share/nginx/html;\n        index index.html;\n        location ^~ /.well-known/acme-challenge/ {\n            alias /var/www/certbot/.well-known/acme-challenge/;\n            allow all;\n        }\n        location /api/ {\n            proxy_pass http://server:8080/api/;\n            proxy_set_header Host \$host;\n            proxy_set_header X-Real-IP \$remote_addr;\n            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n            proxy_set_header X-Forwarded-Proto \$scheme;\n            proxy_set_header X-Cart-Session-Id \$http_x_cart_session_id;\n        }\n        location /p/ {\n            proxy_pass http://server:8080/p/;\n            proxy_set_header Host \$host;\n            proxy_set_header X-Real-IP \$remote_addr;\n            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n            proxy_set_header X-Forwarded-Proto \$scheme;\n        }\n        location /uploads/ {\n            alias /usr/share/nginx/html/uploads/;\n            try_files \$uri @backend_fallback;\n        }\n        location @backend_fallback {\n            proxy_pass http://server:8080;\n            proxy_set_header Host \$host;\n        }\n        location / {\n            try_files \$uri \$uri/ /index.html;\n        }\n    }\n}\n" > nginx.prod.conf
+                # Produção
+                server {
+                    listen 80;
+                    server_name victorbenevides.dev www.victorbenevides.dev;
+                    location / { return 301 https://\$host\$request_uri; }
+                }
+                server {
+                    listen 443 ssl default_server;
+                    server_name victorbenevides.dev www.victorbenevides.dev;
+                    ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
+                    ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
+                    root /usr/share/nginx/html;
+                    index index.html;
+                    location /api/ {
+                        proxy_pass http://app-server-1:8080/api/;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                    }
+                    location / { try_files \$uri \$uri/ /index.html; }
+                }
 
-            # 2. Gerar Docker Compose usando imagens do OCIR via printf
-            REGISTRY="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}"
-            printf "services:\n  server:\n    image: ${REGISTRY}/genesys-server:latest\n    environment:\n      - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}\n      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}\n      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\n      - PROD_MODE=true\n    volumes:\n      - ./data:/app/data\n      - ./uploads:/app/uploads\n    restart: unless-stopped\n    networks:\n      - genesys-network\n    healthcheck:\n      test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8080/\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n  web:\n    image: ${REGISTRY}/genesys-web:latest\n    depends_on:\n      server:\n        condition: service_healthy\n" > docker-compose.yml
-            printf "    ports:\n      - \"80:80\"\n      - \"443:443\"\n    volumes:\n      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro\n      - ./uploads:/usr/share/nginx/html/uploads:ro\n      - ./certbot/conf:/etc/letsencrypt:ro\n      - ./certbot/www:/var/www/certbot:ro\n    restart: unless-stopped\n    networks:\n      - genesys-network\n  certbot:\n    image: certbot/certbot\n    volumes:\n      - ./certbot/conf:/etc/letsencrypt\n      - ./certbot/www:/var/www/certbot\n    networks:\n      - genesys-network\n    entrypoint: \"/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait \$\${!}; done'\"\nnetworks:\n  genesys-network:\n    driver: bridge\n" >> docker-compose.yml
+                # Staging
+                server {
+                    listen 80;
+                    server_name staging.victorbenevides.dev;
+                    location / { return 301 https://\$host\$request_uri; }
+                }
+                server {
+                    listen 443 ssl;
+                    server_name staging.victorbenevides.dev;
+                    ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
+                    ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
+                    root /usr/share/nginx/html/staging;
+                    index index.html;
+                    location /api/ {
+                        proxy_pass http://staging-server-1:8080/api/;
+                        proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                    }
+                    location / { try_files \$uri \$uri/ /index.html; }
+                }
+            }
+            EOF
 
-            # 3. Transferir arquivos e executar comandos via SSH
-            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${CLEAN_HOST} "mkdir -p ~/app"
-            scp -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no nginx.prod.conf docker-compose.yml ubuntu@${CLEAN_HOST}:~/app/
+            # Gerar Docker Compose
+            if [ "$ENV" = "prod" ]; then
+              cat \<<EOF > docker-compose.yml
+            services:
+              server:
+                container_name: app-server-1
+                image: ${REGISTRY}/genesys-server:latest
+                environment:
+                  - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
+                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+                  - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+                  - PROD_MODE=true
+                volumes:
+                  - ./data:/app/data
+                  - ./uploads:/app/uploads
+                restart: unless-stopped
+                networks:
+                  - genesys-network
+                healthcheck:
+                  test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+              web:
+                image: ${REGISTRY}/genesys-web:latest
+                depends_on:
+                  server: { condition: service_healthy }
+                ports:
+                  - "80:80"
+                  - "443:443"
+                volumes:
+                  - ./nginx.conf:/etc/nginx/nginx.conf:ro
+                  - ./uploads:/usr/share/nginx/html/uploads:ro
+                  - ./certbot/conf:/etc/letsencrypt:ro
+                restart: unless-stopped
+                networks:
+                  - genesys-network
+            networks:
+              genesys-network: { driver: bridge }
+            EOF
+            else
+              cat \<<EOF > docker-compose.staging.yml
+            services:
+              server:
+                container_name: staging-server-1
+                image: ${REGISTRY}/genesys-server:staging
+                environment:
+                  - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
+                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+                  - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+                  - PROD_MODE=false
+                volumes:
+                  - ./data-staging:/app/data
+                  - ./uploads-staging:/app/uploads
+                restart: unless-stopped
+                networks:
+                  - genesys-network
+                healthcheck:
+                  test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+            networks:
+              genesys-network: { external: true }
+            EOF
+            fi
 
-            # Execução remota garantindo que as variáveis de ambiente locais sejam passadas
-            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAcceptedAlgorithms=+ssh-rsa ubuntu@${CLEAN_HOST} "
-              set -e
-              cd ~/app
-              echo \"${OCI_AUTH_TOKEN}\" | sudo docker login ${OCI_REGION}.ocir.io -u \"${OCI_TENANCY_NAMESPACE}/${OCI_USER}\" --password-stdin
+            # Transferência e Execução
+            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "mkdir -p ${TARGET_DIR}"
 
-              # Força o uso do Docker Compose V2 (Plugin) para evitar erro 'ContainerConfig'
-              DOCKER_CMD=\"sudo docker compose\"
-
-              # Verifica se o comando existe, caso contrário tenta o binário antigo (menos provável de funcionar com imagens novas)
-              if ! \$DOCKER_CMD version >/dev/null 2>&1; then
-                DOCKER_CMD=\"sudo docker-compose\"
-              fi
-
-              \$DOCKER_CMD pull
-              \$DOCKER_CMD down --remove-orphans || true
-              \$DOCKER_CMD up -d
-              sudo docker image prune -f
-            "
+            if [ "$ENV" = "prod" ]; then
+                scp -i ~/.ssh/oracle_key nginx.conf docker-compose.yml ubuntu@${OCI_HOST}:${TARGET_DIR}/
+                ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "cd ${TARGET_DIR} && sudo docker compose pull && sudo docker compose up -d"
+            else
+                scp -i ~/.ssh/oracle_key docker-compose.staging.yml ubuntu@${OCI_HOST}:${TARGET_DIR}/
+                ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "cd ${TARGET_DIR} && sudo docker network create genesys-network || true && sudo docker compose -f docker-compose.staging.yml pull && sudo docker compose -f docker-compose.staging.yml up -d"
+            fi
 
 workflows:
-  version: 2
   validate-and-deploy:
     jobs:
       - test-and-validate
-      - deploy-to-oracle:
-          requires:
-            - test-and-validate
-          filters:
-            branches:
-              only: main
+      - deploy:
+          name: deploy-prod
+          environment_name: prod
+          requires: [test-and-validate]
+          filters: { branches: { only: main } }
+      - deploy:
+          name: deploy-staging
+          environment_name: staging
+          requires: [test-and-validate]
+          filters: { branches: { only: develop } }

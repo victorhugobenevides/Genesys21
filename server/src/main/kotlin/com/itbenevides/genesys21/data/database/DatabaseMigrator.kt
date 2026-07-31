@@ -17,6 +17,7 @@ object DatabaseMigrator {
         fixResidualIndices()
         fixAppointmentsTable()
         fixUsersTable()
+        fixCartItemsTable()
     }
 
     private fun Transaction.fixUsersTable() {
@@ -197,5 +198,27 @@ object DatabaseMigrator {
 
         exec("DROP TABLE pages_old")
         println("DatabaseMigrator: Tabela 'pages' normalizada com sucesso!")
+    }
+
+    private fun Transaction.fixCartItemsTable() {
+        try {
+            val tableSql =
+                exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='cart_items'") { rs ->
+                    if (rs.next()) rs.getString("sql") else ""
+                } ?: ""
+
+            // Se o productId não estiver marcado como opcional (não tiver NULL no SQL da coluna)
+            // No SQLite, a ausência de 'NOT NULL' significa que é NULL, mas o Exposed pode ter criado como NOT NULL se não tinha .nullable()
+            // Vamos simplificar: se não houver 'appointment_data' ou se quisermos garantir a migração para Ktor 3/Exposed 0.59
+            if (tableSql.isNotBlank() && !tableSql.contains("appointment_data", true)) {
+                println("DatabaseMigrator: Reconstruindo tabela 'cart_items' para suportar agendamentos...")
+                exec("DROP TABLE IF EXISTS cart_items_old")
+                exec("ALTER TABLE cart_items RENAME TO cart_items_old")
+                SchemaUtils.create(CartItemsTable)
+                exec("DROP TABLE cart_items_old")
+            }
+        } catch (e: Exception) {
+            println("DatabaseMigrator: Erro ao corrigir tabela 'cart_items' - ${e.message}")
+        }
     }
 }

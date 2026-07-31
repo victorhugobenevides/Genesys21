@@ -138,7 +138,18 @@ fun Application.module() {
     */
 
     install(CORS) {
-        anyHost()
+        // Permitimos o domínio principal e o de staging
+        allowHost("victorbenevides.dev", schemes = listOf("http", "https"))
+        allowHost("www.victorbenevides.dev", schemes = listOf("http", "https"))
+        allowHost("staging.victorbenevides.dev", schemes = listOf("http", "https"))
+        allowHost("radarani.site", schemes = listOf("http", "https"))
+        allowHost("www.radarani.site", schemes = listOf("http", "https"))
+
+        // Localhost para desenvolvimento
+        allowHost("localhost:8080")
+        allowHost("localhost:8081")
+        allowHost("localhost:3000")
+        allowHost("0.0.0.0:8080")
 
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
