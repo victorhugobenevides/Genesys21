@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
@@ -34,12 +35,22 @@ fun App() {
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(router.viewModel) {
-        router.viewModel.errorEvents.collect { error ->
-            snackbarHostState.showSnackbar(
-                message = "${error.title}: ${error.message}",
-                actionLabel = "OK",
-                duration = SnackbarDuration.Long
-            )
+        launch {
+            router.viewModel.errorEvents.collect { error ->
+                snackbarHostState.showSnackbar(
+                    message = "${error.title}: ${error.message}",
+                    actionLabel = "OK",
+                    duration = SnackbarDuration.Long
+                )
+            }
+        }
+        launch {
+            router.viewModel.uiMessages.collect { message ->
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    duration = SnackbarDuration.Short
+                )
+            }
         }
     }
 

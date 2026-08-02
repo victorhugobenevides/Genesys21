@@ -74,7 +74,7 @@ class PageViewModel(
     private val _userAddresses = MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
     val userAddresses: StateFlow<List<com.itbenevides.genesys21.domain.model.Address>> = _userAddresses.asStateFlow()
 
-    val isLoggedIn: StateFlow<Boolean> = _userProfile.map { it != null }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val isLoggedIn: StateFlow<Boolean> = authRepository.authState.map { it != null }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _allUsers = MutableStateFlow<List<UserProfile>>(emptyList())
     val allUsers: StateFlow<List<UserProfile>> = _allUsers.asStateFlow()
@@ -117,6 +117,9 @@ class PageViewModel(
 
     private val _errorEvents = MutableSharedFlow<AppError>()
     val errorEvents = _errorEvents.asSharedFlow()
+
+    private val _uiMessages = MutableSharedFlow<String>()
+    val uiMessages = _uiMessages.asSharedFlow()
 
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -188,6 +191,7 @@ class PageViewModel(
     fun addToCart(product: Product): Boolean {
         viewModelScope.launch {
             cartRepository.addToCart(CartItem(product = product, quantity = 1))
+            _uiMessages.emit("Produto adicionado ao carrinho!")
         }
         return true
     }
@@ -201,6 +205,7 @@ class PageViewModel(
                     quantity = 1
                 )
             )
+            _uiMessages.emit("Serviço adicionado ao carrinho!")
         }
     }
 
@@ -213,6 +218,7 @@ class PageViewModel(
                     quantity = 1
                 )
             )
+            _uiMessages.emit("Contribuição adicionada ao carrinho!")
         }
     }
 

@@ -178,10 +178,11 @@ fun CartScreen(
                             provider = "google",
                             onSuccess = {
                                 showLoginDialog = false
-                                // O CheckoutClicked já será disparado pelo sucesso
+                                // Forçamos o fechamento do diálogo e disparamos o checkout novamente
+                                // O re-check do login no Event fará o resto
                                 onEvent(CartScreenEvent.OnCheckoutClicked)
                             },
-                            onError = { /* feedback de erro */ }
+                            onError = { /* feedback de erro já tratado via snackbar no viewModel */ }
                         )
                     },
                     onError = { /* feedback de erro */ }

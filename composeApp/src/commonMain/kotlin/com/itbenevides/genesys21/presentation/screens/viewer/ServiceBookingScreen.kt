@@ -297,12 +297,21 @@ fun ServiceBookingScreen(
             title = "Acesse sua conta",
             confirmButton = {}
         ) {
-            com.itbenevides.genesys21.presentation.screens.login.LoginScreen(
-                viewModel = viewModel,
-                onLoginSuccess = {
-                    showLoginDialog = false
-                    // Trigger confirm again or directly
-                }
+            com.itbenevides.genesys21.presentation.components.auth.GoogleSignInButton(
+                modifier = Modifier.fillMaxWidth(),
+                onTokenReceived = { idToken, accessToken ->
+                    viewModel.signInWithToken(
+                        idToken = idToken,
+                        accessToken = accessToken,
+                        provider = "google",
+                        onSuccess = {
+                            showLoginDialog = false
+                            // Agora o usuário está logado, podemos prosseguir com a reserva
+                        },
+                        onError = { /* erro tratado no viewModel */ }
+                    )
+                },
+                onError = { /* erro tratado no viewModel */ }
             )
         }
     }

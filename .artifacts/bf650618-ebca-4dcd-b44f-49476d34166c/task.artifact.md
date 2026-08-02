@@ -1,7 +1,8 @@
-# Tarefas - Implementação de Staging e Correção de Build
+# Tarefas - Melhoria de UX: Login e Carrinho
 
-- [x] Configurar roteamento multi-ambiente no Nginx <!-- id: 21 -->
-- [x] Implementar feedback visual de erros (Snackbar) <!-- id: 22 -->
-- [x] Restaurar decodificação de segredos no CircleCI <!-- id: 23 -->
-- [/] Validar deploy de Staging (branch develop) <!-- id: 24 -->
-- [/] Validar deploy de Produção (branch main) <!-- id: 25 -->
+- [x] Reestruturar estado de login no `PageViewModel` <!-- id: 30 -->
+- [x] Implementar canal de mensagens de UI (Snackbars) no `PageViewModel` <!-- id: 31 -->
+- [x] Integrar observador de mensagens no `App.kt` <!-- id: 32 -->
+- [x] Corrigir fechamento de diálogos no `CartScreen` <!-- id: 33 -->
+- [x] Corrigir fechamento de diálogos no `ServiceBookingScreen` <!-- id: 34 -->
+- [x] Validar melhorias visualmente <!-- id: 35 -->
