@@ -211,16 +211,13 @@ jobs:
             events { worker_connections  1024; }
             http {
                 include /etc/nginx/mime.types;
-                types { application/wasm wasm; }
+                # Removido types duplicado ja que o wasm vem no mime.types padrao
                 default_type application/octet-stream;
                 client_max_body_size 50M;
                 gzip on;
 
-                # Otimizações de Header para One Tap e CORS
-                map \$http_origin \$cors_origin {
-                    default "";
-                    "~^https?://(staging\.)?victorbenevides\.dev$" "\$http_origin";
-                }
+                # Resolver interno do Docker para permitir que o Nginx inicie mesmo se um container falhar
+                resolver 127.0.0.11 valid=30s;
 
                 server {
                     listen 80;
@@ -239,9 +236,12 @@ jobs:
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups";
 
                     location /api/ {
-                        proxy_pass http://app-server-1:8080/api/;
+                        set \$upstream_prod app-server-1;
+                        proxy_pass http://\$upstream_prod:8080/api/;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
                     }
                     location / { try_files \$uri \$uri/ /index.html; }
                 }
@@ -257,9 +257,12 @@ jobs:
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups";
 
                     location /api/ {
-                        proxy_pass http://staging-server-1:8080/api/;
+                        set \$upstream_staging staging-server-1;
+                        proxy_pass http://\$upstream_staging:8080/api/;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
                     }
                     location / { try_files \$uri \$uri/ /index.html; }
                 }
