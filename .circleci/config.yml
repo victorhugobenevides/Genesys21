@@ -104,7 +104,7 @@ jobs:
                 oneTapInitialized = true;
                 console.log("BRIDGE: Iniciando One Tap...");
                 google.accounts.id.initialize({
-                    client_id: "674755208954-6ofmvlcn9birat7ako2banqc9ph1t74s.apps.googleusercontent.com",
+                    client_id: "${GOOGLE_WEB_CLIENT_ID}",
                     callback: (response) => {
                         const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
                         auth.signInWithCredential(credential)
