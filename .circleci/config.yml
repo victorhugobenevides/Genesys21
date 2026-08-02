@@ -211,7 +211,6 @@ jobs:
             events { worker_connections  1024; }
             http {
                 include /etc/nginx/mime.types;
-                # Removido types duplicado ja que o wasm vem no mime.types padrao
                 default_type application/octet-stream;
                 client_max_body_size 50M;
                 gzip on;
@@ -232,12 +231,11 @@ jobs:
                     root /usr/share/nginx/html;
                     index index.html;
 
-                    # Segurança para One Tap
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups";
 
                     location /api/ {
                         set \$upstream_prod app-server-1;
-                        proxy_pass http://\$upstream_prod:8080/api/;
+                        proxy_pass http://\$upstream_prod:8080\$request_uri;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
                         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -253,12 +251,11 @@ jobs:
                     root /usr/share/nginx/html/staging;
                     index index.html;
 
-                    # Segurança para One Tap
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups";
 
                     location /api/ {
                         set \$upstream_staging staging-server-1;
-                        proxy_pass http://\$upstream_staging:8080/api/;
+                        proxy_pass http://\$upstream_staging:8080\$request_uri;
                         proxy_set_header Host \$host;
                         proxy_set_header X-Real-IP \$remote_addr;
                         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
