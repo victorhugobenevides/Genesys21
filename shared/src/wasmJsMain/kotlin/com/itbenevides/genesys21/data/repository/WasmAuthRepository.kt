@@ -144,6 +144,7 @@ class WasmAuthRepository : AuthRepository {
     }
 
     override fun initializeOneTap() {
+        println("WASM: Chamando inicialização do One Tap...")
         firebaseInitializeOneTapSafe()
     }
 

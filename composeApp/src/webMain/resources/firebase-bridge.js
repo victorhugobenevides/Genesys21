@@ -58,7 +58,27 @@ window.firebaseGetUserName = () => {
 };
 
 window.firebaseSignOut = () => {
+    oneTapInitialized = false;
     return auth.signOut();
+};
+
+// GOOGLE ONE TAP
+let oneTapInitialized = false;
+window.firebaseInitializeOneTap = () => {
+    if (oneTapInitialized || auth.currentUser || typeof google === 'undefined') return;
+    oneTapInitialized = true;
+    console.log("WASM: Iniciando One Tap...");
+
+    google.accounts.id.initialize({
+        client_id: "674755208954-6ofmvlcn9birat7ako2banqc9ph1t74s.apps.googleusercontent.com",
+        callback: (response) => {
+            const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+            auth.signInWithCredential(credential)
+                .then(() => console.log("WASM: One Tap Sucesso"))
+                .catch(err => console.error("WASM: One Tap Erro", err));
+        }
+    });
+    google.accounts.id.prompt();
 };
 
 console.log("WASM: Ponte Firebase (Compat) carregada com sucesso.");

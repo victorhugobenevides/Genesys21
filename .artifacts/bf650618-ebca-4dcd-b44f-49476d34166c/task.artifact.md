@@ -1,8 +1,7 @@
-# Tarefas - Melhoria de UX: Login e Carrinho
+# Tarefas - Ativação do Google One Tap Login
 
-- [x] Reestruturar estado de login no `PageViewModel` <!-- id: 30 -->
-- [x] Implementar canal de mensagens de UI (Snackbars) no `PageViewModel` <!-- id: 31 -->
-- [x] Integrar observador de mensagens no `App.kt` <!-- id: 32 -->
-- [x] Corrigir fechamento de diálogos no `CartScreen` <!-- id: 33 -->
-- [x] Corrigir fechamento de diálogos no `ServiceBookingScreen` <!-- id: 34 -->
-- [x] Validar melhorias visualmente <!-- id: 35 -->
+- [ ] Atualizar `index.html` local com o Client ID real <!-- id: 40 -->
+- [ ] Implementar lógica do One Tap no `firebase-bridge.js` do CircleCI <!-- id: 41 -->
+- [ ] Incluir script do Google no `index.html` gerado pelo CircleCI <!-- id: 42 -->
+- [ ] Adicionar logs de debug no `WasmAuthRepository.kt` <!-- id: 43 -->
+- [ ] Commit e Push para validação em Produção <!-- id: 44 -->
