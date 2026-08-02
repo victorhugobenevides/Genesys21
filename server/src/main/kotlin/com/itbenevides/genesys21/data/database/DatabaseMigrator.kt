@@ -207,14 +207,17 @@ object DatabaseMigrator {
                     if (rs.next()) rs.getString("sql") else ""
                 } ?: ""
 
-            // Se o productId não estiver marcado como opcional (não tiver NULL no SQL da coluna)
-            // No SQLite, a ausência de 'NOT NULL' significa que é NULL, mas o Exposed pode ter criado como NOT NULL se não tinha .nullable()
-            // Vamos simplificar: se não houver 'appointment_data' ou se quisermos garantir a migração para Ktor 3/Exposed 0.59
-            if (tableSql.isNotBlank() && !tableSql.contains("appointment_data", true)) {
-                println("DatabaseMigrator: Reconstruindo tabela 'cart_items' para suportar agendamentos...")
+            // Reconstruir se:
+            // 1. Não tiver appointment_data
+            // 2. product_id for NOT NULL (queremos que seja opcional para serviços)
+            val isProductIdNotNull = tableSql.contains("product_id", true) && tableSql.contains("NOT NULL", true)
+
+            if (tableSql.isNotBlank() && (!tableSql.contains("appointment_data", true) || isProductIdNotNull)) {
+                println("DatabaseMigrator: Reconstruindo tabela 'cart_items' para suporte total a agendamentos (product_id opcional)...")
                 exec("DROP TABLE IF EXISTS cart_items_old")
                 exec("ALTER TABLE cart_items RENAME TO cart_items_old")
                 SchemaUtils.create(CartItemsTable)
+                // Não tentamos migrar dados de carrinho temporário para simplificar
                 exec("DROP TABLE cart_items_old")
             }
         } catch (e: Exception) {

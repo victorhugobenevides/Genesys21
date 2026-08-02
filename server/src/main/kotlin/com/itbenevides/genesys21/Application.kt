@@ -65,7 +65,8 @@ fun Application.module() {
 
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
-    val bookingRepository = SqliteBookingRepository()
+    val googleCalendarService = com.itbenevides.genesys21.data.service.GoogleCalendarService()
+    val bookingRepository = SqliteBookingRepository(googleCalendarService)
     val orderRepository = SqliteOrderRepository(bookingRepository)
     val userRepository = SqliteUserRepository()
     val addressRepository = SqliteAddressRepository()

@@ -12,7 +12,9 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import java.util.UUID
 
-class SqliteBookingRepository : BookingRepository {
+class SqliteBookingRepository(
+    private val googleCalendarService: com.itbenevides.genesys21.data.service.GoogleCalendarService? = null
+) : BookingRepository {
 
     override suspend fun getServices(): List<BookingService> = dbQuery {
         BookingServicesTable.selectAll()
@@ -444,10 +446,22 @@ class SqliteBookingRepository : BookingRepository {
                     throw Exception("CONFLITO: O horário selecionado (${appointment.startTime}) já foi ocupado.")
                 }
 
-                // Busca o link de reunião do serviço (se houver)
-                val meetingLink = BookingServicesTable.select(BookingServicesTable.meetingLink)
+                // Busca o link de reunião do serviço (se houver link estático ou se for online)
+                val serviceRow = BookingServicesTable.selectAll()
                     .where { BookingServicesTable.id eq appointment.serviceId }
-                    .firstOrNull()?.get(BookingServicesTable.meetingLink)
+                    .firstOrNull()
+
+                var finalMeetingLink = serviceRow?.get(BookingServicesTable.meetingLink)
+                val isOnline = serviceRow?.get(BookingServicesTable.isOnline) ?: false
+                val sName = serviceRow?.get(BookingServicesTable.name) ?: "Serviço"
+
+                // Se o serviço for ONLINE e tivermos o serviço do Google configurado, gera link dinâmico
+                if (isOnline && googleCalendarService != null) {
+                    val dynamicLink = googleCalendarService.createMeetLink(appointment, sName)
+                    if (dynamicLink != null) {
+                        finalMeetingLink = dynamicLink
+                    }
+                }
 
                 AppointmentsTable.insert {
                     it[id] = aid
@@ -459,7 +473,7 @@ class SqliteBookingRepository : BookingRepository {
                     it[startTime] = start
                     it[endTime] = end
                     it[status] = appointment.status.name
-                    it[AppointmentsTable.meetingLink] = meetingLink
+                    it[meetingLink] = finalMeetingLink
                     it[travelFee] = appointment.travelFee
                     it[street] = appointment.address?.street
                     it[number] = appointment.address?.number

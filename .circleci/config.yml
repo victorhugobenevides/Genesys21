@@ -12,46 +12,27 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Decode Google Services JSON (Android)
+          name: Decode Secrets
           command: |
             if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
               CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
               echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
-              echo "✓ decoded google-services.json"
             fi
-      - run:
-          name: Decode Firebase Admin JSON (Server)
-          command: |
             if [ -n "$FIREBASE_ADMIN_JSON" ]; then
               echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
               mkdir -p server/src/main/resources
               echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/firebase-adminsdk.json
-              echo "✓ decoded firebase-adminsdk.json"
             fi
       - run:
-          name: Setup Java
-          command: |
-            java -version
+          name: Run Unit Tests
+          command: ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon
       - run:
-          name: Grant execute permission for gradlew
-          command: chmod +x gradlew
-      - run:
-          name: Run Unit Tests & Coverage
-          command: |
-            ./gradlew :composeApp:testDebugUnitTest :shared:testDebugUnitTest :server:test -Pandroid.useAndroidX=true --no-daemon
-            ./gradlew :server:jacocoTestReport --no-daemon
-
-            # Coleta resultados
-            mkdir -p /tmp/test-results/junit
-            find . -type f -name "*.xml" -path "*/build/test-results/*" -exec cp {} /tmp/test-results/junit/ \;
-      - run:
-          name: Verify Visual Integrity (Screenshot Tests)
+          name: Verify Visual Integrity
           command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
-      - store_test_results:
-          path: /tmp/test-results
-      - store_artifacts:
-          path: /tmp/test-results
-          destination: tr
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
   deploy:
     docker:
@@ -63,19 +44,8 @@ jobs:
         default: "staging"
     steps:
       - checkout
-      - run:
-          name: Decode Google Services JSON (Android)
-          command: |
-            if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
-              CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
-              echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
-            fi
-      - run:
-          name: Decode Firebase Admin JSON (Server)
-          command: |
-            if [ -n "$FIREBASE_ADMIN_JSON" ]; then
-              echo "${FIREBASE_ADMIN_JSON}" > firebase-adminsdk.json
-            fi
+      - attach_workspace:
+          at: .
       - setup_remote_docker:
           version: 20.10.24
       - run:
@@ -90,6 +60,17 @@ jobs:
 
             echo "$OCI_AUTH_TOKEN" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
+            # Prepare deployment folders
+            mkdir -p deploy/server deploy/web
+            cp -R server/build/install/server/. deploy/server/
+            cp firebase-adminsdk.json deploy/server/ 2>/dev/null || true
+
+            WEB_DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -o -name "distribution" | head -n 1)
+            if [ -n "$WEB_DIST_DIR" ]; then
+                find "$WEB_DIST_DIR" -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+            fi
+
+            # Build and Push
             docker build -t $REGISTRY/genesys-server:$TAG -f Dockerfile.server .
             docker build -t $REGISTRY/genesys-web:$TAG -f Dockerfile.web .
             docker push $REGISTRY/genesys-server:$TAG
@@ -105,39 +86,43 @@ jobs:
 
             SUCCESS=0
             for i in $(seq 1 30); do
-              if docker exec smoke-test-server curl -s -f http://localhost:8080/ > /dev/null; then
-                echo "✓ Server boot successful!"
+              # Testa boot e conectividade com banco
+              if docker exec smoke-test-server curl -s -f http://localhost:8080/api/booking/services > /dev/null; then
+                echo "✓ Server and DB connection successful!"
                 SUCCESS=1
                 break
               fi
+              echo "Waiting for server and DB... ($i/30)"
               sleep 1
             done
             docker rm -f smoke-test-server
-            [ $SUCCESS -eq 0 ] && exit 1 || true
-      - run:
-          name: Setup SSH
-          command: |
-            mkdir -p ~/.ssh
-            python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
-            chmod 600 ~/.ssh/oracle_key
-            ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
+            if [ $SUCCESS -eq 0 ]; then
+                echo "CRITICAL: Server failed to start!"
+                exit 1
+            fi
       - run:
           name: Remote Deploy via SSH
           command: |
             ENV=<< parameters.environment_name >>
             REGISTRY="${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}"
 
+            # SSH Key Setup
+            mkdir -p ~/.ssh
+            python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
+            chmod 600 ~/.ssh/oracle_key
+            ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
+
             if [ "$ENV" = "prod" ]; then
               TAG="latest"
               TARGET_DIR="~/app"
-              CONTAINER_NAME="app-server-1"
+              B_TAG="latest"
             else
               TAG="staging"
               TARGET_DIR="~/staging"
-              CONTAINER_NAME="staging-server-1"
+              B_TAG="staging"
             fi
 
-            # Gerar Nginx Config Localmente
+            # Gerar Nginx Config
             cat \<<EOF > nginx.conf
             user  nginx;
             worker_processes  auto;
@@ -149,10 +134,9 @@ jobs:
                 client_max_body_size 50M;
                 gzip on;
 
-                # Produção
                 server {
                     listen 80;
-                    server_name victorbenevides.dev www.victorbenevides.dev;
+                    server_name victorbenevides.dev www.victorbenevides.dev staging.victorbenevides.dev;
                     location / { return 301 https://\$host\$request_uri; }
                 }
                 server {
@@ -168,13 +152,6 @@ jobs:
                         proxy_set_header X-Real-IP \$remote_addr;
                     }
                     location / { try_files \$uri \$uri/ /index.html; }
-                }
-
-                # Staging
-                server {
-                    listen 80;
-                    server_name staging.victorbenevides.dev;
-                    location / { return 301 https://\$host\$request_uri; }
                 }
                 server {
                     listen 443 ssl;
@@ -201,32 +178,27 @@ jobs:
                 container_name: app-server-1
                 image: ${REGISTRY}/genesys-server:latest
                 environment:
-                  - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
-                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-                  - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
                   - PROD_MODE=true
+                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
                 restart: unless-stopped
-                networks:
-                  - genesys-network
+                networks: [genesys-network]
                 healthcheck:
                   test: ["CMD", "curl", "-f", "http://localhost:8080/"]
               web:
                 image: ${REGISTRY}/genesys-web:latest
                 depends_on:
                   server: { condition: service_healthy }
-                ports:
-                  - "80:80"
-                  - "443:443"
+                ports: ["80:80", "443:443"]
                 volumes:
                   - ./nginx.conf:/etc/nginx/nginx.conf:ro
                   - ./uploads:/usr/share/nginx/html/uploads:ro
+                  - ./staging-web:/usr/share/nginx/html/staging:ro
                   - ./certbot/conf:/etc/letsencrypt:ro
                 restart: unless-stopped
-                networks:
-                  - genesys-network
+                networks: [genesys-network]
             networks:
               genesys-network: { driver: bridge }
             EOF
@@ -237,16 +209,13 @@ jobs:
                 container_name: staging-server-1
                 image: ${REGISTRY}/genesys-server:staging
                 environment:
-                  - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
-                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-                  - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
                   - PROD_MODE=false
+                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
                 volumes:
                   - ./data-staging:/app/data
                   - ./uploads-staging:/app/uploads
                 restart: unless-stopped
-                networks:
-                  - genesys-network
+                networks: [genesys-network]
                 healthcheck:
                   test: ["CMD", "curl", "-f", "http://localhost:8080/"]
             networks:
@@ -254,15 +223,21 @@ jobs:
             EOF
             fi
 
-            # Transferência e Execução
+            # Deploy
             ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "mkdir -p ${TARGET_DIR}"
-
             if [ "$ENV" = "prod" ]; then
                 scp -i ~/.ssh/oracle_key nginx.conf docker-compose.yml ubuntu@${OCI_HOST}:${TARGET_DIR}/
                 ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "cd ${TARGET_DIR} && sudo docker compose pull && sudo docker compose up -d"
             else
+                # Envia o docker-compose de staging
                 scp -i ~/.ssh/oracle_key docker-compose.staging.yml ubuntu@${OCI_HOST}:${TARGET_DIR}/
-                ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "cd ${TARGET_DIR} && sudo docker network create genesys-network || true && sudo docker compose -f docker-compose.staging.yml pull && sudo docker compose -f docker-compose.staging.yml up -d"
+
+                # Sincroniza os arquivos web de staging para que o Nginx de prod possa servir
+                ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "mkdir -p ~/app/staging-web"
+                scp -i ~/.ssh/oracle_key -r deploy/web/. ubuntu@${OCI_HOST}:~/app/staging-web/
+
+                ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "sudo docker network create genesys-network || true"
+                ssh -i ~/.ssh/oracle_key ubuntu@${OCI_HOST} "cd ${TARGET_DIR} && sudo docker compose -f docker-compose.staging.yml pull && sudo docker compose -f docker-compose.staging.yml up -d"
             fi
 
 workflows:

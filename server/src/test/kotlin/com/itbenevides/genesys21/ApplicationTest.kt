@@ -23,6 +23,36 @@ class ApplicationTest {
         }
 
     @Test
+    fun testPublicServicesList() =
+        testApplication {
+            environment { config = MapApplicationConfig("ktor.testing" to "true") }
+            application { module() }
+            val response = client.get("/api/booking/services")
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
+
+    @Test
+    fun testPublicPagesFirst() =
+        testApplication {
+            environment { config = MapApplicationConfig("ktor.testing" to "true") }
+            application { module() }
+            // Como o banco está limpo, deve retornar 404 ou 200 vazio dependendo da lógica
+            val response = client.get("/api/public/pages/first")
+            assertTrue(response.status == HttpStatusCode.OK || response.status == HttpStatusCode.NotFound)
+        }
+
+    @Test
+    fun testCartRequiresSessionOrAuth() =
+        testApplication {
+            environment { config = MapApplicationConfig("ktor.testing" to "true") }
+            application { module() }
+            // GET sem session id deve retornar vazio
+            val response = client.get("/api/cart")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertEquals("[]", response.bodyAsText())
+        }
+
+    @Test
     fun testPagesListRequiresAuth() =
         testApplication {
             environment {

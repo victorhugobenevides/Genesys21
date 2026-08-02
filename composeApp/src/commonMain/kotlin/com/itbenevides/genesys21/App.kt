@@ -27,23 +27,19 @@ fun App() {
     val router: Router = koinInject()
     val currentRoute = router.currentRoute
     val trackedOrder by router.viewModel.trackedOrder.collectAsState()
-    val currentError by router.viewModel.currentError.collectAsState()
 
     var currentActivePageTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
     var currentActiveCustomTheme by remember { mutableStateOf<CustomThemeConfig?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(currentError) {
-        currentError?.let { error ->
-            val result = snackbarHostState.showSnackbar(
+    LaunchedEffect(router.viewModel) {
+        router.viewModel.errorEvents.collect { error ->
+            snackbarHostState.showSnackbar(
                 message = "${error.title}: ${error.message}",
                 actionLabel = "OK",
                 duration = SnackbarDuration.Long
             )
-            if (result == SnackbarResult.ActionPerformed || result == SnackbarResult.Dismissed) {
-                router.viewModel.clearError()
-            }
         }
     }
 

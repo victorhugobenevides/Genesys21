@@ -115,8 +115,8 @@ class PageViewModel(
     private val _isLoading = MutableStateFlow(value = false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _currentError = MutableStateFlow<AppError?>(null)
-    val currentError: StateFlow<AppError?> = _currentError.asStateFlow()
+    private val _errorEvents = MutableSharedFlow<AppError>()
+    val errorEvents = _errorEvents.asSharedFlow()
 
     private val _uiEvent = MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -166,15 +166,13 @@ class PageViewModel(
             customerRepository.savePhone(phone)
         }
 
-    fun clearError() {
-        _currentError.value = null
-    }
-
     private fun handleError(
         title: String,
         error: Throwable,
     ) {
-        _currentError.value = AppError(title, error.message ?: "Erro desconhecido", error.stackTraceToString())
+        viewModelScope.launch {
+            _errorEvents.emit(AppError(title, error.message ?: "Erro desconhecido", error.stackTraceToString()))
+        }
         error.printStackTrace()
     }
 

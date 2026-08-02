@@ -33,6 +33,8 @@ kotlinx-coroutines = "1.10.1"
 androidxDatastore = "1.1.2"
 androidxSecurity = "1.1.0-alpha06"
 stripe-java = "33.1.0"
+google_api_services_calendar = "v3-rev20220715-2.0.0"
+google_auth_library_oauth2_http = "1.23.0"
 ktlint = "12.1.2"
 detekt = "1.23.8"
 paparazzi = "1.3.5"
@@ -96,6 +98,8 @@ exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "e
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 thumbnailator = { module = "net.coobird:thumbnailator", version.ref = "thumbnailator" }
 stripe-java = { module = "com.stripe:stripe-java", version.ref = "stripe-java" }
+google_api_services_calendar = { module = "com.google.apis:google-api-services-calendar", version.ref = "google_api_services_calendar" }
+google_auth_library_oauth2_http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "google_auth_library_oauth2_http" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 windowSizeClass = { module = "androidx.compose.material3:material3-window-size-class", version = "1.2.1" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidxDatastore" }

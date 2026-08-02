@@ -48,6 +48,10 @@ dependencies {
     // Pagamentos
     implementation(libs.stripe.java)
 
+    // Google Meet / Calendar
+    implementation(libs.google.api.services.calendar)
+    implementation(libs.google.auth.library.oauth2.http)
+
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }
