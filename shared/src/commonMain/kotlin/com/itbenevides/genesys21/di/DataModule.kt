@@ -7,7 +7,6 @@ import com.itbenevides.genesys21.data.repository.KtorUserRepository
 import com.itbenevides.genesys21.data.repository.KtorAddressRepository
 import com.itbenevides.genesys21.data.repository.KtorShippingRepository
 import com.itbenevides.genesys21.data.repository.KtorStoreRepository
-import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
 import io.ktor.client.*
@@ -51,7 +50,6 @@ val dataModule =
         single<AddressRepository> { KtorAddressRepository(get(), getBaseUrl(), get()) }
         single<ShippingRepository> { KtorShippingRepository(get(), getBaseUrl()) }
         single<StoreRepository> { KtorStoreRepository(get(), getBaseUrl(), get()) }
-        single { GoogleCalendarService(get(), get()) }
 
         // UseCases
         single { GetUserProfileUseCase(get()) }

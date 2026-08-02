@@ -52,7 +52,10 @@ jobs:
           version: 20.10.24
       - run:
           name: Build Distribution
-          command: ./gradlew :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
+          command: |
+            ./gradlew clean :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
+            rm -rf deploy/server deploy/web
+            mkdir -p deploy/server deploy/web
       - run:
           name: Prepare and Push Docker Images
           command: |

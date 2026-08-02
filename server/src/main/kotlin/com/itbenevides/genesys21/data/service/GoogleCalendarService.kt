@@ -9,48 +9,57 @@ import com.google.api.services.calendar.model.*
 import com.google.auth.http.HttpCredentialsAdapter
 import com.google.auth.oauth2.GoogleCredentials
 import com.itbenevides.genesys21.domain.model.Appointment
-import kotlinx.datetime.Instant
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
-import java.util.*
+import java.util.UUID
 
-class GoogleCalendarService {
-    private val jsonFactory = GsonFactory.getDefaultInstance()
-    private val httpTransport = GoogleNetHttpTransport.newTrustedTransport()
+class GoogleCalendarService() {
+    private val jsonFactory by lazy { GsonFactory.getDefaultInstance() }
+    private val httpTransport by lazy { GoogleNetHttpTransport.newTrustedTransport() }
     private val credentialsFile = "firebase-adminsdk.json"
 
     private fun getService(): Calendar? {
         val file = File(credentialsFile)
-        if (!file.exists()) return null
-
-        val credentials = GoogleCredentials.fromStream(FileInputStream(file))
-            .createScoped(listOf(CalendarScopes.CALENDAR_EVENTS))
-
-        return Calendar.Builder(httpTransport, jsonFactory, HttpCredentialsAdapter(credentials))
-            .setApplicationName("Genesys21")
-            .build()
-    }
-
-    suspend fun createMeetLink(appointment: Appointment, serviceName: String): String? {
-        val calendarService = getService() ?: return null
-
-        val event = Event().apply {
-            summary = "Agendamento: $serviceName"
-            description = "Reserva realizada via Genesys21\nCliente: ${appointment.customerName}\nTelefone: ${appointment.customerPhone}"
-
-            start = EventDateTime().setDateTime(DateTime(appointment.startTime.toEpochMilliseconds()))
-            end = EventDateTime().setDateTime(DateTime(appointment.endTime.toEpochMilliseconds()))
-
-            // Configuração para gerar link do Meet
-            conferenceData = ConferenceData().apply {
-                createRequest = CreateConferenceRequest().apply {
-                    requestId = UUID.randomUUID().toString()
-                    conferenceSolutionKey = ConferenceSolutionKey().setType("hangoutsMeet")
-                }
-            }
+        if (!file.exists()) {
+            println("GOOGLE CALENDAR: Credentials file not found at ${file.absolutePath}")
+            return null
         }
 
         return try {
+            val credentials = GoogleCredentials.fromStream(FileInputStream(file))
+                .createScoped(listOf(CalendarScopes.CALENDAR_EVENTS))
+
+            Calendar.Builder(httpTransport, jsonFactory, HttpCredentialsAdapter(credentials))
+                .setApplicationName("Genesys21")
+                .build()
+        } catch (e: Exception) {
+            println("GOOGLE CALENDAR: Failed to initialize service: ${e.message}")
+            null
+        }
+    }
+
+    suspend fun createMeetLink(appointment: Appointment, serviceName: String): String? = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val calendarService = getService() ?: return@withContext null
+
+            val event = Event().apply {
+                summary = "Agendamento: $serviceName"
+                description = "Reserva realizada via Genesys21\nCliente: ${appointment.customerName}\nTelefone: ${appointment.customerPhone}"
+
+                start = EventDateTime().setDateTime(DateTime(appointment.startTime.toEpochMilliseconds()))
+                end = EventDateTime().setDateTime(DateTime(appointment.endTime.toEpochMilliseconds()))
+
+                // Configuração para gerar link do Meet
+                conferenceData = ConferenceData().apply {
+                    createRequest = CreateConferenceRequest().apply {
+                        requestId = UUID.randomUUID().toString()
+                        conferenceSolutionKey = ConferenceSolutionKey().setType("hangoutsMeet")
+                    }
+                }
+            }
+
             val createdEvent = calendarService.events().insert("primary", event)
                 .setConferenceDataVersion(1)
                 .execute()

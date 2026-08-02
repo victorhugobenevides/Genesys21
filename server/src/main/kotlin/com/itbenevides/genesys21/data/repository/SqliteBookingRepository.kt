@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.data.database.*
 import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
+import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.BookingRepository
 import kotlinx.datetime.*
@@ -13,7 +14,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import java.util.UUID
 
 class SqliteBookingRepository(
-    private val googleCalendarService: com.itbenevides.genesys21.data.service.GoogleCalendarService? = null
+    private val googleCalendarService: GoogleCalendarService? = null
 ) : BookingRepository {
 
     override suspend fun getServices(): List<BookingService> = dbQuery {

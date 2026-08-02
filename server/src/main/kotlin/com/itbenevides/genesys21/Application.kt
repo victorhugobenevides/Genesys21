@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.repository.*
+import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.routes.*
@@ -65,7 +66,7 @@ fun Application.module() {
 
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
-    val googleCalendarService = com.itbenevides.genesys21.data.service.GoogleCalendarService()
+    val googleCalendarService = GoogleCalendarService()
     val bookingRepository = SqliteBookingRepository(googleCalendarService)
     val orderRepository = SqliteOrderRepository(bookingRepository)
     val userRepository = SqliteUserRepository()
