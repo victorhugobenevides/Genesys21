@@ -60,7 +60,20 @@ jobs:
 
             echo "$OCI_AUTH_TOKEN" | docker login ${OCI_REGION}.ocir.io -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
 
-            # Gerar index.html
+            # Criar pastas de deploy
+            mkdir -p deploy/server deploy/web
+
+            # Copiar artefatos do Servidor
+            cp -R server/build/install/server/. deploy/server/
+            cp firebase-adminsdk.json deploy/server/ 2>/dev/null || true
+
+            # Copiar artefatos Web (Wasm/JS)
+            WEB_DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -o -name "distribution" | head -n 1)
+            if [ -n "$WEB_DIST_DIR" ]; then
+                find "$WEB_DIST_DIR" -type f \( -name "*.js" -o -name "*.wasm" -o -name "*.html" -o -name "*.css" -o -name "*.mjs" -o -name "*.map" \) -exec cp -f {} deploy/web/ \;
+            fi
+
+            # Gerar index.html customizado para o deploy
             cat \<<EOF > deploy/web/index.html
             <!DOCTYPE html>
             <html>
