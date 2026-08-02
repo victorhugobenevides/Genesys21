@@ -5,3 +5,4 @@
 - [x] Incluir script do Google no `index.html` gerado pelo CircleCI <!-- id: 42 -->
 - [x] Adicionar logs de debug no `WasmAuthRepository.kt` <!-- id: 43 -->
 - [x] Commit e Push para validação em Produção <!-- id: 44 -->
+- [x] Corrigir falha de compilação em `SuperAdminDashboard` e testes <!-- id: 45 -->

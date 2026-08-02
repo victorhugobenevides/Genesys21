@@ -165,6 +165,14 @@ jobs:
               fi
               echo "Waiting for server and DB... ($i/30)"
               sleep 1
+
+              # Verifica se o container morreu e mostra logs
+              if [ "$(docker inspect -f '{{.State.Running}}' smoke-test-server 2>/dev/null)" = "false" ]; then
+                echo "ERROR: Server container crashed during boot!"
+                docker logs smoke-test-server
+                docker rm -f smoke-test-server
+                exit 1
+              fi
             done
             docker rm -f smoke-test-server
             if [ $SUCCESS -eq 0 ]; then

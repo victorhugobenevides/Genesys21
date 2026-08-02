@@ -48,9 +48,11 @@ dependencies {
     // Pagamentos
     implementation(libs.stripe.java)
 
-    // Google Meet / Calendar
-    implementation(libs.google.api.services.calendar)
-    implementation(libs.google.auth.library.oauth2.http)
+    // Google Meet / Calendar (String literals used due to temporary Gradle accessor synchronization issue)
+    implementation("com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0")
+    implementation("com.google.api-client:google-api-client:2.0.0")
+    implementation("com.google.http-client:google-http-client-gson:1.42.3")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
 
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
