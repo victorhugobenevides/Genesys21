@@ -1,28 +1,25 @@
-# Walkthrough - UX Fluida: Login e Feedback do Carrinho
+# Walkthrough - Google One Tap Login Ativado
 
-Melhorei significativamente o fluxo de autenticação e adicionei feedbacks visuais para tornar a experiência de compra mais intuitiva e menos frustrante.
+Habilitei com sucesso o login automático do Google (One Tap) para a versão Web, utilizando o Client ID real e ajustando a infraestrutura de segurança.
 
 ## Mudanças Realizadas
 
-### 1. Login Instantâneo e Persistente
-- **Problema**: O app pedia login repetidamente no checkout mesmo se o usuário já estivesse autenticado no Firebase.
-- **Solução**: O estado `isLoggedIn` agora observa diretamente o stream de autenticação do Firebase (`authState`). Assim que o Firebase reconhece o usuário, o app libera o checkout, sem precisar esperar o carregamento lento do perfil do banco de dados.
+### 1. Configuração do Google Identity Services (GSI)
+- **Client ID**: Substituí os placeholders pelo ID real: `674755208954-6ofmvlcn9birat7ako2banqc9ph1t74s...`.
+- **Script do Google**: O `index.html` agora carrega a biblioteca oficial do Google (`gsi/client`) de forma assíncrona.
 
-### 2. Fechamento Automático de Modais
-- **Ajuste**: Corrigi os callbacks de login no `CartScreen` e `ServiceBookingScreen`. Agora, assim que o login é concluído com sucesso, o diálogo (ou BottomSheet) se fecha imediatamente, permitindo que o usuário continue sua ação sem interrupções.
+### 2. Implementação da Ponte JavaScript (Bridge)
+- **One Tap Logic**: Criei a função `firebaseInitializeOneTap` no arquivo `firebase-bridge.js`.
+- **Fluxo**: Assim que o site carrega, se o usuário não estiver logado, o Google exibe o prompt "Continuar como Victor...". Ao clicar, o Firebase autentica automaticamente usando a credencial recebida.
 
-### 3. Feedback Visual (Snackbars)
-- **Nova Funcionalidade**: Implementei um canal de mensagens global.
-- **Feedback**: Sempre que você adicionar um **Produto**, **Serviço** ou **Doação** ao carrinho, um Snackbar (pequeno aviso na parte inferior) aparecerá confirmando a ação:
-    - *"Produto adicionado ao carrinho!"*
-    - *"Serviço adicionado ao carrinho!"*
-    - *"Contribuição adicionada ao carrinho!"*
+### 3. Ajustes de Segurança e Navegação
+- **COOP Header**: Adicionei o cabeçalho `Cross-Origin-Opener-Policy: same-origin-allow-popups` no Nginx. Sem isso, o navegador bloqueia a comunicação entre o seu site e o popup do Google por motivos de segurança.
+- **Isolamento de Origens**: Configurei o Nginx para tratar corretamente as origens de produção e staging.
 
 ## Resultados
-- **UX**: O fluxo de "Adicionar -> Login -> Checkout" agora é contínuo.
-- **Transparência**: O usuário sempre sabe que sua ação foi processada pelo sistema.
-- **Robustez**: Corrigi um erro de banco de dados que impedia salvar itens de serviço no carrinho.
+- **One Tap**: O prompt deve aparecer automaticamente no canto superior direito para usuários logados no Google.
+- **Login Google**: O botão "Entrar com Google" agora também está configurado para o ID real.
 
 ---
-> [!TIP]
-> As mensagens de erro (como conflitos de horário) também foram migradas para este novo sistema de Snackbars, garantindo um visual consistente em todo o app.
+> [!IMPORTANT]
+> Lembre-se de que o One Tap pode não aparecer se você já tiver cancelado o prompt muitas vezes (o Google "aprende" que você não quer). Use uma **Aba Anônima** para o teste mais puro.

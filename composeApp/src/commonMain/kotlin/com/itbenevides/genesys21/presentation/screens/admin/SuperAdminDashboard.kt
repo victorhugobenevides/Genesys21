@@ -28,9 +28,18 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 fun SuperAdminDashboard(viewModel: PageViewModel) {
     val users by viewModel.allUsers.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val currentError by viewModel.currentError.collectAsState()
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.errorEvents.collect { error ->
+            if (users.isEmpty()) {
+                localError = error.message
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
+        localError = null
         viewModel.loadAllUsers()
     }
 
@@ -44,17 +53,20 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
             Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-        } else if (currentError != null && users.isEmpty()) {
+        } else if (localError != null && users.isEmpty()) {
             Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(GenesysIcons.Feedback, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
                     GenesysSpacer(GenesysSpacing.Medium)
-                    GenesysText(text = currentError?.message ?: "Erro ao carregar usuários", style = GenesysTextStyle.Error)
+                    GenesysText(text = localError ?: "Erro ao carregar usuários", style = GenesysTextStyle.Error)
                     GenesysSpacer(GenesysSpacing.Large)
-                    GenesysLoadingButton(text = "Tentar Novamente", onClick = { viewModel.loadAllUsers() })
+                    GenesysLoadingButton(text = "Tentar Novamente", onClick = {
+                        localError = null
+                        viewModel.loadAllUsers()
+                    })
                 }
             }
-        } else if (users.isEmpty()) {
+        } else if (users.isEmpty() && !isLoading) {
             Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                 GenesysText(text = "Nenhum usuário encontrado.", style = GenesysTextStyle.Body)
             }

@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.mocks.FakePageRepository
 import kotlin.test.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Clock.System.now
@@ -203,13 +204,19 @@ class PageViewModelTest {
                 endTime = futureTime.plus(kotlin.time.Duration.parse("30m"))
             )
 
+            var capturedError: AppError? = null
+            val errorJob = launch {
+                viewModel.errorEvents.collect { capturedError = it }
+            }
+
             var success = false
             viewModel.createAppointment("s1", app2) { success = true }
             advanceUntilIdle()
 
             assertFalse(success)
-            assertNotNull(viewModel.currentError.value)
-            assertEquals("Horário Indisponível", viewModel.currentError.value?.title)
+            assertNotNull(capturedError)
+            assertEquals("Horário Indisponível", capturedError?.title)
+            errorJob.cancel()
         }
 
     // --- Cart Flows ---
