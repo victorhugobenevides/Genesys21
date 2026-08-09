@@ -24,6 +24,8 @@ fun Route.receiptRoutes(parserService: ReceiptParserService) {
                 val request = call.receive<ParseReceiptRequest>()
                 val apiKey = System.getenv("GEMINI_API_KEY")
 
+                println("BACKEND: Recebida requisição de parse. Imagem: ${request.imageBase64?.length ?: 0} bytes, Key configurada: ${!apiKey.isNullOrBlank()}")
+
                 // 1. Camada Híbrida: Detectar se é uma URL da SEFAZ
                 if (request.rawText.startsWith("http", true) && request.rawText.contains("fazenda", true)) {
                     println("BACKEND: URL detectada, tentando Scraper...")

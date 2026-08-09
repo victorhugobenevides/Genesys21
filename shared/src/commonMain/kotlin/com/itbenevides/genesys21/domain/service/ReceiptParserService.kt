@@ -72,6 +72,7 @@ class ReceiptParserService(
     }
 
     private suspend fun parseWithGeminiApi(imageBase64: String, apiKey: String, mimeType: String): Receipt {
+        println("GEMINI: Iniciando requisição para API (Mime: $mimeType)...")
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
         val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
@@ -125,12 +126,23 @@ class ReceiptParserService(
         }
 
         val responseText = response.bodyAsText()
+        println("GEMINI: Resposta recebida (Status: ${response.status})")
+
+        if (!response.status.isSuccess()) {
+            println("GEMINI ERROR: API retornou erro: $responseText")
+            throw Exception("Gemini API Error: ${response.status}")
+        }
+
         val parsedJson = json.parseToJsonElement(responseText).jsonObject
         val textContent = parsedJson["candidates"]?.jsonArray?.firstOrNull()
             ?.jsonObject?.get("content")?.jsonObject
             ?.get("parts")?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw IllegalArgumentException("Resposta da IA vazia")
+            ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: run {
+                println("GEMINI ERROR: Estrutura de resposta inválida: $responseText")
+                throw IllegalArgumentException("Resposta da IA vazia ou malformada")
+            }
 
+        println("GEMINI: Texto extraído com sucesso. Iniciando parse do JSON interno...")
         val cleanJsonString = textContent.replace("```json", "").replace("```", "").trim()
         val receiptObj = json.parseToJsonElement(cleanJsonString).jsonObject
 
