@@ -15,11 +15,24 @@ data class ParseReceiptRequest(
 )
 
 fun Route.receiptRoutes(parserService: ReceiptParserService) {
+    val scraperService = com.itbenevides.genesys21.data.service.SefazScraperService()
+
     route("/public/receipts") {
         post("/parse") {
             try {
                 val request = call.receive<ParseReceiptRequest>()
                 val apiKey = System.getenv("GEMINI_API_KEY")
+
+                // 1. Camada Híbrida: Detectar se é uma URL da SEFAZ
+                if (request.rawText.startsWith("http", true) && request.rawText.contains("fazenda", true)) {
+                    println("BACKEND: URL detectada, tentando Scraper...")
+                    val scrapedReceipt = scraperService.parseFromUrl(request.rawText)
+                    if (scrapedReceipt != null) {
+                        call.respond(scrapedReceipt)
+                        return@post
+                    }
+                    println("BACKEND: Scraper falhou ou não compatível, tentando IA...")
+                }
 
                 if (apiKey.isNullOrBlank()) {
                     // Fallback para parse local se a chave não estiver configurada no servidor

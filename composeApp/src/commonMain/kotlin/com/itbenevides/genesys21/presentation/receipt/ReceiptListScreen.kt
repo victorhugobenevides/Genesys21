@@ -486,8 +486,8 @@ fun ScanReceiptDialog(
                     value = state.geminiApiKey,
                     onValueChange = { viewModel.onGeminiApiKeyChanged(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Gemini API Key (Opcional - Usar do Servidor)") },
-                    placeholder = { Text("O servidor já possui uma chave configurada") },
+                    label = { Text("Chave Gemini Personalizada (Opcional)") },
+                    placeholder = { Text("Use se quiser usar sua própria chave") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -509,23 +509,23 @@ fun ScanReceiptDialog(
         },
         confirmButton = {
             val hasImage = state.selectedImageBytes != null
-            val hasKey = state.geminiApiKey.isNotBlank()
+            val hasText = rawInputText.isNotBlank()
 
             Button(
                 onClick = {
                     val base64 = state.selectedImageBytes?.toBase64()
                     viewModel.processReceiptText(rawInputText, base64, state.geminiApiKey)
                 },
-                enabled = (hasImage && hasKey) || rawInputText.isNotBlank(),
+                enabled = (hasImage || hasText) && !state.isScanning,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (hasImage && hasKey) Color(0xFF6200EE) else MaterialTheme.colorScheme.primary
+                    containerColor = if (hasImage) Color(0xFF6200EE) else MaterialTheme.colorScheme.primary
                 )
             ) {
                 if (state.isScanning) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
                 } else {
-                    Text(if (hasImage && hasKey) "Processar com Gemini AI" else "Processar Localmente")
+                    Text(if (hasImage) "Analisar Nota Fiscal" else "Processar Texto")
                 }
             }
         },

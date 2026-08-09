@@ -49,6 +49,9 @@ dependencies {
     // Manipulação de Imagem
     implementation(libs.thumbnailator)
 
+    // Scraping e HTML
+    implementation(libs.jsoup)
+
     // Pagamentos
     implementation(libs.stripe.java)
 
