@@ -6,6 +6,8 @@ import com.itbenevides.genesys21.domain.util.NfeUrlBuilder
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import io.ktor.http.*
 import kotlinx.serialization.json.*
 
@@ -15,6 +17,16 @@ class ReceiptParserService(
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
+
+    companion object {
+        fun createDefaultHttpClient(): HttpClient {
+            return HttpClient {
+                install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        }
+    }
 
     /**
      * Processa dinamicamente a Nota Fiscal.

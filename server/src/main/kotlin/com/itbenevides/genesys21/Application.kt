@@ -73,7 +73,7 @@ fun Application.module() {
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()
-    val receiptParserService = ReceiptParserService()
+    val receiptParserService = ReceiptParserService(ReceiptParserService.createDefaultHttpClient())
 
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
