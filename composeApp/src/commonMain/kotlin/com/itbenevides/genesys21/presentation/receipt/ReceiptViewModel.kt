@@ -18,7 +18,9 @@ data class ReceiptUiState(
     val isScanning: Boolean = false,
     val backupMessage: String? = null,
     val showBackupDialog: Boolean = false,
-    val showScanDialog: Boolean = false
+    val showScanDialog: Boolean = false,
+    val geminiApiKey: String = "",
+    val selectedImageBytes: ByteArray? = null
 )
 
 class ReceiptViewModel(
@@ -50,7 +52,15 @@ class ReceiptViewModel(
     }
 
     fun openScanDialog(show: Boolean) {
-        _uiState.value = _uiState.value.copy(showScanDialog = show)
+        _uiState.value = _uiState.value.copy(showScanDialog = show, selectedImageBytes = null)
+    }
+
+    fun onGeminiApiKeyChanged(key: String) {
+        _uiState.value = _uiState.value.copy(geminiApiKey = key)
+    }
+
+    fun onImageSelected(bytes: ByteArray?) {
+        _uiState.value = _uiState.value.copy(selectedImageBytes = bytes)
     }
 
     fun openBackupDialog(show: Boolean) {

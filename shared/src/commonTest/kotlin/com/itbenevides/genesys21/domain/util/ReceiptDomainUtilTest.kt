@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.domain.util
 
 import com.itbenevides.genesys21.domain.model.Receipt
 import com.itbenevides.genesys21.domain.model.ReceiptItem
+import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -65,5 +66,32 @@ class ReceiptDomainUtilTest {
         assertEquals("KARZEN ELETRO", importedList[0].emitente)
         assertEquals(158.49, importedList[0].valorTotal)
         assertEquals(1, importedList[0].items.size)
+    }
+
+    @Test
+    fun testLocalParserFiltersGarbageItems() {
+        val parser = ReceiptParserService()
+        val rawText = """
+            COMPROVANTE FISCAL
+            KARZEN ELETRO
+            CPF: 123.456.789-00
+            ITEM: Celular Galaxy S24 R$ 4.999,00
+            VALOR ICMS R$ 899,00
+            TOTAL R$ 4.999,00
+            DISTRITO FEDERAL
+        """.trimIndent()
+
+        val receipt = parser.parseReceiptFromText(rawText)
+
+        // Deve capturar o celular
+        assertTrue(receipt.items.any { it.descricao.contains("GALAXY") })
+
+        // Deve IGNORAR CPF, ICMS, TOTAL e DISTRITO
+        assertTrue(receipt.items.none { it.descricao.contains("CPF") })
+        assertTrue(receipt.items.none { it.descricao.contains("ICMS") })
+        assertTrue(receipt.items.none { it.descricao.contains("TOTAL") })
+        assertTrue(receipt.items.none { it.descricao.contains("DISTRITO") })
+
+        assertEquals(1, receipt.items.size, "Deveria ter apenas 1 item (o celular)")
     }
 }

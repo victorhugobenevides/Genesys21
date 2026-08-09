@@ -21,7 +21,7 @@ class ReceiptParserService(
      * Caso contrário (ou se estiver offline), faz o parse regex/OCR instantâneo no próprio dispositivo.
      */
     suspend fun parseReceiptDynamic(
-        rawText: String,
+        rawText: String = "",
         imageBase64: String? = null,
         apiKey: String? = null
     ): Receipt {
@@ -40,14 +40,21 @@ class ReceiptParserService(
         val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
 
         val prompt = """
-            Analise esta nota fiscal (DANFE ou NFC-e) e retorne APENAS um JSON no formato:
+            Analise esta nota fiscal (DANFE ou NFC-e) e retorne APENAS um JSON estrito no formato abaixo.
+            Importante:
+            1. No campo 'emitente', use o nome fantasia da loja.
+            2. Extraia todos os produtos/serviços reais da lista de itens.
+            3. Ignore campos de impostos, CPF ou mensagens publicitárias na lista de itens.
+            4. O campo 'chaveAcesso' deve ter exatamente 44 dígitos numéricos.
+
+            Formato:
             {
               "emitente": "Nome da Loja",
               "cnpjEmitente": "XX.XXX.XXX/XXXX-XX",
               "dataEmissao": "DD/MM/AAAA",
               "valorTotal": 0.0,
               "categoria": "Supermercado|Eletrônicos|Farmácia|Combustível|Alimentação|Geral",
-              "chaveAcesso": "44 dígitos se houver",
+              "chaveAcesso": "44 dígitos",
               "items": [
                 { "descricao": "nome do item", "quantidade": 1.0, "valorUnitario": 0.0, "valorTotal": 0.0 }
               ]
@@ -171,13 +178,33 @@ class ReceiptParserService(
 
     private fun extractBasicItems(text: String): List<ReceiptItem> {
         val items = mutableListOf<ReceiptItem>()
-        val productRegex = Regex("""([A-Za-z0-9\s]{4,30})\s+(?:R\$\s*)?(\d+[.,]\d{2})""")
+        // Regex mais criteriosa: nome de produto (letras/numeros/espaços) seguido de um valor monetário
+        val productRegex = Regex("""([A-Z0-9\s]{4,40})\s+(?:R\$\s*)?(\d+[.,]\d{2})""", RegexOption.IGNORE_CASE)
+
+        // Termos que indicam que a linha NÃO é um produto, mas sim lixo do OCR ou metadados
+        val blacklist = listOf(
+            "CPF", "CNPJ", "VALOR", "TOTAL", "ICMS", "TRIBUTO", "BASE", "CALCULO",
+            "CHAVE", "ACESSO", "DATA", "EMISSAO", "DESTINATARIO", "MUNICIPIO", "DISTRITO",
+            "ITEM", "UNID", "PRECO", "QUANT", "DESC", "PAGAMENTO", "DINHEIRO", "TROCO",
+            "VIA", "CONSUMIDOR", "FISCAL", "ELETRONICA", "DANFE", "NF-E", "NFC-E"
+        )
+
         val matches = productRegex.findAll(text)
-        for (m in matches.take(5)) {
+        for (m in matches.take(20)) {
             val name = m.groupValues[1].trim()
             val valStr = m.groupValues[2].replace(",", ".").toDoubleOrNull() ?: 0.0
-            if (valStr > 0 && !name.contains("TOTAL", ignoreCase = true)) {
-                items.add(ReceiptItem(descricao = name, quantidade = 1.0, valorUnitario = valStr, valorTotal = valStr))
+
+            // Filtros de Qualidade
+            val isBlacklisted = blacklist.any { name.contains(it, ignoreCase = true) }
+            val hasDigitsOnly = name.all { it.isDigit() || it.isWhitespace() } // Provavelmente uma data ou código longo
+
+            if (valStr > 0 && !isBlacklisted && !hasDigitsOnly && name.length >= 3) {
+                items.add(ReceiptItem(
+                    descricao = name.uppercase(),
+                    quantidade = 1.0,
+                    valorUnitario = valStr,
+                    valorTotal = valStr
+                ))
             }
         }
         return items

@@ -24,6 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Receipt
 import com.itbenevides.genesys21.domain.util.NfeUrlBuilder
+import com.itbenevides.genesys21.util.rememberImagePicker
+import com.itbenevides.genesys21.util.toBase64
+import org.jetbrains.compose.resources.decodeToImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -193,8 +198,8 @@ fun ReceiptListScreen(
     // Modal de Scanner / Leitura de Foto
     if (state.showScanDialog) {
         ScanReceiptDialog(
-            onDismiss = { viewModel.openScanDialog(false) },
-            onProcessText = { text -> viewModel.processReceiptText(text) }
+            viewModel = viewModel,
+            onDismiss = { viewModel.openScanDialog(false) }
         )
     }
 
@@ -410,53 +415,118 @@ fun ReceiptCardItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, org.jetbrains.compose.resources.ExperimentalResourceApi::class)
 @Composable
 fun ScanReceiptDialog(
-    onDismiss: () -> Unit,
-    onProcessText: (String) -> Unit
+    viewModel: ReceiptViewModel,
+    onDismiss: () -> Unit
 ) {
-    var rawInputText by remember {
-        mutableStateOf(
-            """
-                RECEBEMOS DE KARZEN ELETRO OS PRODUTOS CONSTANTES DA NOTA FISCAL
-                DANFE Documento Auxiliar da Nota Fiscal Eletrônica
-                CHAVE DE ACESSO: 3126 0322 1246 8700 0100 5501 2000 1565 8815 7587 6081
-                EMISSÃO: 10/03/2026
-                CNPJ: 22.124.687/0001-00
-                VALOR TOTAL: R$ 158,49
-                ITEM: Aparador de Pelos Mondial Super Body Groom R$ 158,49
-            """.trimIndent()
-        )
+    val state by viewModel.uiState.collectAsState()
+    var rawInputText by remember { mutableStateOf("") }
+
+    val imagePicker = rememberImagePicker { bytes ->
+        viewModel.onImageSelected(bytes)
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("📷 Escanear Foto / Texto da Nota") },
+        title = { Text("📷 Escanear Nota com Gemini AI") },
         text = {
-            Column {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "A IA e o OCR extraem automaticamente a Chave de 44 dígitos, Valor Total e Estabelecimento:",
+                    text = "Escolha uma foto da nota para processamento inteligente ou cole o texto extraído via OCR:",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 1. Botão de Imagem e Preview
+                if (state.selectedImageBytes != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        state.selectedImageBytes?.let { bytes ->
+                            val bitmap = remember(bytes) { bytes.decodeToImageBitmap() }
+                            androidx.compose.foundation.Image(
+                                bitmap = bitmap,
+                                contentDescription = "Preview da Nota",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                            )
+                        }
+                        IconButton(
+                            onClick = { viewModel.onImageSelected(null) },
+                            modifier = Modifier.align(Alignment.TopEnd).background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                        ) {
+                            Icon(Icons.Default.Close, null, tint = Color.White)
+                        }
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = { imagePicker() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Selecionar Foto da Nota")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. API Key (Opcional se usar local)
+                OutlinedTextField(
+                    value = state.geminiApiKey,
+                    onValueChange = { viewModel.onGeminiApiKeyChanged(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Gemini API Key (Google AI Studio)") },
+                    placeholder = { Text("AIza...") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 3. Fallback: Texto Manual
+                Text("Ou cole o texto manualmente:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = rawInputText,
                     onValueChange = { rawInputText = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    label = { Text("Texto da Nota ou OCR da Câmera") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    placeholder = { Text("Cole aqui o texto da nota...") },
                     shape = RoundedCornerShape(12.dp)
                 )
             }
         },
         confirmButton = {
+            val hasImage = state.selectedImageBytes != null
+            val hasKey = state.geminiApiKey.isNotBlank()
+
             Button(
-                onClick = { onProcessText(rawInputText) },
-                shape = RoundedCornerShape(10.dp)
+                onClick = {
+                    val base64 = state.selectedImageBytes?.toBase64()
+                    viewModel.processReceiptText(rawInputText, base64, state.geminiApiKey)
+                },
+                enabled = (hasImage && hasKey) || rawInputText.isNotBlank(),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (hasImage && hasKey) Color(0xFF6200EE) else MaterialTheme.colorScheme.primary
+                )
             ) {
-                Text("Processar Nota Fiscal")
+                if (state.isScanning) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+                } else {
+                    Text(if (hasImage && hasKey) "Processar com Gemini AI" else "Processar Localmente")
+                }
             }
         },
         dismissButton = {
