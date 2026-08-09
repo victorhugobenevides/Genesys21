@@ -20,7 +20,8 @@ data class ReceiptUiState(
     val showBackupDialog: Boolean = false,
     val showScanDialog: Boolean = false,
     val geminiApiKey: String = "",
-    val selectedImageBytes: ByteArray? = null
+    val selectedImageBytes: ByteArray? = null,
+    val selectedMimeType: String? = null
 )
 
 class ReceiptViewModel(
@@ -59,8 +60,8 @@ class ReceiptViewModel(
         _uiState.value = _uiState.value.copy(geminiApiKey = key)
     }
 
-    fun onImageSelected(bytes: ByteArray?) {
-        _uiState.value = _uiState.value.copy(selectedImageBytes = bytes)
+    fun onImageSelected(bytes: ByteArray?, mimeType: String? = null) {
+        _uiState.value = _uiState.value.copy(selectedImageBytes = bytes, selectedMimeType = mimeType)
     }
 
     fun openBackupDialog(show: Boolean) {
@@ -68,17 +69,19 @@ class ReceiptViewModel(
     }
 
     fun processReceiptText(rawText: String, imageBase64: String? = null, apiKey: String? = null) {
+        val mimeType = _uiState.value.selectedMimeType
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isScanning = true)
             try {
                 // Chamada via backend (Segurança e Anti-Injection)
-                val newReceipt = parserService.parseReceiptDynamic(rawText, imageBase64, apiKey)
+                val newReceipt = parserService.parseReceiptDynamic(rawText, imageBase64, apiKey, mimeType)
                 repository.saveReceipt(newReceipt)
                 _uiState.value = _uiState.value.copy(
                     isScanning = false,
                     showScanDialog = false,
                     selectedReceipt = newReceipt,
-                    selectedImageBytes = null
+                    selectedImageBytes = null,
+                    selectedMimeType = null
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(

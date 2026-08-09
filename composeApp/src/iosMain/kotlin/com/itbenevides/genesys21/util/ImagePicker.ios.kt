@@ -18,3 +18,8 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
         )
     return { launcher.launch() }
 }
+
+@Composable
+actual fun rememberFilePicker(onResult: (SelectedFile?) -> Unit): (String, Boolean) -> Unit {
+    return { _, _ -> /* Not implemented for iOS yet */ }
+}

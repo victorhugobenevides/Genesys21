@@ -42,3 +42,42 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
         }
     }
 }
+
+@Composable
+actual fun rememberFilePicker(onResult: (SelectedFile?) -> Unit): (String, Boolean) -> Unit {
+    return remember {
+        { accept, useCamera ->
+            val input = document.createElement("input") as HTMLInputElement
+            input.type = "file"
+            input.accept = accept
+
+            if (useCamera) {
+                input.setAttribute("capture", "environment")
+            }
+
+            input.onchange = {
+                val files = input.files
+                if (files != null && files.length > 0) {
+                    val file = files.item(0)
+                    if (file != null) {
+                        val mimeType = file.type
+                        val reader = FileReader()
+                        reader.onload = {
+                            val arrayBuffer = reader.result as ArrayBuffer
+                            val uint8Array = Uint8Array(arrayBuffer)
+                            val bytes = ByteArray(uint8Array.length) { i -> uint8Array[i] }
+                            onResult(SelectedFile(bytes, mimeType))
+                        }
+                        reader.readAsArrayBuffer(file)
+                    } else {
+                        onResult(null)
+                    }
+                } else {
+                    onResult(null)
+                }
+            }
+
+            input.click()
+        }
+    }
+}

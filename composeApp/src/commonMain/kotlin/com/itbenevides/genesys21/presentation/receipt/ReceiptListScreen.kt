@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.Receipt
 import com.itbenevides.genesys21.domain.util.NfeUrlBuilder
-import com.itbenevides.genesys21.util.rememberImagePicker
+import com.itbenevides.genesys21.util.rememberFilePicker
+import com.itbenevides.genesys21.util.SelectedFile
 import com.itbenevides.genesys21.util.toBase64
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
@@ -424,24 +425,24 @@ fun ScanReceiptDialog(
     val state by viewModel.uiState.collectAsState()
     var rawInputText by remember { mutableStateOf("") }
 
-    val imagePicker = rememberImagePicker { bytes ->
-        viewModel.onImageSelected(bytes)
+    val filePicker = rememberFilePicker { result ->
+        viewModel.onImageSelected(result?.bytes, result?.mimeType)
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("📷 Escanear Nota com Gemini AI") },
+        title = { Text("🧾 Escanear Nota (Foto ou PDF)") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Escolha uma foto da nota para processamento inteligente ou cole o texto extraído via OCR:",
+                    text = "Selecione uma foto da galeria, use a câmera ou envie um arquivo PDF:",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 1. Botão de Imagem e Preview
+                // 1. Área de Preview / Seleção
                 if (state.selectedImageBytes != null) {
                     Box(
                         modifier = Modifier
@@ -451,14 +452,21 @@ fun ScanReceiptDialog(
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
-                        state.selectedImageBytes?.let { bytes ->
-                            val bitmap = remember(bytes) { bytes.decodeToImageBitmap() }
-                            androidx.compose.foundation.Image(
-                                bitmap = bitmap,
-                                contentDescription = "Preview da Nota",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                            )
+                        if (state.selectedMimeType == "application/pdf") {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.Description, "PDF", modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+                                Text("Documento PDF Selecionado", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            state.selectedImageBytes?.let { bytes ->
+                                val bitmap = remember(bytes) { bytes.decodeToImageBitmap() }
+                                androidx.compose.foundation.Image(
+                                    bitmap = bitmap,
+                                    contentDescription = "Preview da Nota",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                                )
+                            }
                         }
                         IconButton(
                             onClick = { viewModel.onImageSelected(null) },
@@ -468,26 +476,38 @@ fun ScanReceiptDialog(
                         }
                     }
                 } else {
-                    OutlinedButton(
-                        onClick = { imagePicker() },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.PhotoCamera, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Selecionar Foto da Nota")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { filePicker("image/*,application/pdf", false) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.AttachFile, null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Arquivo/Galeria", fontSize = 12.sp)
+                        }
+
+                        Button(
+                            onClick = { filePicker("image/*", true) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.PhotoCamera, null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Usar Câmera", fontSize = 12.sp)
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. API Key (Opcional - Agora usamos a chave do Servidor)
+                // 2. Chave Gemini (Opcional)
                 OutlinedTextField(
                     value = state.geminiApiKey,
                     onValueChange = { viewModel.onGeminiApiKeyChanged(it) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Chave Gemini Personalizada (Opcional)") },
-                    placeholder = { Text("Use se quiser usar sua própria chave") },
+                    placeholder = { Text("O servidor já possui uma chave configurada") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
@@ -496,19 +516,19 @@ fun ScanReceiptDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // 3. Fallback: Texto Manual
-                Text("Ou cole o texto manualmente:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Ou cole a URL do QR Code ou texto:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
                 OutlinedTextField(
                     value = rawInputText,
                     onValueChange = { rawInputText = it },
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    placeholder = { Text("Cole aqui o texto da nota...") },
+                    modifier = Modifier.fillMaxWidth().height(80.dp),
+                    placeholder = { Text("Cole aqui o texto da nota ou link do QR Code...") },
                     shape = RoundedCornerShape(12.dp)
                 )
             }
         },
         confirmButton = {
-            val hasImage = state.selectedImageBytes != null
+            val hasFile = state.selectedImageBytes != null
             val hasText = rawInputText.isNotBlank()
 
             Button(
@@ -516,16 +536,14 @@ fun ScanReceiptDialog(
                     val base64 = state.selectedImageBytes?.toBase64()
                     viewModel.processReceiptText(rawInputText, base64, state.geminiApiKey)
                 },
-                enabled = (hasImage || hasText) && !state.isScanning,
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (hasImage) Color(0xFF6200EE) else MaterialTheme.colorScheme.primary
-                )
+                enabled = (hasFile || hasText) && !state.isScanning,
+                shape = RoundedCornerShape(10.dp)
             ) {
                 if (state.isScanning) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
                 } else {
-                    Text(if (hasImage) "Analisar Nota Fiscal" else "Processar Texto")
+                    val actionText = if (hasFile) "Analisar ${if (state.selectedMimeType == "application/pdf") "PDF" else "Foto"}" else "Analisar Texto"
+                    Text(actionText)
                 }
             }
         },

@@ -11,7 +11,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ParseReceiptRequest(
     val rawText: String = "",
-    val imageBase64: String? = null
+    val imageBase64: String? = null,
+    val mimeType: String? = "image/jpeg"
 )
 
 fun Route.receiptRoutes(parserService: ReceiptParserService) {
@@ -44,7 +45,8 @@ fun Route.receiptRoutes(parserService: ReceiptParserService) {
                 val receipt = parserService.parseReceiptDynamic(
                     rawText = request.rawText,
                     imageBase64 = request.imageBase64,
-                    apiKey = apiKey
+                    apiKey = apiKey,
+                    mimeType = request.mimeType
                 )
                 call.respond(receipt)
             } catch (e: Exception) {

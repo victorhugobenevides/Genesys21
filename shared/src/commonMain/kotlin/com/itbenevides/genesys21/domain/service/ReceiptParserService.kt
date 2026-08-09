@@ -36,7 +36,8 @@ class ReceiptParserService(
     suspend fun parseReceiptDynamic(
         rawText: String = "",
         imageBase64: String? = null,
-        apiKey: String? = null
+        apiKey: String? = null,
+        mimeType: String? = "image/jpeg"
     ): Receipt {
         // Se houver um serverUrl, significa que estamos no Cliente (Wasm/Android)
         if (!serverUrl.isNullOrBlank() && httpClient != null) {
@@ -46,6 +47,7 @@ class ReceiptParserService(
                     setBody(buildJsonObject {
                         put("rawText", rawText)
                         put("imageBase64", imageBase64)
+                        put("mimeType", mimeType)
                     }.toString())
                 }
                 if (response.status.isSuccess()) {
@@ -62,14 +64,14 @@ class ReceiptParserService(
         if (!apiKey.isNullOrBlank() && !imageBase64.isNullOrBlank()) {
             runCatching {
                 // No backend, se não tiver httpClient, criamos um temporário ou usamos o injetado
-                parseWithGeminiApi(imageBase64, apiKey)
+                parseWithGeminiApi(imageBase64, apiKey, mimeType ?: "image/jpeg")
             }.getOrNull()?.let { return it }
         }
 
         return parseReceiptFromText(rawText)
     }
 
-    private suspend fun parseWithGeminiApi(imageBase64: String, apiKey: String): Receipt {
+    private suspend fun parseWithGeminiApi(imageBase64: String, apiKey: String, mimeType: String): Receipt {
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
         val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
@@ -108,7 +110,7 @@ class ReceiptParserService(
                         addJsonObject { put("text", prompt) }
                         addJsonObject {
                             putJsonObject("inlineData") {
-                                put("mimeType", "image/jpeg")
+                                put("mimeType", mimeType)
                                 put("data", imageBase64)
                             }
                         }

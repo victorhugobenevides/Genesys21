@@ -6,3 +6,8 @@ import androidx.compose.runtime.Composable
 actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
     return { /* Not supported on JS yet */ }
 }
+
+@Composable
+actual fun rememberFilePicker(onResult: (SelectedFile?) -> Unit): (String, Boolean) -> Unit {
+    return { _, _ -> /* Not supported on JS yet */ }
+}
