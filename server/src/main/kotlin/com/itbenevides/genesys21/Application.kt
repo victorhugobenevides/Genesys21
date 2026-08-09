@@ -13,6 +13,8 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.routes.*
 import io.ktor.http.*
 import io.ktor.http.content.*
+import io.ktor.client.*
+import io.ktor.client.engine.java.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -73,7 +75,17 @@ fun Application.module() {
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()
-    val receiptParserService = ReceiptParserService(ReceiptParserService.createDefaultHttpClient())
+
+    // Log de segurança para confirmar se o Gemini está configurado (sem mostrar a chave)
+    val geminiKey = System.getenv("GEMINI_API_KEY")
+    if (geminiKey.isNullOrBlank()) {
+        logger.warn("SERVIDOR: GEMINI_API_KEY não configurada. O processamento inteligente de notas usará o extrator local.")
+    } else {
+        logger.info("SERVIDOR: Gemini AI configurado com sucesso.")
+    }
+
+    val client = HttpClient(io.ktor.client.engine.java.Java)
+    val receiptParserService = ReceiptParserService(client)
 
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
