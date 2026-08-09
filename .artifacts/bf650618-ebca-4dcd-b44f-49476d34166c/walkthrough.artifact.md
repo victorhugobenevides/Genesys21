@@ -1,25 +1,26 @@
-# Walkthrough - Google One Tap Login Ativado
+# Walkthrough - Correção de Conflito de Classes e Estabilização do Boot
 
-Habilitei com sucesso o login automático do Google (One Tap) para a versão Web, utilizando o Client ID real e ajustando a infraestrutura de segurança.
+Resolvi o erro crítico de inicialização do servidor (`NoSuchMethodError`) causado por uma colisão de nomes de classes entre os módulos do projeto e estabilizei o processo de boot.
 
 ## Mudanças Realizadas
 
-### 1. Configuração do Google Identity Services (GSI)
-- **Client ID**: Substituí os placeholders pelo ID real: `674755208954-6ofmvlcn9birat7ako2banqc9ph1t74s...`.
-- **Script do Google**: O `index.html` agora carrega a biblioteca oficial do Google (`gsi/client`) de forma assíncrona.
+### 1. Resolução de Colisão no Classpath
+- **Problema**: Existiam duas classes `GoogleCalendarService` com o mesmo pacote (`com.itbenevides.genesys21.data.service`) nos módulos `:server` e `:shared`. O Java carregava a versão do `:shared` (que exigia parâmetros no construtor) quando o servidor tentava usar a versão do `:server` (que não tinha parâmetros), resultando em um crash imediato no boot.
+- **Solução**: Removi a versão duplicada e incompleta do módulo `:shared`. A implementação real e completa agora vive exclusivamente no módulo `:server`, onde as bibliotecas nativas do Google estão disponíveis.
 
-### 2. Implementação da Ponte JavaScript (Bridge)
-- **One Tap Logic**: Criei a função `firebaseInitializeOneTap` no arquivo `firebase-bridge.js`.
-- **Fluxo**: Assim que o site carrega, se o usuário não estiver logado, o Google exibe o prompt "Continuar como Victor...". Ao clicar, o Firebase autentica automaticamente usando a credencial recebida.
+### 2. Melhoria no Serviço de Google Calendar
+- **Não-Bloqueante**: Envolvi as chamadas da API do Google (que são síncronas em Java) em um bloco `withContext(Dispatchers.IO)`. Isso garante que a criação de links do Meet não trave as threads principais do servidor Ktor.
+- **Robustez**: Adicionei inicialização preguiçosa (`lazy`) para os componentes de transporte e JSON do Google, evitando falhas precoces durante a criação do objeto.
 
-### 3. Ajustes de Segurança e Navegação
-- **COOP Header**: Adicionei o cabeçalho `Cross-Origin-Opener-Policy: same-origin-allow-popups` no Nginx. Sem isso, o navegador bloqueia a comunicação entre o seu site e o popup do Google por motivos de segurança.
-- **Isolamento de Origens**: Configurei o Nginx para tratar corretamente as origens de produção e staging.
+### 3. Ajuste no Pipeline de Deploy (CircleCI)
+- **Limpeza Total**: Adicionei um passo de `clean` antes da compilação para garantir que nenhum artefato antigo ou corrompido seja incluído na imagem Docker.
+- **Logs de Erro**: O Smoke Test agora monitora e imprime os logs do container em caso de falha de boot, facilitando diagnósticos futuros.
 
 ## Resultados
-- **One Tap**: O prompt deve aparecer automaticamente no canto superior direito para usuários logados no Google.
-- **Login Google**: O botão "Entrar com Google" agora também está configurado para o ID real.
+- O crash `java.lang.NoSuchMethodError` foi eliminado.
+- O servidor agora deve completar o boot com sucesso no CircleCI.
+- A integração com Google Meet está mais segura e performática.
 
 ---
-> [!IMPORTANT]
-> Lembre-se de que o One Tap pode não aparecer se você já tiver cancelado o prompt muitas vezes (o Google "aprende" que você não quer). Use uma **Aba Anônima** para o teste mais puro.
+> [!TIP]
+> Com a remoção do arquivo duplicado no `:shared`, a estrutura do projeto ficou mais limpa e livre de comportamentos imprevisíveis de "shadowing" de classes.

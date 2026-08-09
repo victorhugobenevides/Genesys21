@@ -97,6 +97,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.EditorShowcase -> "Editor Showcase"
                 is Route.TemplateShowcase -> "Catálogo de Templates"
                 is Route.ServiceBooking -> "Agendamento: ${route.service.name}"
+                is Route.Receipts -> "Notas Fiscais"
             }
         AnalyticsManager.trackPageView(pageName)
     }
@@ -130,6 +131,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.EditorShowcase -> Triple(null, null, "Editor Showcase")
                 is Route.TemplateShowcase -> Triple(null, null, "Catálogo de Templates")
                 is Route.ServiceBooking -> Triple(current.page.id, current.service.id, "Agendar: ${current.service.name}")
+                is Route.Receipts -> Triple(null, null, "Notas Fiscais")
             }
 
         val screen =
@@ -152,6 +154,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.EditorShowcase -> Screen.EditorShowcase
                 is Route.TemplateShowcase -> Screen.TemplateShowcase
                 is Route.ServiceBooking -> Screen.ServiceBooking
+                is Route.Receipts -> Screen.List
             }
 
         syncUrlWithScreen(screen, pageId, productId, title ?: "Genesys21", replace = replace)

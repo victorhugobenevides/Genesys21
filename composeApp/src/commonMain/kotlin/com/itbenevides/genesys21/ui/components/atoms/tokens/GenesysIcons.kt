@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 
 object GenesysIcons {
     val Inventory = Icons.Default.Inventory
+    val ReceiptLong = Icons.Default.ReceiptLong
     val Payments = Icons.Default.Payments
     val Numbers = Icons.Default.Numbers
     val Category = Icons.Default.Category

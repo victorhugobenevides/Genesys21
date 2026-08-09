@@ -40,4 +40,6 @@ sealed class Route {
     object TemplateShowcase : Route()
 
     data class ServiceBooking(val service: BookingService, val page: Page) : Route()
+
+    object Receipts : Route()
 }

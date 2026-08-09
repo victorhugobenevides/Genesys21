@@ -977,10 +977,12 @@ class PageViewModel(
                     if (e.message == "ACCOUNT_EXISTS_PASSWORD") {
                         _uiEvent.emit(UiEvent.ShowAccountLinkingDialog(email = "Seu e-mail"))
                     } else {
+                        handleError("Erro de Login", e)
                         onError(e.message ?: "Erro desconhecido")
                     }
                 }
             } catch (e: Exception) {
+                handleError("Falha na Autenticação", e)
                 onError(e.message ?: "Erro desconhecido")
             } finally {
                 _isLoading.value = false

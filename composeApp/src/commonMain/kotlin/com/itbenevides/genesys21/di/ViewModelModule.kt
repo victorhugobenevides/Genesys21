@@ -29,6 +29,9 @@ val viewModelModule =
             )
         }
 
+        // ReceiptViewModel para gerenciar notas fiscais
+        single { com.itbenevides.genesys21.presentation.receipt.ReceiptViewModel(get(), get()) }
+
         // O Router precisa ser single para manter o estado da navegação global
         single { Router(get()) }
     }

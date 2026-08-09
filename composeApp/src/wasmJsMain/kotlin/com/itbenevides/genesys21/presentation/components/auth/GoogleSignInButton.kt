@@ -49,7 +49,7 @@ actual fun GoogleSignInButton(
                     val token = firebaseSignInGoogleSafe().await().toString()
                     onTokenReceived(token, null)
                 } catch (e: Exception) {
-                    println("WASM Login Error: \${e.message}")
+                    println("WASM Login Error: ${e.message}")
                     onError(e.message ?: "Erro ao entrar com Google")
                 }
             }

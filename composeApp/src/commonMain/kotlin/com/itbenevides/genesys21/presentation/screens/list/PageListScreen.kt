@@ -200,6 +200,7 @@ fun PageListScreen(
             uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
         },
         onShowcase = onShowcase,
+        onOpenReceipts = { router.navigateTo(Route.Receipts) },
         onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
         onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
         onDeleteService = { viewModel.deleteBookingService(it) },
@@ -218,6 +219,7 @@ private fun PageListContent(
     onExportAll: () -> Unit,
     onContactCustomer: (String, String, String) -> Unit,
     onShowcase: () -> Unit,
+    onOpenReceipts: () -> Unit,
     onAddService: () -> Unit,
     onEditService: (BookingService) -> Unit,
     onDeleteService: (String) -> Unit,
@@ -234,6 +236,7 @@ private fun PageListContent(
                     title = GenesysStrings.AdminTitle,
                     onBack = null,
                     actions = {
+                        GenesysIconButton(icon = GenesysIcons.ReceiptLong, contentDescription = "Notas Fiscais", onClick = onOpenReceipts)
                         GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
                         GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)
                         GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)

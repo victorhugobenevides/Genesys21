@@ -85,6 +85,8 @@ val dataModule =
         single { SaveAddressUseCase(get()) }
         single { DeleteAddressUseCase(get()) }
         single { CalculateShippingUseCase(get()) }
+        single { com.itbenevides.genesys21.data.repository.ReceiptLocalRepository() }
+        single { com.itbenevides.genesys21.domain.service.ReceiptParserService(get()) }
     }
 
 expect fun getAuthRepository(): AuthRepository
