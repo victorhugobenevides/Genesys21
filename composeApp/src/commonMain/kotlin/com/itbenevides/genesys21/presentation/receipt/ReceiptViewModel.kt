@@ -70,13 +70,22 @@ class ReceiptViewModel(
     fun processReceiptText(rawText: String, imageBase64: String? = null, apiKey: String? = null) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isScanning = true)
-            val newReceipt = parserService.parseReceiptDynamic(rawText, imageBase64, apiKey)
-            repository.saveReceipt(newReceipt)
-            _uiState.value = _uiState.value.copy(
-                isScanning = false,
-                showScanDialog = false,
-                selectedReceipt = newReceipt
-            )
+            try {
+                // Chamada via backend (Segurança e Anti-Injection)
+                val newReceipt = parserService.parseReceiptDynamic(rawText, imageBase64, apiKey)
+                repository.saveReceipt(newReceipt)
+                _uiState.value = _uiState.value.copy(
+                    isScanning = false,
+                    showScanDialog = false,
+                    selectedReceipt = newReceipt,
+                    selectedImageBytes = null
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isScanning = false,
+                    backupMessage = "❌ Erro ao processar nota: ${e.message}"
+                )
+            }
         }
     }
 

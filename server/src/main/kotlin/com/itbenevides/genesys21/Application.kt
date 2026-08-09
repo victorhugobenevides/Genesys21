@@ -8,6 +8,7 @@ import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
+import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.routes.*
 import io.ktor.http.*
@@ -55,7 +56,6 @@ fun Application.module() {
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
     if (isTesting) {
-        // Usamos um identificador único para o banco em memória para evitar colisões entre testes
         val testDbId = System.nanoTime()
         DatabaseFactory.init("jdbc:sqlite:file:testdb-$testDbId?mode=memory&cache=shared", rebuild = true)
     } else {
@@ -73,6 +73,7 @@ fun Application.module() {
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()
+    val receiptParserService = ReceiptParserService()
 
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
@@ -86,39 +87,21 @@ fun Application.module() {
         exception<Throwable> { call, cause ->
             val isProd = System.getenv("PROD_MODE") == "true"
             logger.error("Erro Interno: ${cause.message}", cause)
-
-            if (isProd) {
-                call.respond(HttpStatusCode.InternalServerError, "Ocorreu um erro inesperado no servidor.")
-            } else {
-                call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
-            }
+            if (isProd) call.respond(HttpStatusCode.InternalServerError, "Ocorreu um erro inesperado.")
+            else call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
         }
     }
 
     install(Compression) {
         gzip { priority = 1.0 }
-        deflate {
-            priority = 10.0
-            minimumSize(1024)
-        }
+        deflate { priority = 10.0; minimumSize(1024) }
     }
 
     install(ContentNegotiation) {
-        json(
-            Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-                encodeDefaults = true
-                coerceInputValues = true
-            },
-        )
+        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true; coerceInputValues = true })
     }
 
-    // Configuração para suportar Nginx Proxy (Headers X-Forwarded-*)
-    // No Ktor 3, XForwardedHeaders é a forma recomendada para ler Host/Proto do Nginx
-    install(XForwardedHeaders) {
-        // Confia nos headers padrões enviados pelo Nginx no docker-compose/circleci
-    }
+    install(XForwardedHeaders) {}
 
     install(DefaultHeaders) {
         header(HttpHeaders.Server, "GenesysServer")
@@ -128,43 +111,16 @@ fun Application.module() {
         header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com;")
     }
 
-    /*
-    install(RateLimit) {
-        global {
-            rateLimit(limit = 100, period = 60.seconds)
-        }
-        register(RateLimitName("login")) {
-            rateLimit(limit = 5, period = 60.seconds)
-        }
-    }
-    */
-
     install(CORS) {
-        // Permitimos o domínio principal e o de staging
         allowHost("victorbenevides.dev", schemes = listOf("http", "https"))
         allowHost("www.victorbenevides.dev", schemes = listOf("http", "https"))
         allowHost("staging.victorbenevides.dev", schemes = listOf("http", "https"))
         allowHost("radarani.site", schemes = listOf("http", "https"))
         allowHost("www.radarani.site", schemes = listOf("http", "https"))
-
-        // Localhost para desenvolvimento
-        allowHost("localhost:8080")
-        allowHost("localhost:8081")
-        allowHost("localhost:3000")
-        allowHost("0.0.0.0:8080")
-
-        allowHeader(HttpHeaders.Authorization)
-        allowHeader(HttpHeaders.ContentType)
-        allowHeader(HttpHeaders.CacheControl)
-        allowHeader("X-Cart-Session-Id")
-        allowMethod(HttpMethod.Options)
-        allowMethod(HttpMethod.Get)
-        allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Patch)
-        allowMethod(HttpMethod.Delete)
-        allowCredentials = true
-        maxAgeInSeconds = 3600
+        allowHost("localhost:8080"); allowHost("localhost:8081"); allowHost("localhost:3000"); allowHost("0.0.0.0:8080")
+        allowHeader(HttpHeaders.Authorization); allowHeader(HttpHeaders.ContentType); allowHeader(HttpHeaders.CacheControl)
+        allowHeader("X-Cart-Session-Id"); allowMethod(HttpMethod.Options); allowMethod(HttpMethod.Get); allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put); allowMethod(HttpMethod.Patch); allowMethod(HttpMethod.Delete); allowCredentials = true; maxAgeInSeconds = 3600
     }
 
     install(Authentication) {
@@ -173,34 +129,24 @@ fun Application.module() {
                 try {
                     val decodedToken = FirebaseAuth.getInstance().verifyIdToken(credential.token)
                     UserIdPrincipal(decodedToken.uid)
-                } catch (e: Exception) {
-                    null
-                }
+                } catch (e: Exception) { null }
             }
         }
     }
 
     initFirebase(logger)
 
-    // LGPD: Cleanup old audit logs on startup
     (this as kotlinx.coroutines.CoroutineScope).launch {
         try {
             com.itbenevides.genesys21.data.service.AuditLogger.cleanupOldLogs(months = 12)
             logger.info("AUDITORIA: Limpeza de logs antigos concluída.")
-        } catch (e: Exception) {
-            logger.error("AUDITORIA: Erro ao limpar logs: ${e.message}")
-        }
+        } catch (e: Exception) { logger.error("AUDITORIA: Erro ao limpar logs: ${e.message}") }
     }
 
     logger.info("SERVIDOR: Pronto e ouvindo na porta $SERVER_PORT")
 
     routing {
-        // Aplica rate limit na rota de login e upload
-        authenticate("firebase") {
-            // rateLimit(RateLimitName("login")) {
-                post("/api/login_check") { call.respond(HttpStatusCode.OK) }
-            // }
-        }
+        authenticate("firebase") { post("/api/login_check") { call.respond(HttpStatusCode.OK) } }
 
         get("/uploads/{filename...}") {
             val filename = call.parameters.getAll("filename")?.joinToString("/") ?: ""
@@ -208,71 +154,22 @@ fun Application.module() {
             if (file.exists() && file.isFile) {
                 call.response.header(HttpHeaders.CacheControl, "public, max-age=2592000")
                 call.respondFile(file)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
+            } else call.respond(HttpStatusCode.NotFound)
         }
 
         get("/p/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val page = pageRepository.getPublicPage(id).getOrNull()
-
             val title = page?.title ?: "Página não encontrada"
-            val siteName = "Social Bio"
+            val description = page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.bio ?: "Confira esta vitrine incrível na Genesys21."
+            val rawImage = page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.imageUrl ?: ""
+            val ogImage = if (rawImage.startsWith("/uploads/")) {
+                val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
+                val scheme = if (host.contains("localhost")) "http" else "https"
+                "$scheme://$host$rawImage"
+            } else rawImage
 
-            val description =
-                page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.bio
-                    ?: page?.components?.filterIsInstance<PageComponent.Text>()?.firstOrNull()?.content
-                    ?: "Confira esta vitrine incrível na Genesys21."
-
-            val rawImage =
-                page?.components?.filterIsInstance<PageComponent.ProfileHeader>()?.firstOrNull()?.imageUrl
-                    ?: page?.components?.filterIsInstance<PageComponent.Image>()?.firstOrNull()?.url
-                    ?: ""
-
-            val ogImage =
-                if (rawImage.startsWith("/uploads/")) {
-                    val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
-                    val scheme = if (host.contains("localhost")) "http" else "https"
-                    "$scheme://$host$rawImage"
-                } else {
-                    rawImage
-                }
-
-            val html =
-                """
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>$title</title>
-                    <meta name="description" content="$description">
-
-                    <!-- Open Graph / Facebook -->
-                    <meta property="og:type" content="website">
-                    <meta property="og:url" content="${call.request.uri}">
-                    <meta property="og:title" content="$title">
-                    <meta property="og:description" content="$description">
-                    <meta property="og:image" content="$ogImage">
-                    <meta property="og:site_name" content="$siteName">
-
-                    <!-- Twitter -->
-                    <meta name="twitter:card" content="summary_large_image">
-                    <meta name="twitter:url" content="${call.request.uri}">
-                    <meta name="twitter:title" content="$title">
-                    <meta name="twitter:description" content="$description">
-                    <meta name="twitter:image" content="$ogImage">
-
-                    <script>
-                        window.location.replace("/?pageId=$id");
-                    </script>
-                </head>
-                <body>
-                    Redirecionando para $title...
-                </body>
-                </html>
-                """.trimIndent()
-
+            val html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>$title</title><meta name="description" content="$description"><meta property="og:type" content="website"><meta property="og:title" content="$title"><meta property="og:description" content="$description"><meta property="og:image" content="$ogImage"><script>window.location.replace("/?pageId=$id");</script></head><body>Redirecionando para $title...</body></html>""".trimIndent()
             call.respondText(html, ContentType.Text.Html)
         }
 
@@ -281,17 +178,12 @@ fun Application.module() {
             val host = call.request.header(HttpHeaders.Host) ?: "genesys21.com"
             val scheme = if (host.contains("localhost")) "http" else "https"
             val baseUrl = "$scheme://$host"
-
-            val sitemap =
-                buildString {
-                    append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-                    append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
-                    append("  <url><loc>$baseUrl/</loc><priority>1.0</priority></url>\n")
-                    ids.forEach { id ->
-                        append("  <url><loc>$baseUrl/p/$id</loc><priority>0.8</priority></url>\n")
-                    }
-                    append("</urlset>")
-                }
+            val sitemap = buildString {
+                append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
+                append("  <url><loc>$baseUrl/</loc><priority>1.0</priority></url>\n")
+                ids.forEach { id -> append("  <url><loc>$baseUrl/p/$id</loc><priority>0.8</priority></url>\n") }
+                append("</urlset>")
+            }
             call.respondText(sitemap, ContentType.Text.Xml)
         }
 
@@ -309,54 +201,33 @@ fun Application.module() {
             storeRoutes(storeRepository)
             shippingRoutes(storeRepository)
             connectRoutes(userRepository, storeRepository)
+            receiptRoutes(receiptParserService)
 
             authenticate("firebase") {
                 post("/upload") {
                     val multipart = call.receiveMultipart()
                     var fileName = ""
                     var fileBytes: ByteArray? = null
-
                     multipart.forEachPart { part ->
                         if (part is PartData.FileItem) {
-                            // Validação de Tipo de Arquivo
                             val contentType = part.contentType?.toString() ?: ""
-                            if (!contentType.startsWith("image/")) {
-                                return@forEachPart call.respond(HttpStatusCode.UnsupportedMediaType, "Apenas imagens são permitidas.")
-                            }
-
-                            val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
-                            fileName = "${UUID.randomUUID()}.$ext"
-                            val channel = part.provider()
-                            fileBytes = channel.toByteArray()
-
-                            // Validação de Tamanho (Max 10MB)
-                            if (fileBytes != null && fileBytes!!.size > 10 * 1024 * 1024) {
-                                fileBytes = null
-                                return@forEachPart call.respond(HttpStatusCode.PayloadTooLarge, "Imagem muito grande (máximo 10MB).")
+                            if (contentType.startsWith("image/")) {
+                                val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
+                                fileName = "${UUID.randomUUID()}.$ext"
+                                fileBytes = part.provider().toByteArray()
                             }
                         }
                         part.dispose()
                     }
-
                     if (fileBytes != null) {
                         val file = File(uploadDir, fileName)
-
                         try {
                             val outputStream = ByteArrayOutputStream()
-                            Thumbnails.of(ByteArrayInputStream(fileBytes))
-                                .size(1200, 1200)
-                                .outputFormat("jpg")
-                                .outputQuality(0.8)
-                                .toOutputStream(outputStream)
+                            Thumbnails.of(ByteArrayInputStream(fileBytes)).size(1200, 1200).outputFormat("jpg").outputQuality(0.8).toOutputStream(outputStream)
                             file.writeBytes(outputStream.toByteArray())
-                        } catch (e: Exception) {
-                            file.writeBytes(fileBytes!!)
-                        }
-
+                        } catch (e: Exception) { file.writeBytes(fileBytes!!) }
                         call.respondText("/uploads/$fileName")
-                    } else {
-                        call.respond(HttpStatusCode.BadRequest)
-                    }
+                    } else call.respond(HttpStatusCode.BadRequest)
                 }
             }
         }
@@ -367,22 +238,10 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
         val fileName = "firebase-adminsdk.json"
         val file = File(fileName)
-        val stream =
-            this::class.java.classLoader.getResourceAsStream(fileName)
-                ?: if (file.exists()) file.inputStream() else null
-
+        val stream = this::class.java.classLoader.getResourceAsStream(fileName) ?: if (file.exists()) file.inputStream() else null
         if (stream != null) {
-            logger.info("Inicializando Firebase Admin SDK usando $fileName...")
             val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(stream)).build()
-            if (FirebaseApp.getApps().isEmpty()) {
-                FirebaseApp.initializeApp(options)
-                logger.info("Firebase Admin SDK inicializado com sucesso.")
-            }
-        } else {
-            logger.error("ERRO: Arquivo $fileName não encontrado! Autenticação Firebase não funcionará.")
-            logger.error("Caminho absoluto tentado: ${file.absolutePath}")
+            if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
         }
-    } catch (e: Exception) {
-        logger.error("Erro Crítico no Firebase: ${e.message}", e)
-    }
+    } catch (e: Exception) { logger.error("Erro Crítico no Firebase: ${e.message}", e) }
 }

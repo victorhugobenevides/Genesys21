@@ -29,7 +29,8 @@ class ReceiptDomainUtilTest {
         val chave = "31260322124687000100550120001565881575876081"
         val url = NfeUrlBuilder.buildOnlineUrl(chave)
         assertNotNull(url)
-        assertTrue(url.contains("nfe.fazenda.mg.gov.br"))
+        // MG consulta completa exige certificado, agora usamos o Portal Nacional
+        assertTrue(url.contains("nfe.fazenda.gov.br"))
         assertTrue(url.contains(chave))
     }
 

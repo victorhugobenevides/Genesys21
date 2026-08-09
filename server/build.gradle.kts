@@ -34,6 +34,10 @@ dependencies {
     implementation(libs.ktor.serializationJson)
     implementation(libs.firebase.admin)
 
+    implementation(libs.ktor.clientCore)
+    implementation(libs.ktor.clientJava)
+    implementation(libs.ktor.clientContentNegotiation)
+
     // Database
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)

@@ -481,13 +481,13 @@ fun ScanReceiptDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. API Key (Opcional se usar local)
+                // 2. API Key (Opcional - Agora usamos a chave do Servidor)
                 OutlinedTextField(
                     value = state.geminiApiKey,
                     onValueChange = { viewModel.onGeminiApiKeyChanged(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Gemini API Key (Google AI Studio)") },
-                    placeholder = { Text("AIza...") },
+                    label = { Text("Gemini API Key (Opcional - Usar do Servidor)") },
+                    placeholder = { Text("O servidor já possui uma chave configurada") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)

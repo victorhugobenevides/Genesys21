@@ -292,6 +292,7 @@ jobs:
                 environment:
                   - PROD_MODE=true
                   - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+                  - GEMINI_API_KEY=${GEMINI_API_KEY}
                 volumes:
                   - ./data:/app/data
                   - ./uploads:/app/uploads
@@ -323,6 +324,7 @@ jobs:
                 environment:
                   - PROD_MODE=false
                   - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+                  - GEMINI_API_KEY=${GEMINI_API_KEY}
                 volumes:
                   - ./data-staging:/app/data
                   - ./uploads-staging:/app/uploads
