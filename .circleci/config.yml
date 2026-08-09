@@ -234,7 +234,9 @@ jobs:
                     # Segurança para One Tap e recursos externos
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
                     add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
-                    add_header Access-Control-Allow-Origin "$cors_origin" always;
+
+                    # Deixamos o Ktor gerenciar o CORS para /api/, mas mantemos para os dominios principais se necessario
+                    # add_header Access-Control-Allow-Origin "$cors_origin" always;
                     add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, PATCH, DELETE" always;
                     add_header Access-Control-Allow-Headers "Authorization, Content-Type, Cache-Control, X-Cart-Session-Id" always;
                     add_header Access-Control-Allow-Credentials "true" always;
@@ -260,7 +262,9 @@ jobs:
                     # Segurança para One Tap e recursos externos
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
                     add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
-                    add_header Access-Control-Allow-Origin "$cors_origin" always;
+
+                    # Deixamos o Ktor gerenciar o CORS para /api/, mas mantemos para os dominios principais se necessario
+                    # add_header Access-Control-Allow-Origin "$cors_origin" always;
                     add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, PATCH, DELETE" always;
                     add_header Access-Control-Allow-Headers "Authorization, Content-Type, Cache-Control, X-Cart-Session-Id" always;
                     add_header Access-Control-Allow-Credentials "true" always;

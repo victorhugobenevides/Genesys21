@@ -48,25 +48,25 @@ object NfeUrlBuilder {
 
     private fun getSefazNfeUrl(ufCode: String, cleanKey: String): String {
         return when (ufCode) {
-            "52" -> "https://nfe.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica?chaveAccesso=$cleanKey"
-            "31" -> "https://nfe.fazenda.mg.gov.br/nfe/portal/consultas/consulta-completa-nfe/$cleanKey"
-            "35" -> "https://www.nfe.fazenda.sp.gov.br/ConsultaNFe/consulta/consultaTexto.aspx?chaveAccesso=$cleanKey"
-            "43" -> "https://www.sefaz.rs.gov.br/NFE/NFE-COM.aspx?chNFe=$cleanKey"
-            "33" -> "https://www.fazenda.rj.gov.br/nfe/consulta?chaveAccesso=$cleanKey"
-            "29" -> "http://nfe.sefaz.ba.gov.br/servicos/nfe/default.aspx?chaveAccesso=$cleanKey"
-            "41" -> "http://www.fazenda.pr.gov.br/nfe/consulta?chaveAccesso=$cleanKey"
-            else -> "https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=completa&tipoConteudo=X2B2igwMsfw="
+            "52" -> "https://nfe.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica?chNFe=$cleanKey"
+            "31" -> "https://www.nfe.fazenda.mg.gov.br/nfe/portal/consultas/consulta-completa-nfe/$cleanKey"
+            "35" -> "https://www.nfe.fazenda.sp.gov.br/ConsultaPublica/Consulta.aspx?chNFe=$cleanKey"
+            "43" -> "https://www.sefaz.rs.gov.br/dfe/Consultas/ConsultaPublicaDfe?chNFe=$cleanKey"
+            "33" -> "https://www.fazenda.rj.gov.br/nfe/consulta?chNFe=$cleanKey"
+            "29" -> "https://nfe.sefaz.ba.gov.br/servicos/nfe/default.aspx?chNFe=$cleanKey"
+            "41" -> "https://www.fazenda.pr.gov.br/nfe/consulta?chNFe=$cleanKey"
+            else -> "https://www.nfe.fazenda.gov.br/portal/consulta.aspx?chNFe=$cleanKey"
         }
     }
 
     private fun getSefazNfceUrl(ufCode: String, cleanKey: String): String {
         return when (ufCode) {
-            "52" -> "https://nfe.sefaz.go.gov.br/nfeweb/sites/nfce/consulta-publica?chaveAccesso=$cleanKey"
+            "52" -> "https://nfe.sefaz.go.gov.br/nfeweb/sites/nfce/consulta-publica?chNFe=$cleanKey"
             "35" -> "https://www.nfce.fazenda.sp.gov.br/NFCeConsultaPublica/Paginas/ConsultaQRCode.aspx?p=$cleanKey"
             "31" -> "https://nfce.fazenda.mg.gov.br/portalnfce/sistema/consultaarrecadacao.xhtml?p=$cleanKey"
-            "43" -> "https://www.sefaz.rs.gov.br/NFCE/NFCE-COM.aspx?chNFe=$cleanKey"
-            "33" -> "http://www.fazenda.rj.gov.br/nfce/consulta?p=$cleanKey"
-            else -> "https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumida&chaveAcc=$cleanKey"
+            "43" -> "https://www.sefaz.rs.gov.br/dfe/Consultas/ConsultaPublicaDfe?chNFe=$cleanKey"
+            "33" -> "https://www.fazenda.rj.gov.br/nfce/consulta?p=$cleanKey"
+            else -> "https://www.nfe.fazenda.gov.br/portal/consulta.aspx?chNFe=$cleanKey"
         }
     }
 

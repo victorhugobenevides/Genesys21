@@ -14,4 +14,8 @@ actual fun openUrlInCurrentTab(url: String) {
     // Not implemented for JVM
 }
 
+actual fun openUrlInNewTab(url: String) {
+    // Not implemented for JVM
+}
+
 actual fun getUrlSearchParameters(): String = ""

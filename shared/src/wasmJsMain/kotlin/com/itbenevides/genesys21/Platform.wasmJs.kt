@@ -12,6 +12,9 @@ external fun jsPrint()
 @JsFun("(url) => { window.location.href = url; }")
 external fun jsOpenUrl(url: String)
 
+@JsFun("(url) => { window.open(url, '_blank'); }")
+external fun jsOpenUrlNewTab(url: String)
+
 @JsFun("() => window.location.search")
 external fun jsGetSearch(): JsString
 
@@ -21,6 +24,10 @@ actual fun triggerPrint() {
 
 actual fun openUrlInCurrentTab(url: String) {
     jsOpenUrl(url)
+}
+
+actual fun openUrlInNewTab(url: String) {
+    jsOpenUrlNewTab(url)
 }
 
 actual fun getUrlSearchParameters(): String {

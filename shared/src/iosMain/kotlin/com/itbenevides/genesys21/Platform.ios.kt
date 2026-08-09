@@ -16,4 +16,8 @@ actual fun openUrlInCurrentTab(url: String) {
     // Not implemented for iOS
 }
 
+actual fun openUrlInNewTab(url: String) {
+    // Not implemented for iOS
+}
+
 actual fun getUrlSearchParameters(): String = ""

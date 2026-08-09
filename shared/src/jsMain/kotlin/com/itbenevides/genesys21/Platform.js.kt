@@ -16,4 +16,8 @@ actual fun openUrlInCurrentTab(url: String) {
     window.location.href = url
 }
 
+actual fun openUrlInNewTab(url: String) {
+    window.open(url, "_blank")
+}
+
 actual fun getUrlSearchParameters(): String = window.location.search

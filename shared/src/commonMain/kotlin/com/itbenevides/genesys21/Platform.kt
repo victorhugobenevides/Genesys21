@@ -10,4 +10,6 @@ expect fun triggerPrint()
 
 expect fun openUrlInCurrentTab(url: String)
 
+expect fun openUrlInNewTab(url: String)
+
 expect fun getUrlSearchParameters(): String

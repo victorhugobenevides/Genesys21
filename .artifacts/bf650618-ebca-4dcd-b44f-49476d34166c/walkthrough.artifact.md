@@ -1,26 +1,26 @@
-# Walkthrough - Correção de Conflito de Classes e Estabilização do Boot
+# Walkthrough - Estabilização de Login e Infraestrutura Web
 
-Resolvi o erro crítico de inicialização do servidor (`NoSuchMethodError`) causado por uma colisão de nomes de classes entre os módulos do projeto e estabilizei o processo de boot.
+Resolvi os problemas técnicos que impediam o funcionamento correto do login e do One Tap na versão Web, além de otimizar a segurança do servidor.
 
 ## Mudanças Realizadas
 
-### 1. Resolução de Colisão no Classpath
-- **Problema**: Existiam duas classes `GoogleCalendarService` com o mesmo pacote (`com.itbenevides.genesys21.data.service`) nos módulos `:server` e `:shared`. O Java carregava a versão do `:shared` (que exigia parâmetros no construtor) quando o servidor tentava usar a versão do `:server` (que não tinha parâmetros), resultando em um crash imediato no boot.
-- **Solução**: Removi a versão duplicada e incompleta do módulo `:shared`. A implementação real e completa agora vive exclusivamente no módulo `:server`, onde as bibliotecas nativas do Google estão disponíveis.
+### 1. Sincronização Crítica de Scripts
+- **Problema**: O arquivo `firebase-bridge.js` estava carregando de forma assíncrona, causando uma corrida onde o app tentava logar antes do Firebase estar pronto.
+- **Solução**: Removi o `type="module"` e ajustei o `index.html` para garantir que toda a ponte de autenticação carregue **antes** do motor do aplicativo. Isso estabiliza o login "de primeira".
 
-### 2. Melhoria no Serviço de Google Calendar
-- **Não-Bloqueante**: Envolvi as chamadas da API do Google (que são síncronas em Java) em um bloco `withContext(Dispatchers.IO)`. Isso garante que a criação de links do Meet não trave as threads principais do servidor Ktor.
-- **Robustez**: Adicionei inicialização preguiçosa (`lazy`) para os componentes de transporte e JSON do Google, evitando falhas precoces durante a criação do objeto.
+### 2. Otimização de Segurança (Nginx)
+- **CORS Dinâmico**: Implementei uma lógica no Nginx que aceita requisições apenas dos seus domínios oficiais, evitando o erro de cabeçalhos duplicados que o navegador bloqueava.
+- **COOP & COEP**: Adicionei os cabeçalhos `Cross-Origin-Opener-Policy` e `Cross-Origin-Embedder-Policy`. Isso é obrigatório para que o popup do Google consiga se comunicar com o seu site em domínios diferentes.
 
-### 3. Ajuste no Pipeline de Deploy (CircleCI)
-- **Limpeza Total**: Adicionei um passo de `clean` antes da compilação para garantir que nenhum artefato antigo ou corrompido seja incluído na imagem Docker.
-- **Logs de Erro**: O Smoke Test agora monitora e imprime os logs do container em caso de falha de boot, facilitando diagnósticos futuros.
+### 3. Melhoria no Feedback de Erros
+- **Logs Reais**: Corrigi um erro de sintaxe no Kotlin que escondia as mensagens de erro do Firebase no console. Agora, qualquer falha de login aparecerá com o texto real (ex: "Senha Inválida" ou "Usuário não encontrado").
+- **Snackbars**: Garanti que erros de login social também sejam repassados para as mensagens flutuantes na tela.
 
 ## Resultados
-- O crash `java.lang.NoSuchMethodError` foi eliminado.
-- O servidor agora deve completar o boot com sucesso no CircleCI.
-- A integração com Google Meet está mais segura e performática.
+- **One Tap**: O prompt de login automático agora tem caminho livre para aparecer.
+- **Botão Google**: O login via botão deve ser instantâneo e sem erros de segurança no navegador.
+- **Ambiente Staging**: O servidor de homologação está protegido e não derruba mais a produção se estiver desligado.
 
 ---
 > [!TIP]
-> Com a remoção do arquivo duplicado no `:shared`, a estrutura do projeto ficou mais limpa e livre de comportamentos imprevisíveis de "shadowing" de classes.
+> O deploy está em andamento (commit `3d947a5`). Aguarde a conclusão no CircleCI para testar em aba anônima.

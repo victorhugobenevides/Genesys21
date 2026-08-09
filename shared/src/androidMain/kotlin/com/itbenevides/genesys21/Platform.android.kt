@@ -16,4 +16,8 @@ actual fun openUrlInCurrentTab(url: String) {
     // No Android sempre abre em navegador externo ou WebView
 }
 
+actual fun openUrlInNewTab(url: String) {
+    // Mesma lógica no Mobile
+}
+
 actual fun getUrlSearchParameters(): String = ""

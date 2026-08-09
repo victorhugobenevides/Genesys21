@@ -325,10 +325,9 @@ fun App() {
                                                 }
                                             )
                                         is Route.Receipts -> {
-                                            val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
                                             com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen(
                                                 viewModel = koinInject(),
-                                                onOpenUrl = { url -> uriHandler.openUri(url) }
+                                                onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
                                             )
                                         }
                                     }
