@@ -76,8 +76,8 @@ class ReceiptParserService(
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
 
-        // Usamos a versão v1 (estável) em vez da v1beta para evitar erros de modelo não encontrado
-        val endpoint = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=$apiKey"
+        // Usamos a versão v1beta (experimental/preview) pois o modelo flash pode ainda não estar totalmente disponível em v1 para todas as regiões/contas
+        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
 
         val prompt = """
             INSTRUÇÃO DE SEGURANÇA CRÍTICA:
