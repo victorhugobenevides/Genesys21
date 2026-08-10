@@ -607,9 +607,10 @@ fun ReceiptChatBubble(message: ReceiptChatMessage) {
                             Text("Documento PDF", color = if (isAi) Color.Unspecified else Color.White, style = MaterialTheme.typography.labelMedium)
                         }
                     } else {
-                        val bitmap = remember(fileBase64) {
+                        val dataForPreview = fileBase64
+                        val bitmap = remember(dataForPreview) {
                             try {
-                                val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(fileBase64)
+                                val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForPreview)
                                 bytes.decodeToImageBitmap()
                             } catch (e: Exception) { null }
                         }
@@ -693,9 +694,10 @@ fun ReceiptDetailDialog(
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            val bitmap = remember(fileBase64) {
+                            val dataForDetail = fileBase64
+                            val bitmap = remember(dataForDetail) {
                                 try {
-                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(fileBase64)
+                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForDetail)
                                     bytes.decodeToImageBitmap()
                                 } catch (e: Exception) {
                                     null
