@@ -77,12 +77,13 @@ fun Application.module() {
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()
 
-    // Log de segurança para confirmar se o Gemini está configurado (sem mostrar a chave)
+    // Log de segurança para confirmar se o Gemini está configurado (sem mostrar a chave inteira)
     val geminiKey = System.getenv("GEMINI_API_KEY")
     if (geminiKey.isNullOrBlank()) {
-        logger.warn("SERVIDOR: GEMINI_API_KEY não configurada. O processamento inteligente de notas usará o extrator local.")
+        logger.warn("SERVIDOR: GEMINI_API_KEY não encontrada! Verifique os Secrets do CircleCI.")
     } else {
-        logger.info("SERVIDOR: Gemini AI configurado com sucesso.")
+        val mask = if (geminiKey.length > 8) geminiKey.take(4) + "..." + geminiKey.takeLast(4) else "***"
+        logger.info("SERVIDOR: Gemini AI configurado. Key detectada: $mask")
     }
 
     val client = HttpClient(io.ktor.client.engine.java.Java)

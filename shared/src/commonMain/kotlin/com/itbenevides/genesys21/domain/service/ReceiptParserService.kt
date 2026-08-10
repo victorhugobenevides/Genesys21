@@ -63,6 +63,7 @@ class ReceiptParserService(
                     parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
                 }
             } catch (e: Exception) {
+                if (e.message?.contains("429") == true) throw e
                 parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
             }
         }
@@ -83,8 +84,8 @@ class ReceiptParserService(
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
 
-        // Usamos o modelo gemini-2.0-flash que é estável e moderno em 2026, com cotas generosas.
-        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+        // Voltamos para o gemini-1.5-flash que é o mais estável para o plano gratuito com 1.500 req/dia.
+        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
 
         val prompt = """
             INSTRUÇÃO DE SEGURANÇA CRÍTICA:
