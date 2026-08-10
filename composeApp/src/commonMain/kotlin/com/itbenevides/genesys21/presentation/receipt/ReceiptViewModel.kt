@@ -134,9 +134,15 @@ class ReceiptViewModel(
                     pendingParsedReceipt = if (receipt.valorTotal > 0) receipt else null
                 )
             } catch (e: Exception) {
+                val errorText = if (e.message?.contains("429") == true) {
+                    "Limite diário de uso gratuito da IA atingido! 🛑 \n\nO Google permite apenas algumas análises gratuitas por dia. Tente novamente mais tarde ou amanhã."
+                } else {
+                    "Ops, tive um problema ao processar essa nota: ${e.message}"
+                }
+
                 val errorMsg = ReceiptChatMessage(
                     id = "err-" + Clock.System.now().toEpochMilliseconds(),
-                    text = "Ops, tive um problema ao processar essa nota: ${e.message}",
+                    text = errorText,
                     sender = MessageSender.AI,
                     timestamp = Clock.System.now().toEpochMilliseconds()
                 )

@@ -52,7 +52,12 @@ fun Route.receiptRoutes(parserService: ReceiptParserService) {
                 )
                 call.respond(receipt)
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao processar nota")
+                val message = e.message ?: ""
+                if (message.contains("429")) {
+                    call.respond(HttpStatusCode.TooManyRequests, "Limite de uso da IA excedido por hoje. Tente novamente amanhã.")
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError, message.ifBlank { "Erro ao processar nota" })
+                }
             }
         }
     }
