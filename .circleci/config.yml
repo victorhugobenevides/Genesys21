@@ -52,6 +52,7 @@ jobs:
           version: 20.10.24
       - run:
           name: Build Distribution
+          no_output_timeout: 20m
           command: |
             ./gradlew clean :server:installDist :composeApp:wasmJsBrowserDistribution -Pandroid.useAndroidX=true --no-daemon
             rm -rf deploy/server deploy/web

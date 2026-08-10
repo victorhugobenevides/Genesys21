@@ -8,6 +8,6 @@ actual fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit {
 }
 
 @Composable
-actual fun rememberFilePicker(onResult: (SelectedFile?) -> Unit): (String, Boolean) -> Unit {
+actual fun rememberFilePicker(onResult: (SelectedFile?) -> Unit): (accept: String, useCamera: Boolean) -> Unit {
     return { _, _ -> /* Not supported on JS yet */ }
 }
