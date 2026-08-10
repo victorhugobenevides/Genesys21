@@ -42,6 +42,18 @@ class ReceiptViewModel(
         }
     }
 
+    fun onSearchQueryChanged(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    fun onCategorySelected(category: String) {
+        _uiState.value = _uiState.value.copy(selectedCategory = category)
+    }
+
+    fun selectReceipt(receipt: Receipt?) {
+        _uiState.value = _uiState.value.copy(selectedReceipt = receipt)
+    }
+
     fun openScanDialog(show: Boolean) {
         if (show) {
             val welcomeMsg = ReceiptChatMessage(
@@ -60,6 +72,14 @@ class ReceiptViewModel(
         } else {
             _uiState.value = _uiState.value.copy(showScanDialog = false)
         }
+    }
+
+    fun onGeminiApiKeyChanged(key: String) {
+        _uiState.value = _uiState.value.copy(geminiApiKey = key)
+    }
+
+    fun openBackupDialog(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showBackupDialog = show, backupMessage = null)
     }
 
     fun onImageSelected(bytes: ByteArray?, mimeType: String? = null) {
