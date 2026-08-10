@@ -595,18 +595,21 @@ fun ReceiptChatBubble(message: ReceiptChatMessage) {
             ),
             tonalElevation = 1.dp
         ) {
+            val fileBase64 = message.fileBase64
+            val mimeType = message.mimeType
+
             Column(modifier = Modifier.padding(12.dp)) {
-                if (message.fileBase64 != null) {
-                    if (message.mimeType == "application/pdf") {
+                if (fileBase64 != null) {
+                    if (mimeType == "application/pdf") {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Description, null, tint = if (isAi) Color.Gray else Color.White)
                             Spacer(Modifier.width(8.dp))
                             Text("Documento PDF", color = if (isAi) Color.Unspecified else Color.White, style = MaterialTheme.typography.labelMedium)
                         }
                     } else {
-                        val bitmap = remember(message.fileBase64) {
+                        val bitmap = remember(fileBase64) {
                             try {
-                                val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(message.fileBase64)
+                                val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(fileBase64)
                                 bytes.decodeToImageBitmap()
                             } catch (e: Exception) { null }
                         }
@@ -661,10 +664,13 @@ fun ReceiptDetailDialog(
             }
         },
         text = {
+            val fileBase64 = receipt.fileBase64
+            val fileMimeType = receipt.fileMimeType
+
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Preview do arquivo original se disponível
-                if (receipt.fileBase64 != null) {
-                    if (receipt.fileMimeType == "application/pdf") {
+                if (fileBase64 != null) {
+                    if (fileMimeType == "application/pdf") {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -687,9 +693,9 @@ fun ReceiptDetailDialog(
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            val bitmap = remember(receipt.fileBase64) {
+                            val bitmap = remember(fileBase64) {
                                 try {
-                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(receipt.fileBase64)
+                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(fileBase64)
                                     bytes.decodeToImageBitmap()
                                 } catch (e: Exception) {
                                     null
