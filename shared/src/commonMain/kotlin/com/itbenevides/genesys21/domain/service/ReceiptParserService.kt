@@ -39,8 +39,11 @@ class ReceiptParserService(
         apiKey: String? = null,
         mimeType: String? = "image/jpeg"
     ): Receipt {
-        // Se houver um serverUrl, significa que estamos no Cliente (Wasm/Android)
-        if (!serverUrl.isNullOrBlank() && httpClient != null) {
+        println("SERVICE: Iniciando parse dinâmico. ServerURL: $serverUrl, hasAPIKey: ${!apiKey.isNullOrBlank()}")
+
+        // Prioridade 1: Se houver um serverUrl (Cliente), movemos o processamento para o backend.
+        if (!serverUrl.isNullOrBlank() && httpClient != null && apiKey.isNullOrBlank()) {
+            println("SERVICE: Encaminhando para o backend...")
             return try {
                 val response = httpClient.post("$serverUrl/api/public/receipts/parse") {
                     contentType(ContentType.Application.Json)
@@ -57,23 +60,22 @@ class ReceiptParserService(
                     )
                 } else {
                     val errorBody = response.bodyAsText()
-                    // Propagamos qualquer erro da API do Gemini para evitar o fallback de valor zerado (R$ 0,00)
-                    throw Exception("ERRO GEMINI (${response.status}): $errorBody")
+                    println("SERVICE ERROR: Backend retornou ${response.status}: $errorBody")
+                    throw Exception("ERRO SERVIDOR (${response.status}): $errorBody")
                 }
             } catch (e: Exception) {
-                // Se for um erro da IA, não fazemos fallback local (pois o extrator local não lê imagens)
+                println("SERVICE ERROR: Falha na chamada ao backend: ${e.message}")
                 throw e
             }
         }
 
-        // Se chegamos aqui, estamos no Backend ou no modo legado
+        // Prioridade 2: Se houver apiKey (Backend ou modo direto), chama o Gemini.
         if (!apiKey.isNullOrBlank() && !imageBase64.isNullOrBlank()) {
-            runCatching {
-                // No backend, se não tiver httpClient, criamos um temporário ou usamos o injetado
-                parseWithGeminiApi(imageBase64, apiKey, mimeType ?: "image/jpeg")
-            }.getOrNull()?.let { return it }
+            println("SERVICE: Chamando Gemini API diretamente...")
+            return parseWithGeminiApi(imageBase64, apiKey, mimeType ?: "image/jpeg")
         }
 
+        println("SERVICE: Usando extrator local (fallback)...")
         return parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
     }
 
@@ -82,8 +84,8 @@ class ReceiptParserService(
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
 
-        // Usamos o modelo gemini-2.0-flash que está disponível na sua conta conforme verificado nos logs.
-        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+        // Usamos o modelo gemini-2.5-flash que é a versão estável e recomendada em 2026.
+        val endpoint = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=$apiKey"
 
         val prompt = """
             INSTRUÇÃO DE SEGURANÇA CRÍTICA:

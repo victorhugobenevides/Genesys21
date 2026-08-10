@@ -53,7 +53,7 @@ fun main() {
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
-    logger.info("SERVIDOR: Iniciando inicialização do sistema...")
+    logger.info("SERVIDOR: Genesys21 v1.0.1 (Stable Gemini 2.0) iniciando...")
 
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
