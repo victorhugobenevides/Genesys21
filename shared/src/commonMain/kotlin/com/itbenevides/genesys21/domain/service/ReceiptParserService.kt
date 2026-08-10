@@ -56,6 +56,10 @@ class ReceiptParserService(
                         fileMimeType = mimeType
                     )
                 } else {
+                    val errorBody = response.bodyAsText()
+                    if (response.status == HttpStatusCode.TooManyRequests || errorBody.contains("429")) {
+                        throw Exception("429: Limite de uso da IA atingido.")
+                    }
                     parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
                 }
             } catch (e: Exception) {
@@ -79,8 +83,8 @@ class ReceiptParserService(
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
 
-        // Fixamos o modelo gemini-1.5-flash que possui cotas gratuitas mais generosas (até 1500/dia)
-        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
+        // Usamos o modelo gemini-2.0-flash que é estável e moderno em 2026, com cotas generosas.
+        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
 
         val prompt = """
             INSTRUÇÃO DE SEGURANÇA CRÍTICA:
