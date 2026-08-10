@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.itbenevides.genesys21.domain.model.Receipt
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.util.NfeUrlBuilder
 import com.itbenevides.genesys21.util.rememberFilePicker
 import com.itbenevides.genesys21.util.SelectedFile
@@ -30,6 +32,7 @@ import com.itbenevides.genesys21.util.toBase64
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.window.DialogProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -434,136 +437,211 @@ fun ScanReceiptDialog(
     onDismiss: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
-    var rawInputText by remember { mutableStateOf("") }
+    var inputText by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
 
     val filePicker = rememberFilePicker { result ->
-        viewModel.onImageSelected(result?.bytes, result?.mimeType)
+        if (result != null) {
+            val base64 = result.bytes.toBase64()
+            viewModel.sendChatMessage("Anexei um arquivo para análise.", base64, result.mimeType)
+        }
+    }
+
+    LaunchedEffect(state.chatMessages.size) {
+        if (state.chatMessages.isNotEmpty()) {
+            listState.animateScrollToItem(state.chatMessages.size - 1)
+        }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("🧾 Escanear Nota (Foto ou PDF)") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Selecione uma foto da galeria, use a câmera ou envie um arquivo PDF:",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 1. Área de Preview / Seleção
-                if (state.selectedImageBytes != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (state.selectedMimeType == "application/pdf") {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.Description, "PDF", modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-                                Text("Documento PDF Selecionado", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        } else {
-                            state.selectedImageBytes?.let { bytes ->
-                                val bitmap = remember(bytes) { bytes.decodeToImageBitmap() }
-                                androidx.compose.foundation.Image(
-                                    bitmap = bitmap,
-                                    contentDescription = "Preview da Nota",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                                )
-                            }
-                        }
-                        IconButton(
-                            onClick = { viewModel.onImageSelected(null) },
-                            modifier = Modifier.align(Alignment.TopEnd).background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(Icons.Default.Close, null, tint = Color.White)
-                        }
-                    }
-                } else {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { filePicker("image/*,application/pdf", false) },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.AttachFile, null)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Arquivo/Galeria", fontSize = 12.sp)
-                        }
-
-                        Button(
-                            onClick = { filePicker("image/*", true) },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.PhotoCamera, null)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Usar Câmera", fontSize = 12.sp)
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 2. Chave Gemini (Opcional)
-                OutlinedTextField(
-                    value = state.geminiApiKey,
-                    onValueChange = { viewModel.onGeminiApiKeyChanged(it) },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Chave Gemini Personalizada (Opcional)") },
-                    placeholder = { Text("O servidor já possui uma chave configurada") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 3. Fallback: Texto Manual
-                Text("Ou cole a URL do QR Code ou texto:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = rawInputText,
-                    onValueChange = { rawInputText = it },
-                    modifier = Modifier.fillMaxWidth().height(80.dp),
-                    placeholder = { Text("Cole aqui o texto da nota ou link do QR Code...") },
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-        },
-        confirmButton = {
-            val hasFile = state.selectedImageBytes != null
-            val hasText = rawInputText.isNotBlank()
-
-            Button(
-                onClick = {
-                    val base64 = state.selectedImageBytes?.toBase64()
-                    viewModel.processReceiptText(rawInputText, base64, state.geminiApiKey)
-                },
-                enabled = (hasFile || hasText) && !state.isScanning,
-                shape = RoundedCornerShape(10.dp)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        content = {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp
             ) {
-                if (state.isScanning) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
-                } else {
-                    val actionText = if (hasFile) "Analisar ${if (state.selectedMimeType == "application/pdf") "PDF" else "Foto"}" else "Analisar Texto"
-                    Text(actionText)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Header do Chat
+                    TopAppBar(
+                        title = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AutoAwesome, "IA", tint = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text("Assistente Genesys", style = MaterialTheme.typography.titleMedium)
+                                    Text("Escaner Inteligente", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = onDismiss) {
+                                Icon(Icons.Default.Close, "Fechar")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                    )
+
+                    // Área de Mensagens
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(state.chatMessages) { message ->
+                            ReceiptChatBubble(message)
+                        }
+
+                        if (state.isScanning) {
+                            item {
+                                AIThinkingIndicator()
+                            }
+                        }
+                    }
+
+                    // Botão de Salvar (Aparece quando a IA extrai algo)
+                    AnimatedVisibility(
+                        visible = state.pendingParsedReceipt != null,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Button(
+                            onClick = { viewModel.savePendingReceipt() },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        ) {
+                            Icon(Icons.Default.CheckCircle, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Confirmar e Salvar no Histórico", fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Barra de Entrada
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        tonalElevation = 2.dp,
+                        shadowElevation = 8.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { filePicker("image/*,application/pdf", false) }) {
+                                Icon(Icons.Default.AttachFile, "Anexar", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton(onClick = { filePicker("image/*", true) }) {
+                                Icon(Icons.Default.PhotoCamera, "Câmera", tint = MaterialTheme.colorScheme.primary)
+                            }
+
+                            OutlinedTextField(
+                                value = inputText,
+                                onValueChange = { inputText = it },
+                                modifier = Modifier.weight(1f),
+                                placeholder = { Text("Mande um link ou tire uma dúvida...") },
+                                shape = RoundedCornerShape(24.dp),
+                                maxLines = 3,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                )
+                            )
+
+                            Spacer(Modifier.width(8.dp))
+
+                            IconButton(
+                                onClick = {
+                                    if (inputText.isNotBlank()) {
+                                        viewModel.sendChatMessage(inputText)
+                                        inputText = ""
+                                    }
+                                },
+                                enabled = inputText.isNotBlank() && !state.isScanning,
+                                modifier = Modifier.background(
+                                    if (inputText.isNotBlank()) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                    CircleShape
+                                )
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.Send, "Enviar", tint = Color.White)
+                            }
+                        }
+                    }
                 }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
             }
         }
     )
+}
+
+@OptIn(org.jetbrains.compose.resources.ExperimentalResourceApi::class)
+@Composable
+fun ReceiptChatBubble(message: ReceiptChatMessage) {
+    val isAi = message.sender == MessageSender.AI
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (isAi) Alignment.Start else Alignment.End
+    ) {
+        Surface(
+            color = if (isAi) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 16.dp,
+                bottomStart = if (isAi) 4.dp else 16.dp,
+                bottomEnd = if (isAi) 16.dp else 4.dp
+            ),
+            tonalElevation = 1.dp
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                if (message.fileBase64 != null) {
+                    if (message.mimeType == "application/pdf") {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Description, null, tint = if (isAi) Color.Gray else Color.White)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Documento PDF", color = if (isAi) Color.Unspecified else Color.White, style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        val bitmap = remember(message.fileBase64) {
+                            try {
+                                val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(message.fileBase64)
+                                bytes.decodeToImageBitmap()
+                            } catch (e: Exception) { null }
+                        }
+                        bitmap?.let {
+                            androidx.compose.foundation.Image(
+                                bitmap = it,
+                                contentDescription = null,
+                                modifier = Modifier.widthIn(max = 200.dp).heightIn(max = 200.dp).clip(RoundedCornerShape(8.dp)),
+                                contentScale = androidx.compose.ui.layout.ContentScale.FillWidth
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                Text(
+                    text = message.text,
+                    color = if (isAi) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AIThinkingIndicator() {
+    Row(
+        modifier = Modifier.padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+        Spacer(Modifier.width(12.dp))
+        Text("Analisando nota...", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+    }
 }
 
 @OptIn(org.jetbrains.compose.resources.ExperimentalResourceApi::class)
