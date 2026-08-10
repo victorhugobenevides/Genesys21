@@ -6,6 +6,7 @@ import com.itbenevides.genesys21.domain.repository.UserRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -67,6 +68,18 @@ fun Route.adminRoutes(userRepository: UserRepository) {
                     }
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.BadRequest, "Status inválido")
+                }
+            }
+
+            put("/users/{userId}/permissions") {
+                val userId = call.parameters["userId"] ?: return@put call.respond(HttpStatusCode.BadRequest)
+                val permissions = call.receive<Set<com.itbenevides.genesys21.domain.model.UserPermission>>()
+                val token = ""
+
+                userRepository.updateUserPermissions(token, userId, permissions).onSuccess {
+                    call.respond(HttpStatusCode.OK)
+                }.onFailure {
+                    call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao atualizar permissões")
                 }
             }
         }

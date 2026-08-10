@@ -1,25 +1,22 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Receipt
+import com.itbenevides.genesys21.domain.repository.ReceiptRepository
 import com.itbenevides.genesys21.domain.util.BackupManager
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class ReceiptLocalRepository {
+class ReceiptLocalRepository : ReceiptRepository {
 
     private val _receipts = MutableStateFlow<List<Receipt>>(emptyList())
-    val receipts: StateFlow<List<Receipt>> = _receipts.asStateFlow()
+    override val receipts: Flow<List<Receipt>> = _receipts.asStateFlow()
 
-    fun getAllReceipts(): List<Receipt> {
-        return _receipts.value
+    override suspend fun getAllReceipts(): Result<List<Receipt>> {
+        return Result.success(_receipts.value)
     }
 
-    fun getReceiptById(id: String): Receipt? {
-        return _receipts.value.find { it.id == id }
-    }
-
-    fun saveReceipt(receipt: Receipt) {
+    override suspend fun saveReceipt(receipt: Receipt): Result<Unit> {
         val currentList = _receipts.value.toMutableList()
         val index = currentList.indexOfFirst { it.id == receipt.id }
         if (index >= 0) {
@@ -28,17 +25,19 @@ class ReceiptLocalRepository {
             currentList.add(0, receipt) // Adiciona no topo
         }
         _receipts.value = currentList
+        return Result.success(Unit)
     }
 
-    fun deleteReceipt(id: String) {
+    override suspend fun deleteReceipt(id: String): Result<Unit> {
         _receipts.value = _receipts.value.filterNot { it.id == id }
+        return Result.success(Unit)
     }
 
-    fun exportToJson(): String {
+    override fun exportToJson(): String {
         return BackupManager.exportToJson(_receipts.value)
     }
 
-    fun importFromJson(jsonString: String): Result<Unit> {
+    override fun importFromJson(jsonString: String): Result<Unit> {
         return BackupManager.importFromJson(jsonString).map { importedList ->
             val currentList = _receipts.value.toMutableList()
             importedList.forEach { newReceipt ->

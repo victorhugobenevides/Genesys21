@@ -38,6 +38,7 @@ import androidx.compose.ui.window.DialogProperties
 @Composable
 fun ReceiptListScreen(
     viewModel: ReceiptViewModel,
+    isEmbedded: Boolean = false,
     onOpenUrl: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -59,142 +60,67 @@ fun ReceiptListScreen(
         filteredReceipts.sumOf { it.valorTotal }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "🧾 Notas Fiscais",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Text(
-                            text = "Organizador do Pai • Consulta SEFAZ",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.openBackupDialog(true) }) {
-                        Icon(
-                            imageVector = Icons.Default.Backup,
-                            contentDescription = "Backup JSON",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { viewModel.openScanDialog(true) },
-                icon = { Icon(Icons.Default.AddAPhoto, contentDescription = null) },
-                text = { Text("Escanear Nota", fontWeight = FontWeight.Bold) },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            // Card de Resumo Financeiro
-            SummaryHeaderCard(
-                totalSpent = totalSpent,
-                receiptCount = filteredReceipts.size
-            )
-
-            // Campo de Busca
-            OutlinedTextField(
-                value = state.searchQuery,
-                onValueChange = { viewModel.onSearchQueryChanged(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Buscar por loja, CNPJ ou chave...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = if (state.searchQuery.isNotEmpty()) {
-                    {
-                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                            Icon(Icons.Default.Close, contentDescription = "Limpar")
+    if (isEmbedded) {
+        ReceiptListContent(
+            state = state,
+            totalSpent = totalSpent,
+            filteredReceipts = filteredReceipts,
+            categories = categories,
+            viewModel = viewModel,
+            onOpenUrl = onOpenUrl
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "🧾 Notas Fiscais",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Organizador do Pai • Consulta SEFAZ",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    }
-                } else null,
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            // Chips de Categoria
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(categories) { category ->
-                    FilterChip(
-                        selected = state.selectedCategory == category,
-                        onClick = { viewModel.onCategorySelected(category) },
-                        label = { Text(category) },
-                        shape = RoundedCornerShape(20.dp)
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.openBackupDialog(true) }) {
+                            Icon(
+                                imageVector = Icons.Default.Backup,
+                                contentDescription = "Backup JSON",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                }
+                )
+            },
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = { viewModel.openScanDialog(true) },
+                    icon = { Icon(Icons.Default.AddAPhoto, contentDescription = null) },
+                    text = { Text("Escanear Nota", fontWeight = FontWeight.Bold) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp)
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Lista de Notas Fiscais
-            if (filteredReceipts.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.ReceiptLong,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Nenhuma nota fiscal encontrada",
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.outline,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { viewModel.openScanDialog(true) },
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Escanear Primeira Nota")
-                        }
-                    }
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(filteredReceipts, key = { it.id }) { receipt ->
-                        ReceiptCardItem(
-                            receipt = receipt,
-                            onClick = { viewModel.selectReceipt(receipt) },
-                            onOpenUrl = onOpenUrl,
-                            onDelete = { viewModel.deleteReceipt(receipt.id) }
-                        )
-                    }
-                }
+        ) { padding ->
+            Box(Modifier.padding(padding)) {
+                ReceiptListContent(
+                    state = state,
+                    totalSpent = totalSpent,
+                    filteredReceipts = filteredReceipts,
+                    categories = categories,
+                    viewModel = viewModel,
+                    onOpenUrl = onOpenUrl
+                )
             }
         }
     }
@@ -222,6 +148,113 @@ fun ReceiptListScreen(
             viewModel = viewModel,
             onDismiss = { viewModel.openBackupDialog(false) }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReceiptListContent(
+    state: ReceiptUiState,
+    totalSpent: Double,
+    filteredReceipts: List<Receipt>,
+    categories: List<String>,
+    viewModel: ReceiptViewModel,
+    onOpenUrl: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Card de Resumo Financeiro
+        SummaryHeaderCard(
+            totalSpent = totalSpent,
+            receiptCount = filteredReceipts.size
+        )
+
+        // Campo de Busca
+        OutlinedTextField(
+            value = state.searchQuery,
+            onValueChange = { viewModel.onSearchQueryChanged(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text("Buscar por loja, CNPJ ou chave...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = if (state.searchQuery.isNotEmpty()) {
+                {
+                    IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpar")
+                    }
+                }
+            } else null,
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        // Chips de Categoria
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(categories) { category ->
+                FilterChip(
+                    selected = state.selectedCategory == category,
+                    onClick = { viewModel.onCategorySelected(category) },
+                    label = { Text(category) },
+                    shape = RoundedCornerShape(20.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Lista de Notas Fiscais
+        if (filteredReceipts.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.ReceiptLong,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Nenhuma nota fiscal encontrada",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.outline,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { viewModel.openScanDialog(true) },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Escanear Primeira Nota")
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(filteredReceipts, key = { it.id }) { receipt ->
+                    ReceiptCardItem(
+                        receipt = receipt,
+                        onClick = { viewModel.selectReceipt(receipt) },
+                        onOpenUrl = onOpenUrl,
+                        onDelete = { viewModel.deleteReceipt(receipt.id) }
+                    )
+                }
+            }
+        }
     }
 }
 

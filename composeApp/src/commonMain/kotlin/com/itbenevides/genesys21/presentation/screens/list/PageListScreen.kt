@@ -22,13 +22,13 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.domain.model.BookingService
-import com.itbenevides.genesys21.domain.model.OrderStatus
-import com.itbenevides.genesys21.domain.model.Page
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen
+import com.itbenevides.genesys21.presentation.receipt.ReceiptViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
@@ -58,6 +58,13 @@ import kotlin.math.roundToLong
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
+
+private data class PermittedTab(
+    val id: Int,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val badgeCount: Int = 0
+)
 
 @Composable
 fun PageListScreen(
@@ -229,6 +236,42 @@ private fun PageListContent(
     val userProfile by viewModel.userProfile.collectAsState()
     val isSuperAdmin = userProfile?.role == UserRole.SUPERADMIN
 
+    // Lista de abas permitidas
+    val permittedTabs = remember(userProfile) {
+        val list = mutableListOf<PermittedTab>()
+        val perms = userProfile?.permissions ?: emptySet()
+
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_VITRINES)) {
+            list.add(PermittedTab(0, GenesysStrings.VitrineTab, GenesysIcons.Web))
+        }
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_ORDERS)) {
+            list.add(PermittedTab(1, GenesysStrings.OrdersTab, GenesysIcons.List, state.pendingOrdersCount))
+        }
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_AGENDA)) {
+            list.add(PermittedTab(2, "Agenda", GenesysIcons.Schedule))
+        }
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_SERVICES)) {
+            list.add(PermittedTab(3, "Serviços", GenesysIcons.Inventory))
+        }
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_RECEIPTS)) {
+            list.add(PermittedTab(4, "Notas", GenesysIcons.ReceiptLong))
+        }
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_STORE)) {
+            list.add(PermittedTab(5, "Loja", GenesysIcons.Settings))
+        }
+        if (isSuperAdmin) {
+            list.add(PermittedTab(6, "SuperAdmin", GenesysIcons.AdminPanelSettings))
+        }
+        list
+    }
+
+    // Ajusta aba selecionada se a atual não for permitida
+    LaunchedEffect(permittedTabs) {
+        if (permittedTabs.none { it.id == state.selectedTab }) {
+            permittedTabs.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
+        }
+    }
+
     GenesysPage(
         topBar = {
             GenesysColumn(usePadding = false, modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
@@ -245,22 +288,10 @@ private fun PageListContent(
                     },
                 )
 
-                val tabs = mutableListOf(
-                    GenesysTabData(GenesysStrings.VitrineTab, GenesysIcons.Web),
-                    GenesysTabData(GenesysStrings.OrdersTab, GenesysIcons.List, badgeCount = state.pendingOrdersCount),
-                    GenesysTabData("Agenda", GenesysIcons.Schedule),
-                    GenesysTabData("Serviços", GenesysIcons.Inventory),
-                    GenesysTabData("Loja", GenesysIcons.Settings),
-                )
-
-                if (isSuperAdmin) {
-                    tabs.add(GenesysTabData("SuperAdmin", GenesysIcons.AdminPanelSettings))
-                }
-
                 GenesysTabRow(
-                    selectedTabIndex = state.selectedTab,
-                    tabs = tabs,
-                    onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(index)) },
+                    selectedTabIndex = permittedTabs.indexOfFirst { it.id == state.selectedTab }.coerceAtLeast(0),
+                    tabs = permittedTabs.map { GenesysTabData(it.label, it.icon, badgeCount = it.badgeCount) },
+                    onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(permittedTabs[index].id)) },
                 )
             }
         },
@@ -278,8 +309,16 @@ private fun PageListContent(
                             1 -> OrdersHeaderUI(state, onEvent)
                             2 -> MerchantAgendaTabUI(state, viewModel, onEvent)
                             3 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
-                            4 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler)
-                            5 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
+                            4 -> {
+                                val receiptViewModel: ReceiptViewModel = koinInject()
+                                com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen(
+                                    viewModel = receiptViewModel,
+                                    isEmbedded = true,
+                                    onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
+                                )
+                            }
+                            5 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler)
+                            6 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
                         }
                     }
                 }

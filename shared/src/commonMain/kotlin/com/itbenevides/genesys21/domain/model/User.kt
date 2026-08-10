@@ -25,6 +25,7 @@ data class UserProfile(
     val phone: String? = null,
     val role: UserRole = UserRole.CUSTOMER,
     val status: UserStatus = UserStatus.APPROVED,
+    val permissions: Set<UserPermission> = emptySet(),
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
     val deletedAt: Long? = null

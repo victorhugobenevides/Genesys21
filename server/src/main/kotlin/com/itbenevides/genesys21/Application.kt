@@ -76,6 +76,7 @@ fun Application.module() {
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()
+    val receiptRepository = SqliteReceiptRepository()
 
     // Log de segurança para confirmar se o Gemini está configurado (sem mostrar a chave inteira)
     val geminiKey = System.getenv("GEMINI_API_KEY")
@@ -215,7 +216,7 @@ fun Application.module() {
             storeRoutes(storeRepository)
             shippingRoutes(storeRepository)
             connectRoutes(userRepository, storeRepository)
-            receiptRoutes(receiptParserService)
+            receiptRoutes(receiptParserService, receiptRepository, userRepository)
 
             authenticate("firebase") {
                 post("/upload") {

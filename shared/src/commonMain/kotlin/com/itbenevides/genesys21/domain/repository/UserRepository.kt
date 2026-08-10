@@ -10,5 +10,6 @@ interface UserRepository {
     suspend fun getAllUsers(token: String): Result<List<UserProfile>>
     suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit>
     suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit>
+    suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>): Result<Unit>
     suspend fun deleteUser(userId: String): Result<Unit>
 }

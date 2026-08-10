@@ -8,6 +8,7 @@ object UsersTable : BaseTable("users") {
     val phone = varchar("phone", 50).nullable()
     val role = varchar("role", 50).default("CUSTOMER")
     val status = varchar("status", 50).default("APPROVED")
+    val permissions = text("permissions").default("") // Separadas por vírgula
 
     override val primaryKey = PrimaryKey(id)
 }

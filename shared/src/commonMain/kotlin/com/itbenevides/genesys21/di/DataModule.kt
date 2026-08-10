@@ -57,6 +57,7 @@ val dataModule =
         single { GetAllUsersUseCase(get()) }
         single { UpdateUserRoleUseCase(get()) }
         single { UpdateUserStatusUseCase(get()) }
+        single { UpdateUserPermissionsUseCase(get()) }
         single { GetAvailabilityUseCase(get()) }
         single { SaveAvailabilityUseCase(get()) }
         single { GetBookingServicesUseCase(get()) }
@@ -85,7 +86,12 @@ val dataModule =
         single { SaveAddressUseCase(get()) }
         single { DeleteAddressUseCase(get()) }
         single { CalculateShippingUseCase(get()) }
-        single { com.itbenevides.genesys21.data.repository.ReceiptLocalRepository() }
+
+        single<ReceiptRepository> {
+            // Para Wasm e Android em produção, usamos o backend.
+            // Para testes ou local legacional, poderíamos alternar aqui.
+            com.itbenevides.genesys21.data.repository.KtorReceiptRepository(get(), getBaseUrl(), get())
+        }
         single { com.itbenevides.genesys21.domain.service.ReceiptParserService(get(), getBaseUrl()) }
     }
 

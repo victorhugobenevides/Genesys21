@@ -20,6 +20,7 @@ class SqliteUserRepository : UserRepository {
         phone = this[UsersTable.phone],
         role = UserRole.valueOf(this[UsersTable.role]),
         status = UserStatus.valueOf(this[UsersTable.status]),
+        permissions = this[UsersTable.permissions].split(",").filter { it.isNotBlank() }.map { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.toSet(),
         createdAt = this[UsersTable.createdAt],
         updatedAt = this[UsersTable.updatedAt],
         deletedAt = this[UsersTable.deletedAt]
@@ -46,6 +47,7 @@ class SqliteUserRepository : UserRepository {
                     it[avatarUrl] = profile.avatarUrl
                     it[phone] = profile.phone
                     it[updatedAt] = System.currentTimeMillis()
+                    it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
                 }
                 com.itbenevides.genesys21.data.service.AuditLogger.log(
                     userId = profile.id,
@@ -63,6 +65,7 @@ class SqliteUserRepository : UserRepository {
                     it[phone] = profile.phone
                     it[role] = profile.role.name
                     it[status] = profile.status.name
+                    it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
                 }
             }
             Result.success(Unit)
@@ -113,6 +116,28 @@ class SqliteUserRepository : UserRepository {
                     entityName = "User",
                     entityId = userId,
                     details = "Status alterado para ${status.name}"
+                )
+            }
+            Result.success(Unit)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>): Result<Unit> = try {
+        dbQuery {
+            val permsStr = permissions.joinToString(",") { it.name }
+            val updated = UsersTable.update({ UsersTable.id eq userId }) {
+                it[UsersTable.permissions] = permsStr
+            }
+            if (updated > 0) {
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = token,
+                    storeId = null,
+                    action = "UPDATE_PERMISSIONS",
+                    entityName = "User",
+                    entityId = userId,
+                    details = "Permissões alteradas: $permsStr"
                 )
             }
             Result.success(Unit)

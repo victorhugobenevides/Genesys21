@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.domain.model.UserProfile
+import com.itbenevides.genesys21.domain.model.UserPermission
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
@@ -73,9 +74,74 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
         } else {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 users.forEach { user ->
-                    UserAdminCard(user) { newRole ->
-                        viewModel.updateUserRole(user.id, newRole)
-                    }
+                    UserAdminCard(
+                        user = user,
+                        onRoleChange = { newRole -> viewModel.updateUserRole(user.id, newRole) },
+                        onPermissionChange = { permission, enabled ->
+                            val currentPerms = user.permissions.toMutableSet()
+                            if (enabled) currentPerms.add(permission) else currentPerms.remove(permission)
+                            viewModel.updateUserPermissions(user.id, currentPerms)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun UserAdminCard(
+    user: UserProfile,
+    onRoleChange: (UserRole) -> Unit,
+    onPermissionChange: (UserPermission, Boolean) -> Unit
+) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (isCompact) {
+                UserInfoSection(user)
+                GenesysSpacer(GenesysSpacing.Medium)
+                UserActionsSection(user, onRoleChange, modifier = Modifier.fillMaxWidth())
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    UserInfoSection(user, modifier = Modifier.weight(1f))
+                    UserActionsSection(user, onRoleChange)
+                }
+            }
+
+            GenesysSpacer(GenesysSpacing.Medium)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            GenesysText(text = "Permissões Granulares:", style = GenesysTextStyle.Label, fontWeight = com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight.Bold)
+            GenesysSpacer(GenesysSpacing.Small)
+
+            // Grid de Permissões
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                UserPermission.entries.forEach { permission ->
+                    PermissionCheckbox(
+                        label = when(permission) {
+                            UserPermission.MANAGE_VITRINES -> "Vitrines"
+                            UserPermission.MANAGE_ORDERS -> "Pedidos"
+                            UserPermission.MANAGE_AGENDA -> "Agenda"
+                            UserPermission.MANAGE_SERVICES -> "Serviços"
+                            UserPermission.MANAGE_STORE -> "Loja"
+                            UserPermission.MANAGE_RECEIPTS -> "Notas"
+                            UserPermission.ACCESS_ADMIN_PANEL -> "Painel Adm"
+                        },
+                        checked = user.permissions.contains(permission),
+                        onCheckedChange = { onPermissionChange(permission, it) }
+                    )
                 }
             }
         }
@@ -83,27 +149,10 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
 }
 
 @Composable
-fun UserAdminCard(user: UserProfile, onRoleChange: (UserRole) -> Unit) {
-    val windowSizeClass = LocalWindowSizeClass.current
-    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
-
-    GenesysCard(modifier = Modifier.fillMaxWidth()) {
-        if (isCompact) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                UserInfoSection(user)
-                GenesysSpacer(GenesysSpacing.Medium)
-                UserActionsSection(user, onRoleChange, modifier = Modifier.fillMaxWidth())
-            }
-        } else {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                UserInfoSection(user, modifier = Modifier.weight(1f))
-                UserActionsSection(user, onRoleChange)
-            }
-        }
+private fun PermissionCheckbox(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
     }
 }
 

@@ -26,3 +26,8 @@ class UpdateUserStatusUseCase(private val repository: UserRepository) {
     suspend operator fun invoke(token: String, userId: String, status: UserStatus) =
         repository.updateUserStatus(token, userId, status)
 }
+
+class UpdateUserPermissionsUseCase(private val repository: UserRepository) {
+    suspend operator fun invoke(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>) =
+        repository.updateUserPermissions(token, userId, permissions)
+}

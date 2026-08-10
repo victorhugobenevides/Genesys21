@@ -94,6 +94,8 @@ object DatabaseFactory {
                 AddressesTable,
                 MediaTable,
                 AuditLogsTable,
+                ReceiptsTable,
+                ReceiptItemsTable,
             )
             runFixes()
         }
@@ -131,6 +133,8 @@ object DatabaseFactory {
                 AddressesTable,
                 MediaTable,
                 AuditLogsTable,
+                ReceiptsTable,
+                ReceiptItemsTable,
             )
             runMigrations()
         }

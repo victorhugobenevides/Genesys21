@@ -80,6 +80,21 @@ class KtorUserRepository(
         Result.failure(e)
     }
 
+    override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>): Result<Unit> = try {
+        val response = client.put("$baseUrl/api/admin/users/$userId/permissions") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(permissions)
+        }
+        if (response.status.isSuccess()) {
+            Result.success(Unit)
+        } else {
+            Result.failure(Exception("Erro ao atualizar permissões"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     override suspend fun deleteUser(userId: String): Result<Unit> = try {
         val response = client.delete("$baseUrl/api/admin/users/$userId")
         if (response.status.isSuccess()) {

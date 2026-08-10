@@ -21,7 +21,7 @@ val viewModelModule =
                 get(), get(), get(), // 3
                 get(), get(), get(), // 3
                 get(), get(), get(), // 3
-                get(), get(), get(), get(), get(), // 5
+                get(), get(), get(), get(), get(), get(), // 6 (added UpdateUserPermissionsUseCase)
                 get(), // GetTemplatesUseCase
                 get(), get(), get(), // Addresses
                 get(), // CalculateShipping

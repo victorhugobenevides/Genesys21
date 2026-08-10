@@ -1,8 +1,15 @@
 package com.itbenevides.genesys21.routes
 
+import com.itbenevides.genesys21.domain.model.Receipt
+import com.itbenevides.genesys21.domain.model.UserPermission
+import com.itbenevides.genesys21.domain.model.UserRole
+import com.itbenevides.genesys21.domain.repository.UserRepository
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
+import com.itbenevides.genesys21.data.repository.SqliteReceiptRepository
+import com.itbenevides.genesys21.data.service.SefazScraperService
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -15,8 +22,12 @@ data class ParseReceiptRequest(
     val mimeType: String? = "image/jpeg"
 )
 
-fun Route.receiptRoutes(parserService: ReceiptParserService) {
-    val scraperService = com.itbenevides.genesys21.data.service.SefazScraperService()
+fun Route.receiptRoutes(
+    parserService: ReceiptParserService,
+    receiptRepository: SqliteReceiptRepository,
+    userRepository: UserRepository
+) {
+    val scraperService = SefazScraperService()
 
     route("/public/receipts") {
         post("/parse") {
@@ -28,17 +39,14 @@ fun Route.receiptRoutes(parserService: ReceiptParserService) {
 
                 // 1. Camada Híbrida: Detectar se é uma URL da SEFAZ
                 if (request.rawText.startsWith("http", true) && request.rawText.contains("fazenda", true)) {
-                    println("BACKEND: URL detectada, tentando Scraper...")
                     val scrapedReceipt = scraperService.parseFromUrl(request.rawText)
                     if (scrapedReceipt != null) {
                         call.respond(scrapedReceipt)
                         return@post
                     }
-                    println("BACKEND: Scraper falhou ou não compatível, tentando IA...")
                 }
 
                 if (apiKey.isNullOrBlank()) {
-                    // Fallback para parse local se a chave não estiver configurada no servidor
                     val result = parserService.parseReceiptFromText(request.rawText)
                     call.respond(result)
                     return@post
@@ -57,6 +65,51 @@ fun Route.receiptRoutes(parserService: ReceiptParserService) {
                     call.respond(HttpStatusCode.TooManyRequests, "Limite de uso da IA excedido por hoje. Tente novamente amanhã.")
                 } else {
                     call.respond(HttpStatusCode.InternalServerError, message.ifBlank { "Erro ao processar nota" })
+                }
+            }
+        }
+    }
+
+    authenticate("firebase") {
+        route("/receipts") {
+            // Middleware de permissão
+            intercept(ApplicationCallPipeline.Call) {
+                val principal = call.principal<UserIdPrincipal>() ?: return@intercept call.respond(HttpStatusCode.Unauthorized).also { finish() }
+                val user = userRepository.getUserProfile(principal.name).getOrNull()
+                val isSuperAdmin = user?.role == UserRole.SUPERADMIN
+                val hasPermission = user?.permissions?.contains(UserPermission.MANAGE_RECEIPTS) == true
+
+                if (!isSuperAdmin && !hasPermission) {
+                    call.respond(HttpStatusCode.Forbidden, "Sem permissão para gerenciar notas")
+                    return@intercept finish()
+                }
+            }
+
+            get {
+                val principal = call.principal<UserIdPrincipal>()!!
+                receiptRepository.getReceiptsByUser(principal.name).onSuccess {
+                    call.respond(it)
+                }.onFailure {
+                    call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao buscar notas")
+                }
+            }
+
+            post {
+                val principal = call.principal<UserIdPrincipal>()!!
+                val receipt = call.receive<Receipt>()
+                receiptRepository.saveReceiptWithUser(receipt, principal.name).onSuccess {
+                    call.respond(HttpStatusCode.Created)
+                }.onFailure {
+                    call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar nota")
+                }
+            }
+
+            delete("/{id}") {
+                val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                receiptRepository.deleteReceipt(id).onSuccess {
+                    call.respond(HttpStatusCode.OK)
+                }.onFailure {
+                    call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao excluir nota")
                 }
             }
         }

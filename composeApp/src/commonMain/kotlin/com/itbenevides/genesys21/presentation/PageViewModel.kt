@@ -58,6 +58,7 @@ class PageViewModel(
     private val getAllUsersUseCase: GetAllUsersUseCase,
     private val updateUserRoleUseCase: UpdateUserRoleUseCase,
     private val updateUserStatusUseCase: UpdateUserStatusUseCase,
+    private val updateUserPermissionsUseCase: UpdateUserPermissionsUseCase,
     private val getTemplatesUseCase: GetTemplatesUseCase,
     private val getAddressesUseCase: com.itbenevides.genesys21.domain.usecase.GetAddressesUseCase,
     private val saveAddressUseCase: com.itbenevides.genesys21.domain.usecase.SaveAddressUseCase,
@@ -900,6 +901,19 @@ class PageViewModel(
                 loadAllUsers()
             }.onFailure {
                 handleError("Erro ao atualizar cargo", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun updateUserPermissions(userId: String, permissions: Set<UserPermission>) {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            _isLoading.value = true
+            updateUserPermissionsUseCase(token, userId, permissions).onSuccess {
+                loadAllUsers()
+            }.onFailure {
+                handleError("Erro ao atualizar permissões", it)
             }
             _isLoading.value = false
         }

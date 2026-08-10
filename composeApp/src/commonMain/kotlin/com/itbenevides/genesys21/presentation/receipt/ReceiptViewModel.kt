@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation.receipt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.repository.ReceiptRepository
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +28,7 @@ data class ReceiptUiState(
 )
 
 class ReceiptViewModel(
-    private val repository: com.itbenevides.genesys21.data.repository.ReceiptLocalRepository,
+    private val repository: ReceiptRepository,
     private val parserService: ReceiptParserService
 ) : ViewModel() {
 
@@ -39,6 +40,13 @@ class ReceiptViewModel(
             repository.receipts.collect { list ->
                 _uiState.value = _uiState.value.copy(receipts = list)
             }
+        }
+        loadAllReceipts()
+    }
+
+    fun loadAllReceipts() {
+        viewModelScope.launch {
+            repository.getAllReceipts()
         }
     }
 
@@ -156,18 +164,22 @@ class ReceiptViewModel(
 
     fun savePendingReceipt() {
         _uiState.value.pendingParsedReceipt?.let { receipt ->
-            repository.saveReceipt(receipt)
-            _uiState.value = _uiState.value.copy(
-                showScanDialog = false,
-                pendingParsedReceipt = null
-            )
+            viewModelScope.launch {
+                repository.saveReceipt(receipt)
+                _uiState.value = _uiState.value.copy(
+                    showScanDialog = false,
+                    pendingParsedReceipt = null
+                )
+            }
         }
     }
 
     fun deleteReceipt(id: String) {
-        repository.deleteReceipt(id)
-        if (_uiState.value.selectedReceipt?.id == id) {
-            _uiState.value = _uiState.value.copy(selectedReceipt = null)
+        viewModelScope.launch {
+            repository.deleteReceipt(id)
+            if (_uiState.value.selectedReceipt?.id == id) {
+                _uiState.value = _uiState.value.copy(selectedReceipt = null)
+            }
         }
     }
 

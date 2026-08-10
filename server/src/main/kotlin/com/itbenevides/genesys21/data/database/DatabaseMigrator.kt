@@ -16,14 +16,32 @@ object DatabaseMigrator {
         fixCustomDomainConstraint()
         fixResidualIndices()
         fixAppointmentsTable()
+        fixUsersTableStructural()
         fixUsersTable()
         fixCartItemsTable()
     }
 
+    private fun Transaction.fixUsersTableStructural() {
+        try {
+            val tableSql =
+                exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'") { rs ->
+                    if (rs.next()) rs.getString("sql") else ""
+                } ?: ""
+
+            if (tableSql.isNotBlank() && !tableSql.contains("permissions", true)) {
+                println("DatabaseMigrator: Adicionando coluna 'permissions' à tabela 'users'...")
+                exec("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT ''")
+            }
+        } catch (e: Exception) {
+            println("DatabaseMigrator: Erro ao adicionar coluna 'permissions' - ${e.message}")
+        }
+    }
+
     private fun Transaction.fixUsersTable() {
         try {
-            // Garante que o victorkoto@gmail.com seja SUPERADMIN se existir
-            exec("UPDATE users SET role = 'SUPERADMIN' WHERE email = 'victorkoto@gmail.com'")
+            val allPerms = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
+            // Garante que o victorkoto@gmail.com seja SUPERADMIN e tenha todas as permissões se existir
+            exec("UPDATE users SET role = 'SUPERADMIN', permissions = '$allPerms' WHERE email = 'victorkoto@gmail.com'")
         } catch (e: Exception) {
             // Ignora se a tabela ainda não existir
         }
