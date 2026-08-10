@@ -1,8 +1,13 @@
 package com.itbenevides.genesys21.presentation.components.auth
 
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.heightIn
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import kotlinx.coroutines.launch
 import kotlin.js.Promise
@@ -43,6 +48,7 @@ actual fun GoogleSignInButton(
 
     GenesysLoadingButton(
         text = "Entrar com Google",
+        icon = androidx.compose.material.icons.Icons.Default.Language, // Placeholder visual
         onClick = {
             scope.launch {
                 try {
@@ -54,6 +60,7 @@ actual fun GoogleSignInButton(
                 }
             }
         },
-        modifier = modifier
+        modifier = modifier.heightIn(min = 48.dp),
+        containerColor = MaterialTheme.colorScheme.secondaryContainer
     )
 }

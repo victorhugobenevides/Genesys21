@@ -123,6 +123,7 @@ private fun LoginContent(
                     horizontalAlignment = GenesysAlignment.Center,
                     verticalArrangement = Arrangement.Center,
                     usePadding = true,
+                    useScroll = true // Ativa rolagem para evitar achatamento em telas pequenas
                 ) {
                     Surface(
                         modifier =
