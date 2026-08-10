@@ -84,8 +84,8 @@ class ReceiptParserService(
         // Criamos um cliente local se não houver um injetado (comum no backend)
         val client = httpClient ?: HttpClient()
 
-        // Usamos o modelo gemini-2.5-flash que é a versão estável e recomendada em 2026.
-        val endpoint = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=$apiKey"
+        // Usamos o alias gemini-flash-latest na v1beta, que é o mais compatível e estável para extração multimodal gratuita.
+        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"
 
         val prompt = """
             INSTRUÇÃO DE SEGURANÇA CRÍTICA:
