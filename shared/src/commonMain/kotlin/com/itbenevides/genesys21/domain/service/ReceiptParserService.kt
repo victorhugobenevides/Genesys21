@@ -51,12 +51,15 @@ class ReceiptParserService(
                     }.toString())
                 }
                 if (response.status.isSuccess()) {
-                    response.bodyAsText().let { json.decodeFromString<Receipt>(it) }
+                    response.bodyAsText().let { json.decodeFromString<Receipt>(it) }.copy(
+                        fileBase64 = imageBase64,
+                        fileMimeType = mimeType
+                    )
                 } else {
-                    parseReceiptFromText(rawText)
+                    parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
                 }
             } catch (e: Exception) {
-                parseReceiptFromText(rawText)
+                parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
             }
         }
 
@@ -68,7 +71,7 @@ class ReceiptParserService(
             }.getOrNull()?.let { return it }
         }
 
-        return parseReceiptFromText(rawText)
+        return parseReceiptFromText(rawText, fileBase64 = imageBase64, fileMimeType = mimeType)
     }
 
     private suspend fun parseWithGeminiApi(imageBase64: String, apiKey: String, mimeType: String): Receipt {
@@ -180,14 +183,16 @@ class ReceiptParserService(
             valorTotal = valorTotal,
             categoria = categoria,
             onlineUrl = onlineUrl,
-            items = itemsList
+            items = itemsList,
+            fileBase64 = imageBase64,
+            fileMimeType = mimeType
         )
     }
 
     /**
      * Processa o texto extraído da Nota Fiscal via OCR/Regex local (Modo Offline/Gratuito).
      */
-    fun parseReceiptFromText(rawText: String, imagePath: String? = null): Receipt {
+    fun parseReceiptFromText(rawText: String, imagePath: String? = null, fileBase64: String? = null, fileMimeType: String? = null): Receipt {
         val chave = NfeUrlBuilder.extractChaveAcesso(rawText)
         val onlineUrl = chave?.let { NfeUrlBuilder.buildOnlineUrl(it) }
 
@@ -216,7 +221,9 @@ class ReceiptParserService(
             categoria = detectCategory(emitenteCandidate, rawText),
             imagePath = imagePath,
             onlineUrl = onlineUrl,
-            items = extractBasicItems(rawText)
+            items = extractBasicItems(rawText),
+            fileBase64 = fileBase64,
+            fileMimeType = fileMimeType
         )
     }
 

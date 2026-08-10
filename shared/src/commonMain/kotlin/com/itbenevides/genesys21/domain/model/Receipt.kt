@@ -14,7 +14,9 @@ data class Receipt(
     val imagePath: String? = null,
     val onlineUrl: String? = null,
     val items: List<ReceiptItem> = emptyList(),
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val fileBase64: String? = null,
+    val fileMimeType: String? = null
 )
 
 @Serializable

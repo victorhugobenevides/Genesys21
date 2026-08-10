@@ -324,7 +324,7 @@ fun ReceiptCardItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -355,12 +355,23 @@ fun ReceiptCardItem(
                     }
                 }
 
-                Text(
-                    text = "R$ " + formatMoney(receipt.valorTotal),
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "R$ " + formatMoney(receipt.valorTotal),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Excluir Nota",
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -555,6 +566,7 @@ fun ScanReceiptDialog(
     )
 }
 
+@OptIn(org.jetbrains.compose.resources.ExperimentalResourceApi::class)
 @Composable
 fun ReceiptDetailDialog(
     receipt: Receipt,
@@ -572,6 +584,55 @@ fun ReceiptDetailDialog(
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
+                // Preview do arquivo original se disponível
+                if (receipt.fileBase64 != null) {
+                    if (receipt.fileMimeType == "application/pdf") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.Description, "PDF", modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+                                Text("Documento PDF Original", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val bitmap = remember(receipt.fileBase64) {
+                                try {
+                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(receipt.fileBase64)
+                                    bytes.decodeToImageBitmap()
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+
+                            if (bitmap != null) {
+                                androidx.compose.foundation.Image(
+                                    bitmap = bitmap,
+                                    contentDescription = "Nota Fiscal Original",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                                )
+                            } else {
+                                Icon(Icons.Default.Error, "Erro ao carregar", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 Text("CNPJ: ${receipt.cnpjEmitente ?: "Não informado"}", fontSize = 13.sp)
                 Text("Data de Emissão: ${receipt.dataEmissao}", fontSize = 13.sp)
                 Text("Categoria: ${receipt.categoria}", fontSize = 13.sp)
