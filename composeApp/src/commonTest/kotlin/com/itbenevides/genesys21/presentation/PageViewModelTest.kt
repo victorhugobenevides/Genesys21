@@ -81,6 +81,7 @@ class PageViewModelTest {
                 getAllUsersUseCase = GetAllUsersUseCase(fakeUserRepository),
                 updateUserRoleUseCase = UpdateUserRoleUseCase(fakeUserRepository),
                 updateUserStatusUseCase = UpdateUserStatusUseCase(fakeUserRepository),
+                updateUserPermissionsUseCase = UpdateUserPermissionsUseCase(fakeUserRepository),
                 getTemplatesUseCase = GetTemplatesUseCase(),
                 getAddressesUseCase = GetAddressesUseCase(fakeAddressRepository),
                 saveAddressUseCase = SaveAddressUseCase(fakeAddressRepository),

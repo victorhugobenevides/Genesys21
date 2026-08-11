@@ -153,6 +153,10 @@ class FakeUserRepository : UserRepository {
         return Result.success(Unit)
     }
 
+    override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<UserPermission>): Result<Unit> {
+        return Result.success(Unit)
+    }
+
     override suspend fun deleteUser(userId: String): Result<Unit> {
         users.removeAll { it.id == userId }
         return Result.success(Unit)
