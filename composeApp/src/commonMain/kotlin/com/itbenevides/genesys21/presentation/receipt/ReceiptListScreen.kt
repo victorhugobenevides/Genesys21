@@ -805,6 +805,16 @@ fun ReceiptDetailDialog(
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (chave.length == 44) {
+                        Text(
+                            text = "✨ A chave será preenchida automaticamente no site da SEFAZ.",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         },

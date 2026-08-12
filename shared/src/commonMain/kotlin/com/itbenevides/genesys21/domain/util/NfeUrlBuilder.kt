@@ -42,21 +42,14 @@ object NfeUrlBuilder {
             // Se for NFC-e (modelo 65), links estaduais diretos de consulta
             modelo == "65" -> getSefazNfceUrl(ufCode, cleanKey)
             // Portal Nacional da NF-e (modelo 55 ou fallback)
-            else -> getSefazNfeUrl(ufCode, cleanKey)
+            else -> getSefazNfeUrl(cleanKey)
         }
     }
 
-    private fun getSefazNfeUrl(ufCode: String, cleanKey: String): String {
-        return when (ufCode) {
-            "52" -> "https://nfe.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica?chNFe=$cleanKey"
-            "31" -> "https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?chNFe=$cleanKey" // MG consulta completa exige certificado, usamos o Portal Nacional
-            "35" -> "https://www.nfe.fazenda.sp.gov.br/ConsultaPublica/Consulta.aspx?chNFe=$cleanKey"
-            "43" -> "https://www.sefaz.rs.gov.br/dfe/Consultas/ConsultaPublicaDfe?chNFe=$cleanKey"
-            "33" -> "https://www.fazenda.rj.gov.br/nfe/consulta?chNFe=$cleanKey"
-            "29" -> "https://nfe.sefaz.ba.gov.br/servicos/nfe/default.aspx?chNFe=$cleanKey"
-            "41" -> "https://www.fazenda.pr.gov.br/nfe/consulta?chNFe=$cleanKey"
-            else -> "https://www.nfe.fazenda.gov.br/portal/consulta.aspx?chNFe=$cleanKey"
-        }
+    private fun getSefazNfeUrl(cleanKey: String): String {
+        // Portal Nacional centraliza todas as NF-e (Modelo 55) do Brasil e permite pré-preencher a chave.
+        // O parâmetro 'nfe' preenche o campo no site, restando apenas resolver o Captcha.
+        return "https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumo&nfe=$cleanKey"
     }
 
     private fun getSefazNfceUrl(ufCode: String, cleanKey: String): String {
