@@ -31,7 +31,6 @@ fun GenesysLoadingButton(
     Button(
         onClick = onClick,
         modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier)
-            .heightIn(min = 48.dp) // Garante altura mínima para acessibilidade e evitar achatamento
             .semantics {
                 if (isLoading) {
                     contentDescription = "$text, $loadingText"

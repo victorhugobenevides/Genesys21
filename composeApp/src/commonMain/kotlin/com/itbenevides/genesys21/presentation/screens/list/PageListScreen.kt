@@ -288,11 +288,13 @@ private fun PageListContent(
                     },
                 )
 
-                GenesysTabRow(
-                    selectedTabIndex = permittedTabs.indexOfFirst { it.id == state.selectedTab }.coerceAtLeast(0),
-                    tabs = permittedTabs.map { GenesysTabData(it.label, it.icon, badgeCount = it.badgeCount) },
-                    onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(permittedTabs[index].id)) },
-                )
+                if (permittedTabs.isNotEmpty()) {
+                    GenesysTabRow(
+                        selectedTabIndex = permittedTabs.indexOfFirst { it.id == state.selectedTab }.coerceAtMost(permittedTabs.size - 1).coerceAtLeast(0),
+                        tabs = permittedTabs.map { GenesysTabData(it.label, it.icon, badgeCount = it.badgeCount) },
+                        onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(permittedTabs[index].id)) },
+                    )
+                }
             }
         },
     ) {
@@ -568,7 +570,7 @@ private fun StoreSettingsTabUI(
         GenesysLoadingButton(
             text = "Salvar Configurações",
             onClick = {
-                val currentStore = store ?: com.itbenevides.genesys21.domain.model.Store(
+                val currentStore = store ?: Store(
                     id = storeId,
                     ownerId = "",
                     name = "Minha Loja"
