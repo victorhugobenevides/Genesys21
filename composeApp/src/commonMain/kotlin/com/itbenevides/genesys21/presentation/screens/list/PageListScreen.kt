@@ -292,7 +292,11 @@ private fun PageListContent(
                     GenesysTabRow(
                         selectedTabIndex = permittedTabs.indexOfFirst { it.id == state.selectedTab }.coerceAtMost(permittedTabs.size - 1).coerceAtLeast(0),
                         tabs = permittedTabs.map { GenesysTabData(it.label, it.icon, badgeCount = it.badgeCount) },
-                        onTabSelected = { index -> onEvent(PageListEvent.OnTabSelected(permittedTabs[index].id)) },
+                        onTabSelected = { index ->
+                            if (index in permittedTabs.indices) {
+                                onEvent(PageListEvent.OnTabSelected(permittedTabs[index].id))
+                            }
+                        },
                     )
                 }
             }
