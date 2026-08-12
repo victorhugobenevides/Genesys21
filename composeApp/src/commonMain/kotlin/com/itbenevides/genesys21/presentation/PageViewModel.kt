@@ -836,19 +836,23 @@ class PageViewModel(
                 // Se o perfil não existe no servidor (ex: primeiro login social),
                 // cria um registro básico automaticamente para garantir integridade no banco.
                 val email = authRepository.getCurrentUserEmail() ?: ""
-                val name = authRepository.getCurrentUserName() ?: email.substringBefore("@")
+                val name = authRepository.getCurrentUserName() ?: email.substringBefore("@").ifBlank { "Novo Usuário" }
+
+                println("VIEWMODEL: Criando perfil inicial para $email ($userId)")
 
                 val newProfile = UserProfile(
                     id = userId,
                     email = email,
                     name = name,
                     role = UserRole.CUSTOMER,
-                    status = UserStatus.APPROVED
+                    status = UserStatus.APPROVED,
+                    permissions = emptySet()
                 )
 
                 saveUserProfileUseCase(newProfile).onSuccess {
                     _userProfile.value = newProfile
                     loadUserAddresses(userId)
+                    println("VIEWMODEL: Perfil inicial salvo com sucesso.")
                 }.onFailure { e ->
                     handleError("Erro ao sincronizar perfil", e)
                 }

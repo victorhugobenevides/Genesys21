@@ -29,6 +29,8 @@ fun Route.adminRoutes(userRepository: UserRepository) {
             }
 
             get("/users") {
+                val principal = call.principal<UserIdPrincipal>()!!
+                println("ADMIN: SuperAdmin ${principal.name} solicitou listagem de usuários.")
                 val token = call.request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ") ?: ""
                 userRepository.getAllUsers(token).onSuccess {
                     call.respond(it)

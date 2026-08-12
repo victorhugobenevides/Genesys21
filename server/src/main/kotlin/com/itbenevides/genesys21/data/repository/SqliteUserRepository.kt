@@ -20,7 +20,11 @@ class SqliteUserRepository : UserRepository {
         phone = this[UsersTable.phone],
         role = UserRole.valueOf(this[UsersTable.role]),
         status = UserStatus.valueOf(this[UsersTable.status]),
-        permissions = this[UsersTable.permissions].split(",").filter { it.isNotBlank() }.map { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.toSet(),
+        permissions = this[UsersTable.permissions].split(",")
+            .filter { it.isNotBlank() }
+            .mapNotNull {
+                runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
+            }.toSet(),
         createdAt = this[UsersTable.createdAt],
         updatedAt = this[UsersTable.updatedAt],
         deletedAt = this[UsersTable.deletedAt]
@@ -34,11 +38,13 @@ class SqliteUserRepository : UserRepository {
                 ?: Result.failure(Exception("Usuário não encontrado"))
         }
     } catch (e: Exception) {
+        println("REPOSITORY ERROR (getUserProfile): ${e.message}")
         Result.failure(e)
     }
 
     override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> = try {
         dbQuery {
+            println("REPOSITORY: Salvando perfil de usuário ${profile.email} (${profile.id})")
             val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
             if (exists) {
                 UsersTable.update({ UsersTable.id eq profile.id }) {
@@ -71,14 +77,18 @@ class SqliteUserRepository : UserRepository {
             Result.success(Unit)
         }
     } catch (e: Exception) {
+        println("REPOSITORY ERROR (saveUserProfile): ${e.message}")
         Result.failure(e)
     }
 
     override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = try {
         dbQuery {
-            Result.success(UsersTable.selectAll().map { it.toUserProfile() })
+            val list = UsersTable.selectAll().map { it.toUserProfile() }
+            println("REPOSITORY: Listagem SuperAdmin. Retornando ${list.size} usuários.")
+            Result.success(list)
         }
     } catch (e: Exception) {
+        println("REPOSITORY ERROR (getAllUsers): ${e.message}")
         Result.failure(e)
     }
 
