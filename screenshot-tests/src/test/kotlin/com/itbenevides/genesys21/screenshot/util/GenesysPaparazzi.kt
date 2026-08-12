@@ -117,14 +117,6 @@ fun Paparazzi.genesysResponsiveSnapshot(
 }
 
 fun getMockModule() = module {
-    val sampleSuperAdmin = com.itbenevides.genesys21.domain.model.UserProfile(
-        id = "admin-1",
-        email = "victorkoto@gmail.com",
-        name = "Victor SuperAdmin",
-        role = com.itbenevides.genesys21.domain.model.UserRole.SUPERADMIN,
-        permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-    )
-
     single<PageViewModel> {
         mockk<PageViewModel>(relaxed = true).apply {
             every { pages } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Page>>(emptyList())
@@ -136,7 +128,7 @@ fun getMockModule() = module {
             every { customerPhone } returns MutableStateFlow<String>("11999999999")
             every { allAvailableCategories } returns MutableStateFlow<List<String>>(emptyList())
             every { isLoading } returns MutableStateFlow<Boolean>(false)
-            every { userProfile } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.UserProfile?>(sampleSuperAdmin)
+            every { userProfile } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.UserProfile?>(null)
             every { services } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.BookingService>>(emptyList())
             every { allAvailableProducts } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Product>>(emptyList())
             every { categories } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Category>>(emptyList())
@@ -146,7 +138,7 @@ fun getMockModule() = module {
             every { customerAppointments } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Appointment>>(emptyList())
             every { userAddresses } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
             every { allUsers } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.UserProfile>>(emptyList())
-            every { isLoggedIn } returns MutableStateFlow<Boolean>(true)
+            every { isLoggedIn } returns MutableStateFlow<Boolean>(false)
             every { isWaitingForPaymentSignal } returns MutableStateFlow<Boolean>(false)
         }
     }

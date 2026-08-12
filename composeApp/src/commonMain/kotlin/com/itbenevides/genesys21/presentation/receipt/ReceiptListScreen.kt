@@ -752,10 +752,8 @@ fun ReceiptDetailDialog(
                             val dataForDetail = fileBase64
                             val bitmap = remember(dataForDetail) {
                                 try {
-                                    if (dataForDetail != null) {
-                                        val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForDetail)
-                                        bytes.decodeToImageBitmap()
-                                    } else null
+                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForDetail)
+                                    bytes.decodeToImageBitmap()
                                 } catch (e: Exception) {
                                     null
                                 }
