@@ -38,9 +38,10 @@ fun createGenesysPaparazzi(
 
 fun Paparazzi.genesysSnapshot(
     widthOverride: Dp? = null,
+    mockUserProfile: com.itbenevides.genesys21.domain.model.UserProfile? = null,
     content: @Composable () -> Unit,
 ) {
-    val mockModule = getMockModule()
+    val mockModule = getMockModule(mockUserProfile)
     val widthDp = widthOverride ?: 393.dp
 
     this.snapshot {
@@ -72,6 +73,7 @@ fun Paparazzi.genesysSnapshot(
 
 fun Paparazzi.genesysResponsiveSnapshot(
     namePrefix: String? = null,
+    mockUserProfile: com.itbenevides.genesys21.domain.model.UserProfile? = null,
     content: @Composable () -> Unit,
 ) {
     val configs = listOf(
@@ -86,7 +88,7 @@ fun Paparazzi.genesysResponsiveSnapshot(
 
         this.unsafeUpdateConfig(deviceConfig = config)
 
-        val mockModule = getMockModule()
+        val mockModule = getMockModule(mockUserProfile)
 
         this.snapshot(name = snapshotName) {
             val viewModelStoreOwner = remember {
@@ -116,7 +118,7 @@ fun Paparazzi.genesysResponsiveSnapshot(
     }
 }
 
-fun getMockModule() = module {
+fun getMockModule(mockUserProfile: com.itbenevides.genesys21.domain.model.UserProfile? = null) = module {
     single<PageViewModel> {
         mockk<PageViewModel>(relaxed = true).apply {
             every { pages } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Page>>(emptyList())
@@ -128,7 +130,7 @@ fun getMockModule() = module {
             every { customerPhone } returns MutableStateFlow<String>("11999999999")
             every { allAvailableCategories } returns MutableStateFlow<List<String>>(emptyList())
             every { isLoading } returns MutableStateFlow<Boolean>(false)
-            every { userProfile } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.UserProfile?>(null)
+            every { userProfile } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.UserProfile?>(mockUserProfile)
             every { services } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.BookingService>>(emptyList())
             every { allAvailableProducts } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Product>>(emptyList())
             every { categories } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Category>>(emptyList())
@@ -138,7 +140,7 @@ fun getMockModule() = module {
             every { customerAppointments } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Appointment>>(emptyList())
             every { userAddresses } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
             every { allUsers } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.UserProfile>>(emptyList())
-            every { isLoggedIn } returns MutableStateFlow<Boolean>(false)
+            every { isLoggedIn } returns MutableStateFlow<Boolean>(mockUserProfile != null)
             every { isWaitingForPaymentSignal } returns MutableStateFlow<Boolean>(false)
         }
     }
