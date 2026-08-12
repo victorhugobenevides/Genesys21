@@ -73,10 +73,25 @@ class SqliteReceiptRepository : ReceiptRepository {
 
     override suspend fun saveReceipt(receipt: Receipt): Result<Unit> = try {
         // Como a interface não tem context, usamos os dados do objeto se disponíveis
-        if (receipt.userId != null) {
-            saveReceiptWithUser(receipt, receipt.userId)
+        val userId = receipt.userId
+        if (userId != null) {
+            saveReceiptWithUser(receipt, userId)
         } else {
             Result.failure(Exception("UserID obrigatório para salvar nota"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getReceiptsByUser(userId: String): Result<List<Receipt>> = try {
+        dbQuery {
+            val rows = ReceiptsTable.selectAll().where { (ReceiptsTable.userId eq userId) and (ReceiptsTable.deletedAt.isNull()) }.toList()
+            val receipts = rows.map { row ->
+                val items = ReceiptItemsTable.selectAll().where { ReceiptItemsTable.receiptId eq row[ReceiptsTable.id] }
+                    .map { it.toReceiptItem() }
+                row.toReceipt(items)
+            }
+            Result.success(receipts)
         }
     } catch (e: Exception) {
         Result.failure(e)
