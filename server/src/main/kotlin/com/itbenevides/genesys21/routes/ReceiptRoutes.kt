@@ -87,7 +87,15 @@ fun Route.receiptRoutes(
 
             get {
                 val principal = call.principal<UserIdPrincipal>()!!
-                receiptRepository.getReceiptsByUser(principal.name).onSuccess {
+                val storeId = call.request.queryParameters["storeId"]
+
+                val result = if (!storeId.isNullOrBlank()) {
+                    receiptRepository.getReceiptsByStore(storeId)
+                } else {
+                    receiptRepository.getReceiptsByUser(principal.name)
+                }
+
+                result.onSuccess {
                     call.respond(it)
                 }.onFailure {
                     call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao buscar notas")

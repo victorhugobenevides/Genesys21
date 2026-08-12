@@ -27,6 +27,8 @@ class SqliteReceiptRepository : ReceiptRepository {
 
     private fun ResultRow.toReceipt(items: List<ReceiptItem>) = Receipt(
         id = this[ReceiptsTable.id],
+        userId = this[ReceiptsTable.userId],
+        storeId = this[ReceiptsTable.storeId],
         chaveAcesso = this[ReceiptsTable.chaveAcesso],
         emitente = this[ReceiptsTable.emitente],
         cnpjEmitente = this[ReceiptsTable.cnpjEmitente],
@@ -55,9 +57,9 @@ class SqliteReceiptRepository : ReceiptRepository {
         Result.failure(e)
     }
 
-    suspend fun getReceiptsByUser(userId: String): Result<List<Receipt>> = try {
+    suspend fun getReceiptsByStore(storeId: String): Result<List<Receipt>> = try {
         dbQuery {
-            val rows = ReceiptsTable.selectAll().where { (ReceiptsTable.userId eq userId) and (ReceiptsTable.deletedAt.isNull()) }.toList()
+            val rows = ReceiptsTable.selectAll().where { (ReceiptsTable.storeId eq storeId) and (ReceiptsTable.deletedAt.isNull()) }.toList()
             val receipts = rows.map { row ->
                 val items = ReceiptItemsTable.selectAll().where { ReceiptItemsTable.receiptId eq row[ReceiptsTable.id] }
                     .map { it.toReceiptItem() }
@@ -70,9 +72,12 @@ class SqliteReceiptRepository : ReceiptRepository {
     }
 
     override suspend fun saveReceipt(receipt: Receipt): Result<Unit> = try {
-        // Como a interface não tem userId, assumimos que este método é chamado pelo backend com contexto de usuário.
-        // Vou adicionar um método sobrecarregado ou ajustar a lógica.
-        Result.failure(Exception("Use saveReceiptWithUser para persistência no servidor"))
+        // Como a interface não tem context, usamos os dados do objeto se disponíveis
+        if (receipt.userId != null) {
+            saveReceiptWithUser(receipt, receipt.userId)
+        } else {
+            Result.failure(Exception("UserID obrigatório para salvar nota"))
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -83,6 +88,7 @@ class SqliteReceiptRepository : ReceiptRepository {
             if (exists) {
                 ReceiptsTable.update({ ReceiptsTable.id eq receipt.id }) {
                     it[ReceiptsTable.userId] = userId
+                    it[storeId] = receipt.storeId
                     it[chaveAcesso] = receipt.chaveAcesso
                     it[emitente] = receipt.emitente
                     it[cnpjEmitente] = receipt.cnpjEmitente
@@ -101,6 +107,7 @@ class SqliteReceiptRepository : ReceiptRepository {
                 ReceiptsTable.insert {
                     it[id] = receipt.id
                     it[ReceiptsTable.userId] = userId
+                    it[storeId] = receipt.storeId
                     it[chaveAcesso] = receipt.chaveAcesso
                     it[emitente] = receipt.emitente
                     it[cnpjEmitente] = receipt.cnpjEmitente

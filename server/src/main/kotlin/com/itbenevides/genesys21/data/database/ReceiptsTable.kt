@@ -5,6 +5,7 @@ import com.itbenevides.genesys21.data.database.BaseTable
 object ReceiptsTable : BaseTable("receipts") {
     val id = varchar("id", 100)
     val userId = varchar("user_id", 100).references(UsersTable.id)
+    val storeId = varchar("store_id", 50).references(StoresTable.id).nullable()
     val chaveAcesso = varchar("chave_acesso", 100).nullable()
     val emitente = varchar("emitente", 200)
     val cnpjEmitente = varchar("cnpj_emitente", 50).nullable()

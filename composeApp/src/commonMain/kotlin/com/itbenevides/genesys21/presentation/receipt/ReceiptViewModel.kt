@@ -183,6 +183,15 @@ class ReceiptViewModel(
         }
     }
 
+    fun updateReceipt(receipt: Receipt) {
+        viewModelScope.launch {
+            repository.saveReceipt(receipt)
+            if (_uiState.value.selectedReceipt?.id == receipt.id) {
+                _uiState.value = _uiState.value.copy(selectedReceipt = receipt)
+            }
+        }
+    }
+
     fun exportBackupJson(): String {
         return repository.exportToJson()
     }

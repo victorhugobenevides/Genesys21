@@ -18,7 +18,24 @@ object DatabaseMigrator {
         fixAppointmentsTable()
         fixUsersTableStructural()
         fixUsersTable()
+        fixReceiptsTable()
         fixCartItemsTable()
+    }
+
+    private fun Transaction.fixReceiptsTable() {
+        try {
+            val tableSql =
+                exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='receipts'") { rs ->
+                    if (rs.next()) rs.getString("sql") else ""
+                } ?: ""
+
+            if (tableSql.isNotBlank() && !tableSql.contains("store_id", true)) {
+                println("DatabaseMigrator: Adicionando coluna 'store_id' à tabela 'receipts'...")
+                exec("ALTER TABLE receipts ADD COLUMN store_id VARCHAR(50)")
+            }
+        } catch (e: Exception) {
+            println("DatabaseMigrator: Erro ao corrigir tabela 'receipts' - ${e.message}")
+        }
     }
 
     private fun Transaction.fixUsersTableStructural() {

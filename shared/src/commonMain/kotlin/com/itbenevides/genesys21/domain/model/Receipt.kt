@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Receipt(
     val id: String,
+    val storeId: String? = null,
+    val userId: String? = null,
     val chaveAcesso: String? = null,
     val emitente: String,
     val cnpjEmitente: String? = null,
