@@ -16,18 +16,7 @@ fun Route.userRoutes(userRepository: UserRepository) {
             userRepository.getUserProfile(id).onSuccess {
                 call.respond(it)
             }.onFailure {
-                // Se o usuário não existe mas o ID foi passado, criamos um perfil básico
-                // para evitar que o frontend trave em 404 após o login do Firebase.
-                val newProfile = UserProfile(
-                    id = id,
-                    email = "", // Será atualizado no próximo save
-                    name = "Novo Usuário",
-                )
-                userRepository.saveUserProfile(newProfile).onSuccess {
-                    call.respond(newProfile)
-                }.onFailure {
-                    call.respond(HttpStatusCode.NotFound, "Perfil não encontrado e falha ao criar automático")
-                }
+                call.respond(HttpStatusCode.NotFound, "Perfil não encontrado")
             }
         }
     }

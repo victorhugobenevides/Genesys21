@@ -829,34 +829,42 @@ class PageViewModel(
 
     fun loadUserProfile(userId: String) {
         viewModelScope.launch {
-            getUserProfileUseCase(userId).onSuccess {
-                _userProfile.value = it
-                loadUserAddresses(userId)
-            }.onFailure {
-                // Se o perfil não existe no servidor (ex: primeiro login social),
-                // cria um registro básico automaticamente para garantir integridade no banco.
-                val email = authRepository.getCurrentUserEmail() ?: ""
-                val name = authRepository.getCurrentUserName() ?: email.substringBefore("@").ifBlank { "Novo Usuário" }
-
-                println("VIEWMODEL: Criando perfil inicial para $email ($userId)")
-
-                val newProfile = UserProfile(
-                    id = userId,
-                    email = email,
-                    name = name,
-                    role = UserRole.CUSTOMER,
-                    status = UserStatus.APPROVED,
-                    permissions = emptySet()
-                )
-
-                saveUserProfileUseCase(newProfile).onSuccess {
-                    _userProfile.value = newProfile
+            getUserProfileUseCase(userId).onSuccess { profile ->
+                // Se o perfil existe mas está sem e-mail (caso raro de falha anterior), sincroniza
+                if (profile.email.isBlank()) {
+                    syncInitialProfile(userId)
+                } else {
+                    _userProfile.value = profile
                     loadUserAddresses(userId)
-                    println("VIEWMODEL: Perfil inicial salvo com sucesso.")
-                }.onFailure { e ->
-                    handleError("Erro ao sincronizar perfil", e)
                 }
+            }.onFailure {
+                // Se o perfil não existe no servidor, cria um registro básico proativamente
+                syncInitialProfile(userId)
             }
+        }
+    }
+
+    private suspend fun syncInitialProfile(userId: String) {
+        val email = authRepository.getCurrentUserEmail() ?: ""
+        val name = authRepository.getCurrentUserName() ?: email.substringBefore("@").ifBlank { "Novo Usuário" }
+
+        println("VIEWMODEL: Sincronizando perfil inicial para $email ($userId)")
+
+        val newProfile = UserProfile(
+            id = userId,
+            email = email,
+            name = name,
+            role = UserRole.CUSTOMER,
+            status = UserStatus.APPROVED,
+            permissions = emptySet()
+        )
+
+        saveUserProfileUseCase(newProfile).onSuccess {
+            _userProfile.value = newProfile
+            loadUserAddresses(userId)
+            println("VIEWMODEL: Perfil inicial sincronizado com sucesso.")
+        }.onFailure { e ->
+            handleError("Erro ao sincronizar perfil", e)
         }
     }
 
