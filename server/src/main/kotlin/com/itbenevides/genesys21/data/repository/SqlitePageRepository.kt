@@ -162,9 +162,34 @@ class SqlitePageRepository : PageRepository {
     ): Result<Unit> =
         try {
             dbQuery {
-                val updated = PagesTable.update({ (PagesTable.id eq id) and (StoresTable.ownerId eq token) }) {
+                println("REPOSITORY: Tentando excluir página $id. UserID: $token")
+
+                // SQLite não suporta JOIN diretamente no UPDATE do Exposed de forma simples.
+                // Verificamos a propriedade da página separadamente.
+                val belongsToUser = (PagesTable innerJoin StoresTable)
+                    .selectAll().where { (PagesTable.id eq id) and (StoresTable.ownerId eq token) }
+                    .count() > 0
+
+                println("REPOSITORY: Pertence ao usuário? $belongsToUser")
+
+                if (!belongsToUser) {
+                    // Opcional: Verificar se o usuário é SUPERADMIN
+                    val userRow = UsersTable.selectAll().where { UsersTable.id eq token }.singleOrNull()
+                    val userRole = userRow?.get(UsersTable.role)
+                    val isSuperAdmin = userRole == com.itbenevides.genesys21.domain.model.UserRole.SUPERADMIN.name
+
+                    println("REPOSITORY: Usuário é SuperAdmin? $isSuperAdmin (Role detectada: $userRole)")
+
+                    if (!isSuperAdmin) {
+                        return@dbQuery Result.failure(Exception("Acesso negado para excluir esta página"))
+                    }
+                }
+
+                val updated = PagesTable.update({ PagesTable.id eq id }) {
                     it[deletedAt] = System.currentTimeMillis()
                 }
+
+                println("REPOSITORY: Resultado do update: $updated")
 
                 if (updated > 0) {
                     com.itbenevides.genesys21.data.service.AuditLogger.log(
@@ -176,9 +201,10 @@ class SqlitePageRepository : PageRepository {
                         details = "Página excluída pelo usuário"
                     )
                     Result.success(Unit)
-                } else Result.failure(Exception("Falha ao excluir"))
+                } else Result.failure(Exception("Falha ao excluir: página não encontrada"))
             }
         } catch (e: Exception) {
+            println("REPOSITORY ERROR: Falha ao excluir página - ${e.message}")
             Result.failure(e)
         }
 
