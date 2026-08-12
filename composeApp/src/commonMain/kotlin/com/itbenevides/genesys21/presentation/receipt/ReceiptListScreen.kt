@@ -663,10 +663,8 @@ fun ReceiptChatBubble(message: ReceiptChatMessage) {
                         val dataForPreview = fileBase64
                         val bitmap = remember(dataForPreview) {
                             try {
-                                if (dataForPreview != null) {
-                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForPreview)
-                                    bytes.decodeToImageBitmap()
-                                } else null
+                                val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForPreview)
+                                bytes.decodeToImageBitmap()
                             } catch (e: Exception) { null }
                         }
                         bitmap?.let {
@@ -752,10 +750,8 @@ fun ReceiptDetailDialog(
                             val dataForDetail = fileBase64
                             val bitmap = remember(dataForDetail) {
                                 try {
-                                    if (dataForDetail != null) {
-                                        val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForDetail)
-                                        bytes.decodeToImageBitmap()
-                                    } else null
+                                    val bytes = com.itbenevides.genesys21.util.Base64Decoder.decode(dataForDetail)
+                                    bytes.decodeToImageBitmap()
                                 } catch (e: Exception) {
                                     null
                                 }
