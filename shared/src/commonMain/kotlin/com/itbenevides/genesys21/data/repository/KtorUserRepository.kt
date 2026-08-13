@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.data.repository
 import com.itbenevides.genesys21.domain.model.UserProfile
 import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.domain.model.UserStatus
+import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -12,6 +13,7 @@ import io.ktor.http.*
 class KtorUserRepository(
     private val client: HttpClient,
     private val baseUrl: String,
+    private val authRepository: AuthRepository
 ) : UserRepository {
 
     override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
@@ -26,7 +28,9 @@ class KtorUserRepository(
     }
 
     override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> = try {
+        val token = authRepository.getCurrentUserToken() ?: throw Exception("Usuário não autenticado")
         val response = client.post("$baseUrl/api/users/profile") {
+            header(HttpHeaders.Authorization, "Bearer $token")
             contentType(ContentType.Application.Json)
             setBody(profile)
         }

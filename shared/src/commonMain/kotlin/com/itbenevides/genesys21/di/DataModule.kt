@@ -46,7 +46,7 @@ val dataModule =
         single<PageRepository> { KtorPageRepository(get(), getBaseUrl()) }
         single<OrderRepository> { KtorOrderRepository(get(), getBaseUrl()) }
         single<BookingRepository> { KtorBookingRepository(get(), getBaseUrl()) }
-        single<UserRepository> { KtorUserRepository(get(), getBaseUrl()) }
+        single<UserRepository> { KtorUserRepository(get(), getBaseUrl(), get()) }
         single<AddressRepository> { KtorAddressRepository(get(), getBaseUrl(), get()) }
         single<ShippingRepository> { KtorShippingRepository(get(), getBaseUrl()) }
         single<StoreRepository> { KtorStoreRepository(get(), getBaseUrl(), get()) }
