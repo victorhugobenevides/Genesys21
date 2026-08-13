@@ -104,7 +104,7 @@ fun PageListScreen(
             is PageListEvent.OnSearchQueryChanged -> state = state.copy(searchQuery = event.query)
             is PageListEvent.OnStatusFilterSelected -> state = state.copy(selectedStatusFilter = event.status)
             is PageListEvent.OnDateSelected -> state = state.copy(selectedDate = event.date)
-            is PageListEvent.OnCreatePageClicked -> router.navigateTo(Route.TemplateShowcase)
+            is PageListEvent.OnCreatePageClicked -> state = state.copy(showCreateDialog = true)
             is PageListEvent.OnDismissCreateDialog -> state = state.copy(showCreateDialog = false, newPageTitle = "")
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
@@ -656,6 +656,13 @@ private fun PagesTabUI(
                 icon = GenesysIcons.WebAssetOff,
                 title = GenesysStrings.NoPagesFound,
                 description = GenesysStrings.NoPagesDescription,
+                action = {
+                    GenesysLoadingButton(
+                        text = "Criar Minha Primeira Página",
+                        icon = GenesysIcons.Add,
+                        onClick = { onEvent(PageListEvent.OnCreatePageClicked) }
+                    )
+                }
             )
         } else {
             state.pages.forEach { page ->
