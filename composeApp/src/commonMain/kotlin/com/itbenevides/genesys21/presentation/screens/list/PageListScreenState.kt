@@ -8,11 +8,10 @@ import com.itbenevides.genesys21.domain.model.Page
 import kotlinx.datetime.LocalDate
 
 enum class PageTemplateType {
-    PROFESSIONAL_VITRINE,
-    BIO_PROFILE,
-    BLOG_POST,
-    BARBER_SHOP,
-    PRO_DESIGN,
+    PREMIUM_STORE,
+    SERVICE_BOOKING,
+    PERSONAL_HUB,
+    AI_GENERATE,
     EMPTY,
 }
 
@@ -33,6 +32,7 @@ data class PageListState(
     val showCreateDialog: Boolean = false,
     val showGlobalSettings: Boolean = false,
     val showRenameDialog: Boolean = false,
+    val showAIBuider: Boolean = false,
     val pageToRename: Page? = null,
     val newPageTitle: String = "",
 )
@@ -50,6 +50,10 @@ sealed class PageListEvent {
     data class OnDateSelected(val date: LocalDate) : PageListEvent()
 
     object OnCreatePageClicked : PageListEvent()
+
+    object OnAIDesignClicked : PageListEvent()
+
+    object OnDismissAIBuilder : PageListEvent()
 
     data class OnNewPageTitleChanged(val title: String) : PageListEvent()
 

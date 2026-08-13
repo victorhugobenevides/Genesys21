@@ -93,6 +93,7 @@ val dataModule =
             com.itbenevides.genesys21.data.repository.KtorReceiptRepository(get(), getBaseUrl(), get())
         }
         single { com.itbenevides.genesys21.domain.service.ReceiptParserService(get(), getBaseUrl()) }
+        single { com.itbenevides.genesys21.domain.service.PageAIGeneratorService(get(), getBaseUrl()) }
     }
 
 expect fun getAuthRepository(): AuthRepository

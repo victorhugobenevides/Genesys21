@@ -2,30 +2,17 @@ package com.itbenevides.genesys21.domain.model
 
 import kotlinx.serialization.Serializable
 
+/**
+ * Definição dos Temas Elite do Genesys21 (Versão 2026).
+ * Foco em alta performance visual, contraste e estética Premium.
+ */
 @Serializable
 enum class PageThemeConfig {
-    ROYAL,
-    OCEAN,
-    FOREST,
-    CANDY,
-    SUNSET,
-    BERRY,
-    MINIMAL,
-    VINTAGE,
-    NORDIC,
-    COFFEE,
-    SOFT_LAVENDER,
-    SKY_BLUE,
-    MINT_GREEN,
-    PEACH,
-    LEMON,
-    DARK_MODE,
-    MIDNIGHT,
-    NEON,
-    DEEP_SPACE,
-    LUXURY_GOLD,
-    RADARANI,
-    CLEAN,
-    MODERN,
-    DEFAULT,
+    ELEGANCE,   // Slate & Gold (Luxo)
+    VIBRANT,    // Electric Blue (Tech)
+    NATURE,     // Deep Forest (Bem-estar)
+    MONO,       // Architectural B&W (Moda)
+    MIDNIGHT,   // OLED Black (Moderno)
+    CANDY,      // Pastel Pop (Criativo)
+    DEFAULT     // Fallback para ELEGANCE
 }

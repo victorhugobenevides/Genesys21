@@ -8,7 +8,6 @@ import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
 import com.itbenevides.genesys21.domain.repository.PageDraftRepository
 import com.itbenevides.genesys21.domain.usecase.*
-import com.itbenevides.genesys21.util.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
@@ -360,7 +359,7 @@ class PageViewModel(
                         shippingPrice = shippingPrice,
                         shippingMethod = shippingMethod,
                         whatsappContact = page?.whatsapp,
-                        theme = page?.theme ?: PageThemeConfig.ROYAL
+                        theme = page?.theme ?: PageThemeConfig.ELEGANCE
                     )
                 submitOrderUseCase(order).onSuccess { response ->
                     // Limpa o carrinho apenas se for pagamento LOCAL

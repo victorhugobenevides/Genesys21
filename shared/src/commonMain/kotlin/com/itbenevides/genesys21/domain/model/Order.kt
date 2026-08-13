@@ -24,7 +24,7 @@ data class Order(
     val shippingPrice: Double = 0.0,
     val shippingMethod: String? = null,
     val whatsappContact: String? = null,
-    val theme: PageThemeConfig = PageThemeConfig.ROYAL,
+    val theme: PageThemeConfig = PageThemeConfig.ELEGANCE,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
     val deletedAt: Long? = null

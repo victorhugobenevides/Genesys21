@@ -87,7 +87,7 @@ fun OrderTrackingScreen(
         }
     }
 
-    val themeToUse = state.order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ROYAL
+    val themeToUse = state.order?.theme ?: com.itbenevides.genesys21.domain.model.PageThemeConfig.ELEGANCE
 
     // 3. Render
     AppTheme(themeConfig = themeToUse) {

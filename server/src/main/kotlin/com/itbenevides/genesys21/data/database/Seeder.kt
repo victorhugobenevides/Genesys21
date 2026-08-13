@@ -250,7 +250,7 @@ object Seeder {
                 it[id] = cvPageId
                 it[storeId] = defaultStoreId
                 it[title] = "Currículo - Victor Hugo"
-                it[theme] = PageThemeConfig.MINIMAL.name
+                it[theme] = PageThemeConfig.MONO.name
                 it[whatsapp] = "5511998104606"
                 it[createdAt] = System.currentTimeMillis()
                 it[updatedAt] = System.currentTimeMillis()

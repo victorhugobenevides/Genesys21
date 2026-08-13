@@ -60,7 +60,7 @@ fun DesignSystemShowcaseScreen(
     onOpenTemplateShowcase: () -> Unit,
     initialTab: Int = 0,
 ) {
-    var currentTheme by remember { mutableStateOf(PageThemeConfig.ROYAL) }
+    var currentTheme by remember { mutableStateOf(PageThemeConfig.ELEGANCE) }
     var selectedTab by remember { mutableIntStateOf(initialTab) }
     var showThemeMenu by remember { mutableStateOf(false) }
     val windowSizeClass = LocalWindowSizeClass.current

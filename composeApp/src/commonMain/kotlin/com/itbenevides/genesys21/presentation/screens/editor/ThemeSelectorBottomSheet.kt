@@ -108,27 +108,12 @@ private fun ThemeOptionItem(
 
 private fun getThemePreviewColor(theme: PageThemeConfig): Color {
     return when (theme) {
-        PageThemeConfig.ROYAL -> Color(0xFF14213D)
-        PageThemeConfig.OCEAN -> Color(0xFF00ADB5)
-        PageThemeConfig.FOREST -> Color(0xFF283618)
-        PageThemeConfig.CANDY -> Color(0xFFD81159)
-        PageThemeConfig.SUNSET -> Color(0xFFE76F51)
-        PageThemeConfig.BERRY -> Color(0xFF6A0572)
-        PageThemeConfig.MINIMAL -> Color(0xFF000000)
-        PageThemeConfig.VINTAGE -> Color(0xFF8B5E3C)
-        PageThemeConfig.NORDIC -> Color(0xFF4A90E2)
-        PageThemeConfig.COFFEE -> Color(0xFF6F4E37)
-        PageThemeConfig.SOFT_LAVENDER -> Color(0xFF967BB6)
-        PageThemeConfig.SKY_BLUE -> Color(0xFF039BE5)
-        PageThemeConfig.MINT_GREEN -> Color(0xFF00C853)
-        PageThemeConfig.PEACH -> Color(0xFFFF8A65)
-        PageThemeConfig.LEMON -> Color(0xFFFBC02D)
-        PageThemeConfig.RADARANI -> Color(0xFF2CB1FF)
-        PageThemeConfig.DARK_MODE -> Color(0xFFBB86FC)
-        PageThemeConfig.MIDNIGHT -> Color(0xFF1A1A2E)
-        PageThemeConfig.NEON -> Color(0xFF39FF14)
-        PageThemeConfig.DEEP_SPACE -> Color(0xFF00D1FF)
-        PageThemeConfig.LUXURY_GOLD -> Color(0xFFD4AF37)
+        PageThemeConfig.ELEGANCE -> Color(0xFF1C1C1E)
+        PageThemeConfig.VIBRANT -> Color(0xFF007AFF)
+        PageThemeConfig.NATURE -> Color(0xFF2D4F1E)
+        PageThemeConfig.MONO -> Color(0xFF000000)
+        PageThemeConfig.MIDNIGHT -> Color(0xFF000000)
+        PageThemeConfig.CANDY -> Color(0xFFFF2D55)
         else -> Color.Gray
     }
 }

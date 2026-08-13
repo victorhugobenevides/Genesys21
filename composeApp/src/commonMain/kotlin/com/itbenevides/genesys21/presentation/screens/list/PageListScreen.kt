@@ -47,6 +47,7 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
+import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
 import com.itbenevides.genesys21.domain.model.UserProfile
 import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -111,12 +112,11 @@ fun PageListScreen(
                 val storeId = "genesys-official-store"
                 val newPage =
                     when (event.templateType) {
-                        PageTemplateType.PROFESSIONAL_VITRINE -> Page.createFromTemplate("professional_vitrine", id, storeId, state.newPageTitle.trim())
-                        PageTemplateType.BIO_PROFILE -> Page.createFromTemplate("bio_profile", id, storeId, state.newPageTitle.trim())
-                        PageTemplateType.BLOG_POST -> Page.createFromTemplate("blog_post", id, storeId, state.newPageTitle.trim())
-                        PageTemplateType.BARBER_SHOP -> Page.createFromTemplate("barber_shop", id, storeId, state.newPageTitle.trim())
-                        PageTemplateType.PRO_DESIGN -> Page.createFromTemplate("pro_design", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.PREMIUM_STORE -> Page.createFromTemplate("premium_store", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.SERVICE_BOOKING -> Page.createFromTemplate("service_booking", id, storeId, state.newPageTitle.trim())
+                        PageTemplateType.PERSONAL_HUB -> Page.createFromTemplate("personal_hub", id, storeId, state.newPageTitle.trim())
                         PageTemplateType.EMPTY -> Page(id, storeId, state.newPageTitle.trim())
+                        else -> Page(id, storeId, state.newPageTitle.trim())
                     }
 
                 viewModel.savePage(newPage, false) {
@@ -124,6 +124,8 @@ fun PageListScreen(
                     onEditPage(newPage)
                 }
             }
+            is PageListEvent.OnAIDesignClicked -> state = state.copy(showAIBuider = true, showCreateDialog = false)
+            is PageListEvent.OnDismissAIBuilder -> state = state.copy(showAIBuider = false)
             is PageListEvent.OnGlobalSettingsClicked -> state = state.copy(showGlobalSettings = true)
             is PageListEvent.OnDismissGlobalSettings -> state = state.copy(showGlobalSettings = false)
             is PageListEvent.OnConfirmGlobalSettings -> {
@@ -379,6 +381,18 @@ private fun PageListContent(
     if (state.showCreateDialog) CreatePageDialog(state, onEvent, onImport)
     if (state.showGlobalSettings && state.pages.isNotEmpty()) GlobalSettingsDialog(state, onEvent)
     if (state.showRenameDialog) RenamePageDialog(state, onEvent)
+
+    if (state.showAIBuider) {
+        AIPageBuilderDialog(
+            onDismiss = { onEvent(PageListEvent.OnDismissAIBuilder) },
+            onPageGenerated = { generatedPage ->
+                onEvent(PageListEvent.OnDismissAIBuilder)
+                viewModel.savePage(generatedPage, false) {
+                    onEditPage(generatedPage)
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -993,28 +1007,37 @@ private fun CreatePageDialog(
         title = GenesysStrings.NewPageTitle,
         confirmButton = {
             GenesysColumn(usePadding = false) {
-                GenesysLoadingButton(text = "Criar Vitrine de Vendas", onClick = {
-                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PROFESSIONAL_VITRINE))
+                // OPÇÃO IA - DESTAQUE
+                GenesysLoadingButton(
+                    text = "Criar com Inteligência Artificial ✨",
+                    onClick = { onEvent(PageListEvent.OnAIDesignClicked) },
+                    fillWidth = true,
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    icon = GenesysIcons.Magic
+                )
+
+                GenesysSpacer(GenesysSpacing.Medium)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                GenesysSpacer(GenesysSpacing.Medium)
+
+                // TEMPLATES ELITE
+                GenesysLoadingButton(text = "Vitrine de Vendas Premium", onClick = {
+                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PREMIUM_STORE))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.ShoppingBag)
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Criar Link na Bio (Perfil)", onClick = {
-                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BIO_PROFILE))
+
+                GenesysLoadingButton(text = "Agendamento Profissional", onClick = {
+                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.SERVICE_BOOKING))
+                }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Schedule)
+                GenesysSpacer(GenesysSpacing.Small)
+
+                GenesysLoadingButton(text = "Personal Hub (Links & Bio)", onClick = {
+                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PERSONAL_HUB))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Person)
                 GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Criar Post de Blog", onClick = {
-                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BLOG_POST))
-                }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.List)
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Criar Página de Barbearia 💈", onClick = {
-                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.BARBER_SHOP))
-                }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Schedule, containerColor = Color(0xFF5D4037))
-                GenesysSpacer(GenesysSpacing.Small)
-                GenesysLoadingButton(text = "Criar Vitrine Design PRO 💎", onClick = {
-                    onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PRO_DESIGN))
-                }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Magic, containerColor = MaterialTheme.colorScheme.tertiary)
-                GenesysSpacer(GenesysSpacing.Small)
+
                 GenesysLoadingButton(
-                    text = "Importar Arquivo .benevides",
+                    text = "Importar Backup .benevides",
                     onClick = onImport,
                     fillWidth = true,
                     icon = GenesysIcons.CloudUpload,
@@ -1030,7 +1053,7 @@ private fun CreatePageDialog(
     ) {
         GenesysTextField(value = state.newPageTitle, onValueChange = {
             onEvent(PageListEvent.OnNewPageTitleChanged(it))
-        }, label = GenesysStrings.PageTitleLabel, placeholder = GenesysStrings.PageTitlePlaceholder)
+        }, label = GenesysStrings.PageTitleLabel, placeholder = "Ex: Minha Loja 2026")
     }
 }
 

@@ -240,7 +240,7 @@ class SqliteOrderRepository(
                 try {
                     PageThemeConfig.valueOf(this[OrdersTable.theme])
                 } catch (e: Exception) {
-                    PageThemeConfig.ROYAL
+                    PageThemeConfig.ELEGANCE
                 },
             shippingAddress = if (this[OrdersTable.shippingZipCode] != null) Address(
                 id = "",

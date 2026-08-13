@@ -26,7 +26,7 @@ data class Store(
     val asaasApiKey: String? = null,
     val paymentGateway: String = "STRIPE", // "STRIPE" or "ASAAS"
     val customDomain: String? = null,
-    val theme: PageThemeConfig = PageThemeConfig.ROYAL,
+    val theme: PageThemeConfig = PageThemeConfig.ELEGANCE,
     val customTheme: CustomThemeConfig? = null,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,

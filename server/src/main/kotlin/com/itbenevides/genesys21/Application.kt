@@ -10,6 +10,7 @@ import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
 
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
+import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.routes.*
 import io.ktor.http.*
@@ -89,6 +90,7 @@ fun Application.module() {
 
     val client = HttpClient(io.ktor.client.engine.java.Java)
     val receiptParserService = ReceiptParserService(client)
+    val pageAIGeneratorService = PageAIGeneratorService(client)
 
     val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
     val uploadDir = File(uploadPath).absoluteFile
@@ -217,6 +219,7 @@ fun Application.module() {
             shippingRoutes(storeRepository)
             connectRoutes(userRepository, storeRepository)
             receiptRoutes(receiptParserService, receiptRepository, userRepository)
+            aiRoutes(pageAIGeneratorService)
 
             authenticate("firebase") {
                 post("/upload") {

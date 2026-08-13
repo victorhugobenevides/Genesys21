@@ -84,8 +84,8 @@ fun App() {
     val themeToApply =
         remember(currentRoute, trackedOrder, currentActivePageTheme) {
             when (currentRoute) {
-                is Route.OrderTracking -> trackedOrder?.theme ?: PageThemeConfig.ROYAL
-                else -> currentActivePageTheme ?: PageThemeConfig.ROYAL
+                is Route.OrderTracking -> trackedOrder?.theme ?: PageThemeConfig.ELEGANCE
+                else -> currentActivePageTheme ?: PageThemeConfig.ELEGANCE
             }
         }
 
