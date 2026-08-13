@@ -324,6 +324,7 @@ jobs:
                 image: ${REGISTRY}/genesys-server:staging
                 environment:
                   - PROD_MODE=false
+                  - STAGING_MODE=true
                   - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
                   - GEMINI_API_KEY=${GEMINI_API_KEY}
                 volumes:

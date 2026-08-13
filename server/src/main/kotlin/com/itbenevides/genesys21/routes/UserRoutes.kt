@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.routes
 
 import com.itbenevides.genesys21.domain.model.UserProfile
+import com.itbenevides.genesys21.domain.model.toPublic
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -14,7 +15,9 @@ fun Route.userRoutes(userRepository: UserRepository) {
         get("/profile/{id}") {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             userRepository.getUserProfile(id).onSuccess {
-                call.respond(it)
+                // LGPD: Nunca retorne o perfil completo em rota pública.
+                // Convertemos para o DTO PublicUserProfile antes de enviar ao cliente.
+                call.respond(it.toPublic())
             }.onFailure {
                 call.respond(HttpStatusCode.NotFound, "Perfil não encontrado")
             }

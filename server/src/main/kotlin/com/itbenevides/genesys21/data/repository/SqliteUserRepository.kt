@@ -44,7 +44,9 @@ class SqliteUserRepository : UserRepository {
 
     override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> = try {
         dbQuery {
-            println("REPOSITORY: Salvando perfil de usuário ${profile.email} (${profile.id})")
+            // LGPD: Mascaramos o e-mail no log do servidor
+            val maskedEmail = com.itbenevides.genesys21.util.PrivacyUtils.maskEmail(profile.email)
+            println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id})")
             val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
             if (exists) {
                 UsersTable.update({ UsersTable.id eq profile.id }) {

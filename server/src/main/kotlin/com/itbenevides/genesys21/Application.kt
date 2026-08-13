@@ -99,13 +99,20 @@ fun Application.module() {
     install(StatusPages) {
         exception<io.ktor.serialization.JsonConvertException> { call, cause ->
             logger.error("ERRO DE SERIALIZAÇÃO (JSON): ${cause.message}")
-            call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados: ${cause.message}")
+            call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados.")
         }
         exception<Throwable> { call, cause ->
             val isProd = System.getenv("PROD_MODE") == "true"
+            val isStaging = System.getenv("STAGING_MODE") == "true" // Novo flag opcional
+
             logger.error("Erro Interno: ${cause.message}", cause)
-            if (isProd) call.respond(HttpStatusCode.InternalServerError, "Ocorreu um erro inesperado.")
-            else call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
+
+            if (isProd || isStaging) {
+                // LGPD/Segurança: Nunca mostre stack traces ou detalhes técnicos no frontend público.
+                call.respond(HttpStatusCode.InternalServerError, "Ocorreu um erro inesperado. Tente novamente mais tarde.")
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
+            }
         }
     }
 

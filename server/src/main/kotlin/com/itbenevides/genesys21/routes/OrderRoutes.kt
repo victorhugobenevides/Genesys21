@@ -1,12 +1,10 @@
 package com.itbenevides.genesys21.routes
 
-import com.itbenevides.genesys21.domain.model.Order
-import com.itbenevides.genesys21.domain.model.OrderResponse
-import com.itbenevides.genesys21.domain.model.OrderStatus
-import com.itbenevides.genesys21.domain.model.PaymentMethod
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.OrderRepository
 import com.itbenevides.genesys21.domain.repository.StoreRepository
 import com.itbenevides.genesys21.data.service.StripeService
+import com.itbenevides.genesys21.util.PrivacyUtils
 import com.stripe.net.Webhook
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -149,7 +147,19 @@ fun Route.orderRoutes(
         get("/{orderId}") {
             val orderId = call.parameters["orderId"] ?: ""
             orderRepository.getOrderById(orderId)
-                .onSuccess { call.respond(it) }
+                .onSuccess { order ->
+                    // LGPD: Mascarar PII (Informações Pessoais) em rastreio público
+                    val maskedOrder = order.copy(
+                        customerName = order.customerName?.take(3) + "****",
+                        customerPhone = PrivacyUtils.maskPhone(order.customerPhone),
+                        shippingAddress = order.shippingAddress?.copy(
+                            street = PrivacyUtils.maskAddress(order.shippingAddress?.street, order.shippingAddress?.number),
+                            complement = null,
+                            zipCode = order.shippingAddress?.zipCode?.take(5) + "-***"
+                        )
+                    )
+                    call.respond(maskedOrder)
+                }
                 .onFailure { call.respond(HttpStatusCode.NotFound, it.message ?: "Pedido não encontrado") }
         }
 

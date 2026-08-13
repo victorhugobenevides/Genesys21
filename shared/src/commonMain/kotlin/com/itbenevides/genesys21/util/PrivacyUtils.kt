@@ -42,7 +42,8 @@ object PrivacyUtils {
             "bearer\\s+[\\w\\-\\.]+".toRegex(RegexOption.IGNORE_CASE),
             "password\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
             "secret\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
-            "token\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE)
+            "token\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
+            "api_key\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE)
         )
 
         patterns.forEach { regex ->
@@ -50,5 +51,36 @@ object PrivacyUtils {
         }
 
         return sanitized
+    }
+
+    /**
+     * Masks an email address: v...n@gmail.com
+     */
+    fun maskEmail(email: String?): String {
+        if (email == null || !email.contains("@")) return "****"
+        val parts = email.split("@")
+        val name = parts[0]
+        val domain = parts[1]
+        if (name.length <= 2) return "${name.first()}***@$domain"
+        return "${name.first()}...${name.last()}@$domain"
+    }
+
+    /**
+     * Masks a phone number: (11) 9****-1234
+     */
+    fun maskPhone(phone: String?): String {
+        if (phone == null || phone.isBlank()) return "****"
+        val digits = phone.filter { it.isDigit() }
+        if (digits.length < 10) return "****"
+        return "(${digits.take(2)}) ${digits[2]}****-${digits.takeLast(4)}"
+    }
+
+    /**
+     * Masks an address to show only the essential: Rua A****, 100
+     */
+    fun maskAddress(street: String?, number: String?): String {
+        if (street == null) return "****"
+        val firstWord = street.split(" ").firstOrNull() ?: "Rua"
+        return "$firstWord ****, $number"
     }
 }
