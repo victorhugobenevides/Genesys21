@@ -35,7 +35,7 @@ class EditorSnapshotTest {
     fun testThemeSelectorBottomSheetResponsive() {
         paparazzi.genesysResponsiveSnapshot {
             ThemeSelectorBottomSheet(
-                currentTheme = PageThemeConfig.ROYAL,
+                currentTheme = PageThemeConfig.ELEGANCE,
                 onThemeSelected = {},
                 onDismiss = {}
             )

@@ -36,7 +36,7 @@ object StoresTable : BaseTable("stores") {
     val asaasApiKey = text("asaas_api_key").nullable()
     val paymentGateway = varchar("payment_gateway", 20).default("STRIPE")
     val customDomain = varchar("custom_domain", 255).nullable().uniqueIndex("idx_stores_custom_domain")
-    val theme = varchar("theme", 50).default("ROYAL")
+    val theme = varchar("theme", 50).default("ELEGANCE")
 
     override val primaryKey = PrimaryKey(id)
 }

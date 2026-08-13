@@ -8,7 +8,7 @@ object PagesTable : BaseTable("pages") {
     val title = varchar("title", 200)
     val customDomain = varchar("custom_domain", 255).nullable().uniqueIndex("idx_pages_custom_domain")
     val whatsapp = varchar("whatsapp", 50).nullable()
-    val theme = varchar("theme", 50).default("ROYAL")
+    val theme = varchar("theme", 50).default("ELEGANCE")
 
     override val primaryKey = PrimaryKey(id)
 }

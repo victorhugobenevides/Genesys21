@@ -23,7 +23,7 @@ class ThemesSnapshotTest {
             id = "theme-test",
             storeId = "test-store",
             title = "Teste de Tema",
-            theme = PageThemeConfig.ROYAL,
+            theme = PageThemeConfig.ELEGANCE,
             components = emptyList()
         )
 

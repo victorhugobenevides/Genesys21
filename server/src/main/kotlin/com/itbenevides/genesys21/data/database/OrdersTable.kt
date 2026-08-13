@@ -13,7 +13,7 @@ object OrdersTable : BaseTable("orders") {
     val status = varchar("status", 50)
     val paymentMethod = varchar("payment_method", 50).default("LOCAL")
     val whatsappContact = varchar("whatsapp_contact", 50).nullable()
-    val theme = varchar("theme", 50).default("ROYAL")
+    val theme = varchar("theme", 50).default("ELEGANCE")
 
     // Entrega / Frete
     val shippingStreet = varchar("shipping_street", 255).nullable()
