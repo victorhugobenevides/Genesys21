@@ -27,9 +27,17 @@ import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -308,13 +316,13 @@ private fun CartFooter(
             GenesysWeightBox(1f) {
                 GenesysText(text = if (state.currentStep < 3) "Subtotal" else "Total Geral", style = GenesysTextStyle.Body)
             }
-            val displayTotal = if (state.currentStep < 3) state.total else state.grandTotal
-            val totalFormatted = (displayTotal * 100.0).roundToLong() / 100.0
+            val displaysubtotal = if (state.currentStep < 3) state.total else state.grandTotal
+            val totalFormatted = (displaysubtotal * 100.0).roundToLong() / 100.0
             GenesysText(
                 text = "${GenesysStrings.PricePrefix}$totalFormatted",
                 style = GenesysTextStyle.Title,
                 fontWeight = GenesysFontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary,
+                color = GenesysTheme.colors.brand,
             )
         }
         GenesysSpacer(GenesysSpacing.Medium)
@@ -390,17 +398,17 @@ private fun DeliveryMethodSelector(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isPickup) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = if (isPickup) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                        color = if (isPickup) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
+                        border = if (isPickup) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(GenesysIcons.ShoppingBag, null, tint = if(isPickup) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(GenesysIcons.ShoppingBag, null, tint = if(isPickup) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
                             GenesysSpacer(GenesysSpacing.Small)
                             GenesysText(text = "Retirar no Local", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-                            GenesysText(text = "Grátis", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.primary)
+                            GenesysText(text = "Grátis", style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand)
                         }
                     }
                 }
@@ -415,14 +423,14 @@ private fun DeliveryMethodSelector(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
-                        color = if (isDelivery) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = if (isDelivery) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                        color = if (isDelivery) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
+                        border = if (isDelivery) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(GenesysIcons.Language, null, tint = if(isDelivery) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(GenesysIcons.Language, null, tint = if(isDelivery) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
                             GenesysSpacer(GenesysSpacing.Small)
                             GenesysText(text = "Receber em Casa", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
                             GenesysText(text = "Cálculo via CEP", style = GenesysTextStyle.Label)
@@ -531,8 +539,8 @@ private fun ShippingOptionsCard(
                     onClick = { onEvent(CartScreenEvent.OnShippingOptionSelected(option)) },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                    color = if (isSelected) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
+                    border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -547,7 +555,7 @@ private fun ShippingOptionsCard(
                         GenesysText(
                             text = "${GenesysStrings.PricePrefix}${option.price}",
                             fontWeight = GenesysFontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = GenesysTheme.colors.brand
                         )
                     }
                 }
@@ -589,7 +597,7 @@ private fun OrderSummaryCard(state: CartScreenState) {
                     text = "${GenesysStrings.PricePrefix}$totalFormatted",
                     fontWeight = GenesysFontWeight.ExtraBold,
                     style = GenesysTextStyle.Title,
-                    color = MaterialTheme.colorScheme.primary
+                    color = GenesysTheme.colors.brand
                 )
             }
         }
@@ -677,7 +685,7 @@ private fun PaymentMethodCard(
                 "O pagamento será processado agora via cartão ou Pix dentro do aplicativo."
 
             GenesysSpacer(GenesysSpacing.Small)
-            GenesysText(text = infoText, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GenesysText(text = infoText, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
         }
     }
 }
@@ -702,7 +710,7 @@ private fun CartStepperUI(step: Int) {
             val active = currentStep <= step
 
             val color by animateColorAsState(
-                targetValue = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                targetValue = if (active) GenesysTheme.colors.brand else GenesysTheme.colors.outline,
                 animationSpec = GenesysMotion.colorSpring,
                 label = "stepperColor",
             )
@@ -726,7 +734,7 @@ private fun CartStepperUI(step: Int) {
                         Modifier
                             .width(24.dp)
                             .height(2.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant)
+                            .background(GenesysTheme.colors.outline)
                             .align(Alignment.CenterVertically),
                 )
             }
@@ -771,7 +779,7 @@ private fun ModernCartItemRow(
                         GenesysText(
                             text = "Agendado: ${time.dayOfMonth}/${time.monthNumber} às ${time.hour}:${time.minute.toString().padStart(2, '0')}",
                             style = GenesysTextStyle.Label,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = GenesysTheme.colors.accent
                         )
                     }
 
@@ -779,7 +787,7 @@ private fun ModernCartItemRow(
                     GenesysText(
                         text = "${GenesysStrings.PricePrefix}$priceFormatted",
                         style = GenesysTextStyle.Body,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = GenesysTheme.colors.brand,
                     )
 
                     val prod = item.product
@@ -797,7 +805,7 @@ private fun ModernCartItemRow(
             GenesysIconButton(
                 icon = GenesysIcons.Delete,
                 onClick = { onEvent(CartScreenEvent.OnRemoveItem(itemId)) },
-                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                tint = GenesysTheme.colors.error.copy(alpha = 0.6f),
             )
         }
     }

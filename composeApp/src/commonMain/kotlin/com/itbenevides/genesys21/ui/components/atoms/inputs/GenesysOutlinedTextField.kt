@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 /**
  * GenesysOutlinedTextField estabilizado para WasmJs.
@@ -69,8 +70,8 @@ fun GenesysOutlinedTextField(
                 {
                     Text(
                         text = errorMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        style = GenesysTheme.typography.bodySmall,
+                        color = GenesysTheme.colors.error,
                     )
                 }
             } else {
@@ -100,8 +101,8 @@ fun GenesysOutlinedTextField(
         },
         colors =
             OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                errorBorderColor = MaterialTheme.colorScheme.error,
+                focusedBorderColor = GenesysTheme.colors.brand,
+                errorBorderColor = GenesysTheme.colors.error,
             ),
     )
 }

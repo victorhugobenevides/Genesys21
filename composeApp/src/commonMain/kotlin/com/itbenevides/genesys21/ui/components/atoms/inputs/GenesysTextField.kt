@@ -17,7 +17,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 /**
  * GenesysTextField - Versão de Resistência Industrial (Samsung Bug Fix).
@@ -39,11 +39,11 @@ fun GenesysTextField(
     isError: Boolean = false,
     supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(GenesysTheme.config.cornerRadius),
     colors: TextFieldColors =
         OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+            focusedBorderColor = GenesysTheme.colors.brand,
+            unfocusedContainerColor = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.1f),
         ),
     weightValue: Float = 0f,
 ) {
@@ -82,11 +82,11 @@ internal fun GenesysTextFieldBase(
     isError: Boolean = false,
     supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(GenesysTheme.config.cornerRadius),
     colors: TextFieldColors =
         OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
+            focusedBorderColor = GenesysTheme.colors.brand,
+            unfocusedContainerColor = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.1f),
         ),
     weightValue: Float = 0f,
 ) {
@@ -127,7 +127,7 @@ internal fun GenesysTextFieldBase(
         },
         label = label?.let { { Text(it) } },
         placeholder = placeholder?.let { { Text(it) } },
-        leadingIcon = icon?.let { { Icon(it, null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary) } },
+        leadingIcon = icon?.let { { Icon(it, null, modifier = Modifier.size(GenesysTheme.spacing.m), tint = GenesysTheme.colors.brand) } },
         trailingIcon = trailingIcon,
         modifier =
             modifier

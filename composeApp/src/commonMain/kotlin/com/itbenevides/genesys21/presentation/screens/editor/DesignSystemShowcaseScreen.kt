@@ -21,9 +21,18 @@ import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysTimeChip
 import com.itbenevides.genesys21.ui.components.atoms.images.*
 import com.itbenevides.genesys21.ui.components.atoms.indicators.*
 import com.itbenevides.genesys21.ui.components.atoms.inputs.*
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysLazyColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
@@ -95,7 +104,7 @@ fun DesignSystemShowcaseScreen(
                                     GenesysTextButton(
                                         text = "Tema: ${currentTheme.name}",
                                         onClick = { showThemeMenu = true },
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = GenesysTheme.colors.brand,
                                     )
                                 }
                                 DropdownMenu(
@@ -150,7 +159,7 @@ fun DesignSystemShowcaseScreen(
                     style = GenesysTextStyle.Label,
                     textAlign = GenesysTextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.outline,
+                    color = GenesysTheme.colors.outline,
                 )
                 Spacer(Modifier.height(64.dp))
             }
@@ -183,14 +192,14 @@ private fun TemplatesTabShowcase() {
                         }
                         Column(Modifier.weight(1f)) {
                             GenesysText(text = template.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                            GenesysText(text = template.description, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            GenesysText(text = template.description, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
                         }
                         Box(
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                .background(GenesysTheme.colors.brandContainer, CircleShape)
                                 .padding(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Text(template.category.name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(template.category.name, style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.onBrandContainer)
                         }
                     }
                 }
@@ -280,19 +289,19 @@ private fun ArchitectureShowcase() {
 private fun StackLayerCard(title: String, description: String, tech: String, modifier: Modifier = Modifier) {
     GenesysCard(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = GenesysTheme.colors.brand)
             Spacer(Modifier.height(4.dp))
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = GenesysTheme.colors.onSurface)
             Spacer(Modifier.height(8.dp))
             Surface(
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                color = GenesysTheme.colors.accent.copy(alpha = 0.2f),
                 shape = MaterialTheme.shapes.small
             ) {
                 Text(
                     text = tech,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = GenesysTheme.colors.accent
                 )
             }
         }
@@ -327,7 +336,7 @@ private fun QualityShowcase() {
                     }
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(GenesysIcons.Description, null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(GenesysIcons.Description, null, tint = GenesysTheme.colors.brand)
                         Spacer(Modifier.width(12.dp))
                         Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                         Icon(GenesysIcons.ArrowRight, null)
@@ -344,7 +353,7 @@ private fun QualityShowcase() {
                             onClick = { uriHandler.openUri(path) }
                         ) {
                             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(GenesysIcons.Description, null, tint = MaterialTheme.colorScheme.primary)
+                                Icon(GenesysIcons.Description, null, tint = GenesysTheme.colors.brand)
                                 Spacer(Modifier.width(12.dp))
                                 Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                                 Icon(GenesysIcons.ArrowRight, null)
@@ -393,11 +402,11 @@ private fun QualityShowcase() {
 @Composable
 private fun ArchitectureLevel(title: String, description: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
         Column {
             GenesysText(text = title, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
-            GenesysText(text = description, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GenesysText(text = description, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
         }
     }
 }
@@ -440,7 +449,7 @@ private fun FoundationShowcase() {
                 GenesysIcons.Magic, GenesysIcons.ShoppingBag, GenesysIcons.Schedule,
                 GenesysIcons.Favorite, GenesysIcons.AdminPanelSettings, GenesysIcons.CloudUpload
             ).forEach { icon ->
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(if (isCompact) 20.dp else 24.dp))
+                Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(if (isCompact) 20.dp else 24.dp))
             }
         }
     }
@@ -560,7 +569,7 @@ private fun DisplayShowcase() {
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(Modifier.align(Alignment.CenterVertically)) { GenesysBadge(label = "NEW", color = MaterialTheme.colorScheme.primary) }
+            Box(Modifier.align(Alignment.CenterVertically)) { GenesysBadge(label = "NEW", color = GenesysTheme.colors.brand) }
             Box(Modifier.align(Alignment.CenterVertically)) { GenesysStatusBadge(status = OrderStatus.PENDING) }
             Box(Modifier.align(Alignment.CenterVertically)) { GenesysStatusBadge(status = OrderStatus.COMPLETED) }
             Box(Modifier.align(Alignment.CenterVertically)) { GenesysStockBadge(stock = 3) }
@@ -663,7 +672,7 @@ private fun ToolsShowcase(
     ShowcaseSection("Developer & Merchant Tools", "Screens for documentation and template management.") {
         GenesysCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenTemplateShowcase) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(GenesysIcons.GridView, null, tint = MaterialTheme.colorScheme.primary)
+                Icon(GenesysIcons.GridView, null, tint = GenesysTheme.colors.brand)
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Template Catalog", style = MaterialTheme.typography.titleMedium)
@@ -675,7 +684,7 @@ private fun ToolsShowcase(
         Spacer(Modifier.height(16.dp))
         GenesysCard(modifier = Modifier.fillMaxWidth(), onClick = onOpenEditorShowcase) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(GenesysIcons.Edit, null, tint = MaterialTheme.colorScheme.primary)
+                Icon(GenesysIcons.Edit, null, tint = GenesysTheme.colors.brand)
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     Text("Editor UI Comparison", style = MaterialTheme.typography.titleMedium)
@@ -700,19 +709,19 @@ private fun ShowcaseSection(
         Text(
             text = title.uppercase(),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
+            color = GenesysTheme.colors.brand,
             modifier = Modifier.padding(bottom = 4.dp),
         )
         subtitle?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = GenesysTheme.colors.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
         }
         content()
         Spacer(Modifier.height(if (isCompact) 16.dp else 24.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.3f))
     }
 }

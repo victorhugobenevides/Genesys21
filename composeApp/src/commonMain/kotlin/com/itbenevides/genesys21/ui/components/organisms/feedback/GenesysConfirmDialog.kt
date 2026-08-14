@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysConfirmDialog(
@@ -22,14 +22,14 @@ fun GenesysConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        icon = icon?.let { { Icon(it, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) } },
+        icon = icon?.let { { Icon(it, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(GenesysTheme.spacing.xxl)) } },
         title = {
             Text(
                 title,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
                 fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleLarge,
+                style = GenesysTheme.typography.title,
             )
         },
         text = {
@@ -37,12 +37,12 @@ fun GenesysConfirmDialog(
                 text,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium,
+                style = GenesysTheme.typography.body,
             )
         },
         confirmButton = confirmButton,
         dismissButton = dismissButton,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(GenesysTheme.config.cornerRadius),
+        containerColor = GenesysTheme.colors.surface,
     )
 }

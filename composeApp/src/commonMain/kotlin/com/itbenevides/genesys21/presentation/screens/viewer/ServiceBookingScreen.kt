@@ -14,9 +14,16 @@ import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine
@@ -102,7 +109,7 @@ fun ServiceBookingScreen(
                                 GenesysSpacer(GenesysSpacing.Small)
                                 com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge(
                                     label = "ONLINE",
-                                    color = MaterialTheme.colorScheme.tertiary
+                                    color = GenesysTheme.colors.accent
                                 )
                             }
                         }
@@ -120,7 +127,7 @@ fun ServiceBookingScreen(
                             text = "${GenesysStrings.PricePrefix}${service.price}",
                             style = GenesysTextStyle.Body,
                             fontWeight = GenesysFontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = GenesysTheme.colors.brand,
                         )
                     }
                 }
@@ -217,18 +224,18 @@ fun ServiceBookingScreen(
 
                     if (travelFee > 0) {
                         GenesysSpacer(GenesysSpacing.Medium)
-                        GenesysCard(backgroundColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.2f)) {
+                        GenesysCard(backgroundColor = GenesysTheme.colors.accent.copy(alpha = 0.1f)) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(GenesysIcons.Payments, null, tint = MaterialTheme.colorScheme.tertiary)
+                                Icon(GenesysIcons.Payments, null, tint = GenesysTheme.colors.accent)
                                 GenesysSpacer(GenesysSpacing.Medium)
                                 GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
-                                    GenesysText(text = "Taxa de Deslocamento", fontWeight = GenesysFontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
+                                    GenesysText(text = "Taxa de Deslocamento", fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.accent)
                                     GenesysText(text = "Cálculo ida e volta para seu local", style = GenesysTextStyle.Label)
                                 }
                                 GenesysText(
                                     text = "${GenesysStrings.PricePrefix}$travelFee",
                                     fontWeight = GenesysFontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.tertiary
+                                    color = GenesysTheme.colors.accent
                                 )
                             }
                         }

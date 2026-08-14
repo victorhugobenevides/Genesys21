@@ -10,8 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,13 +23,13 @@ fun GenesysFilterChip(
     badgeCount: Int = 0,
 ) {
     val containerColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        targetValue = if (selected) GenesysTheme.colors.brand else Color.Transparent,
         animationSpec = GenesysMotion.colorSpring,
         label = "chipColor",
     )
 
     val labelColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (selected) GenesysTheme.colors.onBrand else GenesysTheme.colors.onSurfaceVariant,
         animationSpec = GenesysMotion.colorSpring,
         label = "labelColor",
     )
@@ -40,27 +40,27 @@ fun GenesysFilterChip(
         label = {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge,
+                style = GenesysTheme.typography.label,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
             )
             if (badgeCount > 0) {
                 Surface(
                     color =
                         if (selected) {
-                            MaterialTheme.colorScheme.onPrimary.copy(
+                            GenesysTheme.colors.onBrand.copy(
                                 alpha = 0.2f,
                             )
                         } else {
-                            MaterialTheme.colorScheme.primaryContainer
+                            GenesysTheme.colors.brandContainer
                         },
                     shape = CircleShape,
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier.padding(start = GenesysTheme.spacing.xs),
                 ) {
                     Text(
                         text = badgeCount.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = GenesysTheme.typography.label,
+                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs, vertical = GenesysTheme.spacing.xxxs),
+                        color = if (selected) GenesysTheme.colors.onBrand else GenesysTheme.colors.onBrandContainer,
                     )
                 }
             }
@@ -78,7 +78,7 @@ fun GenesysFilterChip(
             FilterChipDefaults.filterChipBorder(
                 enabled = true,
                 selected = selected,
-                borderColor = if (selected) Color.Transparent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                borderColor = if (selected) Color.Transparent else GenesysTheme.colors.outline.copy(alpha = 0.3f),
                 selectedBorderColor = Color.Transparent,
             ),
     )

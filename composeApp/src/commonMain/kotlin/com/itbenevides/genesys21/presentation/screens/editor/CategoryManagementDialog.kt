@@ -13,9 +13,16 @@ import com.itbenevides.genesys21.domain.model.Category
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysRowText
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
@@ -83,7 +90,7 @@ fun CategoryManagementDialog(
 
                 GenesysIconButton(
                     icon = if (editingCategory != null) GenesysIcons.Check else GenesysIcons.Add,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = GenesysTheme.colors.brand,
                     onClick = { handleSave() },
                 )
 
@@ -103,7 +110,7 @@ fun CategoryManagementDialog(
                 text = "Categorias Salvas",
                 style = GenesysTextStyle.Label,
                 fontWeight = GenesysFontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = GenesysTheme.colors.brand,
             )
 
             GenesysSpacer(GenesysSpacing.Small)
@@ -124,9 +131,9 @@ fun CategoryManagementDialog(
                             modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
                             backgroundColor =
                                 if (editingCategory?.id == category.id) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                    GenesysTheme.colors.brandContainer.copy(alpha = 0.3f)
                                 } else {
-                                    MaterialTheme.colorScheme.surface
+                                    GenesysTheme.colors.surface
                                 },
                         ) {
                             Row(

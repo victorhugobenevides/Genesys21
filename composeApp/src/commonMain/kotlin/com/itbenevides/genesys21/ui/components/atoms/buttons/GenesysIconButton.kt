@@ -2,11 +2,11 @@ package com.itbenevides.genesys21.ui.components.atoms.buttons
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysIconButton(
@@ -14,7 +14,7 @@ fun GenesysIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    tint: Color = MaterialTheme.colorScheme.primary,
+    tint: Color = GenesysTheme.colors.brand,
 ) {
     IconButton(
         onClick = onClick,

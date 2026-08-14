@@ -7,11 +7,9 @@ import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysLoadingIndicator
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextAlign
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.*
 
 /**
  * SplashScreen padronizada com o Design System Genesys21.
@@ -29,7 +27,7 @@ fun SplashScreen() {
             imageVector = GenesysIcons.Magic,
             contentDescription = null,
             modifier = Modifier.size(GenesysSpacing.Huge.value * 2),
-            tint = MaterialTheme.colorScheme.primary,
+            tint = GenesysTheme.colors.brand,
         )
 
         GenesysSpacer(GenesysSpacing.Large)
@@ -40,7 +38,7 @@ fun SplashScreen() {
             style = GenesysTextStyle.Headline,
             fontWeight = GenesysFontWeight.ExtraBold,
             textAlign = GenesysTextAlign.Center,
-            color = MaterialTheme.colorScheme.primary,
+            color = GenesysTheme.colors.brand,
         )
 
         GenesysSpacer(GenesysSpacing.ExtraLarge)

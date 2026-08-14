@@ -22,11 +22,16 @@ import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -146,7 +151,7 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                         GenesysText(
                             text = "Agendamento: $dateStr às $timeStr",
                             fontWeight = GenesysFontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = GenesysTheme.colors.brand,
                         )
                         GenesysText(
                             text = "Status: ${appointment.status.name}",
@@ -159,7 +164,7 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                     color = when (appointment.status.name) {
                         "CONFIRMED" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
                         "CANCELLED" -> Color(0xFFF44336).copy(alpha = 0.1f)
-                        else -> MaterialTheme.colorScheme.surfaceVariant
+                        else -> GenesysTheme.colors.surfaceVariant
                     }
                 ) {
                     Text(
@@ -174,17 +179,17 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
             appointment.meetingLink?.let { link ->
                 GenesysSpacer(GenesysSpacing.Medium)
                 GenesysCard(
-                    backgroundColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                    backgroundColor = GenesysTheme.colors.accent.copy(alpha = 0.1f),
                     onClick = { uriHandler.openUri(link) }
                 ) {
                     GenesysRow(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(GenesysIcons.Language, null, tint = MaterialTheme.colorScheme.tertiary)
+                        Icon(GenesysIcons.Language, null, tint = GenesysTheme.colors.accent)
                         GenesysSpacer(GenesysSpacing.Medium)
                         GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
-                            GenesysText(text = "Link da Reunião", fontWeight = GenesysFontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
+                            GenesysText(text = "Link da Reunião", fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.accent)
                             GenesysText(text = "Clique para acessar a sala", style = GenesysTextStyle.Label)
                         }
-                        Icon(GenesysIcons.ArrowRight, null, tint = MaterialTheme.colorScheme.tertiary)
+                        Icon(GenesysIcons.ArrowRight, null, tint = GenesysTheme.colors.accent)
                     }
                 }
             }
@@ -199,7 +204,7 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                     GenesysText(
                         text = "${note.authorName}: ${note.content}",
                         style = GenesysTextStyle.Label,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = GenesysTheme.colors.onSurfaceVariant
                     )
                 }
             }
@@ -231,7 +236,7 @@ private fun HistoryOrderCard(
                         GenesysText(
                             text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}",
                             fontWeight = GenesysFontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = GenesysTheme.colors.brand,
                         )
                         GenesysText(
                             text = dateText,
@@ -258,7 +263,7 @@ private fun HistoryOrderCard(
                     text = "${GenesysStrings.PricePrefix}$totalFormatted",
                     style = GenesysTextStyle.Title,
                     fontWeight = GenesysFontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = GenesysTheme.colors.brand,
                 )
             }
         }

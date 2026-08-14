@@ -1,6 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.itbenevides.genesys21.LocalAnimatedContentScope
+import com.itbenevides.genesys21.LocalSharedTransitionScope
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.PageComponent
@@ -37,9 +39,19 @@ import com.itbenevides.genesys21.triggerPrint
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysRowText
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
@@ -228,7 +240,7 @@ fun PageComponentRenderer(
                         Surface(
                             modifier = Modifier.size((effectiveImageSize + 12).dp),
                             shape = if (component.isCircular) CircleShape else RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                            color = GenesysTheme.colors.brand.copy(alpha = 0.05f)
                         ) {}
 
                         GenesysImage(
@@ -254,7 +266,7 @@ fun PageComponentRenderer(
                             textAlign = GenesysTextAlign.Center,
                             modifier = Modifier.padding(horizontal = if (isCompact) 16.dp else 32.dp),
                             fontSize = if (isCompact) 14.sp else 16.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = GenesysTheme.colors.onSurfaceVariant
                         )
                     }
                 }
@@ -454,7 +466,7 @@ fun PageComponentRenderer(
                     },
                 ) {
                     GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(GenesysIcons.ShoppingBag, null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(GenesysIcons.ShoppingBag, null, tint = GenesysTheme.colors.brand)
                         GenesysSpacer(GenesysSpacing.Medium)
                         GenesysRowText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, weightValue = 1f)
                         Icon(GenesysIcons.ArrowRight, null)
@@ -472,7 +484,7 @@ fun PageComponentRenderer(
                     },
                 ) {
                     GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(GenesysIcons.List, null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(GenesysIcons.List, null, tint = GenesysTheme.colors.brand)
                         GenesysSpacer(GenesysSpacing.Medium)
                         GenesysRowText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, weightValue = 1f)
                         Icon(GenesysIcons.ArrowRight, null)
@@ -502,7 +514,7 @@ fun PageComponentRenderer(
                             "RIGHT" -> GenesysTextAlign.End
                             else -> GenesysTextAlign.Start
                         },
-                    color = if (component.usePrimaryColor) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                    color = if (component.usePrimaryColor) GenesysTheme.colors.brand else Color.Unspecified,
                     fontSize = component.fontSize.sp,
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp).clickable { onComponentClick() },
                 )
@@ -670,15 +682,15 @@ fun PageComponentRenderer(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                                    .background(GenesysTheme.colors.brandContainer, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(20.dp))
                             }
                             GenesysSpacer(GenesysSpacing.Medium)
                             Column {
                                 GenesysText(text = item.title, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
-                                GenesysText(text = item.description, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                GenesysText(text = item.description, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
                             }
                         }
                     }
@@ -703,7 +715,7 @@ fun PageComponentRenderer(
                         Column {
                             GenesysText(text = component.author, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
                             component.authorTitle?.let {
-                                GenesysText(text = it, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                GenesysText(text = it, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
                             }
                         }
                     }
@@ -841,7 +853,7 @@ fun PageComponentRenderer(
                                     Text(
                                         text = tag,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                        style = MaterialTheme.typography.labelMedium,
+                                        style = GenesysTheme.typography.label,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -857,7 +869,7 @@ fun PageComponentRenderer(
 
             is PageComponent.Divider -> {
                 Box(modifier = Modifier.padding(vertical = if (component.usePadding) 16.dp else 0.dp)) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.5f))
                 }
             }
 
@@ -882,7 +894,7 @@ fun PageComponentRenderer(
                 Surface(
                     onClick = { onEditClick?.invoke() },
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    color = GenesysTheme.colors.brand.copy(alpha = 0.8f),
                     contentColor = Color.White,
                     tonalElevation = 4.dp,
                     modifier = Modifier.size(if (isMobile) 32.dp else 36.dp),
@@ -911,25 +923,26 @@ private fun SocialLinkItem(
                 Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(GenesysTheme.colors.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = GenesysTheme.colors.brand,
                 modifier = Modifier.size(24.dp),
             )
         }
         Spacer(Modifier.height(4.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = GenesysTheme.typography.label,
+            color = GenesysTheme.colors.onSurfaceVariant,
         )
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ProductCard(
     product: Product,
@@ -955,6 +968,9 @@ fun ProductCard(
         targetValue = if (isAdded) 1.15f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
     )
+
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedContentScope = LocalAnimatedContentScope.current
 
     BoxWithConstraints(
         modifier =
@@ -989,26 +1005,25 @@ fun ProductCard(
                     null
                 },
             elevation = if (isHovered) 4.dp else 0.dp,
-            backgroundColor = MaterialTheme.colorScheme.surface,
+            backgroundColor = GenesysTheme.colors.surface,
             border =
                 androidx.compose.foundation.BorderStroke(
                     width = 1.dp,
                     color =
                         if (isHovered) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            GenesysTheme.colors.brand.copy(alpha = 0.2f)
                         } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                            GenesysTheme.colors.onSurface.copy(alpha = 0.08f)
                         },
                 ),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Box(
-                    modifier =
-                        Modifier
+                    modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(0.9f) // Mais vertical para destaque
                             .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     val imageUrl =
@@ -1020,7 +1035,16 @@ fun ProductCard(
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = product.name,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().then(
+                            if (sharedTransitionScope != null && animatedContentScope != null) {
+                                with(sharedTransitionScope) {
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState(key = "prod_img_${product.id}"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
+                                }
+                            } else Modifier
+                        ),
                         contentScale = ContentScale.Crop,
                     )
 
@@ -1049,7 +1073,7 @@ fun ProductCard(
                             Surface(
                                 modifier = Modifier.size(if (isMobile) 24.dp else 32.dp),
                                 shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondary,
+                                color = GenesysTheme.colors.accent,
                                 contentColor = Color.White,
                                 tonalElevation = 4.dp,
                             ) {
@@ -1063,7 +1087,7 @@ fun ProductCard(
                             Surface(
                                 modifier = Modifier.size(if (isMobile) 32.dp else 44.dp).scale(successScale),
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (isAdded) Color(0xFF388E3C) else MaterialTheme.colorScheme.primary,
+                                color = if (isAdded) GenesysTheme.colors.success else GenesysTheme.colors.brand,
                                 contentColor = Color.White,
                                 shadowElevation = 8.dp,
                             ) {
@@ -1098,11 +1122,11 @@ fun ProductCard(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = product.name,
-                        style = if (isMobile) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
+                        style = if (isMobile) GenesysTheme.typography.bodySmall else GenesysTheme.typography.body,
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = GenesysTheme.colors.onSurface,
                     )
 
                     if (product.price > 0 && showPrice) {
@@ -1112,16 +1136,16 @@ fun ProductCard(
                             val priceFormatted = (product.price * 100.0).roundToLong() / 100.0
                             Text(
                                 text = "${GenesysStrings.PricePrefix}$priceFormatted",
-                                style = if (isMobile) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleLarge,
+                                style = if (isMobile) GenesysTheme.typography.body else GenesysTheme.typography.title,
                                 fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = GenesysTheme.colors.brand,
                             )
 
                             if (product.stock <= 0) {
                                 GenesysBadge(
                                     label = "ESGOTADO",
-                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                                    textColor = MaterialTheme.colorScheme.error,
+                                    color = GenesysTheme.colors.error.copy(alpha = 0.1f),
+                                    textColor = GenesysTheme.colors.error,
                                 )
                             }
                         }

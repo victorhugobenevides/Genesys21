@@ -10,9 +10,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun GenesysQuantitySelector(
@@ -57,8 +56,8 @@ private fun QuantityCircleButton(
         onClick = onClick,
         modifier = Modifier.size(GenesysDimens.IconHuge),
         shape = CircleShape,
-        color = if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        contentColor = if (isPrimary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        color = if (isPrimary) GenesysTheme.colors.brand else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f),
+        contentColor = if (isPrimary) GenesysTheme.colors.onBrand else GenesysTheme.colors.onSurface,
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

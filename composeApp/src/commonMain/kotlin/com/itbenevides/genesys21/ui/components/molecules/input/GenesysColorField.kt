@@ -7,12 +7,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.util.GenesysBrandPresets
 import com.itbenevides.genesys21.util.toColor
 
@@ -40,13 +44,13 @@ fun GenesysColorField(
                 Box(
                     modifier =
                         Modifier
-                            .padding(end = 8.dp)
+                            .padding(end = GenesysTheme.spacing.xs)
                             .size(32.dp)
                             .clip(CircleShape)
                             .background(value.toColor())
                             .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                width = GenesysTheme.spacing.xxxs,
+                                color = GenesysTheme.colors.outline.copy(alpha = 0.5f),
                                 shape = CircleShape,
                             )
                             .clickable { showPalette = !showPalette },
@@ -58,28 +62,28 @@ fun GenesysColorField(
             Surface(
                 modifier =
                     Modifier
-                        .padding(top = 8.dp)
+                        .padding(top = GenesysTheme.spacing.xs)
                         .fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(GenesysTheme.config.cornerRadius),
+                color = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
                 border =
                     androidx.compose.foundation.BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
+                        width = GenesysTheme.spacing.xxxs,
+                        color = GenesysTheme.colors.outline,
                     ),
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(GenesysTheme.spacing.m)) {
                     Text(
                         text = "Paleta de Sugestões",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = GenesysTheme.typography.label,
+                        color = GenesysTheme.colors.onSurfaceVariant,
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(GenesysTheme.spacing.s))
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s),
+                        verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s),
                     ) {
                         GenesysBrandPresets.forEach { preset ->
                             Box(
@@ -89,10 +93,10 @@ fun GenesysColorField(
                                         .clip(CircleShape)
                                         .background(preset.toColor())
                                         .border(
-                                            width = if (value.equals(preset, ignoreCase = true)) 3.dp else 1.dp,
+                                            width = if (value.equals(preset, ignoreCase = true)) 3.dp else GenesysTheme.spacing.xxxs,
                                             color =
                                                 if (value.equals(preset, ignoreCase = true)) {
-                                                    MaterialTheme.colorScheme.primary
+                                                    GenesysTheme.colors.brand
                                                 } else {
                                                     Color.White.copy(alpha = 0.5f)
                                                 },

@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -17,6 +16,8 @@ import com.itbenevides.genesys21.presentation.screens.viewer.ProductCard
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
+import com.itbenevides.genesys21.ui.theme.GenesysSpacing
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.coroutines.launch
@@ -47,15 +48,15 @@ fun GenesysProductList(
     }
 
     val horizontalItemWidth = when (windowSizeClass) {
-        GenesysWindowSizeClass.EXPANDED -> 220.dp
-        GenesysWindowSizeClass.MEDIUM -> 180.dp
-        GenesysWindowSizeClass.COMPACT -> 150.dp
+        GenesysWindowSizeClass.EXPANDED -> GenesysTheme.spacing.huge * 3.5f // ~220dp
+        GenesysWindowSizeClass.MEDIUM -> GenesysTheme.spacing.huge * 2.8f // ~180dp
+        GenesysWindowSizeClass.COMPACT -> GenesysTheme.spacing.huge * 2.3f // ~150dp
     }
 
-    val spacing = if (windowSizeClass == GenesysWindowSizeClass.COMPACT) 8.dp else 16.dp
+    val spacing = if (windowSizeClass == GenesysWindowSizeClass.COMPACT) GenesysTheme.spacing.xs else GenesysTheme.spacing.m
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
-    Box(modifier = modifier.fillMaxWidth().padding(vertical = 12.dp)) {
+    Box(modifier = modifier.fillMaxWidth().padding(vertical = GenesysTheme.spacing.s)) {
 
         if (isHorizontal) {
             val listState = rememberLazyListState()
@@ -64,7 +65,7 @@ fun GenesysProductList(
                     state = listState,
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(spacing),
-                    contentPadding = PaddingValues(horizontal = if (isCompact) 0.dp else 48.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = if (isCompact) GenesysTheme.spacing.none else GenesysTheme.spacing.xxl, vertical = GenesysTheme.spacing.xs),
                 ) {
                     itemsIndexed(products) { index, product ->
                         ProductCard(
@@ -83,8 +84,8 @@ fun GenesysProductList(
                     Surface(
                         modifier = Modifier.align(Alignment.CenterStart).size(40.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                        tonalElevation = 4.dp,
+                        color = GenesysTheme.colors.surface.copy(alpha = 0.8f),
+                        tonalElevation = GenesysTheme.spacing.xxs,
                     ) {
                         GenesysIconButton(
                             icon = GenesysIcons.ArrowLeft,
@@ -100,8 +101,8 @@ fun GenesysProductList(
                     Surface(
                         modifier = Modifier.align(Alignment.CenterEnd).size(40.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                        tonalElevation = 4.dp,
+                        color = GenesysTheme.colors.surface.copy(alpha = 0.8f),
+                        tonalElevation = GenesysTheme.spacing.xxs,
                     ) {
                         GenesysIconButton(
                             icon = GenesysIcons.ArrowRight,
@@ -140,7 +141,7 @@ fun GenesysProductList(
                             }
                         }
                     }
-                    GenesysSpacer(if (isCompact) GenesysSpacing.Small else GenesysSpacing.Medium)
+                    Spacer(Modifier.height(if (isCompact) GenesysTheme.spacing.xs else GenesysTheme.spacing.m))
                 }
             }
         }

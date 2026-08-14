@@ -16,8 +16,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
@@ -57,7 +57,7 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
         } else if (localError != null && users.isEmpty()) {
             Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(GenesysIcons.Feedback, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                    Icon(GenesysIcons.Feedback, null, tint = GenesysTheme.colors.error, modifier = Modifier.size(48.dp))
                     GenesysSpacer(GenesysSpacing.Medium)
                     GenesysText(text = localError ?: "Erro ao carregar usuários", style = GenesysTextStyle.Error)
                     GenesysSpacer(GenesysSpacing.Large)
@@ -117,10 +117,10 @@ fun UserAdminCard(
             }
 
             GenesysSpacer(GenesysSpacing.Medium)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.5f))
             GenesysSpacer(GenesysSpacing.Medium)
 
-            GenesysText(text = "Permissões Granulares:", style = GenesysTextStyle.Label, fontWeight = com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight.Bold)
+            GenesysText(text = "Permissões Granulares:", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
             GenesysSpacer(GenesysSpacing.Small)
 
             // Grid de Permissões
@@ -164,7 +164,7 @@ private fun UserInfoSection(user: UserProfile, modifier: Modifier = Modifier) {
         GenesysSpacer(GenesysSpacing.Small)
         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
             GenesysText(text = "Cargo: ", style = GenesysTextStyle.Label)
-            GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.primary)
+            GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand)
         }
     }
 }

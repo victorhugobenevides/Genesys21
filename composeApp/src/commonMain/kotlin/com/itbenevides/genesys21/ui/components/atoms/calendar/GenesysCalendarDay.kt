@@ -13,9 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun GenesysCalendarDay(
@@ -27,16 +26,16 @@ fun GenesysCalendarDay(
     modifier: Modifier = Modifier,
 ) {
     val backgroundColor = when {
-        isSelected -> MaterialTheme.colorScheme.primary
-        isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        isSelected -> GenesysTheme.colors.brand
+        isToday -> GenesysTheme.colors.brand.copy(alpha = 0.1f)
         else -> Color.Transparent
     }
 
     val textColor = when {
-        isSelected -> MaterialTheme.colorScheme.onPrimary
-        !isEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-        isToday -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurface
+        isSelected -> GenesysTheme.colors.onBrand
+        !isEnabled -> GenesysTheme.colors.onSurface.copy(alpha = 0.3f)
+        isToday -> GenesysTheme.colors.brand
+        else -> GenesysTheme.colors.onSurface
     }
 
     Box(

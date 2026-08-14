@@ -24,7 +24,7 @@ import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.*
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -32,7 +32,10 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomS
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysFontWeight
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
@@ -77,7 +80,7 @@ fun WhiteLabelContent(
                             GenesysIconButton(
                                 icon = GenesysIcons.Delete,
                                 contentDescription = GenesysStrings.DiscardDraft,
-                                tint = MaterialTheme.colorScheme.error,
+                                tint = GenesysTheme.colors.error,
                                 onClick = onDiscardClicked,
                             )
                         }
@@ -88,7 +91,7 @@ fun WhiteLabelContent(
                             GenesysIconButton(icon = GenesysIcons.MoreVert, onClick = { showMenu = true })
                             DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                                 DropdownMenuItem(
-                                    text = { Text(GenesysStrings.EditorThemes) },
+                                    text = { Text(GenesysStrings.EditorThemes, style = GenesysTheme.typography.body) },
                                     onClick = {
                                         showMenu = false
                                         onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true))
@@ -96,7 +99,7 @@ fun WhiteLabelContent(
                                     leadingIcon = { Icon(GenesysIcons.Palette, null) }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Theme Lab") },
+                                    text = { Text("Theme Lab", style = GenesysTheme.typography.body) },
                                     onClick = {
                                         showMenu = false
                                         onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true))
@@ -105,12 +108,12 @@ fun WhiteLabelContent(
                                 )
                                 if (state.page != originalPage) {
                                     DropdownMenuItem(
-                                        text = { Text(GenesysStrings.DiscardDraft) },
+                                        text = { Text(GenesysStrings.DiscardDraft, style = GenesysTheme.typography.body, color = GenesysTheme.colors.error) },
                                         onClick = {
                                             showMenu = false
                                             onDiscardClicked()
                                         },
-                                        leadingIcon = { Icon(GenesysIcons.Delete, null, tint = MaterialTheme.colorScheme.error) }
+                                        leadingIcon = { Icon(GenesysIcons.Delete, null, tint = GenesysTheme.colors.error) }
                                     )
                                 }
                             }
@@ -188,13 +191,13 @@ fun WhiteLabelContent(
                         modifier = Modifier
                             .fillMaxHeight()
                             .widthIn(min = 350.dp, max = 500.dp)
-                            .padding(vertical = 16.dp, horizontal = 8.dp)
+                            .padding(vertical = GenesysTheme.spacing.m, horizontal = GenesysTheme.spacing.xs)
                     ) {
                         GenesysCard(
                             modifier = Modifier.fillMaxSize(),
                             elevation = GenesysDimens.ElevationHigh,
-                            backgroundColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                            shape = RoundedCornerShape(24.dp)
+                            backgroundColor = GenesysTheme.colors.surface.copy(alpha = 0.95f),
+                            shape = RoundedCornerShape(GenesysTheme.spacing.l)
                         ) {
                             state.editingComponentIndex?.let { index ->
                                 ComponentEditorUI(
@@ -252,12 +255,12 @@ private fun ComponentWrapperUI(
                 .fillMaxWidth()
                 .then(
                     if (isEditing) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), MaterialTheme.shapes.medium)
+                        Modifier.border(GenesysTheme.spacing.xxxs, GenesysTheme.colors.brand.copy(alpha = 0.5f), RoundedCornerShape(GenesysTheme.config.cornerRadius))
                     } else {
                         Modifier
                     },
                 )
-                .padding(2.dp)
+                .padding(GenesysTheme.spacing.xxxs)
                 .clickable { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
     ) {
         PageComponentRenderer(
@@ -282,41 +285,41 @@ private fun ComponentWrapperUI(
                 modifier =
                     Modifier
                         .align(Alignment.TopStart)
-                        .padding(if (isMobile) 4.dp else 8.dp),
+                        .padding(if (isMobile) GenesysTheme.spacing.xxs else GenesysTheme.spacing.xs),
                 shape = CircleShape,
-                color = if (isEditing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                tonalElevation = 6.dp,
+                color = if (isEditing) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.8f),
+                tonalElevation = GenesysTheme.spacing.xxs,
             ) {
-                Row(modifier = Modifier.padding(horizontal = if (isMobile) 2.dp else 4.dp)) {
+                Row(modifier = Modifier.padding(horizontal = if (isMobile) GenesysTheme.spacing.xxxs else GenesysTheme.spacing.xxs)) {
                     GenesysIconButton(
                         icon = GenesysIcons.KeyboardDoubleArrowUp,
                         onClick = { onEvent(WhiteLabelEvent.OnMoveComponentToTop(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isEditing) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant,
                     )
                     GenesysIconButton(
                         icon = GenesysIcons.ArrowUp,
                         onClick = { onEvent(WhiteLabelEvent.OnMoveComponentUp(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isEditing) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant,
                     )
                     GenesysIconButton(
                         icon = GenesysIcons.ArrowDown,
                         onClick = { onEvent(WhiteLabelEvent.OnMoveComponentDown(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isEditing) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant,
                     )
                     GenesysIconButton(
                         icon = GenesysIcons.KeyboardDoubleArrowDown,
                         onClick = { onEvent(WhiteLabelEvent.OnMoveComponentToBottom(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isEditing) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant,
                     )
                     GenesysIconButton(
                         icon = GenesysIcons.Copy,
                         onClick = { onEvent(WhiteLabelEvent.OnDuplicateComponent(index)) },
-                        tint = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isEditing) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant,
                     )
                     GenesysIconButton(
                         icon = GenesysIcons.Delete,
                         onClick = { onEvent(WhiteLabelEvent.OnDeleteComponent(index)) },
-                        tint = MaterialTheme.colorScheme.error,
+                        tint = GenesysTheme.colors.error,
                     )
                 }
             }
@@ -340,7 +343,7 @@ internal fun ComponentEditorUI(
     Column(modifier = Modifier.fillMaxSize()) {
         // 1. CABEÇALHO DO EDITOR (Fixo)
         GenesysRow(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.s),
             verticalAlignment = Alignment.CenterVertically,
             usePadding = false
         ) {
@@ -354,7 +357,7 @@ internal fun ComponentEditorUI(
                 is PageComponent.ServiceList -> GenesysIcons.Schedule
                 else -> GenesysIcons.Magic
             }
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(GenesysTheme.spacing.m))
             GenesysSpacer(GenesysSpacing.Medium)
             GenesysText(
                 text = "Editar: ${component::class.simpleName ?: "Bloco"}",
@@ -368,7 +371,7 @@ internal fun ComponentEditorUI(
             )
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.4f))
 
         // 2. CONTEÚDO DO EDITOR (Scrollable)
         GenesysColumn(

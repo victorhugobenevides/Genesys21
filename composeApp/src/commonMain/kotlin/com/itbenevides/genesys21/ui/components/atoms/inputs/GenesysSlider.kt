@@ -8,7 +8,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 
 /**
  * Componente de Slider (Scroll Horizontal) padronizado para o DS Genesys21.
@@ -26,7 +26,7 @@ fun GenesysSlider(
         GenesysText(
             text = "$label: ${value.toInt()}px",
             style = GenesysTextStyle.Label,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            color = GenesysTheme.colors.onSurface.copy(alpha = 0.6f),
         )
 
         Slider(
@@ -37,9 +37,9 @@ fun GenesysSlider(
             modifier = Modifier.fillMaxWidth(),
             colors =
                 SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    thumbColor = GenesysTheme.colors.brand,
+                    activeTrackColor = GenesysTheme.colors.brand,
+                    inactiveTrackColor = GenesysTheme.colors.surfaceVariant,
                 ),
         )
     }

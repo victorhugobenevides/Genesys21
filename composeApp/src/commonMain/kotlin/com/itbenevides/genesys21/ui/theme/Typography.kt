@@ -138,4 +138,17 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
     )
 }
 
+fun getGenesysTypography(set: TypographySet = TypographySet.DEFAULT): GenesysTypography {
+    val m3 = getTypography(set)
+    return GenesysTypography(
+        display = m3.headlineLarge,
+        headline = m3.headlineSmall,
+        title = m3.titleLarge,
+        body = m3.bodyLarge,
+        bodySmall = m3.bodySmall,
+        label = m3.labelSmall,
+        action = m3.labelLarge
+    )
+}
+
 val AppTypography = getTypography(TypographySet.DEFAULT)

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -15,8 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysTextButton(
@@ -25,7 +23,7 @@ fun GenesysTextButton(
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
     enabled: Boolean = true,
-    color: Color = MaterialTheme.colorScheme.primary,
+    color: Color = GenesysTheme.colors.brand,
     icon: ImageVector? = null,
 ) {
     TextButton(
@@ -36,8 +34,8 @@ fun GenesysTextButton(
         AnimatedContent(targetState = isLoading, label = "TextButtonLoading") { loading ->
             if (loading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(GenesysTheme.spacing.m),
+                    strokeWidth = GenesysTheme.spacing.xxxs,
                     color = color,
                 )
             } else {
@@ -46,15 +44,15 @@ fun GenesysTextButton(
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(GenesysTheme.spacing.m),
                             tint = if (enabled) color else color.copy(alpha = 0.38f),
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(GenesysTheme.spacing.xs))
                     }
                     Text(
                         text = text,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp,
+                        style = GenesysTheme.typography.action,
                         color = if (enabled) color else color.copy(alpha = 0.38f),
                     )
                 }

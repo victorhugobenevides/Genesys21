@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import com.itbenevides.genesys21.ui.theme.GenesysGlass
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.theme.LocalGenesysThemeConfig
 
 /**
@@ -28,16 +29,17 @@ fun Modifier.glassmorphic(
         val finalAlpha = alpha ?: config.glassIntensity
 
         this
-            .background(Color.White.copy(alpha = finalAlpha), shape)
+            .background(GenesysTheme.colors.surface.copy(alpha = finalAlpha), shape)
             .border(
                 width = GenesysGlass.borderThickness,
-                color = Color.White.copy(alpha = borderAlpha),
+                color = GenesysTheme.colors.onSurface.copy(alpha = borderAlpha),
                 shape = shape,
             )
     }
 
 /**
  * Animated Shimmer effect for skeleton loaders.
+ * Refined with M3 Standard easing for a more natural flow.
  */
 @Composable
 fun shimmerBrush(
@@ -47,9 +49,9 @@ fun shimmerBrush(
     return if (showShimmer) {
         val shimmerColors =
             listOf(
-                Color.LightGray.copy(alpha = 0.6f),
-                Color.LightGray.copy(alpha = 0.2f),
-                Color.LightGray.copy(alpha = 0.6f),
+                GenesysTheme.colors.surfaceVariant.copy(alpha = 0.6f),
+                GenesysTheme.colors.surfaceVariant.copy(alpha = 0.2f),
+                GenesysTheme.colors.surfaceVariant.copy(alpha = 0.6f),
             )
 
         val transition = rememberInfiniteTransition(label = "shimmer")
@@ -58,7 +60,7 @@ fun shimmerBrush(
             targetValue = targetValue,
             animationSpec =
                 infiniteRepeatable(
-                    animation = tween(800, easing = LinearEasing),
+                    animation = tween(1200, easing = GenesysMotion.Standard),
                     repeatMode = RepeatMode.Restart,
                 ),
             label = "shimmerTranslate",
@@ -96,7 +98,7 @@ fun Modifier.pulse(
             targetValue = maxAlpha,
             animationSpec =
                 infiniteRepeatable(
-                    animation = tween(durationMillis, easing = FastOutSlowInEasing),
+                    animation = tween(durationMillis, easing = GenesysMotion.Standard),
                     repeatMode = RepeatMode.Reverse,
                 ),
             label = "pulseAlpha",
@@ -107,19 +109,20 @@ fun Modifier.pulse(
 
 /**
  * Animated staggered entry for list items.
+ * Uses M3 Emphasized curve for a high-quality entrance feel.
  */
 @Composable
 fun rememberStaggeredEntryState(
     index: Int,
     baseDelay: Long = GenesysMotion.staggeredDelay,
-    durationMillis: Int = 450,
+    durationMillis: Int = GenesysMotion.DurationLong1,
 ): State<Float> {
     val alpha = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(index * baseDelay)
         alpha.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis, easing = FastOutSlowInEasing),
+            animationSpec = tween(durationMillis, easing = GenesysMotion.EmphasizedDecelerate),
         )
     }
     return alpha.asState()
@@ -133,6 +136,6 @@ fun Modifier.staggeredEntry(
         val alphaState = rememberStaggeredEntryState(index, baseDelay)
         this.graphicsLayer {
             this.alpha = alphaState.value
-            this.translationY = (1f - alphaState.value) * 60f // Smooth slide up
+            this.translationY = (1f - alphaState.value) * 40f // Smooth slide up
         }
     }

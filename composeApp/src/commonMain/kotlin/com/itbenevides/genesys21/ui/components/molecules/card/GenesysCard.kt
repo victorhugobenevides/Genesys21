@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,24 +16,24 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
-import com.itbenevides.genesys21.ui.theme.LocalGenesysThemeConfig
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 /**
- * GenesysCard: Enhanced with interaction animations (M3).
- * Cards now scale slightly when pressed to give immediate visual feedback.
+ * GenesysCard: Componente de container principal.
+ * Usa tokens semânticos para background, borda e espaçamento.
  */
 @Composable
 fun GenesysCard(
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    backgroundColor: Color = GenesysTheme.colors.surface,
     elevation: Dp = 1.dp,
     shape: Shape? = null,
     onClick: (() -> Unit)? = null,
     border: androidx.compose.foundation.BorderStroke? = null,
+    usePadding: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val config = LocalGenesysThemeConfig.current
-    val finalShape = shape ?: RoundedCornerShape(config.cornerRadius.dp)
+    val finalShape = shape ?: RoundedCornerShape(GenesysTheme.config.cornerRadius.dp)
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -48,7 +47,7 @@ fun GenesysCard(
     val finalBorder =
         border ?: androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+            color = GenesysTheme.colors.outline.copy(alpha = 0.1f),
         )
 
     Surface(
@@ -64,6 +63,9 @@ fun GenesysCard(
         border = finalBorder,
         interactionSource = interactionSource
     ) {
-        Column(modifier = Modifier.padding(16.dp), content = content)
+        Column(
+            modifier = if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier,
+            content = content
+        )
     }
 }

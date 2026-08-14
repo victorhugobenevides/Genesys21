@@ -4,9 +4,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
@@ -24,8 +23,8 @@ fun GenesysTabRow(
     if (shouldScroll) {
         SecondaryScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.primary,
+            containerColor = GenesysTheme.colors.background,
+            contentColor = GenesysTheme.colors.brand,
             edgePadding = 16.dp,
             divider = {},
         ) {
@@ -34,8 +33,8 @@ fun GenesysTabRow(
     } else {
         TabRow(
             selectedTabIndex = selectedTabIndex,
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.primary,
+            containerColor = GenesysTheme.colors.background,
+            contentColor = GenesysTheme.colors.brand,
             divider = {},
         ) {
             TabItems(tabs, selectedTabIndex, onTabSelected)

@@ -1,13 +1,12 @@
 package com.itbenevides.genesys21.ui.components.molecules.layout
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysSectionHeader(
@@ -24,14 +23,14 @@ fun GenesysSectionHeader(
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium,
+                style = GenesysTheme.typography.title,
                 fontWeight = FontWeight.Bold,
             )
             subtitle?.let {
                 Text(
                     it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
+                    style = GenesysTheme.typography.bodySmall,
+                    color = GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.6f),
                 )
             }
         }

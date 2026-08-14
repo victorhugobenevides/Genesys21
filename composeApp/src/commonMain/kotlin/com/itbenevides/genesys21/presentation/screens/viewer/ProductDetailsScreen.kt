@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -18,6 +19,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.itbenevides.genesys21.LocalAnimatedContentScope
+import com.itbenevides.genesys21.LocalSharedTransitionScope
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.getWebBaseUrl
@@ -25,9 +28,17 @@ import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStockBadge
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysPagerIndicator
@@ -44,7 +55,7 @@ import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ProductDetailsScreen(
     product: Product,
@@ -117,7 +128,7 @@ fun ProductDetailsScreen(
     ProductDetailsContent(state, backendUrl, onEvent)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ProductDetailsContent(
     state: ProductDetailsState,
@@ -201,6 +212,7 @@ fun ProductDetailsContent(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun ProductImageCarousel(
     state: ProductDetailsState,
@@ -208,6 +220,9 @@ private fun ProductImageCarousel(
     backendUrl: String,
     onNavigate: (Int) -> Unit,
 ) {
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedContentScope = LocalAnimatedContentScope.current
+
     GenesysCard(
         modifier = Modifier.fillMaxSize(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
@@ -227,7 +242,16 @@ private fun ProductImageCarousel(
                     AsyncImage(
                         model = fullUrl,
                         contentDescription = "Foto ${index + 1}",
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().then(
+                            if (sharedTransitionScope != null && animatedContentScope != null) {
+                                with(sharedTransitionScope) {
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState(key = "prod_img_${state.product.id}"),
+                                        animatedVisibilityScope = animatedContentScope
+                                    )
+                                }
+                            } else Modifier
+                        ),
                         contentScale = ContentScale.Crop,
                     )
                 }
@@ -285,7 +309,7 @@ private fun ProductImageCarousel(
                         imageVector = GenesysIcons.ShoppingBag,
                         contentDescription = null,
                         modifier = Modifier.size(120.dp),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        tint = GenesysTheme.colors.brand.copy(alpha = 0.1f),
                     )
                 }
             }
@@ -312,7 +336,7 @@ private fun ProductInfoSection(
         text = "${GenesysStrings.PricePrefix}$priceFormatted",
         style = GenesysTextStyle.Title,
         fontWeight = GenesysFontWeight.ExtraBold,
-        color = MaterialTheme.colorScheme.primary,
+        color = GenesysTheme.colors.brand,
     )
 
     GenesysSpacer(GenesysSpacing.Medium)

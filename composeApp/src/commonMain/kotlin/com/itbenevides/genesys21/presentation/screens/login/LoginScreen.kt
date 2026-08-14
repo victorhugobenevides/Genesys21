@@ -19,10 +19,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextAlign
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
@@ -149,7 +147,7 @@ private fun LoginContent(
                                     imageVector = GenesysIcons.Magic,
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize(),
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = GenesysTheme.colors.brand,
                                 )
                             }
 
@@ -159,7 +157,7 @@ private fun LoginContent(
                                 text = GenesysStrings.Welcome,
                                 style = GenesysTextStyle.Headline,
                                 fontWeight = GenesysFontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = GenesysTheme.colors.brand,
                             )
 
                             GenesysText(
@@ -206,7 +204,7 @@ private fun LoginContent(
                                 GenesysText(
                                     text = if (state.isSignUp) "Já tem conta? Faça login" else "Ainda não tem conta? Cadastre-se",
                                     style = GenesysTextStyle.Label,
-                                    color = MaterialTheme.colorScheme.primary
+                                    color = GenesysTheme.colors.brand
                                 )
                             }
 

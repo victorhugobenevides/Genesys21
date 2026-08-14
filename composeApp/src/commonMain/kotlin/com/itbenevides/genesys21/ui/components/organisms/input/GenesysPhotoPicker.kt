@@ -16,10 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.*
 
 /**
  * Componente de seleção de fotos para o Design System.
@@ -83,7 +82,7 @@ fun GenesysPhotoPicker(
                                 Icon(
                                     imageVector = Icons.Default.AddPhotoAlternate,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = GenesysTheme.colors.brand,
                                     modifier = Modifier.size(32.dp),
                                 )
                                 GenesysText(

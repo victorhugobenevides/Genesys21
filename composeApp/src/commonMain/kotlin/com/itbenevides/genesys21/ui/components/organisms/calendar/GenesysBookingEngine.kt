@@ -1,13 +1,10 @@
 package com.itbenevides.genesys21.ui.components.organisms.calendar
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysTimePicker
 import kotlinx.datetime.*
@@ -36,9 +33,9 @@ fun GenesysBookingEngine(
             text = "Selecione uma Data",
             style = GenesysTextStyle.Label,
             fontWeight = GenesysFontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            color = GenesysTheme.colors.brand,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(GenesysTheme.spacing.s))
         GenesysDatePicker(
             selectedDate = selectedDateState,
             onDateSelected = {
@@ -48,16 +45,16 @@ fun GenesysBookingEngine(
             },
         )
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(GenesysTheme.spacing.xl))
 
         if (availableSlots.isNotEmpty()) {
             GenesysText(
                 text = "Horários Disponíveis",
                 style = GenesysTextStyle.Label,
                 fontWeight = GenesysFontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                color = GenesysTheme.colors.brand,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(GenesysTheme.spacing.s))
             GenesysTimePicker(
                 availableSlots = availableSlots,
                 selectedSlot = selectedTime,
@@ -72,7 +69,7 @@ fun GenesysBookingEngine(
             GenesysText(
                 text = "Não há horários disponíveis para esta data.",
                 style = GenesysTextStyle.Body,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = GenesysTheme.colors.onSurfaceVariant,
             )
         }
     }

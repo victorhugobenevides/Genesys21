@@ -20,6 +20,30 @@ private fun getContentColor(backgroundColor: Color): Color {
 @Composable
 expect fun getDynamicColorScheme(darkTheme: Boolean): ColorScheme?
 
+private fun ColorScheme.toGenesysColors(isDark: Boolean): GenesysColors {
+    return GenesysColors(
+        brand = primary,
+        onBrand = onPrimary,
+        brandContainer = primaryContainer,
+        onBrandContainer = onPrimaryContainer,
+        accent = tertiary,
+        onAccent = onTertiary,
+        background = background,
+        onBackground = onBackground,
+        backgroundSecondary = surfaceVariant.copy(alpha = 0.5f),
+        surface = surface,
+        onSurface = onSurface,
+        surfaceVariant = surfaceVariant,
+        onSurfaceVariant = onSurfaceVariant,
+        outline = outline,
+        success = Success, // Token fixo para status
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        isDark = isDark
+    )
+}
+
 // 1. ELEGANCE (Slate & Gold)
 private val EleganceColorScheme =
     lightColorScheme(
@@ -164,9 +188,10 @@ private val CandyColorScheme =
 fun AppTheme(
     themeConfig: PageThemeConfig = PageThemeConfig.ELEGANCE,
     customTheme: CustomThemeConfig? = null,
-    useDynamicColor: Boolean = false, // Nova flag para Material You
+    useDynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
+    val isDark = themeConfig == PageThemeConfig.MIDNIGHT
     val baseColorScheme =
         when (themeConfig) {
             PageThemeConfig.ELEGANCE -> EleganceColorScheme
@@ -179,7 +204,7 @@ fun AppTheme(
         }
 
     val dynamicColorScheme = if (useDynamicColor) {
-        getDynamicColorScheme(darkTheme = themeConfig == PageThemeConfig.MIDNIGHT)
+        getDynamicColorScheme(darkTheme = isDark)
     } else null
 
     val colorScheme =
@@ -215,7 +240,14 @@ fun AppTheme(
             extraLarge = RoundedCornerShape(radius.dp * 1.5f),
         )
 
+    val typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT)
+    val genesysTypography = getGenesysTypography(customTheme?.typographySet ?: TypographySet.DEFAULT)
+    val genesysColors = colorScheme.toGenesysColors(isDark)
+
     CompositionLocalProvider(
+        LocalGenesysColors provides genesysColors,
+        LocalGenesysTypography provides genesysTypography,
+        LocalGenesysSpacing provides GenesysSpacing(),
         LocalGenesysThemeConfig provides
             GenesysThemeConfig(
                 cornerRadius = radius,
@@ -224,7 +256,7 @@ fun AppTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT),
+            typography = typography,
             shapes = shapes,
             content = content,
         )

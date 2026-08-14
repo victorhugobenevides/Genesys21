@@ -11,11 +11,12 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysOutlinedTextField
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.CurrencyUtils
 
@@ -48,7 +49,7 @@ fun ValuedActionComponent(
                 GenesysText(
                     text = it,
                     style = GenesysTextStyle.Body,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant
                 )
             }
 
@@ -58,38 +59,37 @@ fun ValuedActionComponent(
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs)
             ) {
                 for (value in component.suggestedValues) {
-                    FilterChip(
+                    GenesysFilterChip(
                         selected = selectedValue == value,
                         onClick = {
                             selectedValue = value
                             customValueText = ""
                         },
-                        label = { Text("${GenesysStrings.PricePrefix}${CurrencyUtils.formatDisplay(value)}") },
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        label = "${GenesysStrings.PricePrefix}${CurrencyUtils.formatDisplay(value)}",
+                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs)
                     )
                 }
 
                 if (component.allowCustomValue) {
-                    FilterChip(
+                    GenesysFilterChip(
                         selected = isCustomSelected,
                         onClick = { selectedValue = null },
-                        label = { Text(GenesysStrings.CustomValue) },
-                        modifier = Modifier.padding(horizontal = 4.dp)
+                        label = GenesysStrings.CustomValue,
+                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs)
                     )
                 }
             }
 
             if (isCustomSelected) {
                 GenesysSpacer(GenesysSpacing.Medium)
-                OutlinedTextField(
+                GenesysOutlinedTextField(
                     value = customValueText,
                     onValueChange = { customValueText = it },
-                    label = { Text("Valor") },
-                    prefix = { Text(GenesysStrings.PricePrefix) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = "Valor",
+                    keyboardType = KeyboardType.Number,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )

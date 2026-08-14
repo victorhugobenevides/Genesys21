@@ -3,10 +3,10 @@ package com.itbenevides.genesys21.ui.components.atoms.buttons
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysFab(
@@ -18,8 +18,8 @@ fun GenesysFab(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor = GenesysTheme.colors.brand,
+        contentColor = GenesysTheme.colors.onBrand,
         shape = CircleShape,
     ) {
         Icon(icon, contentDescription)

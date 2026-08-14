@@ -9,9 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysCalendarDay
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import kotlinx.datetime.*
 
 @Composable
@@ -38,26 +37,26 @@ fun GenesysDatePicker(
         ) {
             IconButton(
                 onClick = { currentMonth = currentMonth.minus(1, DateTimeUnit.MONTH) },
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(GenesysTheme.spacing.xl)
             ) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous Month", modifier = Modifier.size(20.dp))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous Month", modifier = Modifier.size(GenesysTheme.spacing.m))
             }
 
             Text(
                 text = "${currentMonth.month.name.take(3)} ${currentMonth.year}",
-                style = MaterialTheme.typography.bodyMedium,
+                style = GenesysTheme.typography.body,
                 fontWeight = FontWeight.Bold,
             )
 
             IconButton(
                 onClick = { currentMonth = nextMonthDate },
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(GenesysTheme.spacing.xl)
             ) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next Month", modifier = Modifier.size(20.dp))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next Month", modifier = Modifier.size(GenesysTheme.spacing.m))
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(GenesysTheme.spacing.xs))
 
         // Weekdays Header
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -65,15 +64,14 @@ fun GenesysDatePicker(
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     Text(
                         text = day,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 10.sp
+                        style = GenesysTheme.typography.label,
+                        color = GenesysTheme.colors.onSurfaceVariant,
                     )
                 }
             }
         }
 
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(GenesysTheme.spacing.xxs))
 
         // Days Grid
         val totalCells = daysInMonth + paddingDays

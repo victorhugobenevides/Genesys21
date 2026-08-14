@@ -1,18 +1,18 @@
 package com.itbenevides.genesys21.ui.components.atoms.indicators
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysStatusBadge(status: OrderStatus) {
     val color =
         when (status) {
-            OrderStatus.PENDING -> Color(0xFFFBC02D)
-            OrderStatus.AWAITING_PAYMENT -> Color(0xFF9575CD)
-            OrderStatus.PROCESSING -> Color(0xFF1976D2)
-            OrderStatus.COMPLETED -> Color(0xFF388E3C)
-            OrderStatus.CANCELLED -> Color(0xFFD32F2F)
+            OrderStatus.PENDING -> GenesysTheme.colors.brandContainer
+            OrderStatus.AWAITING_PAYMENT -> GenesysTheme.colors.accent
+            OrderStatus.PROCESSING -> GenesysTheme.colors.brand
+            OrderStatus.COMPLETED -> GenesysTheme.colors.success
+            OrderStatus.CANCELLED -> GenesysTheme.colors.error
         }
     val label =
         when (status) {

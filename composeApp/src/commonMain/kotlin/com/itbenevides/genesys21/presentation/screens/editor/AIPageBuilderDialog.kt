@@ -23,6 +23,7 @@ import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.*
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -52,23 +53,23 @@ fun AIPageBuilderDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().padding(GenesysTheme.spacing.m),
         content = {
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+                shape = RoundedCornerShape(GenesysTheme.spacing.l),
+                color = GenesysTheme.colors.surface,
+                tonalElevation = GenesysTheme.spacing.xxs // 6dp ~ xxs is 4dp
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     TopAppBar(
                         title = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(GenesysIcons.Magic, "IA", tint = MaterialTheme.colorScheme.tertiary)
+                                Icon(GenesysIcons.Magic, "IA", tint = GenesysTheme.colors.accent)
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text("Construtor IA Genesys", style = MaterialTheme.typography.titleMedium)
-                                    Text("Design & Estrutura Autônoma", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
+                                    Text("Construtor IA Genesys", style = GenesysTheme.typography.title)
+                                    Text("Design & Estrutura Autônoma", style = GenesysTheme.typography.label, color = GenesysTheme.colors.accent)
                                 }
                             }
                         },
@@ -80,9 +81,9 @@ fun AIPageBuilderDialog(
 
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(bottom = 16.dp)
+                        modifier = Modifier.weight(1f).padding(horizontal = GenesysTheme.spacing.m),
+                        verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s),
+                        contentPadding = PaddingValues(bottom = GenesysTheme.spacing.m)
                     ) {
                         items(messages) { msg ->
                             ChatBubble(msg)
@@ -99,12 +100,12 @@ fun AIPageBuilderDialog(
                     ) {
                         Button(
                             onClick = { generatedPage?.let { onPageGenerated(it) } },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.xs),
+                            shape = RoundedCornerShape(GenesysTheme.spacing.s),
+                            colors = ButtonDefaults.buttonColors(containerColor = GenesysTheme.colors.accent)
                         ) {
                             Icon(Icons.Default.AutoAwesome, null)
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(GenesysTheme.spacing.xs))
                             Text("Usar este Design no Painel", fontWeight = FontWeight.Bold)
                         }
                     }
@@ -115,7 +116,7 @@ fun AIPageBuilderDialog(
                         shadowElevation = 8.dp
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.padding(GenesysTheme.spacing.s),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             OutlinedTextField(
@@ -123,14 +124,14 @@ fun AIPageBuilderDialog(
                                 onValueChange = { inputText = it },
                                 modifier = Modifier.weight(1f),
                                 placeholder = { Text("Descreva sua ideia...") },
-                                shape = RoundedCornerShape(24.dp),
+                                shape = RoundedCornerShape(GenesysTheme.spacing.l),
                                 maxLines = 3,
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedBorderColor = Color.Transparent,
-                                    focusedBorderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                                    focusedBorderColor = GenesysTheme.colors.accent.copy(alpha = 0.5f)
                                 )
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(GenesysTheme.spacing.xs))
                             IconButton(
                                 onClick = {
                                     if (inputText.isNotBlank() && !isGenerating) {
@@ -153,7 +154,7 @@ fun AIPageBuilderDialog(
                                 },
                                 enabled = inputText.isNotBlank() && !isGenerating,
                                 modifier = Modifier.background(
-                                    if (inputText.isNotBlank()) MaterialTheme.colorScheme.tertiary else Color.LightGray,
+                                    if (inputText.isNotBlank()) GenesysTheme.colors.accent else Color.LightGray,
                                     CircleShape
                                 )
                             ) {
@@ -175,18 +176,18 @@ private fun ChatBubble(message: ChatMessage) {
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
         Surface(
-            color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+            color = if (isUser) GenesysTheme.colors.brand else GenesysTheme.colors.surfaceVariant,
             shape = RoundedCornerShape(
-                topStart = 16.dp, topEnd = 16.dp,
-                bottomStart = if (isUser) 16.dp else 4.dp,
-                bottomEnd = if (isUser) 4.dp else 16.dp
+                topStart = GenesysTheme.spacing.m, topEnd = GenesysTheme.spacing.m,
+                bottomStart = if (isUser) GenesysTheme.spacing.m else GenesysTheme.spacing.xxs,
+                bottomEnd = if (isUser) GenesysTheme.spacing.xxs else GenesysTheme.spacing.m
             )
         ) {
             Text(
                 text = message.text,
-                modifier = Modifier.padding(12.dp),
-                color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
+                modifier = Modifier.padding(GenesysTheme.spacing.s),
+                color = if (isUser) Color.White else GenesysTheme.colors.onSurfaceVariant,
+                style = GenesysTheme.typography.body
             )
         }
     }
@@ -194,10 +195,10 @@ private fun ChatBubble(message: ChatMessage) {
 
 @Composable
 private fun GeneratingIndicator() {
-    Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.tertiary)
-        Spacer(Modifier.width(12.dp))
-        Text("Mestre de Design está trabalhando...", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+    Row(modifier = Modifier.padding(GenesysTheme.spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+        com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysAiPulseIndicator()
+        Spacer(Modifier.width(GenesysTheme.spacing.s))
+        Text("Mestre de Design está trabalhando...", style = GenesysTheme.typography.label, color = GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.6f))
     }
 }
 

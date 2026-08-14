@@ -13,9 +13,16 @@ import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
@@ -71,20 +78,20 @@ fun ProfileScreen(
                 GenesysText(
                     text = profile.email,
                     style = GenesysTextStyle.Body,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant
                 )
 
                 GenesysSpacer(GenesysSpacing.Medium)
 
                 Surface(
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    color = GenesysTheme.colors.brandContainer.copy(alpha = 0.5f)
                 ) {
                     GenesysText(
                         text = profile.role.name,
                         style = GenesysTextStyle.Label,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = GenesysTheme.colors.brand,
                         fontWeight = GenesysFontWeight.Bold
                     )
                 }
@@ -152,7 +159,7 @@ fun ProfileScreen(
                     GenesysText(
                         text = "Nenhum endereço cadastrado.",
                         style = GenesysTextStyle.Label,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = GenesysTheme.colors.onSurfaceVariant
                     )
                 } else {
                     addresses.forEach { address ->
@@ -165,7 +172,7 @@ fun ProfileScreen(
                                 }
                                 GenesysIconButton(
                                     icon = GenesysIcons.Delete,
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                    tint = GenesysTheme.colors.error.copy(alpha = 0.6f),
                                     onClick = { viewModel.deleteAddress(address.id) }
                                 )
                             }
@@ -181,7 +188,7 @@ fun ProfileScreen(
                         viewModel.signOut()
                         router.navigateTo(Route.Login, replace = true)
                     },
-                    containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                    containerColor = GenesysTheme.colors.error.copy(alpha = 0.1f),
                     shape = CircleShape,
                     fillWidth = true
                 )
@@ -209,7 +216,7 @@ private fun ActionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = GenesysTheme.colors.brand,
                 modifier = Modifier.size(32.dp)
             )
             GenesysSpacer(GenesysSpacing.Small)
@@ -237,10 +244,10 @@ private fun ProfileMenuItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(imageVector = icon, contentDescription = null, tint = GenesysTheme.colors.brand)
             GenesysSpacer(GenesysSpacing.Medium)
             GenesysText(text = title, style = GenesysTextStyle.Body, modifier = Modifier.weight(1f))
-            Icon(imageVector = GenesysIcons.ArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+            Icon(imageVector = GenesysIcons.ArrowRight, contentDescription = null, tint = GenesysTheme.colors.outline)
         }
     }
 }

@@ -11,9 +11,14 @@ import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRender
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysSlider
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
@@ -28,7 +33,7 @@ fun HeaderComponentEditor(
     var isUppercase by remember { mutableStateOf(component.isUppercase) }
     var usePrimaryColor by remember { mutableStateOf(component.usePrimaryColor) }
 
-    val primaryColor = MaterialTheme.colorScheme.primary
+    val primaryColor = GenesysTheme.colors.brand
 
     // Cria uma versão temporária do componente para renderizar na pre-visualização real
     val previewComponent =

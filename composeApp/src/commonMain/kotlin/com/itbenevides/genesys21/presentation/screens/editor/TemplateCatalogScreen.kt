@@ -26,9 +26,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
@@ -107,7 +106,7 @@ fun TemplateCatalogScreen(
                 GenesysText(
                     text = "Selecione um layout pronto para começar a vender em minutos.",
                     style = GenesysTextStyle.Body,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant
                 )
 
                 GenesysSpacer(GenesysSpacing.Large)
@@ -161,13 +160,13 @@ private fun TemplateCard(
                             imageVector = GenesysIcons.WebAssetOff,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                            tint = GenesysTheme.colors.outline
                         )
                     }
                 }
 
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                    color = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.8f),
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.padding(8.dp).align(Alignment.TopEnd)
                 ) {
@@ -188,7 +187,7 @@ private fun TemplateCard(
                 GenesysText(
                     text = template.description,
                     style = GenesysTextStyle.Label,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = GenesysTheme.colors.onSurfaceVariant,
                     maxLines = 2
                 )
                 GenesysSpacer(GenesysSpacing.Medium)
@@ -204,7 +203,7 @@ private fun TemplateCard(
                         text = "Criar",
                         onClick = onSelect,
                         modifier = Modifier.weight(1f),
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = GenesysTheme.colors.accent
                     )
                 }
             }

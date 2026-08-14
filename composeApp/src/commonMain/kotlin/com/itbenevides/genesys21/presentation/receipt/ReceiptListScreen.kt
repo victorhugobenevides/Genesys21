@@ -36,6 +36,7 @@ import org.jetbrains.compose.resources.decodeToImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.window.DialogProperties
+import com.itbenevides.genesys21.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +88,7 @@ fun ReceiptListScreen(
                             Text(
                                 text = "Organizador do Pai • Consulta SEFAZ",
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = GenesysTheme.colors.onSurfaceVariant
                             )
                         }
                     },
@@ -96,12 +97,12 @@ fun ReceiptListScreen(
                             Icon(
                                 imageVector = Icons.Default.Backup,
                                 contentDescription = "Backup JSON",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = GenesysTheme.colors.brand
                             )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = GenesysTheme.colors.surface
                     )
                 )
             },
@@ -110,7 +111,7 @@ fun ReceiptListScreen(
                     onClick = { viewModel.openScanDialog(true) },
                     icon = { Icon(Icons.Default.AddAPhoto, contentDescription = null) },
                     text = { Text("Escanear Nota", fontWeight = FontWeight.Bold) },
-                    containerColor = MaterialTheme.colorScheme.primary,
+                    containerColor = GenesysTheme.colors.brand,
                     contentColor = Color.White,
                     shape = RoundedCornerShape(16.dp)
                 )
@@ -178,8 +179,8 @@ private fun ReceiptListContent(
             PullToRefreshDefaults.Indicator(
                 state = pullToRefreshState,
                 isRefreshing = state.isLoading,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                containerColor = GenesysTheme.colors.brandContainer,
+                color = GenesysTheme.colors.onBrandContainer,
                 modifier = Modifier.align(Alignment.TopCenter)
             )
         },
@@ -188,7 +189,7 @@ private fun ReceiptListContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(GenesysTheme.colors.background)
         ) {
             // Card de Resumo Financeiro
             SummaryHeaderCard(
@@ -246,13 +247,13 @@ private fun ReceiptListContent(
                             imageVector = Icons.Default.ReceiptLong,
                             contentDescription = null,
                             modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outline
+                            tint = GenesysTheme.colors.outline
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Nenhuma nota fiscal encontrada",
                             fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = GenesysTheme.colors.outline,
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -282,13 +283,13 @@ private fun ReceiptListContent(
         }
 
         // Botão Flutuante quando embutido (pois o Scaffold pai já tem o seu próprio ou não tem nenhum para esta aba)
-        if (isEmbedded && !filteredReceipts.isEmpty()) {
+                if (isEmbedded && !filteredReceipts.isEmpty()) {
             FloatingActionButton(
                 onClick = { viewModel.openScanDialog(true) },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = GenesysTheme.colors.brand,
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
@@ -390,7 +391,7 @@ fun ReceiptCardItem(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -405,13 +406,13 @@ fun ReceiptCardItem(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .background(GenesysTheme.colors.brandContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Storefront,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = GenesysTheme.colors.onBrandContainer
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -426,7 +427,7 @@ fun ReceiptCardItem(
                         Text(
                             text = "Data: ${receipt.dataEmissao} • ${receipt.categoria}",
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = GenesysTheme.colors.onSurfaceVariant
                         )
                     }
                 }
@@ -436,14 +437,14 @@ fun ReceiptCardItem(
                         text = "R$ " + formatMoney(receipt.valorTotal),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.primary
+                        color = GenesysTheme.colors.brand
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Excluir Nota",
-                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                            tint = GenesysTheme.colors.error.copy(alpha = 0.6f),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -456,7 +457,7 @@ fun ReceiptCardItem(
             val chaveAcesso = receipt.chaveAcesso
             if (!chaveAcesso.isNullOrBlank()) {
                 Surface(
-                    color = MaterialTheme.colorScheme.surface,
+                    color = GenesysTheme.colors.surface,
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -471,7 +472,7 @@ fun ReceiptCardItem(
                             text = "Chave: " + NfeUrlBuilder.formatChaveAcesso(chaveAcesso),
                             fontSize = 11.sp,
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = GenesysTheme.colors.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
@@ -534,7 +535,7 @@ fun ScanReceiptDialog(
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = GenesysTheme.colors.surface,
                 tonalElevation = 6.dp
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -542,11 +543,11 @@ fun ScanReceiptDialog(
                     TopAppBar(
                         title = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AutoAwesome, "IA", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.AutoAwesome, "IA", tint = GenesysTheme.colors.brand)
                                 Spacer(Modifier.width(12.dp))
                                 Column {
-                                    Text("Assistente Genesys", style = MaterialTheme.typography.titleMedium)
-                                    Text("Escaner Inteligente", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                    Text("Assistente Genesys", style = GenesysTheme.typography.title)
+                                    Text("Escaner Inteligente", style = GenesysTheme.typography.label, color = GenesysTheme.colors.brand)
                                 }
                             }
                         },
@@ -605,10 +606,10 @@ fun ScanReceiptDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(onClick = { filePicker("image/*,application/pdf", false) }) {
-                                Icon(Icons.Default.AttachFile, "Anexar", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.AttachFile, "Anexar", tint = GenesysTheme.colors.brand)
                             }
                             IconButton(onClick = { filePicker("image/*", true) }) {
-                                Icon(Icons.Default.PhotoCamera, "Câmera", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.PhotoCamera, "Câmera", tint = GenesysTheme.colors.brand)
                             }
 
                             OutlinedTextField(
@@ -620,7 +621,7 @@ fun ScanReceiptDialog(
                                 maxLines = 3,
                                 colors = OutlinedTextFieldDefaults.colors(
                                     unfocusedBorderColor = Color.Transparent,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                    focusedBorderColor = GenesysTheme.colors.brand.copy(alpha = 0.5f)
                                 )
                             )
 
@@ -635,7 +636,7 @@ fun ScanReceiptDialog(
                                 },
                                 enabled = inputText.isNotBlank() && !state.isScanning,
                                 modifier = Modifier.background(
-                                    if (inputText.isNotBlank()) MaterialTheme.colorScheme.primary else Color.LightGray,
+                                    if (inputText.isNotBlank()) GenesysTheme.colors.brand else Color.LightGray,
                                     CircleShape
                                 )
                             ) {
@@ -659,7 +660,7 @@ fun ReceiptChatBubble(message: ReceiptChatMessage) {
         horizontalAlignment = if (isAi) Alignment.Start else Alignment.End
     ) {
         Surface(
-            color = if (isAi) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+            color = if (isAi) GenesysTheme.colors.surfaceVariant else GenesysTheme.colors.brand,
             shape = RoundedCornerShape(
                 topStart = 16.dp,
                 topEnd = 16.dp,
@@ -701,8 +702,8 @@ fun ReceiptChatBubble(message: ReceiptChatMessage) {
 
                 Text(
                     text = message.text,
-                    color = if (isAi) MaterialTheme.colorScheme.onSurfaceVariant else Color.White,
-                    style = MaterialTheme.typography.bodyMedium
+                    color = if (isAi) GenesysTheme.colors.onSurfaceVariant else Color.White,
+                    style = GenesysTheme.typography.body
                 )
             }
         }
@@ -712,12 +713,12 @@ fun ReceiptChatBubble(message: ReceiptChatMessage) {
 @Composable
 fun AIThinkingIndicator() {
     Row(
-        modifier = Modifier.padding(8.dp),
+        modifier = Modifier.padding(GenesysTheme.spacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-        Spacer(Modifier.width(12.dp))
-        Text("Analisando nota...", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+        com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysAiPulseIndicator()
+        Spacer(Modifier.width(GenesysTheme.spacing.s))
+        Text("Analisando nota...", style = GenesysTheme.typography.label, color = GenesysTheme.colors.onSurfaceVariant)
     }
 }
 
@@ -732,7 +733,7 @@ fun ReceiptDetailDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Receipt, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Receipt, contentDescription = null, tint = GenesysTheme.colors.brand)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(receipt.emitente, fontWeight = FontWeight.Bold)
             }
@@ -750,11 +751,11 @@ fun ReceiptDetailDialog(
                                 .fillMaxWidth()
                                 .height(80.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                .background(GenesysTheme.colors.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.Description, "PDF", modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Default.Description, "PDF", modifier = Modifier.size(32.dp), tint = GenesysTheme.colors.brand)
                                 Text("Documento PDF Original", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -764,7 +765,7 @@ fun ReceiptDetailDialog(
                                 .fillMaxWidth()
                                 .height(180.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                                .background(GenesysTheme.colors.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
                             val dataForDetail = fileBase64
@@ -785,7 +786,7 @@ fun ReceiptDetailDialog(
                                     contentScale = androidx.compose.ui.layout.ContentScale.Fit
                                 )
                             } else {
-                                Icon(Icons.Default.Error, "Erro ao carregar", tint = MaterialTheme.colorScheme.error)
+                                Icon(Icons.Default.Error, "Erro ao carregar", tint = GenesysTheme.colors.error)
                             }
                         }
                     }
@@ -800,7 +801,7 @@ fun ReceiptDetailDialog(
                 Divider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text("Valor Total: R$ ${formatMoney(receipt.valorTotal)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text("Valor Total: R$ ${formatMoney(receipt.valorTotal)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GenesysTheme.colors.brand)
 
                 if (receipt.items.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -823,14 +824,14 @@ fun ReceiptDetailDialog(
                         text = NfeUrlBuilder.formatChaveAcesso(chave),
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = GenesysTheme.colors.onSurfaceVariant
                     )
 
                     if (chave.length == 44) {
                         Text(
                             text = "✨ A chave será preenchida automaticamente no site da SEFAZ.",
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = GenesysTheme.colors.brand,
                             modifier = Modifier.padding(top = 4.dp),
                             fontWeight = FontWeight.Medium
                         )
@@ -877,7 +878,7 @@ fun BackupJsonDialog(
                 Text(
                     text = "Você pode copiar seu backup ou colar um JSON para restaurar suas notas:",
                     fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(

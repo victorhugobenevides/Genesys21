@@ -2,15 +2,16 @@ package com.itbenevides.genesys21.ui.components.molecules.input
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.OrderStatus
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysStatusPicker(
@@ -22,16 +23,16 @@ fun GenesysStatusPicker(
     Box {
         Surface(
             onClick = { showStatusMenu = true },
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(GenesysTheme.config.cornerRadius),
+            color = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f),
         ) {
-            GenesysRow(fillWidth = false, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+            GenesysRow(fillWidth = false, modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xs, vertical = GenesysTheme.spacing.xxs)) {
                 GenesysStatusBadge(currentStatus)
                 Icon(
                     imageVector = GenesysIcons.ExpandMore,
                     contentDescription = "Mudar status",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp),
+                    tint = GenesysTheme.colors.onSurfaceVariant,
+                    modifier = Modifier.padding(start = GenesysTheme.spacing.xxs),
                 )
             }
         }

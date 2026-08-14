@@ -26,9 +26,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 
@@ -49,7 +48,7 @@ fun GridComponentEditor(
     GenesysColumn(usePadding = false) {
         // 1. CONFIGURAÇÕES ESTRUTURAIS
         GenesysCard(
-            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
+            backgroundColor = GenesysTheme.colors.brandContainer.copy(alpha = 0.1f),
             elevation = 0.dp
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
@@ -67,7 +66,7 @@ fun GridComponentEditor(
                 GenesysSpacer(GenesysSpacing.Medium)
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(GenesysIcons.ViewModule, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(GenesysIcons.ViewModule, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(12.dp))
                     Text("Colunas:", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
 
@@ -89,7 +88,7 @@ fun GridComponentEditor(
 
         // 2. GESTÃO VISUAL DAS CÉLULAS
         GenesysText("Células da Grade", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-        GenesysText("Cada célula pode conter múltiplos componentes.", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.outline)
+        GenesysText("Cada célula pode conter múltiplos componentes.", style = GenesysTextStyle.Label, color = GenesysTheme.colors.outline)
         GenesysSpacer(GenesysSpacing.Medium)
 
         GenesysColumn(
@@ -146,7 +145,7 @@ fun GridComponentEditor(
                 onClick = { items = items + PageComponent.GridItem() },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, GenesysTheme.colors.brand.copy(alpha = 0.5f))
             ) {
                 Icon(GenesysIcons.Add, null)
                 Spacer(Modifier.width(8.dp))
@@ -234,7 +233,7 @@ private fun CellItemCard(
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = GenesysTheme.colors.accent,
                     shape = CircleShape,
                     modifier = Modifier.size(24.dp)
                 ) {
@@ -261,7 +260,7 @@ private fun CellItemCard(
 
                 GenesysIconButton(icon = GenesysIcons.ArrowUp, onClick = onMoveUp, modifier = Modifier.size(28.dp))
                 GenesysIconButton(icon = GenesysIcons.ArrowDown, onClick = onMoveDown, modifier = Modifier.size(28.dp))
-                GenesysIconButton(icon = GenesysIcons.Delete, onClick = onRemoveCell, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(28.dp))
+                GenesysIconButton(icon = GenesysIcons.Delete, onClick = onRemoveCell, tint = GenesysTheme.colors.error, modifier = Modifier.size(28.dp))
             }
 
             GenesysSpacer(GenesysSpacing.Small)
@@ -275,14 +274,14 @@ private fun CellItemCard(
                         .height(50.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { onAddComponent() }
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), RoundedCornerShape(8.dp)),
+                        .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f))
+                        .border(1.dp, GenesysTheme.colors.outline.copy(alpha = 0.2f), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(GenesysIcons.Add, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(GenesysIcons.Add, null, modifier = Modifier.size(16.dp), tint = GenesysTheme.colors.brand)
                         Spacer(Modifier.width(8.dp))
-                        Text("Adicionar conteúdo", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        Text("Adicionar conteúdo", style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.brand)
                     }
                 }
             } else {
@@ -290,7 +289,7 @@ private fun CellItemCard(
                     GenesysRow(
                         modifier = Modifier
                             .padding(vertical = 2.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         usePadding = false
@@ -303,7 +302,7 @@ private fun CellItemCard(
                             is PageComponent.SingleService -> GenesysIcons.Schedule
                             else -> GenesysIcons.Magic
                         }
-                        Icon(icon, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                        Icon(icon, null, modifier = Modifier.size(14.dp), tint = GenesysTheme.colors.brand)
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = child::class.simpleName ?: "Componente",

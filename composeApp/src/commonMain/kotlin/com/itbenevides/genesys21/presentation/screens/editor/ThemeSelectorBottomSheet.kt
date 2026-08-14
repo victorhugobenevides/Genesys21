@@ -20,9 +20,8 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
@@ -80,7 +79,7 @@ private fun ThemeOptionItem(
                     .background(themeColor)
                     .border(
                         width = if (isSelected) 3.dp else 1.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray.copy(alpha = 0.5f),
+                        color = if (isSelected) GenesysTheme.colors.brand else Color.LightGray.copy(alpha = 0.5f),
                         shape = CircleShape,
                     ),
             contentAlignment = Alignment.Center,

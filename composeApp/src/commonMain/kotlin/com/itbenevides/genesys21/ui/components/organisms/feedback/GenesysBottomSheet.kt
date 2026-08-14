@@ -5,8 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 /**
  * Modal padronizado (Bottom Sheet) abstraído do Material 3.
@@ -22,7 +22,7 @@ fun GenesysBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = GenesysTheme.colors.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         Column(
@@ -31,18 +31,18 @@ fun GenesysBottomSheet(
                     .fillMaxWidth()
                     .wrapContentHeight()
                     .padding(horizontal = GenesysDimens.SpacingLarge)
-                    .padding(bottom = 32.dp) // Espaço para barra de navegação/segurança
+                    .padding(bottom = GenesysTheme.spacing.xl) // Espaço para barra de navegação/segurança
                     .navigationBarsPadding(),
         ) {
             // Header centralizado ou organizado
             Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = GenesysTheme.spacing.xs),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = GenesysTheme.typography.title,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
@@ -53,7 +53,7 @@ fun GenesysBottomSheet(
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(GenesysDimens.SpacingLarge))
 
             content()

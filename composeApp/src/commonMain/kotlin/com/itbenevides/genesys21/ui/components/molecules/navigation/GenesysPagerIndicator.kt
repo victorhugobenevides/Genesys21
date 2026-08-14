@@ -6,14 +6,13 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun GenesysPagerIndicator(
@@ -32,16 +31,16 @@ fun GenesysPagerIndicator(
             val color by animateColorAsState(
                 targetValue =
                     if (isSelected) {
-                        MaterialTheme.colorScheme.primary
+                        GenesysTheme.colors.brand
                     } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        GenesysTheme.colors.onSurface.copy(alpha = 0.2f)
                     },
                 animationSpec = GenesysMotion.colorSpring,
                 label = "indicatorColor",
             )
 
             val size by animateDpAsState(
-                targetValue = if (isSelected) 10.dp else 6.dp,
+                targetValue = if (isSelected) GenesysTheme.spacing.s else GenesysTheme.spacing.xxs,
                 animationSpec = spring(dampingRatio = 0.8f),
                 label = "indicatorSize",
             )
@@ -49,7 +48,7 @@ fun GenesysPagerIndicator(
             Box(
                 modifier =
                     Modifier
-                        .padding(horizontal = 4.dp)
+                        .padding(horizontal = GenesysTheme.spacing.xxs)
                         .clip(CircleShape)
                         .background(color)
                         .size(size),

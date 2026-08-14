@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.ui.components.atoms.typography
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -11,39 +10,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
-
-/**
- * Estilos de texto semânticos para a Presentation.
- */
-enum class GenesysTextStyle {
-    Headline,
-    Title,
-    Body,
-    Label,
-    Error,
-}
-
-/**
- * Pesos de fonte semânticos para a Presentation.
- */
-enum class GenesysFontWeight {
-    Normal,
-    Bold,
-    ExtraBold,
-}
-
-/**
- * Alinhamentos de texto semânticos para a Presentation.
- */
-enum class GenesysTextAlign {
-    Start,
-    Center,
-    End,
-    Justify,
-}
+import com.itbenevides.genesys21.ui.theme.*
 
 /**
  * Componente de texto base do Design System.
+ * Totalmente integrado aos Design Tokens semânticos.
  */
 @Composable
 fun GenesysText(
@@ -70,9 +41,6 @@ fun GenesysText(
     )
 }
 
-/**
- * Implementação interna estável para evitar recursão infinita no compilador WasmJs.
- */
 @Composable
 internal fun GenesysTextContent(
     text: String,
@@ -85,36 +53,42 @@ internal fun GenesysTextContent(
     overflow: TextOverflow = TextOverflow.Clip,
     modifier: Modifier = Modifier,
 ) {
-    val textStyle =
+    val tokens = GenesysTheme.typography
+    val textStyle = when (style) {
+        GenesysTextStyle.Headline -> tokens.headline
+        GenesysTextStyle.Title -> tokens.title
+        GenesysTextStyle.Body -> tokens.body
+        GenesysTextStyle.Label -> tokens.label
+        GenesysTextStyle.Error -> tokens.bodySmall.copy(color = GenesysTheme.colors.error)
+    }
+
+    val composeFontWeight = when (fontWeight) {
+        GenesysFontWeight.Normal -> FontWeight.Normal
+        GenesysFontWeight.Bold -> FontWeight.Bold
+        GenesysFontWeight.ExtraBold -> FontWeight.ExtraBold
+        null -> textStyle.fontWeight
+    }
+
+    val composeTextAlign = when (textAlign) {
+        GenesysTextAlign.Start -> TextAlign.Start
+        GenesysTextAlign.Center -> TextAlign.Center
+        GenesysTextAlign.End -> TextAlign.End
+        GenesysTextAlign.Justify -> TextAlign.Justify
+        null -> null
+    }
+
+    val finalColor = if (color == Color.Unspecified) {
         when (style) {
-            GenesysTextStyle.Headline -> MaterialTheme.typography.headlineLarge
-            GenesysTextStyle.Title -> MaterialTheme.typography.titleLarge
-            GenesysTextStyle.Body -> MaterialTheme.typography.bodyLarge
-            GenesysTextStyle.Label -> MaterialTheme.typography.labelSmall
-            GenesysTextStyle.Error -> MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.error)
+            GenesysTextStyle.Label -> GenesysTheme.colors.onSurfaceVariant
+            GenesysTextStyle.Error -> GenesysTheme.colors.error
+            else -> GenesysTheme.colors.onSurface
         }
-
-    val composeFontWeight =
-        when (fontWeight) {
-            GenesysFontWeight.Normal -> FontWeight.Normal
-            GenesysFontWeight.Bold -> FontWeight.Bold
-            GenesysFontWeight.ExtraBold -> FontWeight.ExtraBold
-            null -> textStyle.fontWeight
-        }
-
-    val composeTextAlign =
-        when (textAlign) {
-            GenesysTextAlign.Start -> TextAlign.Start
-            GenesysTextAlign.Center -> TextAlign.Center
-            GenesysTextAlign.End -> TextAlign.End
-            GenesysTextAlign.Justify -> TextAlign.Justify
-            null -> null
-        }
+    } else color
 
     Text(
         text = text,
         style = textStyle,
-        color = color,
+        color = finalColor,
         modifier = modifier,
         textAlign = composeTextAlign,
         fontWeight = composeFontWeight,
@@ -124,9 +98,6 @@ internal fun GenesysTextContent(
     )
 }
 
-/**
- * Extensão para RowScope.
- */
 @Composable
 fun RowScope.GenesysRowText(
     text: String,
@@ -154,9 +125,6 @@ fun RowScope.GenesysRowText(
     )
 }
 
-/**
- * Extensão para ColumnScope.
- */
 @Composable
 fun ColumnScope.GenesysColumnText(
     text: String,

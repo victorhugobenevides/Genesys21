@@ -16,9 +16,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun GenesysTrackingTimeline(currentStatus: OrderStatus) {
@@ -50,29 +49,29 @@ fun GenesysTrackingTimeline(currentStatus: OrderStatus) {
                     else -> false
                 }
 
-            val color = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            val color = if (isCompleted) GenesysTheme.colors.brand else GenesysTheme.colors.outline
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier =
                             Modifier
-                                .size(28.dp)
+                                .size(GenesysTheme.spacing.l)
                                 .clip(CircleShape)
                                 .background(if (isCompleted) color else color.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (isCompleted && !isActive) {
-                            Icon(GenesysIcons.Check, null, modifier = Modifier.size(16.dp), tint = Color.White)
+                            Icon(GenesysIcons.Check, null, modifier = Modifier.size(GenesysTheme.spacing.m), tint = Color.White)
                         } else if (isActive) {
-                            Box(Modifier.size(10.dp).background(Color.White, CircleShape))
+                            Box(Modifier.size(GenesysTheme.spacing.s).background(Color.White, CircleShape))
                         }
                     }
                     if (index < steps.size - 1) {
                         Box(
                             Modifier
-                                .width(2.dp)
-                                .height(32.dp)
+                                .width(GenesysTheme.spacing.xxxs)
+                                .height(GenesysTheme.spacing.xl)
                                 .background(if (isCompleted && currentStatus != status) color else color.copy(alpha = 0.3f)),
                         )
                     }
@@ -84,7 +83,7 @@ fun GenesysTrackingTimeline(currentStatus: OrderStatus) {
                     text = label,
                     style = GenesysTextStyle.Body,
                     fontWeight = if (isActive) GenesysFontWeight.ExtraBold else null,
-                    color = if (isCompleted) Color.Unspecified else Color.Gray,
+                    color = if (isCompleted) Color.Unspecified else GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.6f),
                 )
             }
         }

@@ -32,6 +32,7 @@ import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.staggeredEntry
 import kotlin.math.roundToLong
 
@@ -71,20 +72,20 @@ fun ServiceCard(
                 },
     ) {
         // Modo Grade: Se a largura for pequena (ex: dentro de uma grade de 2+ colunas), usa layout vertical
-        val isGridMode = maxWidth < 300.dp
+        val isGridMode = maxWidth < GenesysTheme.spacing.xxl * 6 // ~300dp
 
         GenesysCard(
             onClick = onClick,
-            elevation = if (isHovered) 4.dp else 0.dp,
-            backgroundColor = MaterialTheme.colorScheme.surface,
+            elevation = if (isHovered) GenesysTheme.spacing.xxs else GenesysTheme.spacing.none,
+            backgroundColor = GenesysTheme.colors.surface,
             border =
                 androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
+                    width = GenesysTheme.spacing.xxxs,
                     color =
                         if (isHovered) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            GenesysTheme.colors.brand.copy(alpha = 0.2f)
                         } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                            GenesysTheme.colors.onSurface.copy(alpha = 0.08f)
                         },
                 ),
         ) {
@@ -95,15 +96,15 @@ fun ServiceCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                            .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
+                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
                     ) {
                         ServiceImage(service, backendUrl)
                         ServiceBadge(service, Alignment.BottomEnd)
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(GenesysTheme.spacing.s))
 
                     ServiceInfo(service, isGridMode)
                 }
@@ -116,15 +117,15 @@ fun ServiceCard(
                     Box(
                         modifier = Modifier
                             .size(100.dp)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                            .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
+                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
                     ) {
                         ServiceImage(service, backendUrl)
                         ServiceBadge(service, Alignment.BottomEnd)
                     }
 
-                    Spacer(Modifier.width(16.dp))
+                    Spacer(Modifier.width(GenesysTheme.spacing.m))
 
                     ServiceInfo(service, isGridMode, Modifier.weight(1f))
                 }
@@ -151,17 +152,17 @@ private fun ServiceImage(service: BookingService, backendUrl: String) {
 @Composable
 private fun BoxScope.ServiceBadge(service: BookingService, alignment: Alignment) {
     Surface(
-        modifier = Modifier.align(alignment).padding(8.dp),
+        modifier = Modifier.align(alignment).padding(GenesysTheme.spacing.xs),
         shape = CircleShape,
         color = Color.White.copy(alpha = 0.8f),
-        tonalElevation = 2.dp,
+        tonalElevation = GenesysTheme.spacing.xxxs,
     ) {
-        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(GenesysIcons.Schedule, null, modifier = Modifier.size(12.dp), tint = Color.Black)
-            Spacer(Modifier.width(4.dp))
+        Row(modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xs, vertical = GenesysTheme.spacing.xxs), verticalAlignment = Alignment.CenterVertically) {
+            Icon(GenesysIcons.Schedule, null, modifier = Modifier.size(GenesysTheme.spacing.s), tint = Color.Black)
+            Spacer(Modifier.width(GenesysTheme.spacing.xxs))
             Text(
                 text = "${service.durationMinutes} min",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                style = GenesysTheme.typography.label.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black
             )
         }
@@ -177,19 +178,19 @@ private fun ServiceInfo(
     Column(modifier = modifier) {
         Text(
             text = service.name,
-            style = if (isGridMode) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+            style = if (isGridMode) GenesysTheme.typography.title else GenesysTheme.typography.headline,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = GenesysTheme.colors.onSurface,
         )
 
         val desc = service.description
         if (desc != null && !isGridMode) {
             Text(
                 text = desc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = GenesysTheme.typography.bodySmall,
+                color = GenesysTheme.colors.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -198,9 +199,9 @@ private fun ServiceInfo(
         val priceFormatted = (service.price * 100.0).roundToLong() / 100.0
         Text(
             text = "${GenesysStrings.PricePrefix}$priceFormatted",
-            style = if (isGridMode) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.titleMedium,
+            style = if (isGridMode) GenesysTheme.typography.body else GenesysTheme.typography.title,
             fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary,
+            color = GenesysTheme.colors.brand,
         )
 
         if (!isGridMode) {
@@ -211,10 +212,10 @@ private fun ServiceInfo(
             ) {
                 Surface(
                     modifier = Modifier.size(40.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(GenesysTheme.spacing.s),
+                    color = GenesysTheme.colors.brand,
                     contentColor = Color.White,
-                    shadowElevation = 4.dp,
+                    shadowElevation = GenesysTheme.spacing.xxs,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(

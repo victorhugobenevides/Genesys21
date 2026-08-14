@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.shimmerBrush
 
 /**
@@ -33,7 +33,7 @@ fun GenesysImage(
     contentDescription: String? = null,
     contentScale: ContentScale = ContentScale.Crop,
     shape: Shape? = null,
-    placeholderColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+    placeholderColor: Color = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
     showShimmer: Boolean = true,
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -82,7 +82,7 @@ fun GenesysImage(
                 Icon(
                     imageVector = Icons.Default.Image,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    tint = GenesysTheme.colors.brand.copy(alpha = 0.3f),
                     modifier = Modifier.size(size * 0.5f),
                 )
             }

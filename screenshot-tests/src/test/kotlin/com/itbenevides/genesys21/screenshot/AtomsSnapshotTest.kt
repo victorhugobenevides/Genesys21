@@ -12,7 +12,7 @@ import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.GenesysTextStyle
 import org.junit.Rule
 import org.junit.Test
 

@@ -5,16 +5,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysFontWeight
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysTextStyle
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun GenesysTimeChip(
@@ -23,17 +21,17 @@ fun GenesysTimeChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-    val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val backgroundColor = if (isSelected) GenesysTheme.colors.brand else Color.Transparent
+    val borderColor = if (isSelected) GenesysTheme.colors.brand else GenesysTheme.colors.outline
+    val textColor = if (isSelected) GenesysTheme.colors.onBrand else GenesysTheme.colors.onSurface
 
     Box(
         modifier = modifier
-            .clip(MaterialTheme.shapes.medium)
+            .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
             .background(backgroundColor)
-            .border(1.dp, borderColor, MaterialTheme.shapes.medium)
+            .border(GenesysTheme.spacing.xxxs, borderColor, RoundedCornerShape(GenesysTheme.config.cornerRadius))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.xs),
         contentAlignment = Alignment.Center
     ) {
         GenesysText(

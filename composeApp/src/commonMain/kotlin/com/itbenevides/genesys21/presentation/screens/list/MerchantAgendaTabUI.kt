@@ -13,10 +13,16 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.atoms.primitives.*
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -66,7 +72,7 @@ fun MerchantAgendaTabUI(
                 GenesysText(
                     text = "Acompanhe e configure seus atendimentos.",
                     style = GenesysTextStyle.Body,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = GenesysTheme.colors.onSurfaceVariant,
                 )
             }
             GenesysIconButton(
@@ -153,7 +159,7 @@ private fun EditAppointmentDialog(
             if (appointment.status != BookingStatus.CANCELLED) {
                 GenesysLoadingButton(
                     text = "Cancelar", // Encurtei para caber melhor no mobile
-                    containerColor = MaterialTheme.colorScheme.error,
+                    containerColor = GenesysTheme.colors.error,
                     fillWidth = true,
                     onClick = onCancel
                 )
@@ -190,7 +196,7 @@ private fun EditAppointmentDialog(
             GenesysSpacer(GenesysSpacing.Small)
 
             if (currentNotes.isEmpty()) {
-                GenesysText(text = "Nenhuma nota adicionada.", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                GenesysText(text = "Nenhuma nota adicionada.", style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
             } else {
                 currentNotes.forEach { note ->
                     NoteItem(note)
@@ -204,7 +210,7 @@ private fun EditAppointmentDialog(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                    .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                     .padding(12.dp)
             ) {
                 Column {
@@ -251,19 +257,19 @@ private fun NoteItem(note: BookingNote) {
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (note.isPrivate) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                if (note.isPrivate) GenesysTheme.colors.accent.copy(alpha = 0.1f)
+                else GenesysTheme.colors.brandContainer.copy(alpha = 0.3f),
                 RoundedCornerShape(8.dp)
             )
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(note.authorName, style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-            Text(dateStr, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(dateStr, style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.onSurfaceVariant)
         }
         Text(note.content, style = MaterialTheme.typography.bodySmall)
         if (note.isPrivate) {
-            Text("🔒 Privada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+            Text("🔒 Privada", style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.accent)
         }
     }
 }
@@ -291,7 +297,7 @@ private fun DailyAgendaView(
         text = "Agenda para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}/${selectedDate.year}",
         style = GenesysTextStyle.Label,
         fontWeight = GenesysFontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
+        color = GenesysTheme.colors.brand,
     )
 
     GenesysSpacer(GenesysSpacing.Medium)
@@ -336,7 +342,7 @@ private fun UpcomingAgendaView(
                 text = "${date.dayOfMonth} de ${date.month.name} de ${date.year}",
                 style = GenesysTextStyle.Label,
                 fontWeight = GenesysFontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary,
+                color = GenesysTheme.colors.accent,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
@@ -461,7 +467,7 @@ private fun AppointmentCard(
     ) {
         GenesysRow(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             GenesysColumn(usePadding = false, modifier = Modifier.width(60.dp)) {
-                GenesysText(text = timeStr, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                GenesysText(text = timeStr, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand)
             }
             GenesysSpacer(GenesysSpacing.Medium)
             GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
@@ -475,7 +481,7 @@ private fun AppointmentCard(
                     GenesysText(
                         text = "Notas: $publicNotesCount públicas, $privateNotesCount privadas",
                         style = GenesysTextStyle.Label,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = GenesysTheme.colors.onSurfaceVariant
                     )
                 }
             }
@@ -485,13 +491,13 @@ private fun AppointmentCard(
                     BookingStatus.CONFIRMED -> Color(0xFF4CAF50).copy(alpha = 0.1f)
                     BookingStatus.PENDING -> Color(0xFFFF9800).copy(alpha = 0.1f)
                     BookingStatus.CANCELLED -> Color(0xFFF44336).copy(alpha = 0.1f)
-                    else -> MaterialTheme.colorScheme.surfaceVariant
+                    else -> GenesysTheme.colors.surfaceVariant
                 },
                 contentColor = when (appointment.status) {
                     BookingStatus.CONFIRMED -> Color(0xFF4CAF50)
                     BookingStatus.PENDING -> Color(0xFFFF9800)
                     BookingStatus.CANCELLED -> Color(0xFFF44336)
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    else -> GenesysTheme.colors.onSurfaceVariant
                 }
             ) {
                 Text(appointment.status.name, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall)
