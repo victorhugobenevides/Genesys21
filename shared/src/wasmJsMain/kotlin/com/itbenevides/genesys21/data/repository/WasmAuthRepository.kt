@@ -58,6 +58,9 @@ external fun firebaseInitializeOneTapSafe()
 @JsFun("(callback) => { if (typeof window.firebaseOnAuthChanged === 'function') window.firebaseOnAuthChanged(callback); }")
 external fun firebaseOnAuthChangedSafe(callback: (JsString?) -> Unit)
 
+@JsFun("(str) => atob(str)")
+external fun decodeBase64Safe(str: String): String
+
 class WasmAuthRepository : AuthRepository {
     override val authState: Flow<String?> = callbackFlow {
         firebaseOnAuthChangedSafe { uid ->
@@ -129,7 +132,30 @@ class WasmAuthRepository : AuthRepository {
 
     override suspend fun getCurrentUserEmail(): String? {
         return try {
-            firebaseGetUserEmailSafe().await()?.toString()
+            val email = firebaseGetUserEmailSafe().await()?.toString()
+            if (!email.isNullOrBlank()) return email
+
+            // Fallback: Tenta decodificar o e-mail do ID Token
+            getCurrentUserToken()?.let { token ->
+                extractEmailFromToken(token)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun extractEmailFromToken(token: String): String? {
+        return try {
+            // JWT format is Header.Payload.Signature
+            val parts = token.split(".")
+            if (parts.size < 2) return null
+
+            val payload = parts[1]
+            // Wasm/JS Base64 decode
+            val decoded = decodeBase64Safe(payload)
+            if (decoded.contains("\"email\":\"")) {
+                decoded.substringAfter("\"email\":\"").substringBefore("\"")
+            } else null
         } catch (e: Exception) {
             null
         }

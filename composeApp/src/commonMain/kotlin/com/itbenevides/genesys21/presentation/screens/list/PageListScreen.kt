@@ -256,6 +256,7 @@ fun PageListScreen(
                 uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
             },
             onShowcase = onShowcase,
+            onOpenProfile = { router.navigateTo(Route.Profile) },
             onOpenReceipts = { router.navigateTo(Route.Receipts) },
             onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
             onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
@@ -299,6 +300,7 @@ private fun PageListContent(
     onExportAll: () -> Unit,
     onContactCustomer: (String, String, String) -> Unit,
     onShowcase: () -> Unit,
+    onOpenProfile: () -> Unit,
     onOpenReceipts: () -> Unit,
     onAddService: () -> Unit,
     onEditService: (BookingService) -> Unit,
@@ -310,11 +312,11 @@ private fun PageListContent(
     val isSuperAdmin = userProfile?.role == UserRole.SUPERADMIN
 
     // Lista de abas permitidas
-    val permittedTabs = remember(userProfile) {
+    val permittedTabs = remember(userProfile, state.pages) {
         val list = mutableListOf<PermittedTab>()
         val perms = userProfile?.permissions ?: emptySet()
 
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_VITRINES)) {
+        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_VITRINES) || (userProfile == null && state.pages.isNotEmpty())) {
             list.add(PermittedTab(0, GenesysStrings.VitrineTab, GenesysIcons.Web))
         }
         if (isSuperAdmin || perms.contains(UserPermission.MANAGE_ORDERS)) {
@@ -370,6 +372,7 @@ private fun PageListContent(
                 title = GenesysStrings.AdminTitle,
                 onBack = null,
                 actions = {
+                    GenesysIconButton(icon = GenesysIcons.Person, contentDescription = "Perfil", onClick = onOpenProfile)
                     GenesysIconButton(icon = GenesysIcons.ReceiptLong, contentDescription = "Notas Fiscais", onClick = onOpenReceipts)
                     GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
                     GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)

@@ -141,8 +141,24 @@ jobs:
             };
             window.firebaseGetToken = () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null);
             window.firebaseGetUserId = () => Promise.resolve(auth.currentUser ? auth.currentUser.uid : null);
-            window.firebaseGetUserEmail = () => Promise.resolve(auth.currentUser ? auth.currentUser.email : null);
-            window.firebaseGetUserName = () => Promise.resolve(auth.currentUser ? auth.currentUser.displayName : null);
+            window.firebaseGetUserEmail = () => {
+                if (auth.currentUser) return Promise.resolve(auth.currentUser.email);
+                return new Promise((resolve) => {
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        unsubscribe();
+                        resolve(user ? user.email : null);
+                    });
+                });
+            };
+            window.firebaseGetUserName = () => {
+                if (auth.currentUser) return Promise.resolve(auth.currentUser.displayName);
+                return new Promise((resolve) => {
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        unsubscribe();
+                        resolve(user ? user.displayName : null);
+                    });
+                });
+            };
             window.firebaseSignOut = () => { oneTapInitialized = false; return auth.signOut(); };
             window.firebaseOnAuthChanged = (cb) => auth.onAuthStateChanged(u => cb(u ? u.uid : null));
             EOF
@@ -238,12 +254,6 @@ jobs:
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
                     add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
 
-                    # Deixamos o Ktor gerenciar o CORS para /api/, mas mantemos para os dominios principais se necessario
-                    # add_header Access-Control-Allow-Origin "$cors_origin" always;
-                    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, PATCH, DELETE" always;
-                    add_header Access-Control-Allow-Headers "Authorization, Content-Type, Cache-Control, X-Cart-Session-Id" always;
-                    add_header Access-Control-Allow-Credentials "true" always;
-
                     location /api/ {
                         set \$upstream_prod app-server-1;
                         proxy_pass http://\$upstream_prod:8080\$request_uri;
@@ -265,12 +275,6 @@ jobs:
                     # Segurança para One Tap e recursos externos
                     add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
                     add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
-
-                    # Deixamos o Ktor gerenciar o CORS para /api/, mas mantemos para os dominios principais se necessario
-                    # add_header Access-Control-Allow-Origin "$cors_origin" always;
-                    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, PATCH, DELETE" always;
-                    add_header Access-Control-Allow-Headers "Authorization, Content-Type, Cache-Control, X-Cart-Session-Id" always;
-                    add_header Access-Control-Allow-Credentials "true" always;
 
                     location /api/ {
                         set \$upstream_staging staging-server-1;
