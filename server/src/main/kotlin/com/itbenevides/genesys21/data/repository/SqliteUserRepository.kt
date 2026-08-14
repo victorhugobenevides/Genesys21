@@ -42,45 +42,51 @@ class SqliteUserRepository : UserRepository {
         Result.failure(e)
     }
 
-    override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> = try {
-        dbQuery {
-            // LGPD: Mascaramos o e-mail no log do servidor
-            val maskedEmail = com.itbenevides.genesys21.util.PrivacyUtils.maskEmail(profile.email)
-            println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id})")
-            val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
-            if (exists) {
-                UsersTable.update({ UsersTable.id eq profile.id }) {
-                    it[name] = profile.name
-                    it[email] = profile.email
-                    it[avatarUrl] = profile.avatarUrl
-                    it[phone] = profile.phone
-                    it[updatedAt] = System.currentTimeMillis()
-                    it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
-                }
-                com.itbenevides.genesys21.data.service.AuditLogger.log(
-                    userId = profile.id,
-                    storeId = null,
-                    action = "UPDATE_PROFILE",
-                    entityName = "User",
-                    entityId = profile.id
-                )
-            } else {
-                UsersTable.insert {
-                    it[id] = profile.id
-                    it[name] = profile.name
-                    it[email] = profile.email
-                    it[avatarUrl] = profile.avatarUrl
-                    it[phone] = profile.phone
-                    it[role] = profile.role.name
-                    it[status] = profile.status.name
-                    it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
-                }
-            }
-            Result.success(Unit)
+    override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> {
+        if (profile.email.isBlank()) {
+            return Result.failure(Exception("E-mail inválido para o perfil"))
         }
-    } catch (e: Exception) {
-        println("REPOSITORY ERROR (saveUserProfile): ${e.message}")
-        Result.failure(e)
+
+        return try {
+            dbQuery {
+                // LGPD: Mascaramos o e-mail no log do servidor
+                val maskedEmail = com.itbenevides.genesys21.util.PrivacyUtils.maskEmail(profile.email)
+                println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id})")
+                val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
+                if (exists) {
+                    UsersTable.update({ UsersTable.id eq profile.id }) {
+                        it[name] = profile.name
+                        it[email] = profile.email
+                        it[avatarUrl] = profile.avatarUrl
+                        it[phone] = profile.phone
+                        it[updatedAt] = System.currentTimeMillis()
+                        it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
+                    }
+                    com.itbenevides.genesys21.data.service.AuditLogger.log(
+                        userId = profile.id,
+                        storeId = null,
+                        action = "UPDATE_PROFILE",
+                        entityName = "User",
+                        entityId = profile.id
+                    )
+                } else {
+                    UsersTable.insert {
+                        it[id] = profile.id
+                        it[name] = profile.name
+                        it[email] = profile.email
+                        it[avatarUrl] = profile.avatarUrl
+                        it[phone] = profile.phone
+                        it[role] = profile.role.name
+                        it[status] = profile.status.name
+                        it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
+                    }
+                }
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            println("REPOSITORY ERROR (saveUserProfile): ${e.message}")
+            Result.failure(e)
+        }
     }
 
     override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = try {

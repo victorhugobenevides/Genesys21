@@ -847,6 +847,11 @@ class PageViewModel(
         val email = authRepository.getCurrentUserEmail() ?: ""
         val name = authRepository.getCurrentUserName() ?: email.substringBefore("@").ifBlank { "Novo Usuário" }
 
+        if (email.isBlank()) {
+            println("VIEWMODEL: Abortando sincronização. E-mail ausente para o UID: $userId")
+            return
+        }
+
         println("VIEWMODEL: Sincronizando perfil inicial para $email ($userId)")
 
         val newProfile = UserProfile(

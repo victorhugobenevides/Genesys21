@@ -141,6 +141,8 @@ jobs:
             };
             window.firebaseGetToken = () => auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null);
             window.firebaseGetUserId = () => Promise.resolve(auth.currentUser ? auth.currentUser.uid : null);
+            window.firebaseGetUserEmail = () => Promise.resolve(auth.currentUser ? auth.currentUser.email : null);
+            window.firebaseGetUserName = () => Promise.resolve(auth.currentUser ? auth.currentUser.displayName : null);
             window.firebaseSignOut = () => { oneTapInitialized = false; return auth.signOut(); };
             window.firebaseOnAuthChanged = (cb) => auth.onAuthStateChanged(u => cb(u ? u.uid : null));
             EOF
