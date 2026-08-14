@@ -17,6 +17,7 @@ data class ReceiptUiState(
     val selectedCategory: String = "Todas",
     val selectedReceipt: Receipt? = null,
     val isScanning: Boolean = false,
+    val isLoading: Boolean = false,
     val backupMessage: String? = null,
     val showBackupDialog: Boolean = false,
     val showScanDialog: Boolean = false,
@@ -46,7 +47,9 @@ class ReceiptViewModel(
 
     fun loadAllReceipts() {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
             repository.getAllReceipts()
+            _uiState.value = _uiState.value.copy(isLoading = false)
         }
     }
 

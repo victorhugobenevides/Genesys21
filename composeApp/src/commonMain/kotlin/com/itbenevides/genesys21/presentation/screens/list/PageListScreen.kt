@@ -12,6 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +59,7 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.downloadFile
 import com.itbenevides.genesys21.util.rememberFileHandler
 import kotlin.math.roundToLong
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
@@ -67,6 +71,7 @@ private data class PermittedTab(
     val badgeCount: Int = 0
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageListScreen(
     viewModel: PageViewModel,
@@ -81,8 +86,10 @@ fun PageListScreen(
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
+    val scope = rememberCoroutineScope()
 
     var state by remember { mutableStateOf(PageListState()) }
+    var isRefreshing by remember { mutableStateOf(false) }
 
     state =
         state.copy(
@@ -196,27 +203,73 @@ fun PageListScreen(
             json?.let { onEvent(PageListEvent.OnImportPageClicked(it)) }
         }
 
-    PageListContent(
-        state = state,
-        viewModel = viewModel,
-        onEvent = onEvent,
-        onViewPage = onViewPage,
-        onEditPage = onEditPage,
-        onImport = { fileHandler() },
-        onExportAll = { onEvent(PageListEvent.OnExportAllClicked) },
-        onContactCustomer = { phone, orderId, name ->
-            val message = "Olá $name, estou entrando em contato sobre o seu pedido #$orderId na Genesys21."
-            uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            scope.launch {
+                isRefreshing = true
+                viewModel.loadPages()
+                viewModel.loadOrders()
+                viewModel.loadBookingServices()
+                isRefreshing = false
+            }
         },
-        onShowcase = onShowcase,
-        onOpenReceipts = { router.navigateTo(Route.Receipts) },
-        onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
-        onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
-        onDeleteService = { viewModel.deleteBookingService(it) },
-        uriHandler = uriHandler
-    )
+        state = pullToRefreshState,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullToRefreshState,
+                isRefreshing = isRefreshing,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        PageListContent(
+            state = state,
+            viewModel = viewModel,
+            onEvent = onEvent,
+            onViewPage = onViewPage,
+            onEditPage = onEditPage,
+            onImport = { fileHandler() },
+            onExportAll = { onEvent(PageListEvent.OnExportAllClicked) },
+            onContactCustomer = { phone, orderId, name ->
+                val message = "Olá $name, estou entrando em contato sobre o seu pedido #$orderId na Genesys21."
+                uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
+            },
+            onShowcase = onShowcase,
+            onOpenReceipts = { router.navigateTo(Route.Receipts) },
+            onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
+            onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
+            onDeleteService = { viewModel.deleteBookingService(it) },
+            uriHandler = uriHandler
+        )
+    }
+
+    if (state.showCreateDialog) {
+        val onImportHandler = { fileHandler() }
+        CreatePageDialog(state, onEvent, onImportHandler)
+    }
+    if (state.showGlobalSettings && state.pages.isNotEmpty()) GlobalSettingsDialog(state, onEvent)
+    if (state.showRenameDialog) RenamePageDialog(state, onEvent)
+
+    if (state.showAIBuider) {
+        AIPageBuilderDialog(
+            onDismiss = { onEvent(PageListEvent.OnDismissAIBuilder) },
+            onPageGenerated = { generatedPage ->
+                onEvent(PageListEvent.OnDismissAIBuilder)
+                viewModel.savePage(generatedPage, false) {
+                    onEditPage(generatedPage)
+                }
+            }
+        )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PageListContent(
     state: PageListState,
@@ -376,22 +429,6 @@ private fun PageListContent(
                 }
             }
         }
-    }
-
-    if (state.showCreateDialog) CreatePageDialog(state, onEvent, onImport)
-    if (state.showGlobalSettings && state.pages.isNotEmpty()) GlobalSettingsDialog(state, onEvent)
-    if (state.showRenameDialog) RenamePageDialog(state, onEvent)
-
-    if (state.showAIBuider) {
-        AIPageBuilderDialog(
-            onDismiss = { onEvent(PageListEvent.OnDismissAIBuilder) },
-            onPageGenerated = { generatedPage ->
-                onEvent(PageListEvent.OnDismissAIBuilder)
-                viewModel.savePage(generatedPage, false) {
-                    onEditPage(generatedPage)
-                }
-            }
-        )
     }
 }
 

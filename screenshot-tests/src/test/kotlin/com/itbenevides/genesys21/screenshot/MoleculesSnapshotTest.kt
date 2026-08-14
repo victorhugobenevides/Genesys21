@@ -42,14 +42,14 @@ class MoleculesSnapshotTest {
         paparazzi.genesysResponsiveSnapshot {
             Column(Modifier.padding(16.dp).fillMaxWidth()) {
                 GenesysSearchBar(
-                    value = "",
-                    onValueChange = {},
+                    query = "",
+                    onQueryChange = {},
                     placeholder = "Search products...",
                 )
                 Spacer(Modifier.height(16.dp))
                 GenesysSearchBar(
-                    value = "Samsung",
-                    onValueChange = {},
+                    query = "Samsung",
+                    onQueryChange = {},
                     placeholder = "Search products...",
                 )
             }

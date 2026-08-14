@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +18,7 @@ import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorScreen(
     viewModel: PageViewModel,
@@ -48,6 +50,7 @@ fun PageEditorScreen(
     PageEditorContent(state, onEvent)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PageEditorContent(
     state: PageEditorState,

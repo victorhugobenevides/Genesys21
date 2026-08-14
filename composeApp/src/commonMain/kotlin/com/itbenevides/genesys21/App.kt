@@ -114,7 +114,18 @@ fun App() {
                                     if (targetState is Route.Splash || initialState is Route.Splash) {
                                         EnterTransition.None togetherWith ExitTransition.None
                                     } else {
-                                        fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                                        val duration = com.itbenevides.genesys21.ui.theme.GenesysMotion.DurationMedium4
+                                        val easing = com.itbenevides.genesys21.ui.theme.GenesysMotion.Emphasized
+
+                                        (slideInHorizontally(
+                                            animationSpec = tween(duration, easing = easing),
+                                            initialOffsetX = { it / 10 }
+                                        ) + fadeIn(animationSpec = tween(duration))).togetherWith(
+                                            slideOutHorizontally(
+                                                animationSpec = tween(duration, easing = easing),
+                                                targetOffsetX = { -it / 10 }
+                                            ) + fadeOut(animationSpec = tween(duration))
+                                        )
                                     }
                                 },
                                 label = "GlobalNavigation",

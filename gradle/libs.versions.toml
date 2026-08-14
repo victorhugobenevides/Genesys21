@@ -109,6 +109,7 @@ google-http-gson = { module = "com.google.http-client:google-http-client-gson", 
 google-oauth = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "google_auth_library_oauth2_http" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 windowSizeClass = { module = "androidx.compose.material3:material3-window-size-class", version = "1.2.1" }
+adaptive-navigation = { module = "org.jetbrains.compose.material3:material3-adaptive-navigation-suite", version.ref = "composeMultiplatform" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidxDatastore" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurity" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }

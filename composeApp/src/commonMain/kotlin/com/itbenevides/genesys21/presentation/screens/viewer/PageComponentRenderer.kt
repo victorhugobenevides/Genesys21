@@ -375,10 +375,9 @@ fun PageComponentRenderer(
             is PageComponent.Filter -> {
                 GenesysBox(Modifier.padding(vertical = GenesysDimens.SpacingMedium)) {
                     GenesysSearchBar(
-                        value = filterQuery,
-                        onValueChange = { onFilterQueryChange(it) },
-                        placeholder = component.placeholder,
-                        onClear = { onFilterQueryChange("") },
+                        query = filterQuery,
+                        onQueryChange = { onFilterQueryChange(it) },
+                        placeholder = component.placeholder
                     )
                 }
             }

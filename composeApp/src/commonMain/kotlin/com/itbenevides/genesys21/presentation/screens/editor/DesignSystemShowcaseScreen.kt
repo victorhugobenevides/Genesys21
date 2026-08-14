@@ -52,7 +52,7 @@ import com.itbenevides.genesys21.util.toColor
 import com.itbenevides.genesys21.getWebBaseUrl
 import kotlinx.datetime.LocalDate
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DesignSystemShowcaseScreen(
     onBack: () -> Unit,
@@ -487,6 +487,7 @@ private fun InputsShowcase() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ActionNavShowcase() {
     ShowcaseSection("Action Buttons", "Primary, secondary and floating actions.") {

@@ -8,6 +8,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +44,7 @@ import kotlin.math.roundToLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailsScreen(
     product: Product,
@@ -115,6 +117,7 @@ fun ProductDetailsScreen(
     ProductDetailsContent(state, backendUrl, onEvent)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailsContent(
     state: ProductDetailsState,
