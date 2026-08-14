@@ -5,9 +5,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,9 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
@@ -87,9 +86,12 @@ fun PageListScreen(
     val uriHandler = LocalUriHandler.current
     val router: Router = koinInject()
     val scope = rememberCoroutineScope()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
 
     var state by remember { mutableStateOf(PageListState()) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var selectedOrderIdForDetail by remember { mutableStateOf<String?>(null) }
 
     state =
         state.copy(
@@ -231,6 +233,9 @@ fun PageListScreen(
         PageListContent(
             state = state,
             viewModel = viewModel,
+            isExpanded = isExpanded,
+            selectedOrderIdForDetail = selectedOrderIdForDetail,
+            onSelectOrderForDetail = { selectedOrderIdForDetail = it },
             onEvent = onEvent,
             onViewPage = onViewPage,
             onEditPage = onEditPage,
@@ -274,6 +279,9 @@ fun PageListScreen(
 private fun PageListContent(
     state: PageListState,
     viewModel: PageViewModel,
+    isExpanded: Boolean,
+    selectedOrderIdForDetail: String?,
+    onSelectOrderForDetail: (String?) -> Unit,
     onEvent: (PageListEvent) -> Unit,
     onViewPage: (Page) -> Unit,
     onEditPage: (Page) -> Unit,
@@ -328,33 +336,38 @@ private fun PageListContent(
     }
 
     GenesysPage(
-        topBar = {
-            GenesysColumn(usePadding = false, modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
-                GenesysTopAppBar(
-                    title = GenesysStrings.AdminTitle,
-                    onBack = null,
-                    actions = {
-                        GenesysIconButton(icon = GenesysIcons.ReceiptLong, contentDescription = "Notas Fiscais", onClick = onOpenReceipts)
-                        GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
-                        GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)
-                        GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)
-                        GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })
-                        GenesysIconButton(icon = GenesysIcons.Add, onClick = { onEvent(PageListEvent.OnCreatePageClicked) })
-                    },
-                )
-
-                if (permittedTabs.isNotEmpty()) {
-                    GenesysTabRow(
-                        selectedTabIndex = permittedTabs.indexOfFirst { it.id == state.selectedTab }.coerceAtMost(permittedTabs.size - 1).coerceAtLeast(0),
-                        tabs = permittedTabs.map { GenesysTabData(it.label, it.icon, badgeCount = it.badgeCount) },
-                        onTabSelected = { index ->
-                            if (index in permittedTabs.indices) {
-                                onEvent(PageListEvent.OnTabSelected(permittedTabs[index].id))
+        navigationSuiteItems = {
+            permittedTabs.forEach { tab ->
+                item(
+                    selected = state.selectedTab == tab.id,
+                    onClick = { onEvent(PageListEvent.OnTabSelected(tab.id)) },
+                    icon = {
+                        BadgedBox(
+                            badge = {
+                                if (tab.badgeCount > 0) Badge { Text(tab.badgeCount.toString()) }
                             }
-                        },
-                    )
-                }
+                        ) {
+                            Icon(tab.icon, contentDescription = tab.label)
+                        }
+                    },
+                    label = { Text(tab.label) },
+                    alwaysShowLabel = false
+                )
             }
+        },
+        topBar = {
+            GenesysTopAppBar(
+                title = GenesysStrings.AdminTitle,
+                onBack = null,
+                actions = {
+                    GenesysIconButton(icon = GenesysIcons.ReceiptLong, contentDescription = "Notas Fiscais", onClick = onOpenReceipts)
+                    GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
+                    GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)
+                    GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)
+                    GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })
+                    GenesysIconButton(icon = GenesysIcons.Add, onClick = { onEvent(PageListEvent.OnCreatePageClicked) })
+                },
+            )
         },
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -404,15 +417,53 @@ private fun PageListContent(
                             )
                         }
                     } else {
-                        items(items = filteredOrders, key = { it.id }) { order ->
-                            GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
-                                OrderCardUI(
-                                    order = order,
-                                    onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
-                                    onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
-                                )
+                        // O layout de duas colunas para Desktop precisa estar dentro de um item da LazyColumn
+                        // ou a lógica de windowSizeClass deve ser extraída para fora da LazyColumn.
+                        if (isExpanded) {
+                            item {
+                                Row(modifier = Modifier.fillMaxWidth().heightIn(min = 600.dp)) {
+                                    // Coluna da Esquerda: Lista
+                                    Column(modifier = Modifier.weight(1f).padding(16.dp)) {
+                                        filteredOrders.forEach { order ->
+                                            OrderCardUI(
+                                                order = order,
+                                                isSelected = order.id == selectedOrderIdForDetail,
+                                                onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
+                                                onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
+                                                onClick = { onSelectOrderForDetail(order.id) }
+                                            )
+                                            GenesysSpacer(GenesysSpacing.Small)
+                                        }
+                                    }
+
+                                    // Coluna da Direita: Detalhes
+                                    Column(modifier = Modifier.weight(1.5f).padding(16.dp)) {
+                                        val selectedOrder = filteredOrders.find { it.id == selectedOrderIdForDetail }
+                                        if (selectedOrder != null) {
+                                            OrderDetailContent(
+                                                order = selectedOrder,
+                                                onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(selectedOrder.id, newStatus)) },
+                                                onContact = { onContactCustomer(selectedOrder.customerPhone ?: "", selectedOrder.id, selectedOrder.customerName ?: "Cliente") }
+                                            )
+                                        } else {
+                                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                                GenesysText("Selecione um pedido para ver os detalhes", style = GenesysTextStyle.Body, color = MaterialTheme.colorScheme.outline)
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                            GenesysSpacer(GenesysSpacing.Medium)
+                        } else {
+                            items(items = filteredOrders, key = { it.id }) { order ->
+                                GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
+                                    OrderCardUI(
+                                        order = order,
+                                        onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
+                                        onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
+                                    )
+                                }
+                                GenesysSpacer(GenesysSpacing.Medium)
+                            }
                         }
                     }
                 }
@@ -427,6 +478,176 @@ private fun PageListContent(
                     )
                     GenesysSpacer(GenesysSpacing.Huge)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderCardUI(
+    order: com.itbenevides.genesys21.domain.model.Order,
+    isSelected: Boolean = false,
+    onStatusUpdate: (OrderStatus) -> Unit,
+    onContact: () -> Unit,
+    onClick: (() -> Unit)? = null
+) {
+    GenesysCard(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = if (isSelected) 4.dp else 1.dp,
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        onClick = onClick
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                    val initials =
+                        remember(order.customerName) {
+                            order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
+                        }
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = initials,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = order.customerName ?: "Consumidor",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
+            }
+            Spacer(Modifier.height(8.dp))
+            order.items.forEach { item ->
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "${item.quantity}x",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.width(28.dp),
+                    )
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val subtotal = (item.price * item.quantity * 100.0).roundToLong() / 100.0
+                    Text(
+                        text = "${GenesysStrings.PricePrefix}$subtotal",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text(
+                        text = GenesysStrings.OrderTotal,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
+                    Text(
+                        text = "${GenesysStrings.PricePrefix}$totalFormatted",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                    )
+                }
+                if (!order.customerPhone.isNullOrBlank()) {
+                    GenesysLoadingButton(
+                        text = "Falar com o cliente",
+                        onClick = onContact,
+                        icon = GenesysIcons.Chat,
+                        fillWidth = false,
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OrderDetailContent(
+    order: com.itbenevides.genesys21.domain.model.Order,
+    onStatusUpdate: (OrderStatus) -> Unit,
+    onContact: () -> Unit,
+) {
+    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            GenesysText("Detalhes do Pedido", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold)
+            GenesysSpacer(GenesysSpacing.Medium)
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    GenesysText("Pedido #${order.id.takeLast(6).uppercase()}", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    GenesysText(order.customerName ?: "Consumidor", style = GenesysTextStyle.Headline)
+                }
+                GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
+            }
+
+            GenesysSpacer(GenesysSpacing.Large)
+            GenesysDivider()
+            GenesysSpacer(GenesysSpacing.Large)
+
+            GenesysText("Itens", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
+            GenesysSpacer(GenesysSpacing.Small)
+
+            order.items.forEach { item ->
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("${item.quantity}x ${item.name}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    val subtotal = (item.price * item.quantity * 100.0).roundToLong() / 100.0
+                    Text("${GenesysStrings.PricePrefix}$subtotal", fontWeight = FontWeight.Bold)
+                }
+            }
+
+            GenesysSpacer(GenesysSpacing.Large)
+            GenesysDivider()
+            GenesysSpacer(GenesysSpacing.Large)
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Total", style = MaterialTheme.typography.titleLarge)
+                val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
+                Text("${GenesysStrings.PricePrefix}$totalFormatted", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+            }
+
+            if (!order.customerPhone.isNullOrBlank()) {
+                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysLoadingButton(
+                    text = "Falar com o cliente",
+                    onClick = onContact,
+                    icon = GenesysIcons.Chat,
+                    fillWidth = true
+                )
             }
         }
     }
@@ -909,112 +1130,6 @@ private fun PageItemRow(
                 GenesysIconButton(icon = GenesysIcons.Copy, onClick = onCopyUrl)
                 GenesysIconButton(icon = GenesysIcons.CloudUpload, onClick = onExport)
                 GenesysIconButton(icon = GenesysIcons.Delete, onClick = onDelete, tint = MaterialTheme.colorScheme.error)
-            }
-        }
-    }
-}
-
-@Composable
-private fun OrderCardUI(
-    order: com.itbenevides.genesys21.domain.model.Order,
-    onStatusUpdate: (OrderStatus) -> Unit,
-    onContact: () -> Unit,
-) {
-    GenesysCard(modifier = Modifier.fillMaxWidth(), elevation = 1.dp) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    val initials =
-                        remember(order.customerName) {
-                            order.customerName?.split(" ")?.take(2)?.mapNotNull { it.firstOrNull() }?.joinToString("")?.uppercase() ?: "C"
-                        }
-                    Box(
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = initials,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        Text(
-                            text = order.customerName ?: "Consumidor",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
-            }
-            Spacer(Modifier.height(8.dp))
-            order.items.forEach { item ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "${item.quantity}x",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.width(28.dp),
-                    )
-                    Text(
-                        text = item.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    val subtotal = (item.price * item.quantity * 100.0).roundToLong() / 100.0
-                    Text(
-                        text = "${GenesysStrings.PricePrefix}$subtotal",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                    )
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column {
-                    Text(
-                        text = GenesysStrings.OrderTotal,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    val totalFormatted = (order.total * 100.0).roundToLong() / 100.0
-                    Text(
-                        text = "${GenesysStrings.PricePrefix}$totalFormatted",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                    )
-                }
-                if (!order.customerPhone.isNullOrBlank()) {
-                    GenesysLoadingButton(
-                        text = "Falar com o cliente",
-                        onClick = onContact,
-                        icon = GenesysIcons.Chat,
-                        fillWidth = false,
-                        shape = RoundedCornerShape(8.dp),
-                    )
-                }
             }
         }
     }

@@ -17,6 +17,9 @@ private fun getContentColor(backgroundColor: Color): Color {
     return if (backgroundColor.luminance() > 0.5f) Color.Black else Color.White
 }
 
+@Composable
+expect fun getDynamicColorScheme(darkTheme: Boolean): ColorScheme?
+
 // 1. ELEGANCE (Slate & Gold)
 private val EleganceColorScheme =
     lightColorScheme(
@@ -161,6 +164,7 @@ private val CandyColorScheme =
 fun AppTheme(
     themeConfig: PageThemeConfig = PageThemeConfig.ELEGANCE,
     customTheme: CustomThemeConfig? = null,
+    useDynamicColor: Boolean = false, // Nova flag para Material You
     content: @Composable () -> Unit,
 ) {
     val baseColorScheme =
@@ -173,6 +177,10 @@ fun AppTheme(
             PageThemeConfig.CANDY -> CandyColorScheme
             else -> EleganceColorScheme
         }
+
+    val dynamicColorScheme = if (useDynamicColor) {
+        getDynamicColorScheme(darkTheme = themeConfig == PageThemeConfig.MIDNIGHT)
+    } else null
 
     val colorScheme =
         if (customTheme != null) {
@@ -194,7 +202,7 @@ fun AppTheme(
                 surfaceVariant = customSurface.copy(alpha = 0.7f),
             )
         } else {
-            baseColorScheme
+            dynamicColorScheme ?: baseColorScheme
         }
 
     val radius = customTheme?.cornerRadius ?: 16

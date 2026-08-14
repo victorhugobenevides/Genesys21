@@ -97,9 +97,17 @@ fun App() {
             }
         }
 
+    val useDynamicColor =
+        remember(currentRoute) {
+            when (currentRoute) {
+                is Route.PageList, is Route.Profile, is Route.EditorShowcase, is Route.DesignSystemShowcase, is Route.Receipts -> true
+                else -> false
+            }
+        }
+
     BoxWithConstraints {
         ProvideWindowSizeClass(maxWidth) {
-            AppTheme(themeConfig = themeToApply, customTheme = customThemeToApply) {
+            AppTheme(themeConfig = themeToApply, customTheme = customThemeToApply, useDynamicColor = useDynamicColor) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
