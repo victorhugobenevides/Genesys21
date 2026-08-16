@@ -1,5 +1,4 @@
-- [ ] Inject dummy `google-services.json` in CircleCI
-- [ ] Inject dummy `firebase-adminsdk.json` in CircleCI
-- [ ] Create `server/data` directory in CI
-- [ ] Refactor `Application.kt` Firebase init resilience
-- [ ] Final push and verification of CI pipeline
+- [ ] Restore `Decode Secrets` logic in `.circleci/config.yml`
+- [ ] Fix dummy `package_name` in fallback logic
+- [ ] Ensure `firebase-adminsdk.json` is correctly injected from env var
+- [ ] Push changes and monitor CircleCI pipeline

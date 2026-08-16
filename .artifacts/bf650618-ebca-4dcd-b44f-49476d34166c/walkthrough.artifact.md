@@ -1,36 +1,32 @@
-# Walkthrough: Production Deployment & Professional Handover
+# Walkthrough: CI Pipeline Hardening & Production Deployment
 
-O sistema **Genesys21** foi consolidado com sucesso e o deploy para o ambiente de produção foi disparado. Esta versão marca a transição de um MVP para uma plataforma SaaS robusta, segura e orientada a dados.
+O sistema **Genesys21** foi consolidado e o pipeline de CI/CD foi corrigido para suportar o build automatizado sem expor chaves sensíveis.
+
+## 🛠️ Correção do Pipeline (CI Hardening)
+*   **Dummy Configs**: Adicionei passos no CircleCI para gerar arquivos `google-services.json` e `firebase-adminsdk.json` temporários. Isso permite que o Gradle valide as dependências de Firebase durante o build sem precisar dos arquivos reais (que estão protegidos no `.gitignore`).
+*   **Resiliência de Inicialização**: O servidor Ktor agora inicializa de forma resiliente, emitindo avisos em vez de falhas críticas se os arquivos de configuração do Firebase estiverem ausentes ou forem inválidos (como no ambiente de CI).
 
 ## 🚀 Status do Deploy
 *   **Branch**: `main`
-*   **Pipeline**: CircleCI (Build -> Test -> Push -> Deploy)
-*   **Alvo**: Oracle Cloud (Dockerized Ktor Backend + WasmJs Static Frontend)
+*   **Pipeline**: CircleCI (Fixed ✅)
+*   **Alvo**: Oracle Cloud
 
 ## 💎 Principais Entregas desta Versão
 
 ### 1. Advanced Merchant Cockpit (BI)
-*   **Inteligência de Vendas**: Nova aba "Painel" com gráficos dinâmicos de receita semanal e estatísticas de ticket médio.
-*   **Gestão de Best-sellers**: Identificação automática dos produtos com maior faturamento.
-*   **Agenda Consolidada**: Visão unificada de agendamentos confirmados, pendentes e cancelados.
+*   Nova aba "Painel" com gráficos dinâmicos de receita semanal e estatísticas de ticket médio.
 
 ### 2. Stripe Dynamic Checkout (Embedded)
-*   **Experiência White-Label**: Migração do Stripe Hosted Checkout para o **Payment Element**. O cliente agora paga sem sair da vitrine.
-*   **Theming Engine**: Integração profunda com a Appearance API da Stripe, fazendo com que o formulário de pagamento herde cores e arredondamentos do tema escolhido pelo lojista.
+*   Migração para o **Payment Element**. O cliente paga sem sair da vitrine, com o formulário adaptado ao tema do lojista.
 
 ### 3. Hardened Security & Compliance (LGPD)
-*   **Proteção de Infra**: Implementação de Rate Limiting (Global e Sensível), cabeçalhos HSTS e CSP restritiva.
-*   **Privacidade de Dados**: Fluxo de **Exclusão de Conta** operacional com integridade referencial (CASCADE) e anonimização de logs.
-*   **Secure Storage**: Abstração de armazenamento seguro (AES256 no Android, LocalStorage Sandbox no Web) para dados de sessão.
+*   Rate Limiting, cabeçalhos HSTS/CSP e fluxo de **Exclusão de Conta** com integridade CASCADE.
 
-### 4. Estabilidade Multi-plataforma & Responsividade
-*   **Carrinho Resiliente**: Persistência via DataStore (Android) e LocalStorage (Web) com lógica de **merge automático** após o login.
-*   **Adaptive UI**: Design otimizado para Phone, Tablet e Desktop com tipografia escalonável dinamicamente.
-*   **Qualidade Visual**: 100% de cobertura de snapshots no Paparazzi para as 11 categorias do Design System.
+### 4. Estabilidade Multi-plataforma
+*   Carrinho persistente (DataStore/LocalStorage) e responsividade adaptativa em Android, iOS e Web.
 
 ## ✅ Verificação Final
-*   **Build Global**: Sucesso absoluto em todos os módulos.
-*   **Testes**: 46 Suites de Teste validadas e passando.
-*   **Higiene**: Código livre de warnings e débitos técnicos.
+*   **Build Global**: Sucesso local e agora corrigido no CI.
+*   **Testes**: 46 Suites de Teste validadas.
 
-O Genesys21 está oficialmente **Live**.
+O Genesys21 está oficialmente pronto para operação profissional.

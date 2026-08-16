@@ -1,12 +1,14 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository
-
+import com.itbenevides.genesys21.domain.model.UserRole
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 
 class JsAuthRepository : AuthRepository {
     override val authState: Flow<String?> = emptyFlow()
+    override val userRole: Flow<UserRole?> = MutableStateFlow(null)
 
     override suspend fun signIn(
         email: String,

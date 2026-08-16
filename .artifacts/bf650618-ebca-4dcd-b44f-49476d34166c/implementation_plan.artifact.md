@@ -1,29 +1,24 @@
-# Plan: CI Pipeline Hardening & Secret Management
+# Plan: CI Secrets Restoration & Pipeline Fix
 
-Este plano visa corrigir as falhas no pipeline de CI (CircleCI) causadas pela ausência de arquivos de configuração do Firebase (`google-services.json`) que estão no `.gitignore`. Implementaremos a injeção de arquivos dummy para satisfazer os plugins do Gradle durante os testes e build.
+Este plano visa restaurar a lógica de injeção de segredos (Firebase) no pipeline do CircleCI, permitindo que o build e os testes utilizem as credenciais reais configuradas no ambiente, ao mesmo tempo que mantém um fallback resiliente para ambientes de desenvolvimento ou forks.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Os arquivos gerados no CI serão **dummy** (placeholders). Eles permitem que o build complete e os testes unitários rodem, mas não permitem conexões reais com o Firebase. Para o deploy de produção, as chaves reais devem ser injetadas via Secrets do CircleCI (conforme já previsto no plano de deploy anterior).
+> Descobri que o pipeline possuía uma lógica de decodificação de variáveis de ambiente (`GOOGLE_SERVICES_JSON_ANDROID`) que foi removida no refactor anterior. Vou restaurá-la para garantir que o build de produção/staging utilize os dados reais.
 
 ## Proposed Changes
 
 ### [CI/CD - Infrastructure]
 #### [MODIFY] [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
-- Adicionar um passo `Prepare Environment` antes dos testes.
-- Gerar um `google-services.json` mínimo em `composeApp/`.
-- Gerar um `firebase-adminsdk.json` mínimo em `server/`.
-- Criar o diretório `server/data/` para o SQLite.
-
-### [Backend - Server]
-#### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
-- Melhorar a resiliência da inicialização do Firebase Admin para não crashar o servidor se o arquivo JSON for inválido/dummy durante os testes.
+- Restaurar o passo `Decode Secrets` nos jobs `test-and-validate` e `build-and-push`.
+- A lógica tentará decodificar a Base64 das variáveis de ambiente. Se falhar ou estiverem vazias, criará o arquivo dummy com o `package_name` correto (`com.itbenevides.genesys21`).
+- Garantir que o `firebase-adminsdk.json` também seja restaurado a partir da variável `FIREBASE_ADMIN_JSON`.
 
 ## Verification Plan
 
 ### Automated Tests
-- O sucesso será confirmado quando o próximo push para a branch `main` completar o job `test-and-validate` no CircleCI.
+- O sucesso será confirmado pela conclusão verde do job `test-and-validate` no CircleCI após o push.
 
 ### Manual Verification
-- Verificar os logs do CircleCI para garantir que os arquivos dummy foram criados nos caminhos corretos.
+- Acompanhar os logs do job "Prepare CI Environment" para ver se ele detectou e usou a variável de ambiente real.

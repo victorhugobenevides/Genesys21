@@ -1,8 +1,10 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.domain.model.UserRole
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlin.js.Promise
 
@@ -71,6 +73,8 @@ class WasmAuthRepository : AuthRepository {
         }
         awaitClose { }
     }
+
+    override val userRole: Flow<UserRole?> = MutableStateFlow(null)
 
     override suspend fun signIn(email: String, password: String): Result<String?> {
         println("DEBUG KOTLIN: Tentando login para $email")

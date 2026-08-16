@@ -1,10 +1,12 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.domain.model.UserRole
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.auth.GoogleAuthProvider
 import dev.gitlive.firebase.auth.auth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 
 class AndroidAuthRepository : AuthRepository {
@@ -13,6 +15,8 @@ class AndroidAuthRepository : AuthRepository {
     override val authState: Flow<String?> = flow {
         emit(auth.currentUser?.uid)
     }
+
+    override val userRole: Flow<UserRole?> = MutableStateFlow(null)
 
     override suspend fun signIn(
         email: String,
