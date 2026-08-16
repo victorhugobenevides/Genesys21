@@ -3,14 +3,12 @@ version: 2.1
 orbs:
   docker: circleci/docker@2.1.4
 
-jobs:
-  test-and-validate:
-    docker:
-      - image: cimg/android:2024.01
+commands:
+  prepare-env:
+    description: "Prepare environment by decoding secrets or creating dummy configs"
     steps:
-      - checkout
       - run:
-          name: Prepare CI Environment & Decode Secrets
+          name: Prepare Environment & Decode Secrets
           command: |
             # 1. Tentar decodificar GOOGLE_SERVICES_JSON_ANDROID real
             if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
@@ -34,6 +32,14 @@ jobs:
 
             # Criar diretório de dados para SQLite
             mkdir -p server/data
+
+jobs:
+  test-and-validate:
+    docker:
+      - image: cimg/android:2024.01
+    steps:
+      - checkout
+      - prepare-env
       - run:
           name: Run Unit Tests
           command: ./gradlew test
@@ -49,22 +55,7 @@ jobs:
       - image: cimg/android:2024.01
     steps:
       - checkout
-      - run:
-          name: Prepare Build Environment & Decode Secrets
-          command: |
-            if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
-              CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
-              echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
-            else
-              echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides.genesys21"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
-            fi
-
-            if [ -n "$FIREBASE_ADMIN_JSON" ]; then
-              echo "${FIREBASE_ADMIN_JSON}" > server/firebase-adminsdk.json
-            else
-              echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
-            fi
-            mkdir -p server/data
+      - prepare-env
       - setup_remote_docker:
           version: 20.10.24
           docker_layer_caching: true
