@@ -22,11 +22,14 @@ commands:
             fi
 
             # 2. Tentar decodificar FIREBASE_ADMIN_JSON real
+            mkdir -p server/src/main/resources
             if [ -n "$FIREBASE_ADMIN_JSON" ]; then
               echo "${FIREBASE_ADMIN_JSON}" > server/firebase-adminsdk.json
+              echo "${FIREBASE_ADMIN_JSON}" > server/src/main/resources/firebase-adminsdk.json
               echo "✓ Real firebase-adminsdk.json injected from environment."
             else
               echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+              echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/src/main/resources/firebase-adminsdk.json
               echo "⚠ Using dummy firebase-adminsdk.json (Missing env var)."
             fi
 

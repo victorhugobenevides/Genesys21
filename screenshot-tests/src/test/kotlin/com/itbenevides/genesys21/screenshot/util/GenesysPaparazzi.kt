@@ -22,6 +22,10 @@ import io.mockk.mockk
 import org.koin.compose.KoinApplication
 import org.koin.dsl.module
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.presentation.AppError
+import com.itbenevides.genesys21.presentation.UiEvent
 
 /**
  * Standard Paparazzi configuration for Genesys21 Design System tests.
@@ -33,12 +37,12 @@ fun createGenesysPaparazzi(
     Paparazzi(
         deviceConfig = deviceConfig,
         theme = theme,
-        maxPercentDifference = 1.0, // Increased tolerance for major UI changes (Chat, Permissions, Mobile fixes)
+        maxPercentDifference = 1.0,
     )
 
 fun Paparazzi.genesysSnapshot(
     widthOverride: Dp? = null,
-    mockUserProfile: com.itbenevides.genesys21.domain.model.UserProfile? = null,
+    mockUserProfile: UserProfile? = null,
     content: @Composable () -> Unit,
 ) {
     val mockModule = getMockModule(mockUserProfile)
@@ -73,7 +77,7 @@ fun Paparazzi.genesysSnapshot(
 
 fun Paparazzi.genesysResponsiveSnapshot(
     namePrefix: String? = null,
-    mockUserProfile: com.itbenevides.genesys21.domain.model.UserProfile? = null,
+    mockUserProfile: UserProfile? = null,
     content: @Composable () -> Unit,
 ) {
     val configs = listOf(
@@ -118,32 +122,38 @@ fun Paparazzi.genesysResponsiveSnapshot(
     }
 }
 
-fun getMockModule(mockUserProfile: com.itbenevides.genesys21.domain.model.UserProfile? = null) = module {
+fun getMockModule(mockUserProfile: UserProfile? = null) = module {
     single<PageViewModel> {
         mockk<PageViewModel>(relaxed = true).apply {
-            every { pages } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Page>>(emptyList())
-            every { orders } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Order>>(emptyList())
-            every { cart } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.CartItem>>(emptyList())
+            every { pages } returns MutableStateFlow<List<Page>>(emptyList())
+            every { orders } returns MutableStateFlow<List<Order>>(emptyList())
+            every { cart } returns MutableStateFlow<List<CartItem>>(emptyList())
             every { cartTotal } returns MutableStateFlow<Double>(0.0)
-            every { trackedOrder } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.Order?>(null)
+            every { cartCount } returns MutableStateFlow<Int>(0)
+            every { trackedOrder } returns MutableStateFlow<Order?>(null)
             every { customerName } returns MutableStateFlow<String>("Victor Test")
             every { customerPhone } returns MutableStateFlow<String>("11999999999")
             every { allAvailableCategories } returns MutableStateFlow<List<String>>(emptyList())
             every { isLoading } returns MutableStateFlow<Boolean>(false)
-            every { userProfile } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.UserProfile?>(mockUserProfile)
-            every { services } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.BookingService>>(emptyList())
-            every { allAvailableProducts } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Product>>(emptyList())
-            every { categories } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Category>>(emptyList())
-            every { availability } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.MerchantAvailability?>(null)
-            every { templates } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.PageTemplate>>(emptyList())
-            every { customerOrders } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Order>>(emptyList())
-            every { customerAppointments } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Appointment>>(emptyList())
-            every { userAddresses } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
-            every { allUsers } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.UserProfile>>(emptyList())
-            every { analytics } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.MerchantAnalytics?>(null)
-            every { appTheme } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.PageThemeConfig>(com.itbenevides.genesys21.domain.model.PageThemeConfig.ELEGANCE)
+            every { userProfile } returns MutableStateFlow<UserProfile?>(mockUserProfile)
+            every { services } returns MutableStateFlow<List<BookingService>>(emptyList())
+            every { allAvailableProducts } returns MutableStateFlow<List<Product>>(emptyList())
+            every { categories } returns MutableStateFlow<List<Category>>(emptyList())
+            every { availability } returns MutableStateFlow<MerchantAvailability?>(null)
+            every { templates } returns MutableStateFlow<List<PageTemplate>>(emptyList())
+            every { customerOrders } returns MutableStateFlow<List<Order>>(emptyList())
+            every { customerAppointments } returns MutableStateFlow<List<Appointment>>(emptyList())
+            every { userAddresses } returns MutableStateFlow<List<Address>>(emptyList())
+            every { allUsers } returns MutableStateFlow<List<UserProfile>>(emptyList())
+            every { analytics } returns MutableStateFlow<MerchantAnalytics?>(null)
+            every { appTheme } returns MutableStateFlow<PageThemeConfig>(PageThemeConfig.ELEGANCE)
             every { isLoggedIn } returns MutableStateFlow<Boolean>(mockUserProfile != null)
             every { isWaitingForPaymentSignal } returns MutableStateFlow<Boolean>(false)
+
+            // Flows de eventos
+            every { errorEvents } returns MutableSharedFlow<AppError>()
+            every { uiMessages } returns MutableSharedFlow<String>()
+            every { uiEvent } returns MutableSharedFlow<UiEvent>()
         }
     }
 

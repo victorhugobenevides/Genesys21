@@ -48,9 +48,8 @@ class ScreensSnapshotTest {
 
     @Test
     fun testLoginScreenResponsive() {
-        val mockViewModel = mockk<PageViewModel>(relaxed = true)
         paparazzi.genesysResponsiveSnapshot {
-            LoginScreen(viewModel = mockViewModel, onLoginSuccess = {})
+            LoginScreen(viewModel = koinInject(), onLoginSuccess = {})
         }
     }
 
