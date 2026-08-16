@@ -1,24 +1,46 @@
-# Plan: CI Secrets Restoration & Pipeline Fix
+# Plan: Database Versioning, Backup & Scalability
 
-Este plano visa restaurar a lógica de injeção de segredos (Firebase) no pipeline do CircleCI, permitindo que o build e os testes utilizem as credenciais reais configuradas no ambiente, ao mesmo tempo que mantém um fallback resiliente para ambientes de desenvolvimento ou forks.
+Este plano visa profissionalizar a gestão de dados do Genesys21, migrando de uma criação manual de tabelas para um sistema robusto de migrações versionadas (Flyway), implementando backups automáticos e preparando a infraestrutura para escala (suporte a PostgreSQL).
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Descobri que o pipeline possuía uma lógica de decodificação de variáveis de ambiente (`GOOGLE_SERVICES_JSON_ANDROID`) que foi removida no refactor anterior. Vou restaurá-la para garantir que o build de produção/staging utilize os dados reais.
+> A migração para o **Flyway** substituirá o `DatabaseMigrator.kt`. A partir de agora, qualquer alteração no banco de dados deve ser feita através de um novo arquivo `.sql` na pasta de migrações, garantindo que nenhum dado seja perdido em atualizações de produção.
+
+> [!WARNING]
+> A funcionalidade de **Backup** inicial focará em SQLite (cópia de arquivo). Para PostgreSQL em produção, recomenda-se o uso de ferramentas nativas (pg_dump) ou backups gerenciados pelo provedor de nuvem.
 
 ## Proposed Changes
 
-### [CI/CD - Infrastructure]
-#### [MODIFY] [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
-- Restaurar o passo `Decode Secrets` nos jobs `test-and-validate` e `build-and-push`.
-- A lógica tentará decodificar a Base64 das variáveis de ambiente. Se falhar ou estiverem vazias, criará o arquivo dummy com o `package_name` correto (`com.itbenevides.genesys21`).
-- Garantir que o `firebase-adminsdk.json` também seja restaurado a partir da variável `FIREBASE_ADMIN_JSON`.
+### [Server - Infrastructure]
+#### [MODIFY] [libs.versions.toml](file:///Users/victorben/AndroidStudioProjects/genesys21/gradle/libs.versions.toml)
+- Adicionar dependências do Flyway: `flyway-core`, `flyway-database-sqlite` e `flyway-database-postgresql`.
+
+#### [MODIFY] [server/build.gradle.kts](file:///Users/victorben/AndroidStudioProjects/genesys21/server/build.gradle.kts)
+- Incluir as novas dependências no módulo servidor.
+
+#### [MODIFY] [DatabaseFactory.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/database/DatabaseFactory.kt)
+- Integrar o Flyway no ciclo de vida de inicialização.
+- Implementar detecção automática de driver (SQLite vs PostgreSQL) baseada na URL de conexão.
+- Adicionar suporte a `clean` via flag apenas em ambiente de desenvolvimento.
+
+#### [NEW] [V1__Initial_schema.sql](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/resources/db/migration/V1__Initial_schema.sql)
+- Criar o script SQL inicial consolidando todas as tabelas atuais com as restrições e índices corretos.
+
+### [Server - Backup System]
+#### [NEW] [BackupService.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/service/BackupService.kt)
+- Implementar utilitário para realizar cópias de segurança do banco SQLite.
+- Nomeação rotativa: `genesys21_backup_YYYYMMDD.db`.
+
+#### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
+- Configurar uma tarefa agendada (coroutine) para rodar o backup diariamente.
 
 ## Verification Plan
 
 ### Automated Tests
-- O sucesso será confirmado pela conclusão verde do job `test-and-validate` no CircleCI após o push.
+- Executar o servidor com um banco limpo e verificar se o Flyway cria todas as tabelas.
+- Adicionar uma migração `V2__Test.sql` e verificar se ela é aplicada sem erros.
 
 ### Manual Verification
-- Acompanhar os logs do job "Prepare CI Environment" para ver se ele detectou e usou a variável de ambiente real.
+- Forçar um backup via endpoint (ou no startup) e verificar se o arquivo `.db` gerado na pasta `backups/` é válido e contém os dados atuais.
+- Tentar rodar o servidor apontando para um PostgreSQL local para validar a escalabilidade da configuração.

@@ -416,9 +416,13 @@ private fun FoundationShowcase() {
 
     ShowcaseSection("Typography", "Semantic text styles across the system.") {
         GenesysText(text = "Headline Large (34sp)", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysText(text = "Title Medium (22sp)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysText(text = "Body Large (17sp)", style = GenesysTextStyle.Body)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysText(text = "Label Small (11sp)", style = GenesysTextStyle.Label)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysText(text = "Error Message Style", style = GenesysTextStyle.Error)
     }
 

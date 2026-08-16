@@ -24,6 +24,8 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.theme.*
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.CurrencyUtils
 
 @Composable
@@ -93,14 +95,16 @@ private fun DailyRevenueChart(dailyRevenue: List<DailyRevenue>) {
             GenesysSpacer(GenesysTheme.spacing.m)
 
             if (dailyRevenue.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
                     GenesysText(text = "Ainda não há dados suficientes.", color = GenesysTheme.colors.outline)
                 }
             } else {
                 val maxRevenue = dailyRevenue.maxOf { it.amount }.coerceAtLeast(10.0)
                 val brandColor = GenesysTheme.colors.brand
+                val windowSizeClass = LocalWindowSizeClass.current
+                val chartHeight = if (windowSizeClass == GenesysWindowSizeClass.COMPACT) 150.dp else 220.dp
 
-                Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+                Canvas(modifier = Modifier.fillMaxWidth().height(chartHeight)) {
                     val width = size.width
                     val height = size.height
                     val spacing = width / (dailyRevenue.size.coerceAtLeast(2) - 1).coerceAtLeast(1)
@@ -110,6 +114,23 @@ private fun DailyRevenueChart(dailyRevenue: List<DailyRevenue>) {
                         val y = height - (data.amount / maxRevenue * height).toFloat()
                         Offset(x, y)
                     }
+
+                    // Preenchimento gradiente abaixo da linha
+                    val fillPath = Path().apply {
+                        points.firstOrNull()?.let { moveTo(it.x, height) }
+                        points.forEach { lineTo(it.x, it.y) }
+                        points.lastOrNull()?.let { lineTo(it.x, height) }
+                        close()
+                    }
+
+                    drawPath(
+                        path = fillPath,
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(brandColor.copy(alpha = 0.3f), Color.Transparent),
+                            startY = 0f,
+                            endY = height.toFloat()
+                        )
+                    )
 
                     val path = Path().apply {
                         points.firstOrNull()?.let { moveTo(it.x, it.y) }

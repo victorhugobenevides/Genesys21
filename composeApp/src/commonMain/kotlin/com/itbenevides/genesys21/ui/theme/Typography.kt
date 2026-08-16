@@ -153,10 +153,16 @@ fun getGenesysTypography(
     }
 
     return GenesysTypography(
-        display = m3.headlineLarge.copy(fontSize = (m3.headlineLarge.fontSize.value + scaleFactor.value + 2).sp),
-        headline = m3.headlineSmall.copy(fontSize = (m3.headlineSmall.fontSize.value + scaleFactor.value).sp),
-        title = m3.titleLarge,
-        body = m3.bodyLarge,
+        display = m3.headlineLarge.copy(
+            fontSize = (m3.headlineLarge.fontSize.value + scaleFactor.value + 2).sp,
+            lineHeight = (m3.headlineLarge.lineHeight.value + scaleFactor.value + 4).sp
+        ),
+        headline = m3.headlineSmall.copy(
+            fontSize = (m3.headlineSmall.fontSize.value + scaleFactor.value).sp,
+            lineHeight = (m3.headlineSmall.lineHeight.value + scaleFactor.value + 2).sp
+        ),
+        title = m3.titleLarge.copy(lineHeight = 32.sp),
+        body = m3.bodyLarge.copy(lineHeight = 26.sp),
         bodySmall = m3.bodySmall,
         label = m3.labelSmall,
         action = m3.labelLarge

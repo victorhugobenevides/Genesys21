@@ -231,11 +231,51 @@ jobs:
       - run:
           name: Deploy via SSH
           command: |
-            ssh -o StrictHostKeyChecking=no ubuntu@\$SERVER_IP "
-              echo \$OCI_AUTH_TOKEN | sudo docker login gru.ocir.io -u \$OCI_NAMESPACE/\$OCI_USERNAME --password-stdin
-              sudo docker pull gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest
-              sudo docker pull gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest
-              sudo docker compose -f /home/ubuntu/app/docker-compose.yml up -d
+            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP "
+              mkdir -p ~/app && cd ~/app
+
+              # 1. Login no OCIR
+              echo $OCI_AUTH_TOKEN | sudo docker login gru.ocir.io -u $OCI_NAMESPACE/$OCI_USERNAME --password-stdin
+
+              # 2. Pull das imagens mais recentes
+              sudo docker pull gru.ocir.io/$OCI_NAMESPACE/genesys-server:latest
+              sudo docker pull gru.ocir.io/$OCI_NAMESPACE/genesys-web:latest
+
+              # 3. Gerar Docker Compose dinamicamente se necessário (ou usar o existente)
+              # Aqui garantimos que o compose esteja configurado corretamente
+              cat \<<EOF > docker-compose.yml
+              services:
+                genesys-server:
+                  image: gru.ocir.io/$OCI_NAMESPACE/genesys-server:latest
+                  container_name: genesys-server
+                  volumes:
+                    - ./data:/app/data
+                    - ./uploads:/app/uploads
+                  environment:
+                    - DATABASE_URL=jdbc:sqlite:data/genesys21.db?journal_mode=WAL
+                    - PROD_MODE=true
+                  restart: unless-stopped
+                  networks:
+                    - genesys-network
+
+                genesys-web:
+                  image: gru.ocir.io/$OCI_NAMESPACE/genesys-web:latest
+                  container_name: genesys-web
+                  ports:
+                    - \"80:80\"
+                    - \"443:443\"
+                  restart: unless-stopped
+                  networks:
+                    - genesys-network
+
+              networks:
+                genesys-network:
+                  driver: bridge
+            EOF
+
+              # 4. Restart dos serviços
+              sudo docker compose up -d --force-recreate
+              sudo docker image prune -f
             "
 
 workflows:

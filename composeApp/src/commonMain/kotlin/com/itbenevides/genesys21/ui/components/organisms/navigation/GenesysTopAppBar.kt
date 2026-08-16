@@ -40,7 +40,7 @@ fun GenesysTopAppBar(
                 text = title,
                 style = if (isCompact) GenesysTheme.typography.title else GenesysTheme.typography.headline,
                 fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         },

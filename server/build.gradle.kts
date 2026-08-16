@@ -44,7 +44,11 @@ dependencies {
     implementation(libs.exposed.json)
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.59.0")
     implementation(libs.sqlite.jdbc)
+    implementation(libs.postgresql)
     implementation(libs.hikaricp)
+
+    // Migrations
+    implementation(libs.flyway.core)
 
     // Manipulação de Imagem
     implementation(libs.thumbnailator)

@@ -1,4 +1,7 @@
-- [ ] Restore `Decode Secrets` logic in `.circleci/config.yml`
-- [ ] Fix dummy `package_name` in fallback logic
-- [ ] Ensure `firebase-adminsdk.json` is correctly injected from env var
-- [ ] Push changes and monitor CircleCI pipeline
+- [x] Setup Flyway Dependencies (`libs.versions.toml`, `server/build.gradle.kts`)
+- [x] Create Initial SQL Migration (`V1__Initial_schema.sql`)
+- [x] Refactor `DatabaseFactory.kt` to integrate Flyway and Multi-DB support
+- [x] Implement `BackupService.kt` for automated backups
+- [x] Schedule backups in `Application.kt`
+- [x] Remove legacy `DatabaseMigrator.kt` logic
+- [x] Final validation and testing

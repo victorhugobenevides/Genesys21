@@ -229,6 +229,7 @@ fun CartContent(
                 GenesysWeightBox(1f) {
                     GenesysColumn(usePadding = true, useScroll = true, maxWidth = if(isExpanded) 800.dp else null) {
                         if (state.stripeClientSecret == null) {
+                            GenesysSpacer(GenesysTheme.spacing.m)
                             CartStepperUI(step = state.currentStep)
                             GenesysSpacer(GenesysTheme.spacing.l)
                         }
@@ -301,12 +302,12 @@ private fun CartFooter(
             val totalFormatted = (displaysubtotal * 100.0).roundToLong() / 100.0
             GenesysText(
                 text = "${GenesysStrings.PricePrefix}$totalFormatted",
-                style = GenesysTextStyle.Title,
+                style = GenesysTextStyle.Headline,
                 fontWeight = GenesysFontWeight.ExtraBold,
                 color = GenesysTheme.colors.brand,
             )
         }
-        GenesysSpacer(GenesysTheme.spacing.m)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         val buttonText = when(state.currentStep) {
             1 -> "Continuar para Entrega"

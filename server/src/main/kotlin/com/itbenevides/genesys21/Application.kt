@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.repository.*
+import com.itbenevides.genesys21.data.service.BackupService
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
 
@@ -42,6 +43,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 
@@ -181,6 +183,7 @@ fun Application.module() {
     }
 
     initFirebase(logger)
+    initBackups(logger)
 
     (this as kotlinx.coroutines.CoroutineScope).launch {
         try {
@@ -300,5 +303,24 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
         }
     } catch (e: Exception) {
         logger.error("FIREBASE: Erro na inicialização (provavelmente arquivo dummy ou inválido): ${e.message}")
+    }
+}
+
+private fun Application.initBackups(logger: org.slf4j.Logger) {
+    val jdbcUrl = System.getenv("DATABASE_URL") ?: "jdbc:sqlite:data/genesys21.db"
+    if (!jdbcUrl.startsWith("jdbc:sqlite:")) return
+
+    val dbPath = jdbcUrl.substringAfter("jdbc:sqlite:").substringBefore("?")
+
+    (this as kotlinx.coroutines.CoroutineScope).launch {
+        while (true) {
+            try {
+                BackupService.performBackup(dbPath)
+            } catch (e: Exception) {
+                logger.error("BACKUP: Erro no agendamento: ${e.message}")
+            }
+            // Executa a cada 24 horas
+            kotlinx.coroutines.delay(24.hours)
+        }
     }
 }
