@@ -42,7 +42,7 @@ jobs:
       - image: cimg/android:2024.01
     resource_class: large
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g" -Dorg.gradle.workers.max=2
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" -Dorg.gradle.workers.max=2
     steps:
       - checkout
       - prepare-env
@@ -56,9 +56,9 @@ jobs:
   visual-verification:
     docker:
       - image: cimg/android:2024.01
-    resource_class: xlarge
+    resource_class: large
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g" -Dorg.gradle.workers.max=1
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=512m" -Dorg.gradle.workers.max=1
     steps:
       - checkout
       - prepare-env
@@ -71,7 +71,7 @@ jobs:
       - image: cimg/android:2024.01
     resource_class: large
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g"
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx5g -XX:MaxMetaspaceSize=512m"
     steps:
       - checkout
       - prepare-env
