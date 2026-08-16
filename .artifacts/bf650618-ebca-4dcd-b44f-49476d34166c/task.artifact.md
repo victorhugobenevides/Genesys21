@@ -1,12 +1,5 @@
-- [x] Consolidate `AndroidCartRepository.kt` persistence
-- [x] Improve `BaseCartRepository.kt` merge logic (sum quantities)
-- [x] Refactor `PageViewModel.kt` to trigger cart merge on login
-- [x] Polish `CartScreen.kt` UI with integrated `GenesysQuantitySelector`
-- [x] Add unit test for complex merge scenario in `shared`
-- [x] Fix Paparazzi `ClassCastException` (Updated `GenesysPaparazzi.kt`)
-- [x] Secure Storage Implementation (Spec 015)
-    - [x] Define `SecureStorage` interface in `shared`
-    - [x] Implement `AndroidSecureStorage` (EncryptedSharedPreferences)
-    - [x] Implement `IosSecureStorage` (NSUserDefaults placeholder)
-    - [x] Implement `WasmSecureStorage` (LocalStorage)
-- [x] Final Staging Validation & Build Success
+- [ ] Inject dummy `google-services.json` in CircleCI
+- [ ] Inject dummy `firebase-adminsdk.json` in CircleCI
+- [ ] Create `server/data` directory in CI
+- [ ] Refactor `Application.kt` Firebase init resilience
+- [ ] Final push and verification of CI pipeline

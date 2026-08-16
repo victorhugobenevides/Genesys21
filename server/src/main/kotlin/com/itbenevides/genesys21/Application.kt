@@ -294,6 +294,11 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
         if (stream != null) {
             val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(stream)).build()
             if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
+            logger.info("FIREBASE: Inicializado com sucesso via $fileName")
+        } else {
+            logger.warn("FIREBASE: Arquivo $fileName não encontrado. Lógicas de Admin Firebase estarão indisponíveis.")
         }
-    } catch (e: Exception) { logger.error("Erro Crítico no Firebase: ${e.message}", e) }
+    } catch (e: Exception) {
+        logger.error("FIREBASE: Erro na inicialização (provavelmente arquivo dummy ou inválido): ${e.message}")
+    }
 }

@@ -10,6 +10,17 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Prepare CI Environment
+          command: |
+            # Injetar dummy google-services.json para o build do Android
+            echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
+
+            # Injetar dummy firebase-adminsdk.json para o servidor
+            echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+
+            # Criar diretório de dados para SQLite
+            mkdir -p server/data
+      - run:
           name: Run Unit Tests
           command: ./gradlew test
       - run:
@@ -24,6 +35,12 @@ jobs:
       - image: cimg/android:2024.01
     steps:
       - checkout
+      - run:
+          name: Prepare Build Environment
+          command: |
+            echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
+            echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+            mkdir -p server/data
       - setup_remote_docker:
           version: 20.10.24
           docker_layer_caching: true
