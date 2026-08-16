@@ -87,17 +87,18 @@ jobs:
       - run:
           name: Prepare Backend Docker Context
           command: |
-            mkdir -p build/docker/backend
-            cp -r server/build/install/server/* build/docker/backend/
-            cp server/Dockerfile build/docker/backend/
+            mkdir -p build/docker/backend/deploy/server
+            cp -r server/build/install/server/* build/docker/backend/deploy/server/
+            cp Dockerfile.server build/docker/backend/Dockerfile
       - run:
           name: Prepare Web Docker Context
           command: |
-            mkdir -p build/docker/web
-            cp -r composeApp/build/dist/wasmJs/productionExecutable/* build/docker/web/
+            mkdir -p build/docker/web/deploy/web
+            cp -r composeApp/build/dist/wasmJs/productionExecutable/* build/docker/web/deploy/web/
+            cp Dockerfile.web build/docker/web/Dockerfile
 
             # --- WEB INTEROP BRIDGE (FIREBASE & PLATFORM) ---
-            cat \<<EOF > build/docker/web/interop.js
+            cat \<<EOF > build/docker/web/deploy/web/interop.js
             // Genesys21 Web Interop Bridge
             const auth = window.firebaseAuth;
             const db = window.firebaseDb;
@@ -175,57 +176,51 @@ jobs:
             };
             EOF
 
-            # --- NGINX CONFIG (REFINED CORS) ---
+            # --- NGINX CONFIG ---
             cat \<<EOF > build/docker/web/nginx.conf
-            server {
-                listen 80;
-                listen 443 ssl;
-                server_name victorhugobenevides.com itbenevides.com *.itbenevides.com;
-
-                ssl_certificate /etc/letsencrypt/live/itbenevides.com/fullchain.pem;
-                ssl_certificate_key /etc/letsencrypt/live/itbenevides.com/privkey.pem;
-
-                root /usr/share/nginx/html;
-                index index.html;
-
-                # CORS & Security
-                location / {
-                    try_files \$uri \$uri/ /index.html;
-                    add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
-                    add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
-                }
-
-                location /api/ {
-                    proxy_pass http://app-server-1:8080;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade \$http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host \$host;
-                    proxy_set_header X-Real-IP \$remote_addr;
-                    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto \$scheme;
-                }
-
-                location /uploads/ {
-                    proxy_pass http://app-server-1:8080/uploads/;
-                    add_header Access-Control-Allow-Origin "*" always;
+            user  nginx;
+            worker_processes  auto;
+            error_log  /var/log/nginx/error.log warn;
+            pid        /var/run/nginx.pid;
+            events { worker_connections  1024; }
+            http {
+                include       /etc/nginx/mime.types;
+                default_type  application/octet-stream;
+                log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
+                                  '\$status \$body_bytes_sent "\$http_referer" '
+                                  '"\$http_user_agent" "\$http_x_forwarded_for"';
+                access_log  /var/log/nginx/access.log  main;
+                sendfile        on;
+                keepalive_timeout  65;
+                server {
+                    listen 80;
+                    server_name localhost;
+                    location / {
+                        root   /usr/share/nginx/html;
+                        index  index.html index.htm;
+                        try_files \$uri \$uri/ /index.html;
+                        add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+                        add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
+                    }
+                    location /api/ {
+                        proxy_pass http://genesys-server:8080;
+                        proxy_http_version 1.1;
+                        proxy_set_header Host \$host;
+                    }
                 }
             }
-            EOF
-
-            cat \<<EOF > build/docker/web/Dockerfile
-            FROM nginx:alpine
-            COPY . /usr/share/nginx/html/
-            COPY nginx.conf /etc/nginx/conf.d/default.conf
-            EXPOSE 80 443
             EOF
 
       - run:
           name: Build and Push Docker Images
           command: |
             echo \$OCI_AUTH_TOKEN | docker login gru.ocir.io -u \$OCI_NAMESPACE/\$OCI_USERNAME --password-stdin
+
+            # Backend
             docker build -t gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest build/docker/backend/
             docker push gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest
+
+            # Web
             docker build -t gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest build/docker/web/
             docker push gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest
 
