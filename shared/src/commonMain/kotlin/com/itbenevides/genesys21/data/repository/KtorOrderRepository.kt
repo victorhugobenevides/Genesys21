@@ -1,8 +1,6 @@
 package com.itbenevides.genesys21.data.repository
 
-import com.itbenevides.genesys21.domain.model.Order
-import com.itbenevides.genesys21.domain.model.OrderResponse
-import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.OrderRepository
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -94,6 +92,21 @@ class KtorOrderRepository(
                 Result.success(response.body())
             } else {
                 Result.success(emptyList())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getAnalytics(token: String): Result<MerchantAnalytics> {
+        return try {
+            val response = client.get("$baseUrl/api/admin/analytics/summary") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Erro ao buscar analytics: ${response.status}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

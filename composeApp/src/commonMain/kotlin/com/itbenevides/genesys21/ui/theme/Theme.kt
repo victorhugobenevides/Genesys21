@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.TypographySet
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.toColor
 
 @Composable
@@ -231,6 +232,8 @@ fun AppTheme(
         }
 
     val radius = customTheme?.cornerRadius ?: 16
+    val windowSizeClass = LocalWindowSizeClass.current
+
     val shapes =
         Shapes(
             extraSmall = RoundedCornerShape(radius.dp / 8),
@@ -241,7 +244,10 @@ fun AppTheme(
         )
 
     val typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT)
-    val genesysTypography = getGenesysTypography(customTheme?.typographySet ?: TypographySet.DEFAULT)
+    val genesysTypography = getGenesysTypography(
+        set = customTheme?.typographySet ?: TypographySet.DEFAULT,
+        windowSizeClass = windowSizeClass
+    )
     val genesysColors = colorScheme.toGenesysColors(isDark)
 
     CompositionLocalProvider(

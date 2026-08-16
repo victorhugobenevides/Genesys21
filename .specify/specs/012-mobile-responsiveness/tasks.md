@@ -7,3 +7,4 @@
 - [x] T005 Refactor `GenesysTopAppBar` for compact mode (overflow menus, title truncation)
 - [x] T006 Verify dynamic typography scaling for high-impact headlines
 - [x] T007 Run Paparazzi snapshots for Phone, Tablet, and Desktop resolutions
+- [x] T008 Implement line charts via Canvas for the Merchant Dashboard

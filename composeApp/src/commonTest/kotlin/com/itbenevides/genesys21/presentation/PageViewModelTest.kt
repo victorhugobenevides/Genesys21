@@ -83,6 +83,8 @@ class PageViewModelTest {
                 updateUserStatusUseCase = UpdateUserStatusUseCase(fakeUserRepository),
                 updateUserPermissionsUseCase = UpdateUserPermissionsUseCase(fakeUserRepository),
                 getTemplatesUseCase = GetTemplatesUseCase(),
+                getAnalyticsUseCase = GetAnalyticsUseCase(fakeOrderRepository),
+                deleteUserUseCase = DeleteUserUseCase(fakeUserRepository),
                 getAddressesUseCase = GetAddressesUseCase(fakeAddressRepository),
                 saveAddressUseCase = SaveAddressUseCase(fakeAddressRepository),
                 deleteAddressUseCase = DeleteAddressUseCase(fakeAddressRepository),
@@ -259,7 +261,7 @@ class PageViewModelTest {
             advanceUntilIdle()
 
             var orderIdResult = ""
-            viewModel.submitOrder(null, PaymentMethod.APP) { orderIdResult = it }
+            viewModel.submitOrder(null, PaymentMethod.APP) { orderIdResult = it.orderId }
             advanceUntilIdle()
 
             assertNotNull(orderIdResult)
@@ -269,7 +271,7 @@ class PageViewModelTest {
 
             // Vamos testar com LOCAL para garantir que a lógica de limpeza funciona
             viewModel.addToCart(product)
-            viewModel.submitOrder(null, PaymentMethod.LOCAL) { orderIdResult = it }
+            viewModel.submitOrder(null, PaymentMethod.LOCAL) { orderIdResult = it.orderId }
             advanceUntilIdle()
             assertTrue(viewModel.cart.value.isEmpty())
         }

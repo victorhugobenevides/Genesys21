@@ -66,6 +66,7 @@ class AdaptiveLayoutsSnapshotTest {
                 ),
                 store = null,
                 backendUrl = "",
+                stripeAppearance = "{}",
                 onEvent = {}
             )
         }

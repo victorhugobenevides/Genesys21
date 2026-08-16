@@ -167,7 +167,7 @@ fun WhiteLabelContent(
                                 items = state.page.components,
                                 maxWidth = GenesysDimens.ViewerMaxWidth,
                                 usePadding = true,
-                                spacing = GenesysSpacing.Medium,
+                                spacing = GenesysTheme.spacing.m,
                                 // CORREÇÃO: Usar o index como chave para evitar crash com componentes idênticos (ex: divisores)
                                 key = { index, _ -> index },
                             ) { index, component ->
@@ -358,7 +358,7 @@ internal fun ComponentEditorUI(
                 else -> GenesysIcons.Magic
             }
             Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(GenesysTheme.spacing.m))
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
             GenesysText(
                 text = "Editar: ${component::class.simpleName ?: "Bloco"}",
                 style = GenesysTextStyle.Label,

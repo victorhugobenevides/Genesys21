@@ -5,9 +5,9 @@ import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun SocialLinksComponentEditor(
@@ -21,14 +21,14 @@ fun SocialLinksComponentEditor(
 
     GenesysColumn(usePadding = false) {
         GenesysTextField(value = instagram, onValueChange = { instagram = it }, label = "Instagram (URL)", icon = GenesysIcons.Person)
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
         GenesysTextField(value = whatsapp, onValueChange = { whatsapp = it }, label = "WhatsApp (URL ou Link)", icon = GenesysIcons.Chat)
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
         GenesysTextField(value = youtube, onValueChange = { youtube = it }, label = "YouTube (URL)", icon = GenesysIcons.Web)
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
         GenesysTextField(value = email, onValueChange = { email = it }, label = "E-mail", icon = GenesysIcons.Email)
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
             text = "Salvar Redes Sociais",
             onClick = {

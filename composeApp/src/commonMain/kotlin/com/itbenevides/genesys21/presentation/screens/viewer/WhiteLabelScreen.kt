@@ -28,6 +28,7 @@ import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.feedback.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.rememberImagePicker
@@ -337,7 +338,7 @@ fun ComponentCatalogUI(
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             // 2. GRADE DE ITENS (Scrollable)
             val catalogItems = remember {

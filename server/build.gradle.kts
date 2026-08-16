@@ -62,5 +62,6 @@ dependencies {
     implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
 
     testImplementation(libs.ktor.serverTestHost)
+    testImplementation(libs.mockk)
     testImplementation(libs.kotlin.testJunit)
 }

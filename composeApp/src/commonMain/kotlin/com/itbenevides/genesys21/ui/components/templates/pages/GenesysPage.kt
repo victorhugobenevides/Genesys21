@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.ui.components.templates.pages
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -31,7 +30,6 @@ fun GenesysPage(
     content: @Composable () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
-    val isTestMode = LocalTestMode.current
     val windowSizeClass = LocalWindowSizeClass.current
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
 
@@ -98,11 +96,11 @@ private fun NavigationWrapper(
     content: @Composable () -> Unit
 ) {
     if (navigationSuiteItems != null && !LocalTestMode.current) {
+        // Deixamos o layoutType como o padrão (AUTO) para que ele mude sozinho entre Barra e Rail
         NavigationSuiteScaffold(
             navigationSuiteItems = navigationSuiteItems,
             containerColor = GenesysTheme.colors.background,
-            content = content,
-            layoutType = NavigationSuiteType.NavigationRail
+            content = content
         )
     } else {
         content()

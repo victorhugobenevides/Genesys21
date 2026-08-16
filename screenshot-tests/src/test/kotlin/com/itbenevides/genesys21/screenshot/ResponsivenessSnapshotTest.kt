@@ -1,5 +1,8 @@
 package com.itbenevides.genesys21.screenshot
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.screens.viewer.CartContent
 import com.itbenevides.genesys21.presentation.screens.viewer.CartScreenState
@@ -43,8 +46,49 @@ class ResponsivenessSnapshotTest {
                 state = CartScreenState(total = 899.90),
                 store = null,
                 backendUrl = "",
+                stripeAppearance = "",
                 onEvent = {},
             )
+        }
+    }
+
+    @Test
+    fun testEmbeddedCheckoutResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            val appTheme = com.itbenevides.genesys21.domain.model.PageThemeConfig.ELEGANCE
+            val colorScheme = androidx.compose.material3.MaterialTheme.colorScheme
+            val appearance = com.itbenevides.genesys21.util.StripeThemeMapper.mapToAppearance(appTheme, colorScheme)
+
+            CartContent(
+                state = CartScreenState(
+                    total = 899.90,
+                    stripeClientSecret = "pi_test_secret"
+                ),
+                store = null,
+                backendUrl = "",
+                stripeAppearance = appearance,
+                onEvent = {},
+            )
+        }
+    }
+
+    @Test
+    fun testTypographyScaling() {
+        paparazzi.genesysResponsiveSnapshot {
+            androidx.compose.foundation.layout.Column(
+                modifier = androidx.compose.ui.Modifier.padding(16.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+            ) {
+                com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText(
+                    text = "Headline Responsive",
+                    style = com.itbenevides.genesys21.ui.theme.GenesysTextStyle.Headline,
+                    fontWeight = com.itbenevides.genesys21.ui.theme.GenesysFontWeight.ExtraBold
+                )
+                com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText(
+                    text = "Body standard remains consistent.",
+                    style = com.itbenevides.genesys21.ui.theme.GenesysTextStyle.Body
+                )
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.domain.repository
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderResponse
 import com.itbenevides.genesys21.domain.model.OrderStatus
+import com.itbenevides.genesys21.domain.model.MerchantAnalytics
 import kotlinx.coroutines.flow.Flow
 
 interface OrderRepository {
@@ -19,4 +20,6 @@ interface OrderRepository {
     suspend fun getOrderById(orderId: String): Result<Order>
 
     suspend fun getCustomerOrders(sessionId: String): Result<List<Order>>
+
+    suspend fun getAnalytics(token: String): Result<MerchantAnalytics>
 }

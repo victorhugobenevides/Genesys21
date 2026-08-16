@@ -10,7 +10,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
@@ -45,7 +44,7 @@ fun ValuedActionComponent(
             )
 
             component.description?.let {
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 GenesysText(
                     text = it,
                     style = GenesysTextStyle.Body,
@@ -53,7 +52,7 @@ fun ValuedActionComponent(
                 )
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             // Valores sugeridos
             FlowRow(
@@ -84,7 +83,7 @@ fun ValuedActionComponent(
             }
 
             if (isCustomSelected) {
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysOutlinedTextField(
                     value = customValueText,
                     onValueChange = { customValueText = it },
@@ -95,7 +94,7 @@ fun ValuedActionComponent(
                 )
             }
 
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
 
             val finalValue = if (isCustomSelected) {
                 customValueText.toDoubleOrNull() ?: 0.0

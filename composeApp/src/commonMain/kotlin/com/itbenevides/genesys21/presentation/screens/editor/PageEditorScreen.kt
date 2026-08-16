@@ -11,7 +11,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
@@ -77,7 +76,7 @@ fun PageEditorContent(
                             text = GenesysStrings.EditPageTitle,
                             style = GenesysTextStyle.Title,
                         )
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
 
                         GenesysTextField(
                             value = state.title,
@@ -88,7 +87,7 @@ fun PageEditorContent(
                     }
                 }
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 GenesysLoadingButton(
                     onClick = { onEvent(PageEditorEvent.OnSaveClicked) },
@@ -98,7 +97,7 @@ fun PageEditorContent(
                     fillWidth = true,
                 )
 
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
     }

@@ -68,9 +68,23 @@ class DesignSystemSnapshotTest {
     }
 
     @Test
-    fun testShowcaseQualityResponsive() {
+    fun testShowcasePaymentsResponsive() {
         paparazzi.genesysResponsiveSnapshot {
             DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 8)
+        }
+    }
+
+    @Test
+    fun testShowcaseQualityResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 9)
+        }
+    }
+
+    @Test
+    fun testShowcaseToolsResponsive() {
+        paparazzi.genesysResponsiveSnapshot {
+            DesignSystemShowcaseScreen(onBack = {}, onOpenEditorShowcase = {}, onOpenTemplateShowcase = {}, initialTab = 10)
         }
     }
 

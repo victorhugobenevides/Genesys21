@@ -19,6 +19,7 @@ import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAp
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.AnalyticsManager
@@ -225,7 +226,7 @@ fun PageViewerContent(
                         allAvailableCategories = allCategories
                     )
                 }
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
     }

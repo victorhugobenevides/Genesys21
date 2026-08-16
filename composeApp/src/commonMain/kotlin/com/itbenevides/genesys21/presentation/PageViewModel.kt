@@ -59,6 +59,8 @@ class PageViewModel(
     private val updateUserStatusUseCase: UpdateUserStatusUseCase,
     private val updateUserPermissionsUseCase: UpdateUserPermissionsUseCase,
     private val getTemplatesUseCase: GetTemplatesUseCase,
+    private val getAnalyticsUseCase: GetAnalyticsUseCase,
+    private val deleteUserUseCase: DeleteUserUseCase,
     private val getAddressesUseCase: com.itbenevides.genesys21.domain.usecase.GetAddressesUseCase,
     private val saveAddressUseCase: com.itbenevides.genesys21.domain.usecase.SaveAddressUseCase,
     private val deleteAddressUseCase: com.itbenevides.genesys21.domain.usecase.DeleteAddressUseCase,
@@ -70,6 +72,9 @@ class PageViewModel(
 
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
+
+    private val _appTheme = MutableStateFlow(PageThemeConfig.ELEGANCE)
+    val appTheme: StateFlow<PageThemeConfig> = _appTheme.asStateFlow()
 
     private val _userAddresses = MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
     val userAddresses: StateFlow<List<com.itbenevides.genesys21.domain.model.Address>> = _userAddresses.asStateFlow()
@@ -103,6 +108,9 @@ class PageViewModel(
     private val _availability = MutableStateFlow<MerchantAvailability?>(null)
     val availability: StateFlow<MerchantAvailability?> = _availability.asStateFlow()
 
+    private val _analytics = MutableStateFlow<MerchantAnalytics?>(null)
+    val analytics: StateFlow<MerchantAnalytics?> = _analytics.asStateFlow()
+
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
 
@@ -127,6 +135,9 @@ class PageViewModel(
     val customerName = customerRepository.customerName
     val customerPhone = customerRepository.customerPhone
 
+    private val currentStoreId: String
+        get() = userProfile.value?.id ?: "admin"
+
     init {
         loadCategories()
         loadBookingServices()
@@ -143,6 +154,11 @@ class PageViewModel(
                     loadPages()
                     loadOrders()
                     cartRepository.mergeWithServer()
+
+                    // Sincroniza tema da loja com o app
+                    getStore(uid).onSuccess { store ->
+                        _appTheme.value = store.theme
+                    }
                 } else {
                     _userProfile.value = null
                     _pages.value = emptyList()
@@ -249,6 +265,19 @@ class PageViewModel(
         }
     }
 
+    fun loadAnalytics() {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            _isLoading.value = true
+            getAnalyticsUseCase(token).onSuccess {
+                _analytics.value = it
+            }.onFailure {
+                handleError("Erro ao carregar analytics", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
     fun loadCustomerOrders() {
         viewModelScope.launch {
             val sessionId = cartRepository.getSessionId()
@@ -330,7 +359,7 @@ class PageViewModel(
         shippingAddress: com.itbenevides.genesys21.domain.model.Address? = null,
         shippingPrice: Double = 0.0,
         shippingMethod: String? = null,
-        onSuccess: (String) -> Unit,
+        onSuccess: (OrderResponse) -> Unit,
     ) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -350,6 +379,7 @@ class PageViewModel(
                         customerId = currentUserId, // UID real se logado (ou null)
                         sessionId = currentSessionId, // ID da sessão para visitantes
                         customerName = customerName.value,
+                        customerEmail = authRepository.getCurrentUserEmail(),
                         customerPhone = customerPhone.value,
                         items = cart.value,
                         total = cartTotal.value,
@@ -364,18 +394,10 @@ class PageViewModel(
                 submitOrderUseCase(order).onSuccess { response ->
                     // Limpa o carrinho apenas se for pagamento LOCAL
                     // Para pagamentos via APP (Stripe), limpamos apenas após a confirmação de sucesso
-                    // para permitir que o usuário volte ao carrinho se cancelar o pagamento.
                     if (paymentMethod == PaymentMethod.LOCAL) {
                         cartRepository.clearCart()
                     }
-
-                    val checkoutUrl = response.checkoutUrl
-                    if (checkoutUrl != null) {
-                        // Se houver URL de checkout (Stripe), redireciona o usuário
-                        onSuccess(checkoutUrl)
-                    } else {
-                        onSuccess(response.orderId)
-                    }
+                    onSuccess(response)
                 }.onFailure {
                     handleError("Erro ao enviar pedido", it)
                 }
@@ -585,10 +607,10 @@ class PageViewModel(
         }
     }
 
-    fun loadAvailability(storeId: String) {
+    fun loadAvailability(storeId: String = "") {
         viewModelScope.launch {
             try {
-                val mid = storeId.ifBlank { "admin" }
+                val mid = storeId.ifBlank { currentStoreId }
                 _availability.value = getAvailabilityUseCase(mid)
             } catch (e: Exception) {
                 handleError("Erro ao carregar disponibilidade", e)
@@ -619,7 +641,7 @@ class PageViewModel(
         service: BookingService,
         date: LocalDate,
     ): List<String> {
-        val mid = storeId.ifBlank { "admin" }
+        val mid = storeId.ifBlank { currentStoreId }
         val avail = getAvailabilityUseCase(mid)
 
         // 1. Check if day is blocked
@@ -701,28 +723,34 @@ class PageViewModel(
 
     fun loadAppointments(
         date: LocalDate,
-        storeId: String = "admin",
+        storeId: String = "",
     ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                val mid = storeId.ifBlank { currentStoreId }
                 // Buscamos todos os agendamentos do mercador para o dia
-                _appointments.value = getAppointmentsUseCase(null, storeId, date)
+                _appointments.value = getAppointmentsUseCase(null, mid, date)
             } catch (e: Exception) {
                 handleError("Erro ao carregar agenda", e)
             } finally {
+                // Sincroniza tema da loja com o app
+                getStore(currentStoreId).onSuccess { store ->
+                    _appTheme.value = store.theme
+                }
                 _isLoading.value = false
             }
         }
     }
 
-    fun loadUpcomingAppointments(storeId: String = "admin") {
+    fun loadUpcomingAppointments(storeId: String = "") {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                val mid = storeId.ifBlank { currentStoreId }
                 // Atualizamos tanto o dia quanto o global para garantir consistência
-                _upcomingAppointments.value = getAppointmentsUseCase.upcoming(storeId)
-                _appointments.value = getAppointmentsUseCase.all(storeId)
+                _upcomingAppointments.value = getAppointmentsUseCase.upcoming(mid)
+                _appointments.value = getAppointmentsUseCase.all(mid)
             } catch (e: Exception) {
                 handleError("Erro ao carregar agendamentos", e)
             } finally {
@@ -732,7 +760,7 @@ class PageViewModel(
     }
 
     fun createAppointment(
-        storeId: String,
+        storeId: String = "",
         appointment: Appointment,
         onSuccess: () -> Unit,
     ) {
@@ -740,7 +768,7 @@ class PageViewModel(
             _isLoading.value = true
             try {
                 // Validation before creating
-                val mid = storeId.ifBlank { "admin" }
+                val mid = storeId.ifBlank { currentStoreId }
                 val isValid =
                     validateBookingSlotUseCase(
                         storeId = mid,
@@ -869,6 +897,16 @@ class PageViewModel(
             println("VIEWMODEL: Perfil inicial sincronizado com sucesso.")
         }.onFailure { e ->
             handleError("Erro ao sincronizar perfil", e)
+        }
+    }
+
+    fun saveUserProfile(profile: UserProfile) {
+        viewModelScope.launch {
+            saveUserProfileUseCase(profile).onSuccess {
+                _userProfile.value = profile
+            }.onFailure { e ->
+                handleError("Erro ao salvar perfil", e)
+            }
         }
     }
 
@@ -1023,7 +1061,40 @@ class PageViewModel(
     fun signOut() {
         viewModelScope.launch {
             authRepository.signOut()
+            // Limpeza profunda de estado para segurança (Spec 015)
             _pages.value = emptyList()
+            _orders.value = emptyList()
+            _userProfile.value = null
+            _userAddresses.value = emptyList()
+            _allUsers.value = emptyList()
+            _customerOrders.value = emptyList()
+            _customerAppointments.value = emptyList()
+            _appointments.value = emptyList()
+            _upcomingAppointments.value = emptyList()
+            _availability.value = null
+            _analytics.value = null
+            _trackedOrder.value = null
+        }
+    }
+
+    fun deleteAccount(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val userId = _userProfile.value?.id ?: return@launch
+            _isLoading.value = true
+            try {
+                // 1. Delete on server (handles DB anonymization)
+                deleteUserUseCase(userId)
+                    .onSuccess {
+                        // 2. Sign out locally and clear state
+                        signOut()
+                        onSuccess()
+                    }
+                    .onFailure { handleError("Erro ao excluir conta", it) }
+            } catch (e: Exception) {
+                handleError("Erro ao excluir conta", e)
+            } finally {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -1035,6 +1106,8 @@ class PageViewModel(
             try {
                 val token = authRepository.getCurrentUserToken() ?: return@launch
                 storeRepository.saveStore(store, token).onSuccess {
+                    // Atualiza tema global se mudou na loja salva
+                    _appTheme.value = store.theme
                     onComplete()
                 }.onFailure {
                     handleError("Erro ao salvar loja", it)
@@ -1057,6 +1130,16 @@ class PageViewModel(
                 }.onFailure { handleError("Erro ao criar conta Stripe", it) }
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun setAppTheme(theme: PageThemeConfig) {
+        _appTheme.value = theme
+        // Salva globalmente na loja
+        viewModelScope.launch {
+            getStore(currentStoreId).onSuccess { current ->
+                saveStore(current.copy(theme = theme)) {}
             }
         }
     }

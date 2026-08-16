@@ -52,6 +52,9 @@ external fun firebaseGetUserNameSafe(): Promise<JsString?>
 @JsFun("() => (typeof window.firebaseSignOut === 'function') ? window.firebaseSignOut() : Promise.resolve(null)")
 external fun firebaseSignOutSafe(): Promise<JsAny?>
 
+@JsFun("() => (typeof window.firebaseDeleteUser === 'function') ? window.firebaseDeleteUser() : Promise.resolve(null)")
+external fun firebaseDeleteUserSafe(): Promise<JsAny?>
+
 @JsFun("() => { if (typeof window.firebaseInitializeOneTap === 'function') window.firebaseInitializeOneTap(); }")
 external fun firebaseInitializeOneTapSafe()
 
@@ -100,7 +103,7 @@ class WasmAuthRepository : AuthRepository {
                 Result.success(idToken)
             }
         } catch (e: Exception) {
-            println("WASM: Falha crítica no Login Google: \${e.message}")
+            println("WASM: Falha crítica no Login Google: ${e.message}")
             Result.failure(e)
         }
     }
@@ -180,6 +183,15 @@ class WasmAuthRepository : AuthRepository {
         } catch (e: Exception) {
         }
     }
+
+    override suspend fun deleteUser(): Result<Unit> {
+        return try {
+            firebaseDeleteUserSafe().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
 // Extensões de Promise para Wasm
@@ -191,7 +203,7 @@ private suspend fun <T : JsAny?> Promise<T>.await(): T =
                 null
             },
             { error ->
-                val errorMessage = error?.toString() ?: "JS Error"
+                val errorMessage = error.toString()
                 continuation.resumeWith(Result.failure(Exception(errorMessage)))
                 null
             },

@@ -4,11 +4,12 @@ import com.stripe.Stripe
 import com.stripe.StripeClient
 import com.stripe.model.checkout.Session
 import com.stripe.param.checkout.SessionCreateParams
+import com.stripe.param.PaymentIntentCreateParams
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.util.CurrencyUtils
 import com.stripe.net.RequestOptions
 
-class StripeService {
+class StripeService(private val clientProvider: (String) -> StripeClient = { StripeClient(it) }) {
 
     fun createCheckoutSession(
         order: Order,
@@ -17,16 +18,15 @@ class StripeService {
         cancelUrl: String,
         connectedAccountId: String? = null
     ): String {
-        val client = StripeClient(secretKey)
+        val client = clientProvider(secretKey)
 
         val paramsBuilder = SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.PAYMENT)
             .setSuccessUrl(successUrl)
             .setCancelUrl(cancelUrl)
             .setClientReferenceId(order.id)
-            .setCustomerEmail(if (order.customerId?.contains("@") == true) order.customerId else null)
+            .setCustomerEmail(if (order.customerEmail?.contains("@") == true) order.customerEmail else null)
 
-        // Se houver uma conta conectada (Direct Charges), a cobrança vai para ela
         val requestOptions = if (!connectedAccountId.isNullOrBlank()) {
             RequestOptions.builder()
                 .setStripeAccount(connectedAccountId)
@@ -54,7 +54,6 @@ class StripeService {
             )
         }
 
-        // Adiciona frete se houver
         if (order.shippingPrice > 0) {
             paramsBuilder.addLineItem(
                 SessionCreateParams.LineItem.builder()
@@ -74,7 +73,6 @@ class StripeService {
             )
         }
 
-        // Adiciona taxas de deslocamento se houver (Agrupadas como um item de serviço)
         val totalTravelFees = order.items.sumOf { it.appointment?.travelFee ?: 0.0 }
         if (totalTravelFees > 0) {
              paramsBuilder.addLineItem(
@@ -102,5 +100,43 @@ class StripeService {
         }
 
         return session.url
+    }
+
+    fun createPaymentIntent(
+        order: Order,
+        secretKey: String,
+        connectedAccountId: String? = null
+    ): String {
+        val client = clientProvider(secretKey)
+
+        val totalInCents = CurrencyUtils.toStripeCents(order.total + order.shippingPrice)
+
+        val paramsBuilder = PaymentIntentCreateParams.builder()
+            .setAmount(totalInCents)
+            .setCurrency("brl")
+            .putMetadata("order_id", order.id)
+            .putMetadata("store_id", order.storeId)
+            .setReceiptEmail(if (order.customerEmail?.contains("@") == true) order.customerEmail else null)
+            .setAutomaticPaymentMethods(
+                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                    .setEnabled(true)
+                    .build()
+            )
+
+        val requestOptions = if (!connectedAccountId.isNullOrBlank()) {
+            RequestOptions.builder()
+                .setStripeAccount(connectedAccountId)
+                .build()
+        } else {
+            null
+        }
+
+        val paymentIntent = if (requestOptions != null) {
+            client.v1().paymentIntents().create(paramsBuilder.build(), requestOptions)
+        } else {
+            client.v1().paymentIntents().create(paramsBuilder.build())
+        }
+
+        return paymentIntent.clientSecret
     }
 }

@@ -48,6 +48,7 @@ class CartRepositoryTest {
 
     class FakeAuthRepository : AuthRepository {
         override val authState = MutableStateFlow<String?>(null)
+        override val userRole = MutableStateFlow<com.itbenevides.genesys21.domain.model.UserRole?>(null)
         var token: String? = null
         var userId: String? = null
 
@@ -60,6 +61,10 @@ class CartRepositoryTest {
         override suspend fun getCurrentUserName(): String? = if (userId != null) "Test User" else null
         override fun initializeOneTap() {}
         override suspend fun signOut() { authState.value = null }
+        override suspend fun deleteUser(): Result<Unit> {
+            authState.value = null
+            return Result.success(Unit)
+        }
     }
 
     @Test

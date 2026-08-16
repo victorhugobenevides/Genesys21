@@ -15,6 +15,7 @@ data class Order(
     val customerId: String? = null, // UserProfile.id
     val sessionId: String? = null, // Temporary session for visitors
     val customerName: String? = null,
+    val customerEmail: String? = null,
     val customerPhone: String? = null,
     val items: List<CartItem>,
     val total: Double,

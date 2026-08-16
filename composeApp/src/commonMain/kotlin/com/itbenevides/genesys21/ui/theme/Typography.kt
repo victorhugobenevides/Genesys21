@@ -4,8 +4,9 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.*
 import com.itbenevides.genesys21.domain.model.TypographySet
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 
 /**
  * Material Design 3 Typography Scale.
@@ -138,11 +139,22 @@ fun getTypography(set: TypographySet = TypographySet.DEFAULT): Typography {
     )
 }
 
-fun getGenesysTypography(set: TypographySet = TypographySet.DEFAULT): GenesysTypography {
+fun getGenesysTypography(
+    set: TypographySet = TypographySet.DEFAULT,
+    windowSizeClass: GenesysWindowSizeClass = GenesysWindowSizeClass.COMPACT
+): GenesysTypography {
     val m3 = getTypography(set)
+
+    // Escalonamento Dinâmico: Aumentamos fontes no Desktop para impacto visual
+    val scaleFactor = when(windowSizeClass) {
+        GenesysWindowSizeClass.COMPACT -> 0.sp
+        GenesysWindowSizeClass.MEDIUM -> 1.sp
+        GenesysWindowSizeClass.EXPANDED -> 2.sp
+    }
+
     return GenesysTypography(
-        display = m3.headlineLarge,
-        headline = m3.headlineSmall,
+        display = m3.headlineLarge.copy(fontSize = (m3.headlineLarge.fontSize.value + scaleFactor.value + 2).sp),
+        headline = m3.headlineSmall.copy(fontSize = (m3.headlineSmall.fontSize.value + scaleFactor.value).sp),
         title = m3.titleLarge,
         body = m3.bodyLarge,
         bodySmall = m3.bodySmall,

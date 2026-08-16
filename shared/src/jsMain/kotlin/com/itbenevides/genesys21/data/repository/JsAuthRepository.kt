@@ -50,4 +50,8 @@ class JsAuthRepository : AuthRepository {
 
     override suspend fun signOut() {
     }
+
+    override suspend fun deleteUser(): Result<Unit> {
+        return Result.failure(Exception("Not supported on JS"))
+    }
 }

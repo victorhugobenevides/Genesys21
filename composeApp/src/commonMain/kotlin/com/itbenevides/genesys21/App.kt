@@ -7,12 +7,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
-import com.itbenevides.genesys21.domain.model.CustomThemeConfig
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.PageTemplateRegistry
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
+import com.itbenevides.genesys21.presentation.UiEvent
+import com.itbenevides.genesys21.presentation.components.auth.AccountLinkingDialog
 import com.itbenevides.genesys21.presentation.screens.SplashScreen
 import com.itbenevides.genesys21.presentation.screens.editor.*
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
@@ -29,12 +30,9 @@ import org.koin.compose.koinInject
 fun App() {
     val router: Router = koinInject()
     val currentRoute = router.currentRoute
-    val trackedOrder by router.viewModel.trackedOrder.collectAsState()
-
-    var currentActivePageTheme by remember { mutableStateOf<PageThemeConfig?>(null) }
-    var currentActiveCustomTheme by remember { mutableStateOf<CustomThemeConfig?>(null) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    var accountLinkingEmail by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(router.viewModel) {
         launch {
@@ -54,50 +52,21 @@ fun App() {
                 )
             }
         }
+        launch {
+            router.viewModel.uiEvent.collect { event ->
+                when (event) {
+                    is UiEvent.ShowAccountLinkingDialog -> {
+                        accountLinkingEmail = event.email
+                    }
+                }
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
         router.handleDeepLink()
         onUrlChange { router.handleDeepLink() }
     }
-
-    LaunchedEffect(currentRoute) {
-        when (currentRoute) {
-            is Route.PublicViewer -> {
-                currentActivePageTheme = currentRoute.page.theme
-                currentActiveCustomTheme = currentRoute.page.customTheme
-            }
-            is Route.WhiteLabel -> {
-                currentActivePageTheme = currentRoute.page.theme
-                currentActiveCustomTheme = currentRoute.page.customTheme
-            }
-            is Route.ServiceBooking -> {
-                currentActivePageTheme = currentRoute.page.theme
-                currentActiveCustomTheme = currentRoute.page.customTheme
-            }
-            is Route.Splash, is Route.Login, is Route.PageList, is Route.Profile -> {
-                currentActivePageTheme = null
-                currentActiveCustomTheme = null
-            }
-            else -> { }
-        }
-    }
-
-    val themeToApply =
-        remember(currentRoute, trackedOrder, currentActivePageTheme) {
-            when (currentRoute) {
-                is Route.OrderTracking -> trackedOrder?.theme ?: PageThemeConfig.ELEGANCE
-                else -> currentActivePageTheme ?: PageThemeConfig.ELEGANCE
-            }
-        }
-
-    val customThemeToApply =
-        remember(currentRoute, currentActiveCustomTheme) {
-            when (currentRoute) {
-                is Route.OrderTracking -> null // Por enquanto pedidos não salvam custom colors
-                else -> currentActiveCustomTheme
-            }
-        }
 
     val useDynamicColor =
         remember(currentRoute) {
@@ -107,9 +76,13 @@ fun App() {
             }
         }
 
+    val globalAppTheme by router.viewModel.appTheme.collectAsState()
+
     BoxWithConstraints {
         ProvideWindowSizeClass(maxWidth) {
-            AppTheme(themeConfig = themeToApply, customTheme = customThemeToApply, useDynamicColor = useDynamicColor) {
+            // UNIFICAÇÃO DE TEMA: O appTheme soberano controla toda a experiência.
+            // CustomTheme é nulo aqui pois o portal administrativo usa os tokens oficiais.
+            AppTheme(themeConfig = globalAppTheme, customTheme = null, useDynamicColor = useDynamicColor) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -357,6 +330,17 @@ fun App() {
                                                     )
                                                 }
                                             }
+                                        }
+
+                                        accountLinkingEmail?.let { email ->
+                                            AccountLinkingDialog(
+                                                email = email,
+                                                onDismiss = { accountLinkingEmail = null },
+                                                onLoginClick = {
+                                                    accountLinkingEmail = null
+                                                    router.navigateTo(Route.Login)
+                                                }
+                                            )
                                         }
                                     }
                                 }

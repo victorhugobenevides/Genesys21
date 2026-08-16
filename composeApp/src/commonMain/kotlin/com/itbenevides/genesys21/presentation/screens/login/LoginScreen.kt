@@ -1,7 +1,9 @@
 package com.itbenevides.genesys21.presentation.screens.login
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -17,7 +20,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
@@ -34,6 +36,7 @@ fun LoginScreen(
     viewModel: PageViewModel,
     onLoginSuccess: () -> Unit,
 ) {
+    val globalAppTheme by viewModel.appTheme.collectAsState()
     var state by remember { mutableStateOf(LoginState()) }
 
     val onEvent: (LoginEvent) -> Unit = { event ->
@@ -89,7 +92,9 @@ fun LoginScreen(
         }
     }
 
-    LoginContent(state, onEvent, viewModel, onLoginSuccess)
+    AppTheme(themeConfig = globalAppTheme, customTheme = null) {
+        LoginContent(state, onEvent, viewModel, onLoginSuccess)
+    }
 }
 
 @Composable
@@ -99,157 +104,143 @@ private fun LoginContent(
     viewModel: PageViewModel,
     onLoginSuccess: () -> Unit,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "icon")
-    val iconScale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(2500, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "iconScale",
-    )
+    val infiniteTransition = rememberInfiniteTransition(label = "login")
+    val floatAnim by if (!LocalTestMode.current) {
+        infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.05f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(2000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "float",
+        )
+    } else {
+        remember { mutableStateOf(1f) }
+    }
 
-    GenesysPage(
-        content = {
-            Box(modifier = Modifier.fillMaxSize()) {
-                AnimatedGradientBackground()
+    GenesysPage(usePadding = false) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            AnimatedGradientBackground()
 
-                GenesysColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = GenesysAlignment.Center,
-                    verticalArrangement = Arrangement.Center,
-                    usePadding = true,
-                    useScroll = true // Ativa rolagem para evitar achatamento em telas pequenas
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                // Logo animado
+                Box(
+                    modifier =
+                        Modifier
+                            .size(100.dp)
+                            .scale(floatAnim)
+                            .background(GenesysTheme.colors.brandContainer, CircleShape),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Surface(
-                        modifier =
-                            Modifier
-                                .widthIn(max = GenesysDimens.LoginMaxWidth)
-                                .glassmorphic(RoundedCornerShape(32.dp)),
-                        tonalElevation = 8.dp,
-                        shape = RoundedCornerShape(32.dp),
-                        color = Color.Transparent,
-                    ) {
-                        GenesysColumn(
-                            usePadding = true,
-                            horizontalAlignment = GenesysAlignment.Center,
+                    Icon(
+                        imageVector = GenesysIcons.Magic,
+                        contentDescription = "Logo",
+                        modifier = Modifier.size(50.dp),
+                        tint = GenesysTheme.colors.brand,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(GenesysTheme.spacing.l))
+
+                GenesysText(
+                    text = GenesysStrings.AppName,
+                    style = GenesysTextStyle.Headline,
+                    fontWeight = GenesysFontWeight.ExtraBold,
+                )
+                GenesysText(
+                    text = if (state.isSignUp) "Crie sua conta Genesys21" else GenesysStrings.LoginSubtitle,
+                    style = GenesysTextStyle.Body,
+                    color = GenesysTheme.colors.onSurfaceVariant,
+                )
+
+                Spacer(modifier = Modifier.height(GenesysTheme.spacing.xl))
+
+                // Card de formulário com Glassmorphism
+                Box(
+                    modifier =
+                        Modifier
+                            .widthIn(max = GenesysDimens.LoginMaxWidth)
+                            .glassmorphic(RoundedCornerShape(24.dp), alpha = 0.4f)
+                            .padding(24.dp),
+                ) {
+                    Column {
+                        GenesysTextField(
+                            value = state.email,
+                            onValueChange = { onEvent(LoginEvent.OnEmailChanged(it)) },
+                            label = GenesysStrings.EmailLabel,
+                            icon = GenesysIcons.Person,
+                            placeholder = "seu@email.com",
+                        )
+
+                        Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
+
+                        GenesysTextField(
+                            value = state.password,
+                            onValueChange = { onEvent(LoginEvent.OnPasswordChanged(it)) },
+                            label = GenesysStrings.PasswordLabel,
+                            icon = GenesysIcons.Lock,
+                            placeholder = "******",
+                            visualTransformation = PasswordVisualTransformation(),
+                        )
+
+                        if (state.errorMessage.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(GenesysTheme.spacing.xs))
+                            GenesysText(text = state.errorMessage, style = GenesysTextStyle.Error)
+                        }
+
+                        Spacer(modifier = Modifier.height(GenesysTheme.spacing.l))
+
+                        GenesysLoadingButton(
+                            text = if (state.isSignUp) "Cadastrar Agora" else GenesysStrings.LoginButton,
+                            onClick = {
+                                if (state.isSignUp) onEvent(LoginEvent.OnSignUpClicked)
+                                else onEvent(LoginEvent.OnLoginClicked)
+                            },
+                            isLoading = state.isLoading,
+                            enabled = state.canLogin,
+                            fillWidth = true,
+                        )
+
+                        Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
+
+                        GoogleSignInButton(
+                            onTokenReceived = { idToken, accessToken ->
+                                viewModel.signInWithToken(
+                                    idToken = idToken,
+                                    accessToken = accessToken,
+                                    provider = "google",
+                                    onSuccess = onLoginSuccess,
+                                    onError = { error ->
+                                        onEvent(LoginEvent.OnError(error))
+                                    }
+                                )
+                            },
+                            onError = { error ->
+                                onEvent(LoginEvent.OnError(error))
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(GenesysTheme.spacing.l))
+
+                        TextButton(
+                            onClick = { onEvent(LoginEvent.ToggleMode) },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
                         ) {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(80.dp)
-                                        .scale(iconScale),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = GenesysIcons.Magic,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    tint = GenesysTheme.colors.brand,
-                                )
-                            }
-
-                            GenesysSpacer(GenesysSpacing.Medium)
-
-                            GenesysText(
-                                text = GenesysStrings.Welcome,
-                                style = GenesysTextStyle.Headline,
-                                fontWeight = GenesysFontWeight.ExtraBold,
+                            Text(
+                                text = if (state.isSignUp) "Já tem conta? Faça Login" else "Não tem conta? Cadastre-se",
                                 color = GenesysTheme.colors.brand,
+                                fontWeight = FontWeight.Bold,
                             )
-
-                            GenesysText(
-                                text = if (state.isSignUp) "Crie sua conta para começar" else GenesysStrings.LoginSubtitle,
-                                style = GenesysTextStyle.Body,
-                            )
-
-                            GenesysSpacer(GenesysSpacing.ExtraLarge)
-
-                            GenesysTextField(
-                                value = state.email,
-                                onValueChange = { newValue -> onEvent(LoginEvent.OnEmailChanged(newValue)) },
-                                label = GenesysStrings.EmailLabel,
-                                icon = GenesysIcons.Email,
-                            )
-
-                            GenesysSpacer(GenesysSpacing.Medium)
-
-                            GenesysTextField(
-                                value = state.password,
-                                onValueChange = { newValue -> onEvent(LoginEvent.OnPasswordChanged(newValue)) },
-                                label = GenesysStrings.PasswordLabel,
-                                icon = GenesysIcons.Lock,
-                                visualTransformation = PasswordVisualTransformation(),
-                            )
-
-                            GenesysSpacer(GenesysSpacing.Large)
-
-                            GenesysLoadingButton(
-                                text = if (state.isSignUp) "Criar Conta" else GenesysStrings.LoginButton,
-                                onClick = {
-                                    if (state.isSignUp) onEvent(LoginEvent.OnSignUpClicked)
-                                    else onEvent(LoginEvent.OnLoginClicked)
-                                },
-                                fillWidth = true,
-                                isLoading = state.isLoading,
-                                enabled = state.canLogin,
-                                icon = if (state.isSignUp) GenesysIcons.Add else GenesysIcons.Check,
-                            )
-
-                            GenesysSpacer(GenesysSpacing.Medium)
-
-                            TextButton(onClick = { onEvent(LoginEvent.ToggleMode) }) {
-                                GenesysText(
-                                    text = if (state.isSignUp) "Já tem conta? Faça login" else "Ainda não tem conta? Cadastre-se",
-                                    style = GenesysTextStyle.Label,
-                                    color = GenesysTheme.colors.brand
-                                )
-                            }
-
-                            GenesysSpacer(GenesysSpacing.Medium)
-
-                            GenesysText(text = "OU", style = GenesysTextStyle.Label)
-
-                            GenesysSpacer(GenesysSpacing.Medium)
-
-                            if (!LocalTestMode.current) {
-                                GoogleSignInButton(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onTokenReceived = { idToken, accessToken ->
-                                        viewModel.signInWithToken(
-                                            idToken = idToken,
-                                            accessToken = accessToken,
-                                            provider = "google",
-                                            onSuccess = onLoginSuccess,
-                                            onError = { onEvent(LoginEvent.OnError(it)) }
-                                        )
-                                    },
-                                    onError = { onEvent(LoginEvent.OnError(it)) }
-                                )
-                            } else {
-                                // Em teste mostramos um botão placeholder para não crashar
-                                GenesysLoadingButton(
-                                    text = "Google Sign In (Test Mode)",
-                                    onClick = {},
-                                    fillWidth = true,
-                                    enabled = false
-                                )
-                            }
-
-                            if (state.errorMessage.isNotEmpty()) {
-                                GenesysSpacer(GenesysSpacing.Medium)
-                                GenesysText(
-                                    text = state.errorMessage,
-                                    style = GenesysTextStyle.Error,
-                                    textAlign = GenesysTextAlign.Center,
-                                )
-                            }
                         }
                     }
                 }
             }
-        },
-    )
+        }
+    }
 }

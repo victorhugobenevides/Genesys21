@@ -1,5 +1,7 @@
 package com.itbenevides.genesys21.data.database
 
+import org.jetbrains.exposed.sql.ReferenceOption
+
 object UsersTable : BaseTable("users") {
     val id = varchar("id", 100) // Firebase UID
     val email = varchar("email", 200).uniqueIndex()
@@ -15,7 +17,7 @@ object UsersTable : BaseTable("users") {
 
 object StoresTable : BaseTable("stores") {
     val id = varchar("id", 50) // UUID
-    val ownerId = varchar("owner_id", 100).references(UsersTable.id)
+    val ownerId = varchar("owner_id", 100).references(UsersTable.id, onDelete = ReferenceOption.CASCADE)
     val name = varchar("name", 255)
     val description = text("description").nullable()
     val logoUrl = text("logo_url").nullable()

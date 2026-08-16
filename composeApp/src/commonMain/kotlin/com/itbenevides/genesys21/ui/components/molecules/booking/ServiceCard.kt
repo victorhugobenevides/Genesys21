@@ -27,7 +27,6 @@ import coil3.compose.AsyncImage
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
@@ -205,7 +204,7 @@ private fun ServiceInfo(
         )
 
         if (!isGridMode) {
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End

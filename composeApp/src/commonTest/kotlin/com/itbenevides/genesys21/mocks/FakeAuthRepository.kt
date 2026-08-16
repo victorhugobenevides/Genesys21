@@ -12,6 +12,8 @@ class FakeAuthRepository : AuthRepository {
     private val _authState = MutableStateFlow<String?>(null)
     override val authState: Flow<String?> = _authState.asStateFlow()
 
+    override val userRole = MutableStateFlow<com.itbenevides.genesys21.domain.model.UserRole?>(null)
+
     override suspend fun signIn(
         email: String,
         password: String,
@@ -60,6 +62,11 @@ class FakeAuthRepository : AuthRepository {
 
     override suspend fun signOut() {
         mockToken = null
+    }
+
+    override suspend fun deleteUser(): Result<Unit> {
+        mockToken = null
+        return Result.success(Unit)
     }
 
     override fun initializeOneTap() {

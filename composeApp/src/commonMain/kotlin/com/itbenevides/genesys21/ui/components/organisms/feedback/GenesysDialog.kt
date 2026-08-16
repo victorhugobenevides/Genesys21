@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
@@ -34,7 +33,7 @@ fun GenesysDialog(
             GenesysColumn(usePadding = false) {
                 content()
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 // Botões na parte inferior para mobile
                 Row(

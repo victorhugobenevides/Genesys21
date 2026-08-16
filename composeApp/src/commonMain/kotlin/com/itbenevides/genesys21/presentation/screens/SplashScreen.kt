@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysLoadingIndicator
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 
@@ -26,11 +25,11 @@ fun SplashScreen() {
         Icon(
             imageVector = GenesysIcons.Magic,
             contentDescription = null,
-            modifier = Modifier.size(GenesysSpacing.Huge.value * 2),
+            modifier = Modifier.size(GenesysTheme.spacing.huge * 2),
             tint = GenesysTheme.colors.brand,
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         // Nome da marca usando GenesysText
         GenesysText(
@@ -41,7 +40,7 @@ fun SplashScreen() {
             color = GenesysTheme.colors.brand,
         )
 
-        GenesysSpacer(GenesysSpacing.ExtraLarge)
+        GenesysSpacer(GenesysTheme.spacing.xl)
 
         // Indicador de carregamento padronizado do sistema
         GenesysLoadingIndicator()

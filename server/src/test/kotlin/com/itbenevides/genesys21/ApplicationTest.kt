@@ -82,4 +82,18 @@ class ApplicationTest {
                 }
             assertEquals(HttpStatusCode.Unauthorized, response.status)
         }
+
+    @Test
+    fun testSecurityHeaders() =
+        testApplication {
+            environment { config = MapApplicationConfig("ktor.testing" to "true") }
+            application { module() }
+
+            val response = client.get("/")
+
+            assertEquals("DENY", response.headers["X-Frame-Options"])
+            assertEquals("nosniff", response.headers["X-Content-Type-Options"])
+            assertNotNull(response.headers["Strict-Transport-Security"])
+            assertTrue(response.headers["Content-Security-Policy"]?.contains("default-src 'self'") == true)
+        }
 }

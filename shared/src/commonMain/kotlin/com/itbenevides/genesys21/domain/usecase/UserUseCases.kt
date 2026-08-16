@@ -31,3 +31,7 @@ class UpdateUserPermissionsUseCase(private val repository: UserRepository) {
     suspend operator fun invoke(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>) =
         repository.updateUserPermissions(token, userId, permissions)
 }
+
+class DeleteUserUseCase(private val repository: UserRepository) {
+    suspend operator fun invoke(userId: String) = repository.deleteUser(userId)
+}

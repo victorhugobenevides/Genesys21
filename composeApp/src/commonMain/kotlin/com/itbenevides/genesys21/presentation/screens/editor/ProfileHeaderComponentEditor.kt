@@ -9,7 +9,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -46,14 +45,14 @@ fun ProfileHeaderComponentEditor(
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = "Pré-visualização", style = GenesysTextStyle.Label)
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
 
         PageComponentRenderer(
             component = previewComponent,
             isEditMode = false,
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         GenesysLoadingButton(
             text = if (isUploading) "Enviando..." else "Trocar Foto de Perfil",
@@ -63,7 +62,7 @@ fun ProfileHeaderComponentEditor(
             fillWidth = true,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysSlider(
             value = imageSize,
@@ -72,7 +71,7 @@ fun ProfileHeaderComponentEditor(
             valueRange = 40f..300f,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysRow(fillWidth = true) {
             GenesysWeightBox(1f) {
@@ -83,7 +82,7 @@ fun ProfileHeaderComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysTextField(
             value = imageUrl,
@@ -92,21 +91,21 @@ fun ProfileHeaderComponentEditor(
             icon = GenesysIcons.CloudUpload,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysTextField(
             value = name,
             onValueChange = { name = it },
             label = "Nome",
             icon = GenesysIcons.Person,
         )
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysTextField(
             value = bio,
             onValueChange = { bio = it },
             label = "Biografia",
             icon = GenesysIcons.Edit,
         )
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
             text = "Salvar Alterações",
             onClick = {

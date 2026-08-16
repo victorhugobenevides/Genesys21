@@ -6,8 +6,10 @@ import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.OrderRepository
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.case
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.*
 
 class SqliteOrderRepository(
     private val bookingRepository: com.itbenevides.genesys21.domain.repository.BookingRepository
@@ -171,6 +173,72 @@ class SqliteOrderRepository(
         } catch (e: Exception) {
             Result.failure(e)
         }
+
+    override suspend fun getAnalytics(token: String): Result<MerchantAnalytics> = try {
+        dbQuery {
+            val storeIds = StoresTable.selectAll().where { StoresTable.ownerId eq token }.map { it[StoresTable.id] }
+            if (storeIds.isEmpty()) return@dbQuery Result.failure(Exception("Nenhuma loja encontrada"))
+
+            val sevenDaysAgo = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
+
+            // 1. Receita Diária
+            val recentOrders = OrdersTable.selectAll()
+                .where { (OrdersTable.storeId inList storeIds) and (OrdersTable.createdAt greaterEq sevenDaysAgo) and ((OrdersTable.status eq OrderStatus.PROCESSING.name) or (OrdersTable.status eq OrderStatus.COMPLETED.name)) }
+                .map { it[OrdersTable.total] to it[OrdersTable.createdAt] }
+
+            val dailyRevenue = recentOrders.groupBy {
+                val date = Instant.fromEpochMilliseconds(it.second).toLocalDateTime(TimeZone.currentSystemDefault()).date
+                date.toString()
+            }.map { (date, orders) -> DailyRevenue(date, orders.sumOf { it.first }) }
+             .sortedBy { it.date }
+
+            // 2. Top Produtos
+            val topProductsRaw = (OrderItemsTable innerJoin OrdersTable)
+                .select(OrderItemsTable.productName, OrderItemsTable.quantity, OrderItemsTable.productPrice)
+                .where { (OrdersTable.storeId inList storeIds) and (OrderItemsTable.productId.isNotNull()) }
+                .toList()
+
+            val topProducts = topProductsRaw.groupBy { it[OrderItemsTable.productName] }
+                .map { (name, rows) ->
+                    TopProduct(
+                        name = name,
+                        quantity = rows.sumOf { it[OrderItemsTable.quantity] },
+                        revenue = rows.sumOf { it[OrderItemsTable.quantity] * it[OrderItemsTable.productPrice] }
+                    )
+                }
+                .sortedByDescending { it.revenue }
+                .take(5)
+
+            // 3. Resumo de Agendamentos
+            val appointments = AppointmentsTable.selectAll()
+                .where { AppointmentsTable.storeId inList storeIds }
+                .toList()
+
+            val bookingSummary = BookingSummary(
+                pending = appointments.count { it[AppointmentsTable.status] == BookingStatus.PENDING.name },
+                confirmed = appointments.count { it[AppointmentsTable.status] == BookingStatus.CONFIRMED.name },
+                cancelled = appointments.count { it[AppointmentsTable.status] == BookingStatus.CANCELLED.name },
+                upcoming = appointments.count { it[AppointmentsTable.startTime] > System.currentTimeMillis() }
+            )
+
+            // 4. Totais
+            val allOrders = OrdersTable.selectAll()
+                .where { (OrdersTable.storeId inList storeIds) and (OrdersTable.status neq OrderStatus.CANCELLED.name) }
+                .map { it[OrdersTable.total] }
+
+            Result.success(
+                MerchantAnalytics(
+                    dailyRevenue = dailyRevenue,
+                    topProducts = topProducts,
+                    bookingSummary = bookingSummary,
+                    totalOrders = allOrders.size,
+                    averageTicket = if (allOrders.isNotEmpty()) allOrders.average() else 0.0
+                )
+            )
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
     private fun fetchOrderItems(orderId: String, storeId: String): List<CartItem> {
         return OrderItemsTable.selectAll().where { OrderItemsTable.orderId eq orderId }

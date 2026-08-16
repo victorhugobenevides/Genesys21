@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
     val authState: Flow<String?> // Retorna o UID do usuário ou null
+    val userRole: Flow<com.itbenevides.genesys21.domain.model.UserRole?>
 
     suspend fun signIn(
         email: String,
@@ -32,4 +33,6 @@ interface AuthRepository {
     fun initializeOneTap()
 
     suspend fun signOut()
+
+    suspend fun deleteUser(): Result<Unit>
 }

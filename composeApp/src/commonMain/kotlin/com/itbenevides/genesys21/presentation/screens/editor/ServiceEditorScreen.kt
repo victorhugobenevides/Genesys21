@@ -16,7 +16,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -107,7 +106,7 @@ fun ServiceEditorContent(
                     label = "Nome do Serviço",
                     icon = GenesysIcons.Edit
                 )
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysTextField(
                     value = description,
@@ -117,7 +116,7 @@ fun ServiceEditorContent(
                     minLines = 3,
                     icon = GenesysIcons.Description
                 )
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysRow {
                     GenesysWeightBox(1f) {
@@ -128,7 +127,7 @@ fun ServiceEditorContent(
                             icon = GenesysIcons.Payments
                         )
                     }
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysSpacer(GenesysTheme.spacing.m)
                     GenesysWeightBox(1f) {
                         GenesysTextField(
                             value = duration,
@@ -138,7 +137,7 @@ fun ServiceEditorContent(
                         )
                     }
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysTextField(
                     value = buffer,
@@ -147,11 +146,11 @@ fun ServiceEditorContent(
                     icon = GenesysIcons.History
                 )
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 // Configurações Online
                 GenesysText(text = "Configurações de Entrega", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -166,7 +165,7 @@ fun ServiceEditorContent(
                 }
 
                 if (isOnline) {
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysSpacer(GenesysTheme.spacing.m)
                     GenesysTextField(
                         value = meetingLink,
                         onValueChange = { meetingLink = it },
@@ -176,7 +175,7 @@ fun ServiceEditorContent(
                     )
                 }
 
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -190,7 +189,7 @@ fun ServiceEditorContent(
                     Switch(checked = isHomeService, onCheckedChange = { isHomeService = it })
                 }
 
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysTextField(
                     value = maxParticipants,
@@ -200,11 +199,11 @@ fun ServiceEditorContent(
                     placeholder = "1"
                 )
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 // Imagens do Serviço
                 GenesysText(text = "Fotos do Serviço", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
 
                 GenesysRow(modifier = Modifier.fillMaxWidth(), useHorizontalScroll = true) {
                     imageUrls.forEach { url ->
@@ -222,7 +221,7 @@ fun ServiceEditorContent(
                     )
                 }
 
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysTheme.spacing.huge)
 
                 GenesysLoadingButton(
                     text = if (service == null) "Cadastrar Serviço" else "Salvar Alterações",

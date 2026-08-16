@@ -50,6 +50,7 @@ object GenesysIcons {
     val ArrowDropDown = Icons.Default.ArrowDropDown
     val Magic = Icons.Default.AutoAwesome
     val Straighten = Icons.Default.Straighten
+    val Analytics = Icons.Default.Analytics
     val Close = Icons.Default.Close
     val Share = Icons.Default.Share
     val Image = Icons.Default.Image

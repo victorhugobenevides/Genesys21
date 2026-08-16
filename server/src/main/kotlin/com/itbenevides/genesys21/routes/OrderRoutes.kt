@@ -23,7 +23,7 @@ fun Route.orderRoutes(
     // 1. Rotas Públicas (Acesso sem Login)
     route("/public/orders") {
 
-        // WEBHOOK DA STRIPE (Assíncrono e Seguro)
+        // WEBHOOK DA STRIPE (Suporte a PaymentIntent)
         post("/webhook") {
             val payload = call.receiveText()
             val sigHeader = call.request.header("Stripe-Signature")
@@ -31,115 +31,83 @@ fun Route.orderRoutes(
             val envSecret = System.getenv("STRIPE_WEBHOOK_SECRET")
             val endpointSecret = envSecret ?: "whsec_f3f2d698e8f7104ceb2ecc2bbe59d54c1680da981260b000404dc940f91ebfe6"
 
-            println("WEBHOOK: Evento recebido. Origem: ${if (envSecret != null) "Ambiente/CI" else "Fallback Local"}")
-
             try {
                 val event = Webhook.constructEvent(payload, sigHeader ?: "", endpointSecret)
-
-                println("WEBHOOK: Tipo do evento: ${event.type}")
+                println("WEBHOOK: Evento '${event.type}' recebido.")
 
                 when (event.type) {
-                    "checkout.session.completed", "checkout.session.async_payment_succeeded" -> {
-                        // Forma mais segura de extrair o objeto independente da versão da API
-                        val stripeObject = event.dataObjectDeserializer.deserializeUnsafe()
-                        if (stripeObject is com.stripe.model.checkout.Session) {
-                            val orderId = stripeObject.clientReferenceId
-                            println("WEBHOOK: Pagamento confirmado para o Pedido ID: $orderId")
-                            if (!orderId.isNullOrBlank()) {
-                                orderRepository.updateOrderStatus("SYSTEM", orderId, OrderStatus.PROCESSING)
-                            }
-                        } else {
-                            println("WEBHOOK ERROR: Objeto recebido não é uma Session de Checkout")
+                    "payment_intent.succeeded" -> {
+                        val intent = event.dataObjectDeserializer.deserializeUnsafe() as com.stripe.model.PaymentIntent
+                        val orderId = intent.metadata["order_id"]
+                        if (!orderId.isNullOrBlank()) {
+                            println("WEBHOOK: Pagamento PI confirmado para o Pedido ID: $orderId")
+                            orderRepository.updateOrderStatus("SYSTEM", orderId, OrderStatus.PROCESSING)
                         }
                     }
-                    "checkout.session.expired" -> {
-                        val stripeObject = event.dataObjectDeserializer.deserializeUnsafe()
-                        if (stripeObject is com.stripe.model.checkout.Session) {
-                            val orderId = stripeObject.clientReferenceId
-                            if (!orderId.isNullOrBlank()) {
-                                println("WEBHOOK: Checkout expirado para o pedido $orderId")
-                                orderRepository.updateOrderStatus("SYSTEM", orderId, OrderStatus.CANCELLED)
-                            }
+                    "checkout.session.completed" -> {
+                        val session = event.dataObjectDeserializer.deserializeUnsafe() as com.stripe.model.checkout.Session
+                        val orderId = session.clientReferenceId
+                        if (!orderId.isNullOrBlank()) {
+                            println("WEBHOOK: Pagamento Checkout confirmado para o Pedido ID: $orderId")
+                            orderRepository.updateOrderStatus("SYSTEM", orderId, OrderStatus.PROCESSING)
                         }
                     }
                 }
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {
-                println("WEBHOOK ERROR: Falha crítica: ${e.message}")
-                e.printStackTrace()
-                call.respond(HttpStatusCode.OK)
+                println("WEBHOOK ERROR: ${e.message}")
+                call.respond(HttpStatusCode.OK) // Sempre 200 para evitar retentativas infinitas
             }
         }
+
         // POST: Criar novo pedido
         post {
             try {
                 val order = call.receive<Order>()
-                println("SERVIDOR: Recebido pedido para loja '${order.storeId}'. Metodo: ${order.paymentMethod}")
-
                 if (order.storeId.isBlank()) {
-                    println("ERRO: Store ID vazio no JSON recebido")
-                    call.respond(HttpStatusCode.BadRequest, "Erro: Store ID não informado no pedido.")
+                    call.respond(HttpStatusCode.BadRequest, "Store ID não informado.")
                     return@post
                 }
 
-                orderRepository.createOrder(order)
-                    .onSuccess { response ->
-                        val generatedId = response.orderId
-                        println("PEDIDO SALVO: $generatedId")
+                orderRepository.createOrder(order).onSuccess { response ->
+                    val generatedId = response.orderId
 
-                        if (order.paymentMethod == PaymentMethod.APP) {
-                            val store = storeRepository.getStore(order.storeId).getOrNull()
-                            val secretKey = store?.stripeSecretKey
+                    if (order.paymentMethod == PaymentMethod.APP) {
+                        val store = storeRepository.getStore(order.storeId).getOrNull()
+                        val secretKey = store?.stripeSecretKey
 
-                            if (!secretKey.isNullOrBlank()) {
-                                try {
-                                    val baseUrl = "${call.request.origin.scheme}://${call.request.origin.serverHost}"
-                                    val finalBaseUrl = if (call.request.origin.serverPort != 80 && call.request.origin.serverPort != 443) {
-                                        "$baseUrl:${call.request.origin.serverPort}"
-                                    } else {
-                                        baseUrl
-                                    }
+                        if (!secretKey.isNullOrBlank()) {
+                            try {
+                                // MIGRADO: De CheckoutSession para PaymentIntent (Embedded Checkout)
+                                val clientSecret = stripeService.createPaymentIntent(
+                                    order = order.copy(id = generatedId),
+                                    secretKey = secretKey,
+                                    connectedAccountId = store.stripeAccountId
+                                )
 
-                                    // IMPORTANTE: Passar o pedido com o ID gerado para a Stripe
-                                    val checkoutUrl = stripeService.createCheckoutSession(
-                                        order = order.copy(id = generatedId),
-                                        secretKey = secretKey,
-                                        successUrl = "$finalBaseUrl/?orderId=$generatedId&status=success",
-                                        cancelUrl = "$finalBaseUrl/?status=cancel",
-                                        connectedAccountId = store.stripeAccountId
+                                call.respond(
+                                    HttpStatusCode.Created,
+                                    OrderResponse(
+                                        orderId = generatedId,
+                                        stripeClientSecret = clientSecret,
+                                        stripePublishableKey = store.stripePublicKey // Lojista deve fornecer para o bridge
                                     )
-                                    println("STRIPE: Checkout URL gerada com sucesso!")
-                                    call.respond(HttpStatusCode.Created, OrderResponse(orderId = generatedId, checkoutUrl = checkoutUrl))
-                                } catch (e: com.stripe.exception.StripeException) {
-                                    val msg = "STRIPE ERROR: ${e.message}"
-                                    println(msg)
-                                    call.respond(HttpStatusCode.BadRequest, "Erro na Stripe: $msg. Verifique se o lojista completou o cadastro.")
-                                } catch (e: Exception) {
-                                    val msg = "STRIPE ERROR: ${e.message}"
-                                    println(msg)
-                                    e.printStackTrace()
-                                    call.respond(HttpStatusCode.InternalServerError, msg)
-                                }
-                            } else {
-                                val msg = "STRIPE ERROR: Chave secreta ausente para a loja ${order.storeId}"
-                                println(msg)
-                                call.respond(HttpStatusCode.BadRequest, msg)
+                                )
+                            } catch (e: Exception) {
+                                println("STRIPE ERROR: ${e.message}")
+                                call.respond(HttpStatusCode.InternalServerError, "Erro ao processar pagamento.")
                             }
                         } else {
-                            call.respond(HttpStatusCode.Created, OrderResponse(orderId = generatedId))
+                            call.respond(HttpStatusCode.BadRequest, "Configuração de pagamento incompleta.")
                         }
+                    } else {
+                        call.respond(HttpStatusCode.Created, OrderResponse(orderId = generatedId))
                     }
-                    .onFailure {
-                        val msg = "REPO ERROR: ${it.message}"
-                        println(msg)
-                        it.printStackTrace()
-                        call.respond(HttpStatusCode.InternalServerError, msg)
-                    }
-            } catch (e: Exception) {
-                val errorMsg = "DESERIALIZATION ERROR: ${e.message}"
-                println(errorMsg)
-                e.printStackTrace()
-                call.respond(HttpStatusCode.BadRequest, errorMsg)
+                }.onFailure {
+                    call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar pedido.")
+                }
+            } catch (_: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Dados inválidos.")
             }
         }
 
@@ -175,20 +143,12 @@ fun Route.orderRoutes(
     // 2. Rotas Administrativas (Apenas Lojista Logado)
     authenticate("firebase") {
         route("/orders") {
-            // GET: Lista todos os pedidos do lojista autenticado
             get {
-                val principal = call.principal<UserIdPrincipal>()
-                if (principal == null) {
-                    call.respond(HttpStatusCode.Unauthorized, "Usuário não autenticado")
-                    return@get
-                }
-
-                // Buscamos os pedidos usando o UID decodificado do Firebase
+                val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
                 val orders = orderRepository.getOrders(principal.name).first()
                 call.respond(orders)
             }
 
-            // PATCH: Atualizar status do pedido
             patch("/{orderId}/status") {
                 val principal = call.principal<UserIdPrincipal>() ?: return@patch call.respond(HttpStatusCode.Unauthorized)
                 val orderId = call.parameters["orderId"] ?: ""

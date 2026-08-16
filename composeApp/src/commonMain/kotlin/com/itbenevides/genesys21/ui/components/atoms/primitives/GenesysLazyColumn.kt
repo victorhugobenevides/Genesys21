@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun <T> GenesysLazyColumn(
@@ -15,7 +16,7 @@ fun <T> GenesysLazyColumn(
     modifier: Modifier = Modifier,
     maxWidth: Dp? = null,
     usePadding: Boolean = true,
-    spacing: GenesysSpacing = GenesysSpacing.Medium,
+    spacing: Dp = GenesysTheme.spacing.m,
     content: @Composable (T) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -28,7 +29,7 @@ fun <T> GenesysLazyColumn(
         LazyColumn(
             modifier = columnModifier,
             contentPadding = PaddingValues(vertical = GenesysDimens.SpacingMedium),
-            verticalArrangement = Arrangement.spacedBy(spacing.value),
+            verticalArrangement = Arrangement.spacedBy(spacing),
         ) {
             items(items) { item ->
                 content(item)

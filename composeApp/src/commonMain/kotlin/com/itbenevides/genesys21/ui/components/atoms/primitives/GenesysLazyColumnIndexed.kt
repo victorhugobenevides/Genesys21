@@ -10,13 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 @Composable
 fun <T> GenesysLazyColumnIndexed(
     items: List<T>,
     modifier: Modifier = Modifier,
     maxWidth: Dp? = null,
-    spacing: GenesysSpacing = GenesysSpacing.Medium,
+    spacing: Dp = GenesysTheme.spacing.m,
     usePadding: Boolean = true,
     key: ((Int, T) -> Any)? = null,
     itemModifier: LazyItemScope.(Int, T) -> Modifier = { _, _ -> Modifier },
@@ -36,7 +37,7 @@ fun <T> GenesysLazyColumnIndexed(
                 } else {
                     PaddingValues(0.dp)
                 },
-            verticalArrangement = Arrangement.spacedBy(if (usePadding) spacing.value else 0.dp),
+            verticalArrangement = Arrangement.spacedBy(if (usePadding) spacing else 0.dp),
         ) {
             itemsIndexed(
                 items = items,

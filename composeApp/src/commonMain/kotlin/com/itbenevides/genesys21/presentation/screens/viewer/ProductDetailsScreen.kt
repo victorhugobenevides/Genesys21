@@ -34,7 +34,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -196,13 +195,13 @@ fun ProductDetailsContent(
                     }
                 }
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 GenesysColumn(maxWidth = 600.dp, usePadding = true) {
                     ProductInfoSection(state, buttonScale, onEvent)
                 }
 
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
     }
@@ -329,7 +328,7 @@ private fun ProductInfoSection(
         fontWeight = GenesysFontWeight.ExtraBold,
     )
 
-    GenesysSpacer(GenesysSpacing.Small)
+    GenesysSpacer(GenesysTheme.spacing.s)
 
     val priceFormatted = (state.product.price * 100.0).roundToLong() / 100.0
     GenesysText(
@@ -339,27 +338,27 @@ private fun ProductInfoSection(
         color = GenesysTheme.colors.brand,
     )
 
-    GenesysSpacer(GenesysSpacing.Medium)
+    GenesysSpacer(GenesysTheme.spacing.m)
 
     GenesysStockBadge(stock = state.product.stock)
 
-    GenesysSpacer(GenesysSpacing.ExtraLarge)
+    GenesysSpacer(GenesysTheme.spacing.xl)
     GenesysDivider()
-    GenesysSpacer(GenesysSpacing.Large)
+    GenesysSpacer(GenesysTheme.spacing.l)
 
     GenesysText(
         text = GenesysStrings.Description,
         style = GenesysTextStyle.Label,
         fontWeight = GenesysFontWeight.Bold,
     )
-    GenesysSpacer(GenesysSpacing.Small)
+    GenesysSpacer(GenesysTheme.spacing.s)
 
     GenesysText(
         text = state.product.description?.ifBlank { GenesysStrings.ProductDescriptionFallback } ?: GenesysStrings.ProductDescriptionFallback,
         style = GenesysTextStyle.Body,
     )
 
-    GenesysSpacer(GenesysSpacing.ExtraLarge)
+    GenesysSpacer(GenesysTheme.spacing.xl)
 
     GenesysLoadingButton(
         text = GenesysStrings.AddToCartAction,
@@ -371,7 +370,7 @@ private fun ProductInfoSection(
         fillWidth = true,
     )
 
-    GenesysSpacer(GenesysSpacing.Medium)
+    GenesysSpacer(GenesysTheme.spacing.m)
 
     GenesysTextButton(
         text = "Falar com o Vendedor",

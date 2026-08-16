@@ -9,16 +9,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
@@ -40,8 +42,8 @@ fun MerchantAgendaTabUI(
 ) {
     val appointments by viewModel.appointments.collectAsState()
     val upcomingAppointments by viewModel.upcomingAppointments.collectAsState()
-    val pages by viewModel.pages.collectAsState()
-    val storeId = pages.firstOrNull()?.storeId ?: "admin"
+    val userProfile by viewModel.userProfile.collectAsState()
+    val storeId = userProfile?.id ?: "admin"
     val availability by viewModel.availability.collectAsState()
 
     var agendaViewMode by remember { mutableStateOf(0) } // 0: Vista Diária, 1: Todos, 2: Disponibilidade
@@ -49,7 +51,6 @@ fun MerchantAgendaTabUI(
     val today = remember { kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
     val selectedDate = state.selectedDate ?: today
 
-    var showAvailabilityDialog by remember { mutableStateOf(false) }
     var selectedAppointmentForEdit by remember { mutableStateOf<Appointment?>(null) }
 
     LaunchedEffect(selectedDate, storeId, agendaViewMode) {
@@ -61,27 +62,23 @@ fun MerchantAgendaTabUI(
     }
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                GenesysText(text = "Gestão de Agenda", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.Bold)
+                GenesysText(text = "Gestão de Agenda", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
                 GenesysText(
                     text = "Acompanhe e configure seus atendimentos.",
                     style = GenesysTextStyle.Body,
                     color = GenesysTheme.colors.onSurfaceVariant,
                 )
             }
-            GenesysIconButton(
-                icon = GenesysIcons.Settings,
-                onClick = { showAvailabilityDialog = true }
-            )
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         // Seletor de Visualização
         GenesysTabRow(
@@ -94,7 +91,7 @@ fun MerchantAgendaTabUI(
             onTabSelected = { agendaViewMode = it }
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         when (agendaViewMode) {
             0 -> {
@@ -158,7 +155,7 @@ private fun EditAppointmentDialog(
         dismissButton = {
             if (appointment.status != BookingStatus.CANCELLED) {
                 GenesysLoadingButton(
-                    text = "Cancelar", // Encurtei para caber melhor no mobile
+                    text = "Cancelar Agendamento",
                     containerColor = GenesysTheme.colors.error,
                     fillWidth = true,
                     onClick = onCancel
@@ -170,7 +167,7 @@ private fun EditAppointmentDialog(
             GenesysText(text = "Cliente: ${appointment.customerName}", fontWeight = GenesysFontWeight.Bold)
             GenesysText(text = "Telefone: ${appointment.customerPhone}", style = GenesysTextStyle.Label)
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             // Status Selector
             GenesysText(text = "Status Atual", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
@@ -187,24 +184,24 @@ private fun EditAppointmentDialog(
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
             GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             // Timeline of Notes
             GenesysText(text = "Notas e Histórico", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
 
             if (currentNotes.isEmpty()) {
                 GenesysText(text = "Nenhuma nota adicionada.", style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
             } else {
                 currentNotes.forEach { note ->
                     NoteItem(note)
-                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysSpacer(GenesysTheme.spacing.s)
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             // Add New Note Area
             Box(
@@ -214,18 +211,18 @@ private fun EditAppointmentDialog(
                     .padding(12.dp)
             ) {
                 Column {
-                    OutlinedTextField(
+                    GenesysTextField(
                         value = newNoteContent,
                         onValueChange = { newNoteContent = it },
-                        label = { Text("Nova nota...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 2
+                        label = "Nova nota...",
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = isPrivateNote, onCheckedChange = { isPrivateNote = it })
                         Text("Nota Interna (Privada)", style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.weight(1f))
-                        TextButton(
+                        GenesysTextButton(
+                            text = "Adicionar",
                             enabled = newNoteContent.isNotBlank(),
                             onClick = {
                                 val note = BookingNote(
@@ -238,9 +235,7 @@ private fun EditAppointmentDialog(
                                 currentNotes = currentNotes + note
                                 newNoteContent = ""
                             }
-                        ) {
-                            Text("Adicionar")
-                        }
+                        )
                     }
                 }
             }
@@ -264,7 +259,7 @@ private fun NoteItem(note: BookingNote) {
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(note.authorName, style = MaterialTheme.typography.labelSmall, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(note.authorName, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
             Text(dateStr, style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.onSurfaceVariant)
         }
         Text(note.content, style = MaterialTheme.typography.bodySmall)
@@ -284,14 +279,14 @@ private fun DailyAgendaView(
 ) {
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         GenesysColumn(usePadding = true) {
-            com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker(
+            GenesysDatePicker(
                 selectedDate = selectedDate,
                 onDateSelected = { onEvent(PageListEvent.OnDateSelected(it)) },
             )
         }
     }
 
-    GenesysSpacer(GenesysSpacing.Large)
+    GenesysSpacer(GenesysTheme.spacing.l)
 
     GenesysText(
         text = "Agenda para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}/${selectedDate.year}",
@@ -300,7 +295,7 @@ private fun DailyAgendaView(
         color = GenesysTheme.colors.brand,
     )
 
-    GenesysSpacer(GenesysSpacing.Medium)
+    GenesysSpacer(GenesysTheme.spacing.m)
 
     if (appointments.isEmpty() && !state.isLoading) {
         GenesysEmptyState(
@@ -314,7 +309,7 @@ private fun DailyAgendaView(
                 appointment = appointment,
                 onClick = { onEdit(appointment) }
             )
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
         }
     }
 }
@@ -351,9 +346,9 @@ private fun UpcomingAgendaView(
                     appointment = appointment,
                     onClick = { onEdit(appointment) }
                 )
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
             }
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
         }
     }
 }
@@ -367,7 +362,7 @@ private fun AvailabilityManagementView(
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = "Defina os dias e intervalos de horário que você atende.", style = GenesysTextStyle.Body)
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         val days = listOf("Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo")
 
@@ -383,7 +378,7 @@ private fun AvailabilityManagementView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(day, style = MaterialTheme.typography.bodyLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                        Text(day, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         Switch(
                             checked = !dayConfig.isClosed,
                             onCheckedChange = { isOpen ->
@@ -405,10 +400,10 @@ private fun AvailabilityManagementView(
                     }
 
                     if (!dayConfig.isClosed) {
-                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysSpacer(GenesysTheme.spacing.s)
                         dayConfig.slots.forEachIndexed { slotIndex, slot ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                OutlinedTextField(
+                                GenesysTextField(
                                     value = slot.startTime,
                                     onValueChange = { newTime ->
                                         val newSlots = dayConfig.slots.toMutableList()
@@ -418,12 +413,12 @@ private fun AvailabilityManagementView(
                                         newList.add(dayConfig.copy(slots = newSlots))
                                         availabilityState = availabilityState.copy(weeklyConfig = newList)
                                     },
-                                    label = { Text("Início") },
+                                    label = "Início",
                                     modifier = Modifier.weight(1f),
-                                    placeholder = { Text("08:00") }
+                                    placeholder = "08:00"
                                 )
-                                GenesysSpacer(GenesysSpacing.Small)
-                                OutlinedTextField(
+                                GenesysSpacer(GenesysTheme.spacing.s)
+                                GenesysTextField(
                                     value = slot.endTime,
                                     onValueChange = { newTime ->
                                         val newSlots = dayConfig.slots.toMutableList()
@@ -433,9 +428,9 @@ private fun AvailabilityManagementView(
                                         newList.add(dayConfig.copy(slots = newSlots))
                                         availabilityState = availabilityState.copy(weeklyConfig = newList)
                                     },
-                                    label = { Text("Fim") },
+                                    label = "Fim",
                                     modifier = Modifier.weight(1f),
-                                    placeholder = { Text("18:00") }
+                                    placeholder = "18:00"
                                 )
                             }
                         }
@@ -444,7 +439,7 @@ private fun AvailabilityManagementView(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
             text = "Salvar Alterações de Horário",
             onClick = { onSave(availabilityState) },
@@ -469,7 +464,7 @@ private fun AppointmentCard(
             GenesysColumn(usePadding = false, modifier = Modifier.width(60.dp)) {
                 GenesysText(text = timeStr, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand)
             }
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
             GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
                 GenesysText(text = appointment.customerName, fontWeight = GenesysFontWeight.Bold)
                 GenesysText(text = "Serviço ID: ${appointment.serviceId}", style = GenesysTextStyle.Label)

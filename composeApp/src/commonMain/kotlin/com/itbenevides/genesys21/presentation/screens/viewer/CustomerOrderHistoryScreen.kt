@@ -27,7 +27,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -116,7 +115,7 @@ fun CustomerOrderHistoryScreen(
 
                     if (orders.isNotEmpty()) {
                         item {
-                            GenesysSpacer(GenesysSpacing.Large)
+                            GenesysSpacer(GenesysTheme.spacing.l)
                             GenesysText(
                                 text = "Seus Pedidos",
                                 style = GenesysTextStyle.Title,
@@ -177,14 +176,14 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
 
             // Link de Reunião (Apenas se disponível)
             appointment.meetingLink?.let { link ->
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysCard(
                     backgroundColor = GenesysTheme.colors.accent.copy(alpha = 0.1f),
                     onClick = { uriHandler.openUri(link) }
                 ) {
                     GenesysRow(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.Language, null, tint = GenesysTheme.colors.accent)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
                             GenesysText(text = "Link da Reunião", fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.accent)
                             GenesysText(text = "Clique para acessar a sala", style = GenesysTextStyle.Label)
@@ -197,9 +196,9 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
             // Show public notes
             val publicNotes = appointment.notes.filter { !it.isPrivate }
             if (publicNotes.isNotEmpty()) {
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 GenesysDivider()
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 publicNotes.forEach { note ->
                     GenesysText(
                         text = "${note.authorName}: ${note.content}",
@@ -247,9 +246,9 @@ private fun HistoryOrderCard(
                 GenesysStatusBadge(order.status)
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
             GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             GenesysRow(verticalAlignment = Alignment.Bottom) {
                 GenesysWeightBox(1f) {

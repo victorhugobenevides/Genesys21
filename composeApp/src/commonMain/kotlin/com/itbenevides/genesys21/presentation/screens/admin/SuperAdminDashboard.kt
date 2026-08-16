@@ -12,14 +12,12 @@ import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.domain.model.UserProfile
 import com.itbenevides.genesys21.domain.model.UserPermission
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
@@ -45,22 +43,22 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
     }
 
     GenesysColumn(usePadding = true, modifier = Modifier.fillMaxWidth()) {
-        GenesysText(text = "Painel SuperAdmin", style = GenesysTextStyle.Headline)
-        GenesysText(text = "Gerencie permissões de acesso ao sistema", style = GenesysTextStyle.Body)
+        GenesysText(text = "Painel SuperAdmin", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
+        GenesysText(text = "Gerencie permissões de acesso ao sistema", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         if (isLoading && users.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = GenesysTheme.colors.brand)
             }
         } else if (localError != null && users.isEmpty()) {
             Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(GenesysIcons.Feedback, null, tint = GenesysTheme.colors.error, modifier = Modifier.size(48.dp))
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysSpacer(GenesysTheme.spacing.m)
                     GenesysText(text = localError ?: "Erro ao carregar usuários", style = GenesysTextStyle.Error)
-                    GenesysSpacer(GenesysSpacing.Large)
+                    GenesysSpacer(GenesysTheme.spacing.l)
                     GenesysLoadingButton(text = "Tentar Novamente", onClick = {
                         localError = null
                         viewModel.loadAllUsers()
@@ -72,7 +70,7 @@ fun SuperAdminDashboard(viewModel: PageViewModel) {
                 GenesysText(text = "Nenhum usuário encontrado.", style = GenesysTextStyle.Body)
             }
         } else {
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s)) {
                 users.forEach { user ->
                     UserAdminCard(
                         user = user,
@@ -103,7 +101,7 @@ fun UserAdminCard(
         Column(modifier = Modifier.padding(16.dp)) {
             if (isCompact) {
                 UserInfoSection(user)
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 UserActionsSection(user, onRoleChange, modifier = Modifier.fillMaxWidth())
             } else {
                 Row(
@@ -116,12 +114,12 @@ fun UserAdminCard(
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
-            HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.5f))
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
+            GenesysDivider()
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             GenesysText(text = "Permissões Granulares:", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
 
             // Grid de Permissões
             FlowRow(
@@ -151,20 +149,27 @@ fun UserAdminCard(
 @Composable
 private fun PermissionCheckbox(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
-        Text(text = label, style = MaterialTheme.typography.bodySmall)
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = CheckboxDefaults.colors(
+                checkedColor = GenesysTheme.colors.brand,
+                uncheckedColor = GenesysTheme.colors.outline
+            )
+        )
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = GenesysTheme.colors.onSurface)
     }
 }
 
 @Composable
 private fun UserInfoSection(user: UserProfile, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        GenesysText(text = user.name, style = GenesysTextStyle.Title)
-        GenesysText(text = user.email, style = GenesysTextStyle.Label)
-        GenesysSpacer(GenesysSpacing.Small)
-        GenesysRow(verticalAlignment = Alignment.CenterVertically) {
+        GenesysText(text = user.name, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+        GenesysText(text = user.email, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
+        GenesysSpacer(GenesysTheme.spacing.s)
+        GenesysRow(verticalAlignment = Alignment.CenterVertically, usePadding = false) {
             GenesysText(text = "Cargo: ", style = GenesysTextStyle.Label)
-            GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand)
+            GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand, fontWeight = GenesysFontWeight.Bold)
         }
     }
 }
@@ -177,13 +182,18 @@ private fun UserActionsSection(
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
         if (user.role == UserRole.CUSTOMER) {
-            Button(onClick = { onRoleChange(UserRole.MERCHANT) }, modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier) {
-                Text("Tornar Merchant")
-            }
+            GenesysLoadingButton(
+                text = "Tornar Merchant",
+                onClick = { onRoleChange(UserRole.MERCHANT) },
+                fillWidth = modifier != Modifier
+            )
         } else if (user.role == UserRole.MERCHANT) {
-            OutlinedButton(onClick = { onRoleChange(UserRole.CUSTOMER) }, modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier) {
-                Text("Remover Acesso")
-            }
+            GenesysTextButton(
+                text = "Remover Acesso",
+                onClick = { onRoleChange(UserRole.CUSTOMER) },
+                color = GenesysTheme.colors.error,
+                modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier
+            )
         }
     }
 }

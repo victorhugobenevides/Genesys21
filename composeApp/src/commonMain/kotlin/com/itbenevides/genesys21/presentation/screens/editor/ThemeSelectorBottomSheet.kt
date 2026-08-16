@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
@@ -50,7 +49,7 @@ fun ThemeSelectorBottomSheet(
                     )
                 }
             }
-            GenesysSpacer(GenesysSpacing.ExtraLarge)
+            GenesysSpacer(GenesysTheme.spacing.xl)
         }
     }
 }
@@ -95,7 +94,7 @@ private fun ThemeOptionItem(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
 
         GenesysText(
             text = theme.name,

@@ -18,7 +18,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysRowText
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -86,7 +85,7 @@ fun CategoryManagementDialog(
                     }
                 }
 
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
 
                 GenesysIconButton(
                     icon = if (editingCategory != null) GenesysIcons.Check else GenesysIcons.Add,
@@ -104,7 +103,7 @@ fun CategoryManagementDialog(
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
 
             GenesysText(
                 text = "Categorias Salvas",
@@ -113,9 +112,9 @@ fun CategoryManagementDialog(
                 color = GenesysTheme.colors.brand,
             )
 
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
             GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
 
             if (categories.isEmpty()) {
                 Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {

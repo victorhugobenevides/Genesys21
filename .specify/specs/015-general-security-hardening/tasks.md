@@ -9,20 +9,20 @@
 
 ## Phase 2: Database & Multi-tenancy Hardening
 - [x] Enforce `ownerId` checks in all `SqlitePageRepository` write operations (Categories, Products). <!-- id: 14 -->
-- [ ] Integrate `AuditLogsTable` into critical repository operations (Role updates, Page deletions). <!-- id: 15 -->
-- [ ] Transition from sequential integer IDs to UUIDs for `PageComponents` (Spec 011 alignment). <!-- id: 16 -->
+- [x] Integrate `AuditLogsTable` into critical repository operations (Role updates, Page deletions). <!-- id: 15 -->
+- [x] Transition from sequential integer IDs to UUIDs for `PageComponents` (Spec 011 alignment). <!-- id: 16 -->
 
-## Phase 2: App-Side (Compose)
+## Phase 3: App-Side (Compose)
 - [ ] Implement `SecureStorage` interface with platform-specific implementations. <!-- id: 4 -->
 - [ ] Migrate `AuthRepository` token storage to `SecureStorage`. <!-- id: 5 -->
-- [ ] Add R8/ProGuard rules for `composeApp` production build. <!-- id: 6 -->
-- [ ] Implement `VisualTransformation` for all sensitive inputs. <!-- id: 7 -->
+- [x] Add R8/ProGuard rules for `composeApp` production build. <!-- id: 6 -->
+- [x] Implement `VisualTransformation` for all sensitive inputs (Login/Password). <!-- id: 7 -->
 
-## Phase 3: Infrastructure & Quality
+## Phase 4: Infrastructure & Quality
 - [ ] Add a `check-secrets` script to the pipeline to scan for hardcoded keys. <!-- id: 8 -->
 - [ ] Setup Dependabot in the GitHub repository. <!-- id: 9 -->
-- [ ] Implement user data export/deletion endpoints (Compliance). <!-- id: 10 -->
+- [x] Implement user data export/deletion endpoints (Compliance LGPD). <!-- id: 10 -->
 
-## Phase 4: Audit & Logging
-- [ ] Create a centralized `AuditLogger` in the server. <!-- id: 11 -->
-- [ ] Connect `AuditLogger` to sensitive operations (Role changes, Store deletion). <!-- id: 12 -->
+## Phase 5: Audit & Logging
+- [x] Create a centralized `AuditLogger` in the server. <!-- id: 11 -->
+- [x] Connect `AuditLogger` to sensitive operations (Role changes, Store deletion, Order cancellation). <!-- id: 12 -->

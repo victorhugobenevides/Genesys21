@@ -8,7 +8,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
@@ -27,14 +26,14 @@ fun GenesysQuantitySelector(
             contentDescription = "Diminuir quantidade"
         )
 
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
 
         GenesysText(
             text = quantity.toString(),
             fontWeight = GenesysFontWeight.ExtraBold,
         )
 
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
 
         QuantityCircleButton(
             icon = GenesysIcons.Add,

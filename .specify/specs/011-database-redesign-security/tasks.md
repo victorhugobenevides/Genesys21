@@ -7,3 +7,4 @@
 - [x] T005 Implement Soft Deletes (`deleted_at`) for Pages and critical entities
 - [x] T006 Ensure Ktor server handles multi-tenancy validation in repositories
 - [x] T007 Refactor `shared` models to match the new normalized schema
+- [x] T008 Implement LGPD Account Deletion with cascading deletes

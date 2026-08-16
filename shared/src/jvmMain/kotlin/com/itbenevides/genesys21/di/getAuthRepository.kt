@@ -34,4 +34,6 @@ actual fun getAuthRepository(): AuthRepository =
         override fun initializeOneTap() {}
 
         override suspend fun signOut() {}
+
+        override suspend fun deleteUser(): Result<Unit> = Result.failure(Exception("Not implemented on JVM"))
     }

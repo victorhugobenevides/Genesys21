@@ -1,34 +1,41 @@
-# Plano de Implementação - Correção de Login e Infraestrutura Web
+# Plan: Cart Management Consolidation (Spec 003)
 
-Este plano visa resolver a falha no login do Google, ativar o One Tap e corrigir problemas de carregamento e CORS no ambiente Web (WASM).
+Este plano visa finalizar a gestão de carrinho multi-plataforma, garantindo persistência local no Android, sincronização reativa e um fluxo de merge impecável entre visitantes (guest) e usuários logados.
 
-## Problemas Identificados
-1.  **Race Condition no Carregamento**: O script `firebase-bridge.js` está como `type="module"`, o que o torna assíncrono. O app (`composeApp.js`) tenta chamar as funções do Firebase antes delas serem carregadas, fazendo com que o One Tap e o Login Google falhem.
-2.  **Erro de Interpolação**: No Kotlin/Wasm, uma string de log estava com escape incorreto (`\${e.message}`), impedindo a visualização da causa real do erro no console.
-3.  **CORS e COOP**: O navegador bloqueia popups de login se os cabeçalhos de segurança não estiverem perfeitamente alinhados entre o Nginx e a aplicação.
-4.  **Feedback de Erro no Login**: Erros de autenticação não estão sendo repassados para o Snackbar global.
+## User Review Required
 
-## Mudanças Propostas
+> [!NOTE]
+> A sincronização com o servidor exige que o backend suporte o header `X-Cart-Session-Id` para usuários não logados. Já verifiquei que o `KtorCartRepository` e o `cartRoutes` no servidor tratam isso.
 
-### 1. Infraestrutura Web (CircleCI)
-#### [MODIFY] [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
-- **`index.html`**: Remover `type="module"` do `firebase-bridge.js`. Adicionar `defer` para garantir ordem de execução.
-- **`nginx.conf`**:
-    - Ativar o uso do `$cors_origin` mapeado para evitar cabeçalhos duplicados.
-    - Garantir `Cross-Origin-Opener-Policy: same-origin-allow-popups` em todos os blocos.
-    - Adicionar `Cross-Origin-Embedder-Policy: unsafe-none` para facilitar carregamento de recursos externos como o `ui-avatars`.
+## Proposed Changes
 
-### 2. Correções de Código (WASM)
-#### [MODIFY] [GoogleSignInButton.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/wasmJsMain/kotlin/com/itbenevides/genesys21/presentation/components/auth/GoogleSignInButton.kt)
-- Corrigir `println` para mostrar a mensagem de erro real.
+### [Shared - Data Layer]
+#### [MODIFY] [AndroidCartRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/androidMain/kotlin/com/itbenevides/genesys21/data/repository/AndroidCartRepository.kt)
+- Verificar se a implementação do DataStore está correta e se o `loadInitialCart` do `BaseCartRepository` está sendo chamado.
 
+#### [MODIFY] [BaseCartRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/data/repository/BaseCartRepository.kt)
+- Melhorar a lógica de `mergeWithServer` para garantir que duplicatas de produtos sejam somadas e serviços sejam preservados com seus agendamentos.
+
+### [UI Layer - Presentation]
 #### [MODIFY] [PageViewModel.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/PageViewModel.kt)
-- Garantir que o `onError` do `signInWithToken` chame o `handleError`, disparando o Snackbar.
+- Garantir que `loadInitialCart()` seja disparado no `init`.
+- Chamar `mergeWithServer()` imediatamente após o sucesso do login.
 
-## Plano de Verificação
+#### [MODIFY] [CartScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/CartScreen.kt)
+- Integrar o `GenesysQuantitySelector` de forma definitiva nas linhas de produtos.
+- Adicionar feedback visual (Snackbar) ao falhar na sincronização.
 
-### Verificação Manual
-1.  Acessar `https://victorbenevides.dev` em aba anônima.
-2.  Verificar se o log `BRIDGE: Funções carregadas...` aparece no console ANTES do app iniciar.
-3.  Testar o botão "Entrar com Google" e validar se o popup abre e fecha com sucesso.
-4.  Confirmar que o balão do One Tap aparece.
+### [Technical Specs]
+#### [MODIFY] [tasks.md](file:///Users/victorben/AndroidStudioProjects/genesys21/.specify/specs/003-cart-management/tasks.md)
+- Marcar as tarefas concluídas.
+
+## Verification Plan
+
+### Automated Tests
+- Executar `:shared:test` focando no `CartRepositoryTest`.
+- Criar um novo teste unitário para o cenário de merge: Local (Product A x 2) + Server (Product A x 1) = Local (Product A x 3).
+
+### Manual Verification
+- **Web (Wasm)**: Adicionar item como visitante, atualizar a página e verificar se o carrinho persiste.
+- **Login Flow**: Adicionar item como visitante, fazer login com Google e verificar se o item antigo foi "trazido" para a conta.
+- **Android**: Validar a persistência via DataStore entre reinicializações do app.

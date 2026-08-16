@@ -21,15 +21,7 @@ import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysTimeChip
 import com.itbenevides.genesys21.ui.components.atoms.images.*
 import com.itbenevides.genesys21.ui.components.atoms.indicators.*
 import com.itbenevides.genesys21.ui.components.atoms.inputs.*
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysLazyColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
@@ -45,11 +37,14 @@ import com.itbenevides.genesys21.ui.components.molecules.layout.GenesysSectionHe
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysPagerIndicator
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabData
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabRow
+import com.itbenevides.genesys21.ui.components.molecules.payment.ValuedActionComponent
 import com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysConfirmDialog
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
+import com.itbenevides.genesys21.ui.components.organisms.input.GenesysPhotoPicker
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
+import com.itbenevides.genesys21.ui.components.organisms.payment.StripePaymentElement
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
@@ -85,6 +80,7 @@ fun DesignSystemShowcaseScreen(
             GenesysTabData("Display", GenesysIcons.GridView),
             GenesysTabData("Feedback", GenesysIcons.Feedback),
             GenesysTabData("Booking", GenesysIcons.Schedule),
+            GenesysTabData("Payments", GenesysIcons.Payments),
             GenesysTabData("Quality", GenesysIcons.Check),
             GenesysTabData("Tools", GenesysIcons.Settings),
         )
@@ -149,8 +145,9 @@ fun DesignSystemShowcaseScreen(
                     5 -> DisplayShowcase()
                     6 -> FeedbackShowcase()
                     7 -> BookingShowcase()
-                    8 -> QualityShowcase()
-                    9 -> ToolsShowcase(onOpenEditorShowcase, onOpenTemplateShowcase)
+                    8 -> PaymentsShowcase()
+                    9 -> QualityShowcase()
+                    10 -> ToolsShowcase(onOpenEditorShowcase, onOpenTemplateShowcase)
                 }
 
                 Spacer(Modifier.height(64.dp))
@@ -471,6 +468,8 @@ private fun InputsShowcase() {
             GenesysFilterChip(label = "Selected Chip", selected = true, onClick = {}, badgeCount = 5)
             GenesysFilterChip(label = "Standard Chip", selected = false, onClick = {})
         }
+        Spacer(Modifier.height(16.dp))
+        GenesysStatusPicker(currentStatus = OrderStatus.PENDING, onStatusSelected = {})
         Spacer(Modifier.height(24.dp))
         var sliderVal by remember { mutableStateOf(16f) }
         GenesysSlider(
@@ -481,6 +480,12 @@ private fun InputsShowcase() {
         )
         Spacer(Modifier.height(24.dp))
         GenesysQuantitySelector(quantity = 2, onIncrease = {}, onDecrease = {})
+    }
+
+    ShowcaseSection("Advanced Input Tools", "Photography and Search components.") {
+        GenesysSearchBar(query = "", onQueryChange = {}, placeholder = "Search anything...")
+        Spacer(Modifier.height(16.dp))
+        GenesysPhotoPicker(urls = emptyList(), onAddClick = {}, onRemoveClick = {})
     }
 
     ShowcaseSection("Specialized Inputs", "Specific data type selectors.") {
@@ -627,6 +632,18 @@ private fun FeedbackShowcase() {
         }
     }
 
+    ShowcaseSection("Loading & AI Feedback", "Progress indicators and pulsing animations.") {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            GenesysLoadingIndicator()
+            GenesysAiPulseIndicator()
+            Box(Modifier.size(48.dp).background(GenesysTheme.colors.brandContainer, CircleShape)) {
+                GenesysLoadingIndicator(modifier = Modifier.align(Alignment.Center), strokeWidth = 2.dp)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        GenesysText(text = "Full-screen overlays are also available via GenesysLoadingOverlay().", style = GenesysTextStyle.Label)
+    }
+
     ShowcaseSection("States & Timelines", "Feedback on progress and empty states.") {
         GenesysTrackingTimeline(currentStatus = OrderStatus.PROCESSING)
         Spacer(Modifier.height(24.dp))
@@ -661,6 +678,43 @@ private fun BookingShowcase() {
         )
         Spacer(Modifier.height(24.dp))
         ServiceCard(service = sampleService, onClick = {})
+    }
+}
+
+@Composable
+private fun PaymentsShowcase() {
+    ShowcaseSection("Embedded Checkout", "Stripe Payment Element integration (Wasm Interop).") {
+        GenesysCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                GenesysText(text = "Payment Form Preview", fontWeight = GenesysFontWeight.Bold)
+                GenesysSpacer(GenesysTheme.spacing.m)
+                // Placeholder simulando o Stripe Element que herda o tema
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f), MaterialTheme.shapes.medium),
+                    contentAlignment = Alignment.Center
+                ) {
+                    GenesysText(text = "Stripe Element Placeholder", color = GenesysTheme.colors.outline)
+                }
+                GenesysSpacer(GenesysTheme.spacing.m)
+                GenesysLoadingButton(text = "Pay Now", onClick = {}, fillWidth = true, icon = GenesysIcons.Payments)
+            }
+        }
+    }
+
+    ShowcaseSection("Valuation & Actions", "Interactive payment blocks for contributions.") {
+        ValuedActionComponent(
+            component = PageComponent.ValuedAction(
+                title = "Apoie nosso trabalho",
+                description = "Sua contribuição nos ajuda a manter a plataforma gratuita para pequenos produtores.",
+                buttonText = "Contribuir",
+                suggestedValues = listOf(10.0, 20.0, 50.0),
+                allowCustomValue = true
+            ),
+            onActionClick = { _, _ -> }
+        )
     }
 }
 

@@ -15,7 +15,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysRowText
@@ -42,7 +41,7 @@ fun ProductListComponentEditor(
 
     GenesysColumn(usePadding = false) {
         GenesysText(GenesysStrings.ManageProducts, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysTabRow(
             selectedTabIndex = selectedTab,
@@ -54,7 +53,7 @@ fun ProductListComponentEditor(
             onTabSelected = { selectedTab = it },
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         // Campo de busca para filtrar produtos nas abas
         GenesysTextField(
@@ -64,7 +63,7 @@ fun ProductListComponentEditor(
             icon = GenesysIcons.Search,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         if (selectedTab == 0) {
             // ABA 1: Produtos Atuais
@@ -116,7 +115,7 @@ fun ProductListComponentEditor(
                         }
                     }
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysLoadingButton(
                     text = GenesysStrings.AddNewProduct,
                     icon = GenesysIcons.Add,
@@ -154,9 +153,9 @@ fun ProductListComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysDivider()
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         GenesysTextField(
             value = customLabel,
@@ -166,7 +165,7 @@ fun ProductListComponentEditor(
             icon = GenesysIcons.Edit,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
             GenesysRowText(GenesysStrings.HorizontalListLabel, weightValue = 1f)
@@ -176,7 +175,7 @@ fun ProductListComponentEditor(
             )
         }
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysLoadingButton(text = GenesysStrings.SaveLabel, fillWidth = true, onClick = {
             onSaveLabel(customLabel, isHorizontal)

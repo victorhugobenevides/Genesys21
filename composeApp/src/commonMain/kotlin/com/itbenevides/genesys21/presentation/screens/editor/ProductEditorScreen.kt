@@ -18,7 +18,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -237,7 +236,7 @@ private fun PhotosSection(
             title = GenesysStrings.PhotosTitle,
             subtitle = "${state.imageUrls.size}/5",
         )
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
         val displayUrls =
             remember(state.imageUrls, backendUrl) {
                 state.imageUrls.map { if (it.startsWith("/") && !it.startsWith("http")) "$backendUrl$it" else it }
@@ -261,7 +260,7 @@ private fun DataFormSection(
     GenesysCard {
         GenesysColumn(usePadding = false) {
             GenesysText(text = GenesysStrings.ProductGeneralInfo, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             GenesysTextField(
                 value = state.name,
@@ -270,7 +269,7 @@ private fun DataFormSection(
                 icon = GenesysIcons.Inventory,
             )
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             GenesysRow {
                 GenesysWeightBox(1f) {
@@ -281,7 +280,7 @@ private fun DataFormSection(
                         icon = GenesysIcons.Payments,
                     )
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysWeightBox(1f) {
                     GenesysTextField(
                         value = state.stock,
@@ -292,7 +291,7 @@ private fun DataFormSection(
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             GenesysRow(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -306,7 +305,7 @@ private fun DataFormSection(
                         icon = GenesysIcons.Category,
                     )
                 }
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 GenesysIconButton(
                     icon = GenesysIcons.Settings,
                     onClick = onManageCategories,
@@ -314,7 +313,7 @@ private fun DataFormSection(
                 )
             }
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             GenesysTextField(
                 value = state.description,

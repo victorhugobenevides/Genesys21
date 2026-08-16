@@ -24,7 +24,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
@@ -53,7 +52,7 @@ fun GridComponentEditor(
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 GenesysText("Estrutura da Grade", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysTextField(
                     value = title,
@@ -63,7 +62,7 @@ fun GridComponentEditor(
                     icon = GenesysIcons.Edit
                 )
 
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(GenesysIcons.ViewModule, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(20.dp))
@@ -84,12 +83,12 @@ fun GridComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         // 2. GESTÃO VISUAL DAS CÉLULAS
         GenesysText("Células da Grade", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
         GenesysText("Cada célula pode conter múltiplos componentes.", style = GenesysTextStyle.Label, color = GenesysTheme.colors.outline)
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysColumn(
             usePadding = false,
@@ -138,7 +137,7 @@ fun GridComponentEditor(
                         }
                     }
                 )
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
             }
 
             OutlinedButton(
@@ -153,7 +152,7 @@ fun GridComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Huge)
+        GenesysSpacer(GenesysTheme.spacing.huge)
 
         GenesysLoadingButton(
             text = "Salvar Grade",
@@ -263,9 +262,9 @@ private fun CellItemCard(
                 GenesysIconButton(icon = GenesysIcons.Delete, onClick = onRemoveCell, tint = GenesysTheme.colors.error, modifier = Modifier.size(28.dp))
             }
 
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
             HorizontalDivider(modifier = Modifier.alpha(0.3f))
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
 
             if (gridItem.components.isEmpty()) {
                 Box(

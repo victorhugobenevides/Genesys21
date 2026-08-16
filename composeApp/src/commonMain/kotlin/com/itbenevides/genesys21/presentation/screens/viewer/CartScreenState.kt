@@ -19,6 +19,8 @@ data class CartScreenState(
     val selectedShippingOption: ShippingOption? = null,
     val isLoading: Boolean = false,
     val currentStep: Int = 1, // 1: Itens, 2: Identificação/Endereço, 3: Pagamento/Revisão
+    val stripeClientSecret: String? = null,
+    val stripePublishableKey: String? = null,
 ) {
     val isCheckoutEnabled: Boolean get() {
         val isPickup = selectedShippingOption?.id == "pickup"
@@ -62,4 +64,7 @@ sealed class CartScreenEvent {
     object OnCheckoutClicked : CartScreenEvent()
 
     object OnBackClicked : CartScreenEvent()
+
+    data class OnStripePaymentConfirmed(val orderId: String) : CartScreenEvent()
+    data class OnStripePaymentError(val message: String) : CartScreenEvent()
 }

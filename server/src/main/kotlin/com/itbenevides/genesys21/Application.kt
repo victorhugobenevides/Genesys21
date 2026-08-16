@@ -116,6 +116,15 @@ fun Application.module() {
         }
     }
 
+    install(RateLimit) {
+        register(RateLimitName("global")) {
+            rateLimiter(limit = 100, refillPeriod = 60.seconds)
+        }
+        register(RateLimitName("sensitive")) {
+            rateLimiter(limit = 5, refillPeriod = 60.seconds)
+        }
+    }
+
     install(Compression) {
         gzip { priority = 1.0 }
         deflate { priority = 10.0; minimumSize(1024) }
@@ -132,19 +141,32 @@ fun Application.module() {
         header("X-Frame-Options", "DENY")
         header("X-Content-Type-Options", "nosniff")
         header("X-XSS-Protection", "1; mode=block")
-        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com;")
+        header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com https://images.unsplash.com;")
     }
 
     install(CORS) {
-        allowHost("victorbenevides.dev", schemes = listOf("http", "https"))
-        allowHost("www.victorbenevides.dev", schemes = listOf("http", "https"))
-        allowHost("staging.victorbenevides.dev", schemes = listOf("http", "https"))
-        allowHost("radarani.site", schemes = listOf("http", "https"))
-        allowHost("www.radarani.site", schemes = listOf("http", "https"))
-        allowHost("localhost:8080"); allowHost("localhost:8081"); allowHost("localhost:3000"); allowHost("0.0.0.0:8080")
-        allowHeader(HttpHeaders.Authorization); allowHeader(HttpHeaders.ContentType); allowHeader(HttpHeaders.CacheControl)
-        allowHeader("X-Cart-Session-Id"); allowMethod(HttpMethod.Options); allowMethod(HttpMethod.Get); allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put); allowMethod(HttpMethod.Patch); allowMethod(HttpMethod.Delete); allowCredentials = true; maxAgeInSeconds = 3600
+        val allowedHosts = System.getenv("ALLOWED_HOSTS")?.split(",") ?: listOf(
+            "victorbenevides.dev", "www.victorbenevides.dev", "staging.victorbenevides.dev",
+            "radarani.site", "www.radarani.site", "localhost", "0.0.0.0"
+        )
+
+        allowedHosts.forEach { host ->
+            allowHost(host, schemes = listOf("http", "https"))
+        }
+
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.CacheControl)
+        allowHeader("X-Cart-Session-Id")
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+        allowCredentials = true
+        maxAgeInSeconds = 3600
     }
 
     install(Authentication) {
@@ -214,45 +236,50 @@ fun Application.module() {
         get("/") { call.respondText("API Online") }
 
         route("/api") {
-            userRoutes(userRepository)
-            adminRoutes(userRepository)
-            pageRoutes(pageRepository)
-            cartRoutes(cartRepository)
-            orderRoutes(orderRepository, storeRepository, stripeService)
-            categoryRoutes(pageRepository)
-            bookingRoutes(bookingRepository)
-            addressRoutes(addressRepository)
-            storeRoutes(storeRepository)
-            shippingRoutes(storeRepository)
-            connectRoutes(userRepository, storeRepository)
-            receiptRoutes(receiptParserService, receiptRepository, userRepository)
-            aiRoutes(pageAIGeneratorService)
+            rateLimitRoute(RateLimitName("global")) {
+                userRoutes(userRepository)
+                adminRoutes(userRepository)
+                pageRoutes(pageRepository)
+                cartRoutes(cartRepository)
+                orderRoutes(orderRepository, storeRepository, stripeService)
+                analyticsRoutes(orderRepository)
+                categoryRoutes(pageRepository)
+                bookingRoutes(bookingRepository)
+                addressRoutes(addressRepository)
+                storeRoutes(storeRepository)
+                shippingRoutes(storeRepository)
+                connectRoutes(userRepository, storeRepository)
+                receiptRoutes(receiptParserService, receiptRepository, userRepository)
+                aiRoutes(pageAIGeneratorService)
 
-            authenticate("firebase") {
-                post("/upload") {
-                    val multipart = call.receiveMultipart()
-                    var fileName = ""
-                    var fileBytes: ByteArray? = null
-                    multipart.forEachPart { part ->
-                        if (part is PartData.FileItem) {
-                            val contentType = part.contentType?.toString() ?: ""
-                            if (contentType.startsWith("image/")) {
-                                val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
-                                fileName = "${UUID.randomUUID()}.$ext"
-                                fileBytes = part.provider().toByteArray()
+                authenticate("firebase") {
+                    rateLimitRoute(RateLimitName("sensitive")) {
+                        post("/upload") {
+                            val multipart = call.receiveMultipart()
+                            var fileName = ""
+                            var fileBytes: ByteArray? = null
+                            multipart.forEachPart { part ->
+                                if (part is PartData.FileItem) {
+                                    val contentType = part.contentType?.toString() ?: ""
+                                    if (contentType.startsWith("image/")) {
+                                        val ext = part.originalFileName?.substringAfterLast(".") ?: "jpg"
+                                        fileName = "${UUID.randomUUID()}.$ext"
+                                        fileBytes = part.provider().toByteArray()
+                                    }
+                                }
+                                part.dispose()
                             }
+                            if (fileBytes != null) {
+                                val file = File(uploadDir, fileName)
+                                try {
+                                    val outputStream = ByteArrayOutputStream()
+                                    Thumbnails.of(ByteArrayInputStream(fileBytes)).size(1200, 1200).outputFormat("jpg").outputQuality(0.8).toOutputStream(outputStream)
+                                    file.writeBytes(outputStream.toByteArray())
+                                } catch (e: Exception) { file.writeBytes(fileBytes!!) }
+                                call.respondText("/uploads/$fileName")
+                            } else call.respond(HttpStatusCode.BadRequest)
                         }
-                        part.dispose()
                     }
-                    if (fileBytes != null) {
-                        val file = File(uploadDir, fileName)
-                        try {
-                            val outputStream = ByteArrayOutputStream()
-                            Thumbnails.of(ByteArrayInputStream(fileBytes)).size(1200, 1200).outputFormat("jpg").outputQuality(0.8).toOutputStream(outputStream)
-                            file.writeBytes(outputStream.toByteArray())
-                        } catch (e: Exception) { file.writeBytes(fileBytes!!) }
-                        call.respondText("/uploads/$fileName")
-                    } else call.respond(HttpStatusCode.BadRequest)
                 }
             }
         }

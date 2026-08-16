@@ -12,6 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScope
+import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -38,16 +41,9 @@ import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
@@ -59,10 +55,11 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
+import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
 import com.itbenevides.genesys21.domain.model.UserProfile
 import com.itbenevides.genesys21.domain.model.UserRole
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.downloadFile
@@ -128,7 +125,7 @@ fun PageListScreen(
             is PageListEvent.OnNewPageTitleChanged -> state = state.copy(newPageTitle = event.title)
             is PageListEvent.OnConfirmCreatePage -> {
                 val id = (1..8).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-                val storeId = "genesys-official-store"
+                val storeId = viewModel.userProfile.value?.id ?: "admin"
                 val newPage =
                     when (event.templateType) {
                         PageTemplateType.PREMIUM_STORE -> Page.createFromTemplate("premium_store", id, storeId, state.newPageTitle.trim())
@@ -243,6 +240,7 @@ fun PageListScreen(
         PageListContent(
             state = state,
             viewModel = viewModel,
+            router = router,
             isExpanded = isExpanded,
             selectedOrderIdForDetail = selectedOrderIdForDetail,
             onSelectOrderForDetail = { selectedOrderIdForDetail = it },
@@ -285,11 +283,12 @@ fun PageListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable
 private fun PageListContent(
     state: PageListState,
     viewModel: PageViewModel,
+    router: Router,
     isExpanded: Boolean,
     selectedOrderIdForDetail: String?,
     onSelectOrderForDetail: (String?) -> Unit,
@@ -314,29 +313,23 @@ private fun PageListContent(
     // Lista de abas permitidas
     val permittedTabs = remember(userProfile, state.pages) {
         val list = mutableListOf<PermittedTab>()
-        val perms = userProfile?.permissions ?: emptySet()
 
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_VITRINES) || (userProfile == null && state.pages.isNotEmpty())) {
-            list.add(PermittedTab(0, GenesysStrings.VitrineTab, GenesysIcons.Web))
-        }
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_ORDERS)) {
-            list.add(PermittedTab(1, GenesysStrings.OrdersTab, GenesysIcons.List, state.pendingOrdersCount))
-        }
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_AGENDA)) {
-            list.add(PermittedTab(2, "Agenda", GenesysIcons.Schedule))
-        }
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_SERVICES)) {
-            list.add(PermittedTab(3, "Serviços", GenesysIcons.Inventory))
-        }
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_RECEIPTS)) {
-            list.add(PermittedTab(4, "Notas", GenesysIcons.ReceiptLong))
-        }
-        if (isSuperAdmin || perms.contains(UserPermission.MANAGE_STORE)) {
-            list.add(PermittedTab(5, "Loja", GenesysIcons.Settings))
-        }
+        // Vitrines e Ferramentas ADM liberadas se logado
+        list.add(PermittedTab(0, "Painel", GenesysIcons.Analytics))
+        list.add(PermittedTab(1, GenesysStrings.VitrineTab, GenesysIcons.Web))
+        list.add(PermittedTab(2, GenesysStrings.OrdersTab, GenesysIcons.List, state.pendingOrdersCount))
+        list.add(PermittedTab(3, "Agenda", GenesysIcons.Schedule))
+        list.add(PermittedTab(4, "Serviços", GenesysIcons.Inventory))
+        list.add(PermittedTab(5, "Notas", GenesysIcons.ReceiptLong))
+        list.add(PermittedTab(6, "Loja", GenesysIcons.Settings))
+
         if (isSuperAdmin) {
-            list.add(PermittedTab(6, "SuperAdmin", GenesysIcons.AdminPanelSettings))
+            list.add(PermittedTab(7, "SuperAdmin", GenesysIcons.AdminPanelSettings))
         }
+
+        // Perfil sempre no menu para visibilidade
+        list.add(PermittedTab(8, "Perfil", GenesysIcons.Person))
+
         list
     }
 
@@ -346,6 +339,23 @@ private fun PageListContent(
             permittedTabs.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
         }
     }
+
+    val suiteItemColors = NavigationSuiteDefaults.itemColors(
+        navigationRailItemColors = NavigationRailItemDefaults.colors(
+            selectedIconColor = GenesysTheme.colors.brand,
+            unselectedIconColor = GenesysTheme.colors.onSurfaceVariant,
+            selectedTextColor = GenesysTheme.colors.brand,
+            unselectedTextColor = GenesysTheme.colors.onSurfaceVariant,
+            indicatorColor = GenesysTheme.colors.brandContainer.copy(alpha = 0.3f)
+        ),
+        navigationBarItemColors = NavigationBarItemDefaults.colors(
+            selectedIconColor = GenesysTheme.colors.brand,
+            unselectedIconColor = GenesysTheme.colors.onSurfaceVariant,
+            selectedTextColor = GenesysTheme.colors.brand,
+            unselectedTextColor = GenesysTheme.colors.onSurfaceVariant,
+            indicatorColor = GenesysTheme.colors.brandContainer.copy(alpha = 0.3f)
+        )
+    )
 
     GenesysPage(
         navigationSuiteItems = {
@@ -363,19 +373,17 @@ private fun PageListContent(
                         }
                     },
                     label = { Text(tab.label) },
-                    alwaysShowLabel = false
+                    alwaysShowLabel = false,
+                    colors = suiteItemColors
                 )
             }
         },
         topBar = {
-            GenesysTopAppBar(
+             GenesysTopAppBar(
                 title = GenesysStrings.AdminTitle,
                 onBack = null,
                 actions = {
-                    GenesysIconButton(icon = GenesysIcons.Person, contentDescription = "Perfil", onClick = onOpenProfile)
-                    GenesysIconButton(icon = GenesysIcons.ReceiptLong, contentDescription = "Notas Fiscais", onClick = onOpenReceipts)
                     GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
-                    GenesysIconButton(icon = GenesysIcons.Numbers, contentDescription = "Exportar Tudo", onClick = onExportAll)
                     GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)
                     GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })
                     GenesysIconButton(icon = GenesysIcons.Add, onClick = { onEvent(PageListEvent.OnCreatePageClicked) })
@@ -392,25 +400,27 @@ private fun PageListContent(
                 item {
                     GenesysColumn(modifier = Modifier.widthIn(max = 1200.dp), usePadding = false) {
                         when (state.selectedTab) {
-                            0 -> PagesTabUI(state, onEvent, onViewPage, onEditPage)
-                            1 -> OrdersHeaderUI(state, onEvent)
-                            2 -> MerchantAgendaTabUI(state, viewModel, onEvent)
-                            3 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
-                            4 -> {
+                            0 -> MerchantAnalyticsTabUI(viewModel)
+                            1 -> PagesTabUI(state, onEvent, onViewPage, onEditPage)
+                            2 -> OrdersHeaderUI(state, onEvent)
+                            3 -> MerchantAgendaTabUI(state, viewModel, onEvent)
+                            4 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
+                            5 -> {
                                 val receiptViewModel: ReceiptViewModel = koinInject()
-                                com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen(
+                                ReceiptListScreen(
                                     viewModel = receiptViewModel,
                                     isEmbedded = true,
                                     onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
                                 )
                             }
-                            5 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler)
-                            6 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
+                            6 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler)
+                            7 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
+                            8 -> ProfileScreen(viewModel, router)
                         }
                     }
                 }
 
-                if (state.selectedTab == 1) {
+                if (state.selectedTab == 2) {
                     val filteredOrders =
                         state.orders.filter { order ->
                             val matchesSearch =
@@ -430,12 +440,9 @@ private fun PageListContent(
                             )
                         }
                     } else {
-                        // O layout de duas colunas para Desktop precisa estar dentro de um item da LazyColumn
-                        // ou a lógica de windowSizeClass deve ser extraída para fora da LazyColumn.
                         if (isExpanded) {
                             item {
                                 Row(modifier = Modifier.fillMaxWidth().heightIn(min = 600.dp)) {
-                                    // Coluna da Esquerda: Lista
                                     Column(modifier = Modifier.weight(1f).padding(16.dp)) {
                                         filteredOrders.forEach { order ->
                                             OrderCardUI(
@@ -445,11 +452,10 @@ private fun PageListContent(
                                                 onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
                                                 onClick = { onSelectOrderForDetail(order.id) }
                                             )
-                                            Spacer(Modifier.height(GenesysTheme.spacing.xs))
+                                            GenesysSpacer(GenesysTheme.spacing.s)
                                         }
                                     }
 
-                                    // Coluna da Direita: Detalhes
                                     Column(modifier = Modifier.weight(1.5f).padding(16.dp)) {
                                         val selectedOrder = filteredOrders.find { it.id == selectedOrderIdForDetail }
                                         if (selectedOrder != null) {
@@ -460,35 +466,28 @@ private fun PageListContent(
                                             )
                                         } else {
                                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                GenesysText("Selecione um pedido para ver os detalhes", style = GenesysTextStyle.Body, color = GenesysTheme.colors.outline)
+                                                GenesysText("Selecione um pedido para ver os detalhes", color = GenesysTheme.colors.outline)
                                             }
                                         }
                                     }
                                 }
                             }
                         } else {
-                                items(items = filteredOrders, key = { it.id }) { order ->
-                                    GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
-                                        OrderCardUI(
-                                            order = order,
-                                            onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
-                                            onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
-                                        )
-                                    }
-                                    Spacer(Modifier.height(GenesysTheme.spacing.m))
+                            items(items = filteredOrders, key = { it.id }) { order ->
+                                GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
+                                    OrderCardUI(
+                                        order = order,
+                                        onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
+                                        onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
+                                    )
                                 }
+                                GenesysSpacer(GenesysTheme.spacing.m)
+                            }
                         }
                     }
                 }
 
                 item {
-                    Spacer(Modifier.height(GenesysTheme.spacing.huge))
-                    GenesysTextButton(
-                        text = GenesysStrings.Logout,
-                        onClick = { onEvent(PageListEvent.OnLogoutClicked) },
-                        modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
-                        color = GenesysTheme.colors.error,
-                    )
                     Spacer(Modifier.height(GenesysTheme.spacing.huge))
                 }
             }
@@ -623,7 +622,7 @@ private fun OrderDetailContent(
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         Column {
             GenesysText("Detalhes do Pedido", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.ExtraBold)
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
@@ -633,12 +632,12 @@ private fun OrderDetailContent(
                 GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
             }
 
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
             GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
 
             GenesysText("Itens", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
-            GenesysSpacer(GenesysSpacing.Small)
+            GenesysSpacer(GenesysTheme.spacing.s)
 
             order.items.forEach { item ->
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -648,9 +647,9 @@ private fun OrderDetailContent(
                 }
             }
 
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
             GenesysDivider()
-            GenesysSpacer(GenesysSpacing.Large)
+            GenesysSpacer(GenesysTheme.spacing.l)
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Total", style = MaterialTheme.typography.titleLarge)
@@ -659,7 +658,7 @@ private fun OrderDetailContent(
             }
 
             if (!order.customerPhone.isNullOrBlank()) {
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysTheme.spacing.huge)
                 GenesysLoadingButton(
                     text = "Falar com o cliente",
                     onClick = onContact,
@@ -677,11 +676,8 @@ private fun StoreSettingsTabUI(
     userProfile: UserProfile?,
     uriHandler: androidx.compose.ui.platform.UriHandler
 ) {
-    val pages by viewModel.pages.collectAsState()
-    val firstPage = pages.firstOrNull()
-    val storeId = firstPage?.storeId ?: "admin"
-
-    var store by remember { mutableStateOf<com.itbenevides.genesys21.domain.model.Store?>(null) }
+    val storeId = userProfile?.id ?: "admin"
+    var store by remember { mutableStateOf<Store?>(null) }
 
     var originZip by remember { mutableStateOf("") }
     var originStreet by remember { mutableStateOf("") }
@@ -723,49 +719,49 @@ private fun StoreSettingsTabUI(
     }
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysText(text = "Configurações da Loja", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysText(text = "Configure os dados de remetente e as opções do checkout.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         GenesysCard {
             GenesysColumn(usePadding = false) {
                 GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysTextField(value = originZip, onValueChange = { originZip = it }, label = "CEP de Origem", icon = GenesysIcons.Search)
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysTextField(value = originStreet, onValueChange = { originStreet = it }, label = "Rua/Logradouro")
-                GenesysSpacer(GenesysSpacing.Medium)
-                Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs)) {
+                GenesysSpacer(GenesysTheme.spacing.m)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) { GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número") }
                     Box(Modifier.weight(2f)) { GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro") }
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
-                Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs)) {
+                GenesysSpacer(GenesysTheme.spacing.m)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(2f)) { GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade") }
                     Box(Modifier.weight(1f)) { GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF") }
                 }
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         GenesysCard {
             GenesysColumn(usePadding = false) {
                 GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { allowPayLocal = it }
                 ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { allowPayApp = it }
-                HorizontalDivider(modifier = Modifier.padding(vertical = GenesysTheme.spacing.xs), color = GenesysTheme.colors.outline.copy(alpha = 0.2f))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                 ToggleOptionRow("Permitir Retirada no Local", allowPickup) { allowPickup = it }
                 ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { allowDelivery = it }
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
     GenesysCard {
         GenesysColumn(usePadding = false) {
@@ -780,7 +776,7 @@ private fun StoreSettingsTabUI(
                 color = GenesysTheme.colors.onSurfaceVariant
             )
 
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
 
             if (store?.stripeAccountId.isNullOrBlank()) {
                 GenesysLoadingButton(
@@ -798,7 +794,7 @@ private fun StoreSettingsTabUI(
             } else {
                 GenesysRow(
                     modifier = Modifier.fillMaxWidth().background(
-                        GenesysTheme.colors.brandContainer.copy(alpha = 0.3f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                         RoundedCornerShape(GenesysTheme.spacing.s)
                     ).padding(GenesysTheme.spacing.s),
                     verticalAlignment = Alignment.CenterVertically,
@@ -807,24 +803,24 @@ private fun StoreSettingsTabUI(
                     Icon(
                         GenesysIcons.Check,
                         null,
-                        tint = GenesysTheme.colors.success,
+                        tint = Color(0xFF34C759),
                         modifier = Modifier.size(20.dp)
                     )
-                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysSpacer(GenesysTheme.spacing.xs)
                     GenesysText(
                         text = "Stripe Conectado",
                         style = GenesysTextStyle.Body,
                         fontWeight = GenesysFontWeight.Bold,
-                        color = GenesysTheme.colors.onBrandContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
 
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 GenesysLoadingButton(
                     text = "Abrir Dashboard Stripe",
                     icon = GenesysIcons.Language,
-                    containerColor = GenesysTheme.colors.accent,
+                    containerColor = MaterialTheme.colorScheme.secondary,
                     onClick = {
                         viewModel.openStripeDashboard(storeId) { url ->
                             uriHandler.openUri(url)
@@ -834,7 +830,7 @@ private fun StoreSettingsTabUI(
                     fillWidth = true
                 )
 
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.xs)
                 GenesysText(
                     text = "Gerencie seus ganhos, reembolsos e dados bancários.",
                     style = GenesysTextStyle.Label,
@@ -846,9 +842,9 @@ private fun StoreSettingsTabUI(
 
             // Manter campos extras apenas para o Asaas (ou remover se não usar mais)
             if (selectedGateway == "ASAAS") {
-                GenesysSpacer(GenesysSpacing.Large)
-                HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.2f))
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.l)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysTextField(
                     value = asaasKey,
                     onValueChange = { asaasKey = it },
@@ -859,7 +855,7 @@ private fun StoreSettingsTabUI(
         }
     }
 
-        GenesysSpacer(GenesysSpacing.Huge)
+        GenesysSpacer(GenesysTheme.spacing.huge)
 
         GenesysLoadingButton(
             text = "Salvar Configurações",
@@ -918,14 +914,14 @@ private fun PagesTabUI(
     val clipboardManager = LocalClipboardManager.current
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysText(text = GenesysStrings.ManageVitrines, style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysText(
             text = GenesysStrings.ManageVitrinesSubtitle,
             style = GenesysTextStyle.Body,
             color = GenesysTheme.colors.onSurfaceVariant,
         )
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         if (state.pages.isEmpty() && !state.isLoading) {
             GenesysEmptyState(
@@ -955,7 +951,7 @@ private fun PagesTabUI(
                     onExport = { onEvent(PageListEvent.OnExportPageClicked(page)) },
                     onDelete = { onEvent(PageListEvent.OnDeletePageClicked(page.id)) },
                 )
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
             }
         }
     }
@@ -972,7 +968,7 @@ private fun ServicesTabUI(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -993,7 +989,7 @@ private fun ServicesTabUI(
                 fillWidth = false
             )
         }
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         if (services.isEmpty()) {
             GenesysEmptyState(
@@ -1032,7 +1028,7 @@ private fun ServicesTabUI(
                             Spacer(Modifier.weight(1f))
                         }
                     }
-                    Spacer(Modifier.height(GenesysTheme.spacing.m))
+                    Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
                 }
             }
         }
@@ -1051,7 +1047,7 @@ private fun OrdersHeaderUI(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         if (isCompact) {
             GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
                 GenesysStatsCard(
@@ -1059,7 +1055,7 @@ private fun OrdersHeaderUI(
                     value = "${GenesysStrings.PricePrefix}$totalRevenue",
                     color = Color(0xFF34C759),
                 )
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500))
             }
         } else {
@@ -1071,18 +1067,18 @@ private fun OrdersHeaderUI(
                         color = Color(0xFF34C759),
                     )
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysWeightBox(
                     1f,
                 ) { GenesysStatsCard(label = GenesysStrings.Pending, value = totalPending.toString(), color = Color(0xFFFF9500)) }
             }
         }
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
             GenesysTextField(value = state.searchQuery, onValueChange = {
                 onEvent(PageListEvent.OnSearchQueryChanged(it))
             }, label = GenesysStrings.SearchOrdersLabel, icon = GenesysIcons.Search)
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
             GenesysRow(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1106,7 +1102,7 @@ private fun OrdersHeaderUI(
                 }
             }
         }
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
     }
 }
 
@@ -1129,7 +1125,7 @@ private fun PageItemRow(
                 ) {
                     Icon(GenesysIcons.Web, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(20.dp))
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
                     GenesysText(
                         text = page.title,
@@ -1137,10 +1133,10 @@ private fun PageItemRow(
                         fontWeight = GenesysFontWeight.ExtraBold,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    GenesysText(text = "ID: ${page.id}", style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
+                    GenesysText(text = "ID: ${page.id}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
             GenesysRow(fillWidth = true, horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 GenesysIconButton(icon = GenesysIcons.Visibility, onClick = onView)
                 GenesysIconButton(icon = GenesysIcons.Edit, onClick = onRename)
@@ -1189,38 +1185,38 @@ private fun CreatePageDialog(
                     text = "Criar com Inteligência Artificial ✨",
                     onClick = { onEvent(PageListEvent.OnAIDesignClicked) },
                     fillWidth = true,
-                    containerColor = GenesysTheme.colors.accent,
+                    containerColor = MaterialTheme.colorScheme.tertiary,
                     icon = GenesysIcons.Magic
                 )
 
-                GenesysSpacer(GenesysSpacing.Medium)
-                HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.5f))
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 // TEMPLATES ELITE
                 GenesysLoadingButton(text = "Vitrine de Vendas Premium", onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PREMIUM_STORE))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.ShoppingBag)
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
 
                 GenesysLoadingButton(text = "Agendamento Profissional", onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.SERVICE_BOOKING))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Schedule)
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
 
                 GenesysLoadingButton(text = "Personal Hub (Links & Bio)", onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.PERSONAL_HUB))
                 }, enabled = state.newPageTitle.isNotBlank(), isLoading = state.isLoading, fillWidth = true, icon = GenesysIcons.Person)
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
 
                 GenesysLoadingButton(
                     text = "Importar Backup .benevides",
                     onClick = onImport,
                     fillWidth = true,
                     icon = GenesysIcons.CloudUpload,
-                    containerColor = GenesysTheme.colors.accent,
+                    containerColor = MaterialTheme.colorScheme.secondary,
                 )
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 GenesysTextButton(text = GenesysStrings.CreateEmptyVitrine, onClick = {
                     onEvent(PageListEvent.OnConfirmCreatePage(PageTemplateType.EMPTY))
                 }, enabled = state.newPageTitle.isNotBlank(), modifier = Modifier.fillMaxWidth())
@@ -1254,7 +1250,7 @@ private fun GlobalSettingsDialog(
     ) {
         GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
             GenesysTextField(value = domain, onValueChange = { domain = it }, label = GenesysStrings.CustomDomainLabel)
-            GenesysSpacer(GenesysSpacing.Medium)
+            GenesysSpacer(GenesysTheme.spacing.m)
             GenesysTextField(value = whatsapp, onValueChange = { whatsapp = it }, label = GenesysStrings.WhatsAppLabel)
         }
     }

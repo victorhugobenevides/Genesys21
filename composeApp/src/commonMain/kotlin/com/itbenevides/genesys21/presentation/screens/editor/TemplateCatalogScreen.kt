@@ -24,7 +24,6 @@ import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
@@ -109,7 +108,7 @@ fun TemplateCatalogScreen(
                     color = GenesysTheme.colors.onSurfaceVariant
                 )
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 LazyVerticalGrid(
                     columns = if (isCompact) GridCells.Fixed(1) else GridCells.Adaptive(minSize = 300.dp),
@@ -190,7 +189,7 @@ private fun TemplateCard(
                     color = GenesysTheme.colors.onSurfaceVariant,
                     maxLines = 2
                 )
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
                         onClick = onPreview,

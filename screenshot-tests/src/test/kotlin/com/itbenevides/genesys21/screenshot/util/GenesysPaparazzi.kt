@@ -140,6 +140,8 @@ fun getMockModule(mockUserProfile: com.itbenevides.genesys21.domain.model.UserPr
             every { customerAppointments } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Appointment>>(emptyList())
             every { userAddresses } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.Address>>(emptyList())
             every { allUsers } returns MutableStateFlow<List<com.itbenevides.genesys21.domain.model.UserProfile>>(emptyList())
+            every { analytics } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.MerchantAnalytics?>(null)
+            every { appTheme } returns MutableStateFlow<com.itbenevides.genesys21.domain.model.PageThemeConfig>(com.itbenevides.genesys21.domain.model.PageThemeConfig.ELEGANCE)
             every { isLoggedIn } returns MutableStateFlow<Boolean>(mockUserProfile != null)
             every { isWaitingForPaymentSignal } returns MutableStateFlow<Boolean>(false)
         }

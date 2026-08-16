@@ -14,7 +14,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -49,7 +48,7 @@ fun HeaderComponentEditor(
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
 
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
@@ -57,7 +56,7 @@ fun HeaderComponentEditor(
             isEditMode = false,
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysTextField(
             value = title,
             onValueChange = { title = it },
@@ -65,7 +64,7 @@ fun HeaderComponentEditor(
             icon = GenesysIcons.Description,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysText(text = GenesysStrings.Alignment, style = GenesysTextStyle.Label)
         GenesysRow(modifier = Modifier.fillMaxWidth()) {
@@ -84,7 +83,7 @@ fun HeaderComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysSlider(
             value = fontSize,
             onValueChange = { fontSize = it },
@@ -92,7 +91,7 @@ fun HeaderComponentEditor(
             valueRange = 18f..48f,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysRow(modifier = Modifier.fillMaxWidth()) {
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
@@ -108,7 +107,7 @@ fun HeaderComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
             text = GenesysStrings.UpdateTitle,
             fillWidth = true,

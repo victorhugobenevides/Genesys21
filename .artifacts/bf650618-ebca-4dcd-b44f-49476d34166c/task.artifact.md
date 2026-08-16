@@ -1,7 +1,12 @@
-# Tarefas - Correção de Login e Infraestrutura
-
-- [x] Ajustar carregamento de scripts no `index.html` (CircleCI) <!-- id: 50 -->
-- [x] Ativar headers de CORS dinâmico no `nginx.conf` (CircleCI) <!-- id: 51 -->
-- [x] Corrigir interpolação de erro no `GoogleSignInButton.kt` <!-- id: 52 -->
-- [x] Repassar erros de login para o Snackbar no `PageViewModel.kt` <!-- id: 53 -->
-- [ ] Validar deploy e fluxo de login em Produção <!-- id: 54 -->
+- [x] Consolidate `AndroidCartRepository.kt` persistence
+- [x] Improve `BaseCartRepository.kt` merge logic (sum quantities)
+- [x] Refactor `PageViewModel.kt` to trigger cart merge on login
+- [x] Polish `CartScreen.kt` UI with integrated `GenesysQuantitySelector`
+- [x] Add unit test for complex merge scenario in `shared`
+- [x] Fix Paparazzi `ClassCastException` (Updated `GenesysPaparazzi.kt`)
+- [x] Secure Storage Implementation (Spec 015)
+    - [x] Define `SecureStorage` interface in `shared`
+    - [x] Implement `AndroidSecureStorage` (EncryptedSharedPreferences)
+    - [x] Implement `IosSecureStorage` (NSUserDefaults placeholder)
+    - [x] Implement `WasmSecureStorage` (LocalStorage)
+- [x] Final Staging Validation & Build Success

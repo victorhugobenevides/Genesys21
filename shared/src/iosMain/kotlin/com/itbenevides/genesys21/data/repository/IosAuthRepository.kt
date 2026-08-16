@@ -77,4 +77,13 @@ class IosAuthRepository : AuthRepository {
     override suspend fun signOut() {
         auth.signOut()
     }
+
+    override suspend fun deleteUser(): Result<Unit> {
+        return try {
+            auth.currentUser?.delete()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

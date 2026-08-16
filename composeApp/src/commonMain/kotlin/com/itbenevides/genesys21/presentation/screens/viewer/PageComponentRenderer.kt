@@ -44,7 +44,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
@@ -192,7 +191,7 @@ fun PageComponentRenderer(
 
                 GenesysColumn(usePadding = true) {
                     GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysSpacer(GenesysTheme.spacing.m)
 
                     if (isDesktop) {
                         // Grade de 2 colunas para serviços no Desktop
@@ -208,7 +207,7 @@ fun PageComponentRenderer(
                                 }
                                 if (rowServices.size < 2) GenesysWeightSpacer(1f)
                             }
-                            GenesysSpacer(GenesysSpacing.Small)
+                            GenesysSpacer(GenesysTheme.spacing.s)
                         }
                     } else {
                         servicesToDisplay.forEach { service ->
@@ -216,7 +215,7 @@ fun PageComponentRenderer(
                                 service = service,
                                 onClick = { onServiceClick?.invoke(service) },
                             )
-                            GenesysSpacer(GenesysSpacing.Small)
+                            GenesysSpacer(GenesysTheme.spacing.s)
                         }
                     }
                 }
@@ -250,7 +249,7 @@ fun PageComponentRenderer(
                         )
                     }
 
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysSpacer(GenesysTheme.spacing.m)
 
                     GenesysText(
                         text = component.name,
@@ -336,7 +335,7 @@ fun PageComponentRenderer(
                         style = GenesysTextStyle.Label,
                         fontWeight = GenesysFontWeight.Bold,
                     )
-                    GenesysSpacer(GenesysSpacing.Medium)
+                    GenesysSpacer(GenesysTheme.spacing.m)
                     GenesysRow(modifier = Modifier.fillMaxWidth(), useHorizontalScroll = true) {
                         GenesysFilterChip(
                             selected = filterQuery.isEmpty(),
@@ -345,7 +344,7 @@ fun PageComponentRenderer(
                         )
 
                         allAvailableCategories.forEach { category ->
-                            GenesysSpacer(GenesysSpacing.Small)
+                            GenesysSpacer(GenesysTheme.spacing.s)
                             GenesysFilterChip(
                                 selected = filterQuery.equals(category, ignoreCase = true),
                                 onClick = {
@@ -371,7 +370,7 @@ fun PageComponentRenderer(
                     GenesysColumn(usePadding = true) {
                         component.title?.let {
                             GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                            GenesysSpacer(GenesysSpacing.Medium)
+                            GenesysSpacer(GenesysTheme.spacing.m)
                         }
                         GenesysProductList(
                             products = productsToDisplay,
@@ -385,7 +384,7 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Filter -> {
-                GenesysBox(Modifier.padding(vertical = GenesysDimens.SpacingMedium)) {
+                GenesysBox(Modifier.padding(vertical = GenesysTheme.spacing.m)) {
                     GenesysSearchBar(
                         query = filterQuery,
                         onQueryChange = { onFilterQueryChange(it) },
@@ -443,7 +442,7 @@ fun PageComponentRenderer(
                 if (productsToDisplay.isNotEmpty()) {
                     GenesysColumn(usePadding = true) {
                         GenesysText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysProductList(
                             products = productsToDisplay,
                             isHorizontal = true,
@@ -467,7 +466,7 @@ fun PageComponentRenderer(
                 ) {
                     GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.ShoppingBag, null, tint = GenesysTheme.colors.brand)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysRowText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, weightValue = 1f)
                         Icon(GenesysIcons.ArrowRight, null)
                     }
@@ -485,7 +484,7 @@ fun PageComponentRenderer(
                 ) {
                     GenesysRow(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.List, null, tint = GenesysTheme.colors.brand)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysRowText(text = component.title, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, weightValue = 1f)
                         Icon(GenesysIcons.ArrowRight, null)
                     }
@@ -654,7 +653,7 @@ fun PageComponentRenderer(
                         }
                         val btnText = component.buttonText
                         if (!btnText.isNullOrBlank()) {
-                            GenesysSpacer(GenesysSpacing.Large)
+                            GenesysSpacer(GenesysTheme.spacing.l)
                             GenesysLoadingButton(
                                 text = btnText,
                                 onClick = onComponentClick
@@ -668,7 +667,7 @@ fun PageComponentRenderer(
                 GenesysColumn(usePadding = true) {
                     component.title?.let {
                         GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                     }
                     component.items.forEach { item ->
                         Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -687,7 +686,7 @@ fun PageComponentRenderer(
                             ) {
                                 Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(20.dp))
                             }
-                            GenesysSpacer(GenesysSpacing.Medium)
+                            GenesysSpacer(GenesysTheme.spacing.m)
                             Column {
                                 GenesysText(text = item.title, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
                                 GenesysText(text = item.description, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
@@ -705,13 +704,13 @@ fun PageComponentRenderer(
                                 Icon(GenesysIcons.Favorite, null, tint = Color(0xFFFFB300), modifier = Modifier.size(16.dp))
                             }
                         }
-                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysSpacer(GenesysTheme.spacing.s)
                         GenesysText(
                             text = "\"${component.quote}\"",
                             style = GenesysTextStyle.Body,
                             fontWeight = GenesysFontWeight.Normal
                         )
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         Column {
                             GenesysText(text = component.author, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
                             component.authorTitle?.let {
@@ -725,7 +724,7 @@ fun PageComponentRenderer(
                  GenesysColumn(usePadding = true) {
                     component.title?.let {
                         GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                     }
 
                     // Calculamos as linhas com base nos spans
@@ -776,7 +775,7 @@ fun PageComponentRenderer(
                                 GenesysWeightSpacer((component.columns - rowSpan).toFloat())
                             }
                         }
-                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysSpacer(GenesysTheme.spacing.s)
                     }
                 }
             }
@@ -809,7 +808,7 @@ fun PageComponentRenderer(
                     GenesysColumn(usePadding = true) {
                         component.title?.let {
                             GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                            GenesysSpacer(GenesysSpacing.Medium)
+                            GenesysSpacer(GenesysTheme.spacing.m)
                         }
                         @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
                         FlowRow(
@@ -1130,7 +1129,7 @@ fun ProductCard(
                     )
 
                     if (product.price > 0 && showPrice) {
-                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysSpacer(GenesysTheme.spacing.s)
 
                         GenesysRow(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             val priceFormatted = (product.price * 100.0).roundToLong() / 100.0

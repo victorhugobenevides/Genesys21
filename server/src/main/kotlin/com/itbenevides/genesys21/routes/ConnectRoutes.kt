@@ -2,12 +2,11 @@ package com.itbenevides.genesys21.routes
 
 import com.itbenevides.genesys21.domain.repository.StoreRepository
 import com.itbenevides.genesys21.domain.repository.UserRepository
-import com.stripe.Stripe
 import com.stripe.StripeClient
 import com.stripe.model.AccountSession
 import com.stripe.model.LoginLink
 import com.stripe.param.AccountSessionCreateParams
-import com.stripe.param.LoginLinkCreateOnAccountParams
+import com.stripe.param.AccountLoginLinkCreateParams
 import com.stripe.param.v2.core.AccountCreateParams
 import com.stripe.param.v2.core.AccountLinkCreateParams
 import io.ktor.http.*
@@ -170,10 +169,10 @@ fun Route.connectRoutes(
 
                 try {
                     val secretKey = store.stripeSecretKey ?: System.getenv("STRIPE_SECRET_KEY")
-                    Stripe.apiKey = secretKey
+                    val client = StripeClient(secretKey)
 
-                    val params = LoginLinkCreateOnAccountParams.builder().build()
-                    val loginLink = LoginLink.createOnAccount(accountId, params)
+                    val params = AccountLoginLinkCreateParams.builder().build()
+                    val loginLink = client.v1().accounts().loginLinks().create(accountId, params)
 
                     call.respond(ConnectLinkResponse(url = loginLink.url))
                 } catch (e: Exception) {
@@ -199,7 +198,7 @@ fun Route.connectRoutes(
                     if (secretKey.isNullOrBlank() || secretKey.contains("default")) {
                         return@post call.respond(HttpStatusCode.BadRequest, "Configuração do Stripe incompleta: Chave de API ausente ou inválida.")
                     }
-                    Stripe.apiKey = secretKey
+                    val client = StripeClient(secretKey)
 
                     val params = AccountSessionCreateParams.builder()
                         .setAccount(accountId)
@@ -215,7 +214,7 @@ fun Route.connectRoutes(
                         )
                         .build()
 
-                    val accountSession = AccountSession.create(params)
+                    val accountSession = client.v1().accountSessions().create(params)
                     call.respond(AccountSessionResponse(clientSecret = accountSession.clientSecret))
                 } catch (e: com.stripe.exception.AuthenticationException) {
                     call.respond(HttpStatusCode.Unauthorized, "Erro de Autenticação Stripe: Verifique suas chaves de API.")

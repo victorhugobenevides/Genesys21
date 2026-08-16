@@ -30,8 +30,8 @@ object Seeder {
                 }
             }
 
-            // 2. Create/Update Default Store
-            val defaultStoreId = "genesys-official-store"
+            // 2. Create/Update Default Store (Linked to Admin UID for instant dashboard access)
+            val defaultStoreId = adminId
             val storeExists = StoresTable.selectAll().where { StoresTable.id eq defaultStoreId }.count() > 0
 
             val pk = System.getenv("STRIPE_PUBLIC_KEY") ?: "pk_test_genesys_default"

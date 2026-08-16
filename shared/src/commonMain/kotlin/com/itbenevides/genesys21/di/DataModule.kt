@@ -9,6 +9,8 @@ import com.itbenevides.genesys21.data.repository.KtorShippingRepository
 import com.itbenevides.genesys21.data.repository.KtorStoreRepository
 import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
+import com.itbenevides.genesys21.data.util.SecureStorage
+import com.itbenevides.genesys21.data.util.createSecureStorage
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
@@ -41,6 +43,9 @@ val dataModule =
                 }
             }
         }
+
+        // SecureStorage is provided by platformModule
+        // single<SecureStorage> { ... }
 
         single<AuthRepository> { getAuthRepository() }
         single<PageRepository> { KtorPageRepository(get(), getBaseUrl()) }
@@ -86,6 +91,8 @@ val dataModule =
         single { SaveAddressUseCase(get()) }
         single { DeleteAddressUseCase(get()) }
         single { CalculateShippingUseCase(get()) }
+        single { GetAnalyticsUseCase(get()) }
+        single { DeleteUserUseCase(get()) }
 
         single<ReceiptRepository> {
             // Para Wasm e Android em produção, usamos o backend.

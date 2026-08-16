@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.GenesysTheme
 
 /**
  * Listagem horizontal padronizada.
@@ -15,12 +17,12 @@ import com.itbenevides.genesys21.ui.theme.GenesysDimens
 fun <T> GenesysLazyRow(
     items: List<T>,
     modifier: Modifier = Modifier,
-    spacing: GenesysSpacing = GenesysSpacing.Medium,
+    spacing: Dp = GenesysTheme.spacing.m,
     content: @Composable (T) -> Unit,
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(spacing.value),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(spacing),
         contentPadding = PaddingValues(vertical = GenesysDimens.SpacingSmall),
     ) {
         items(items) { item ->

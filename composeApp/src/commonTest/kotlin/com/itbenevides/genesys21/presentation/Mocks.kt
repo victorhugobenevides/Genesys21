@@ -79,6 +79,16 @@ class FakeOrderRepository : OrderRepository {
         orderId: String,
         status: OrderStatus,
     ) = Result.success(Unit)
+
+    override suspend fun getAnalytics(token: String) = Result.success(
+        MerchantAnalytics(
+            dailyRevenue = emptyList(),
+            topProducts = emptyList(),
+            bookingSummary = BookingSummary(0, 0, 0, 0),
+            totalOrders = 0,
+            averageTicket = 0.0
+        )
+    )
 }
 
 class FakeBookingRepository : BookingRepository {

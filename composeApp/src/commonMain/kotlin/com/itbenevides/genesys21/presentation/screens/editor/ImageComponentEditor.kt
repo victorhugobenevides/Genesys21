@@ -11,7 +11,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysSlider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -50,7 +49,7 @@ fun ImageComponentEditor(
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
-        GenesysSpacer(GenesysSpacing.Small)
+        GenesysSpacer(GenesysTheme.spacing.s)
 
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
@@ -58,7 +57,7 @@ fun ImageComponentEditor(
             isEditMode = false,
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
             text = if (isUploading) "Enviando..." else "Trocar Imagem",
             icon = GenesysIcons.CloudUpload,
@@ -67,10 +66,10 @@ fun ImageComponentEditor(
             fillWidth = true,
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysSlider(value = sizeValue, onValueChange = { sizeValue = it }, label = "Tamanho da Imagem", valueRange = 50f..500f)
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysRow(modifier = Modifier.fillMaxWidth()) {
             GenesysWeightBox(1f) {
                 GenesysColumn(usePadding = false) {
@@ -91,7 +90,7 @@ fun ImageComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
         GenesysDropdownField(
             value = currentLinkValue,
             onValueChange = { currentLinkValue = it },
@@ -101,7 +100,7 @@ fun ImageComponentEditor(
             icon = GenesysIcons.Language,
         )
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(text = "Confirmar Alterações", fillWidth = true, onClick = {
             val matchingPage = userPages.find { it.title == currentLinkValue }
             onSave(

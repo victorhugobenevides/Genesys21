@@ -19,7 +19,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -100,13 +99,13 @@ fun ServiceBookingScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     service.imageUrls.firstOrNull()?.let { url ->
                         GenesysImage(url = url, size = 80.dp)
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                     }
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             GenesysText(text = service.name, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
                             if (service.isOnline) {
-                                GenesysSpacer(GenesysSpacing.Small)
+                                GenesysSpacer(GenesysTheme.spacing.s)
                                 com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge(
                                     label = "ONLINE",
                                     color = GenesysTheme.colors.accent
@@ -132,13 +131,13 @@ fun ServiceBookingScreen(
                     }
                 }
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
                 GenesysDivider()
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 // User Info
                 GenesysText(text = "Seus Dados", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysSpacing.Small)
+                GenesysSpacer(GenesysTheme.spacing.s)
                 GenesysRow {
                     GenesysWeightBox(1f) {
                         com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
@@ -148,7 +147,7 @@ fun ServiceBookingScreen(
                             placeholder = "Seu nome completo",
                         )
                     }
-                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysSpacer(GenesysTheme.spacing.s)
                     GenesysWeightBox(1f) {
                         com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
                             value = customerPhone,
@@ -159,7 +158,7 @@ fun ServiceBookingScreen(
                     }
                 }
 
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
                 com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
                     value = customerNotes,
@@ -170,12 +169,12 @@ fun ServiceBookingScreen(
                 )
 
                 if (service.isHomeService) {
-                    GenesysSpacer(GenesysSpacing.Large)
+                    GenesysSpacer(GenesysTheme.spacing.l)
                     GenesysDivider()
-                    GenesysSpacer(GenesysSpacing.Large)
+                    GenesysSpacer(GenesysTheme.spacing.l)
 
                     GenesysText(text = "Endereço para Atendimento", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
-                    GenesysSpacer(GenesysSpacing.Small)
+                    GenesysSpacer(GenesysTheme.spacing.s)
 
                     val address = selectedAddress ?: com.itbenevides.genesys21.domain.model.Address(street = "", number = "", neighborhood = "", city = "", state = "", zipCode = "")
 
@@ -197,13 +196,13 @@ fun ServiceBookingScreen(
                     )
 
                     if (selectedAddress != null) {
-                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysSpacer(GenesysTheme.spacing.s)
                         com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
                             value = selectedAddress!!.street,
                             onValueChange = { selectedAddress = selectedAddress!!.copy(street = it) },
                             label = "Logradouro"
                         )
-                        GenesysSpacer(GenesysSpacing.Small)
+                        GenesysSpacer(GenesysTheme.spacing.s)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Box(Modifier.weight(1f)) {
                                 com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
@@ -223,11 +222,11 @@ fun ServiceBookingScreen(
                     }
 
                     if (travelFee > 0) {
-                        GenesysSpacer(GenesysSpacing.Medium)
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysCard(backgroundColor = GenesysTheme.colors.accent.copy(alpha = 0.1f)) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(GenesysIcons.Payments, null, tint = GenesysTheme.colors.accent)
-                                GenesysSpacer(GenesysSpacing.Medium)
+                                GenesysSpacer(GenesysTheme.spacing.m)
                                 GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
                                     GenesysText(text = "Taxa de Deslocamento", fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.accent)
                                     GenesysText(text = "Cálculo ida e volta para seu local", style = GenesysTextStyle.Label)
@@ -242,7 +241,7 @@ fun ServiceBookingScreen(
                     }
                 }
 
-                GenesysSpacer(GenesysSpacing.Large)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
                 // Booking Engine
                 GenesysBookingEngine(
@@ -253,7 +252,7 @@ fun ServiceBookingScreen(
                     today = currentToday
                 )
 
-                GenesysSpacer(GenesysSpacing.Huge)
+                GenesysSpacer(GenesysTheme.spacing.huge)
 
                 val canConfirm = selectedDateTime != null && customerName.isNotBlank() && customerPhone.length >= 8
 

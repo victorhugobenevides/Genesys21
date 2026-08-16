@@ -15,7 +15,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacing
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -40,7 +39,7 @@ fun ServiceListComponentEditor(
 
     GenesysColumn(usePadding = false) {
         GenesysText("Gerenciar Serviços", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysTabRow(
             selectedTabIndex = selectedTab,
@@ -52,7 +51,7 @@ fun ServiceListComponentEditor(
             onTabSelected = { selectedTab = it },
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysTextField(
             value = searchQuery,
@@ -61,7 +60,7 @@ fun ServiceListComponentEditor(
             icon = GenesysIcons.Search,
         )
 
-        GenesysSpacer(GenesysSpacing.Medium)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         if (selectedTab == 0) {
             // ABA 1: Serviços na Lista
@@ -85,7 +84,7 @@ fun ServiceListComponentEditor(
                         }
                     }
                 }
-                GenesysSpacer(GenesysSpacing.Medium)
+                GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysLoadingButton(
                     text = "Cadastrar Novo Serviço",
                     icon = GenesysIcons.Add,
@@ -120,9 +119,9 @@ fun ServiceListComponentEditor(
             }
         }
 
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
         GenesysDivider()
-        GenesysSpacer(GenesysSpacing.Large)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
         GenesysTextField(
             value = title,
@@ -131,7 +130,7 @@ fun ServiceListComponentEditor(
             icon = GenesysIcons.Edit,
         )
 
-        GenesysSpacer(GenesysSpacing.Huge)
+        GenesysSpacer(GenesysTheme.spacing.huge)
         GenesysLoadingButton(
             text = "Salvar Alterações",
             fillWidth = true,

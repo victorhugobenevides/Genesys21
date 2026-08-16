@@ -14,18 +14,20 @@ val viewModelModule =
         // PageViewModel como SINGLE para compartilhar o estado do carrinho e dados entre todas as telas
         single {
             PageViewModel(
-                get(), get(), get(), get(), get(), get(), get(), // 7
-                get(), get(), get(), get(), get(), // 5
-                get(), get(), get(), get(), // 4
-                get(), get(), get(), // 3
-                get(), get(), get(), // 3
-                get(), get(), get(), // 3
-                get(), get(), get(), // 3
-                get(), get(), get(), get(), get(), get(), // 6 (added UpdateUserPermissionsUseCase)
-                get(), // GetTemplatesUseCase
-                get(), get(), get(), // Addresses
-                get(), // CalculateShipping
-                get() // StoreRepository
+                get(), get(), get(), get(), get(), get(), get(), // 1-7: Pages & Upload
+                get(), get(), get(), get(), get(), // 8-12: Orders
+                get(), get(), get(), get(), // 13-16: Repositories
+                get(), get(), get(), // 17-19: Categories
+                get(), get(), get(), // 20-22: Services
+                get(), get(), get(), // 23-25: Appointments
+                get(), get(), get(), // 26-28: Availability
+                get(), get(), get(), get(), get(), get(), // 29-34: User Management
+                get(), // 35: GetTemplates
+                get(), // 36: GetAnalytics
+                get(), // 37: DeleteUser
+                get(), get(), get(), // 38-40: Addresses
+                get(), // 41: CalculateShipping
+                get()  // 42: StoreRepository
             )
         }
 
