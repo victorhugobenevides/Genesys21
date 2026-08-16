@@ -10,13 +10,27 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Prepare CI Environment
+          name: Prepare CI Environment & Decode Secrets
           command: |
-            # Injetar dummy google-services.json para o build do Android
-            echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
+            # 1. Tentar decodificar GOOGLE_SERVICES_JSON_ANDROID real
+            if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
+              CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
+              echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
+              echo "✓ Real google-services.json injected from environment."
+            else
+              # Fallback dummy com package_name CORRETO
+              echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides.genesys21"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
+              echo "⚠ Using dummy google-services.json (Missing env var)."
+            fi
 
-            # Injetar dummy firebase-adminsdk.json para o servidor
-            echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+            # 2. Tentar decodificar FIREBASE_ADMIN_JSON real
+            if [ -n "$FIREBASE_ADMIN_JSON" ]; then
+              echo "${FIREBASE_ADMIN_JSON}" > server/firebase-adminsdk.json
+              echo "✓ Real firebase-adminsdk.json injected from environment."
+            else
+              echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+              echo "⚠ Using dummy firebase-adminsdk.json (Missing env var)."
+            fi
 
             # Criar diretório de dados para SQLite
             mkdir -p server/data
@@ -36,10 +50,20 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Prepare Build Environment
+          name: Prepare Build Environment & Decode Secrets
           command: |
-            echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
-            echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+            if [ -n "$GOOGLE_SERVICES_JSON_ANDROID" ]; then
+              CLEAN_VAR=$(echo "$GOOGLE_SERVICES_JSON_ANDROID" | tr -d '[:space:]')
+              echo "$CLEAN_VAR" | base64 --decode > composeApp/google-services.json || echo "$GOOGLE_SERVICES_JSON_ANDROID" > composeApp/google-services.json
+            else
+              echo '{"project_info":{"project_number":"0","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"0","android_client_info":{"package_name":"com.itbenevides.genesys21"}},"api_key":[{"current_key":"dummy"}]}]}' > composeApp/google-services.json
+            fi
+
+            if [ -n "$FIREBASE_ADMIN_JSON" ]; then
+              echo "${FIREBASE_ADMIN_JSON}" > server/firebase-adminsdk.json
+            else
+              echo '{"project_id":"dummy","private_key":"dummy","client_email":"dummy"}' > server/firebase-adminsdk.json
+            fi
             mkdir -p server/data
       - setup_remote_docker:
           version: 20.10.24
