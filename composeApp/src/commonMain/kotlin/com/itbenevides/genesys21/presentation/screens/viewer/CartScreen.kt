@@ -192,6 +192,7 @@ fun CartContent(
     backendUrl: String,
     stripeAppearance: String,
     onEvent: (CartScreenEvent) -> Unit,
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
     val windowSizeClass = LocalWindowSizeClass.current
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
@@ -246,7 +247,7 @@ fun CartContent(
                             }
                             state.currentStep == 1 -> {
                                 state.cartItems.forEach { item ->
-                                    ModernCartItemRow(item, backendUrl, onEvent)
+                                    ModernCartItemRow(item, backendUrl, onEvent, timeZone)
                                     GenesysSpacer(GenesysTheme.spacing.s)
                                 }
                             }
@@ -563,7 +564,12 @@ private fun CartStepperUI(step: Int) {
 }
 
 @Composable
-private fun ModernCartItemRow(item: CartItem, backendUrl: String, onEvent: (CartScreenEvent) -> Unit) {
+private fun ModernCartItemRow(
+    item: CartItem,
+    backendUrl: String,
+    onEvent: (CartScreenEvent) -> Unit,
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+) {
     val displayImageUrl = remember(item.product?.imageUrls, item.service?.imageUrls) {
         val first = item.product?.imageUrls?.firstOrNull() ?: item.service?.imageUrls?.firstOrNull() ?: ""
         if (first.startsWith("/") && !first.startsWith("http")) "$backendUrl$first" else first
@@ -582,7 +588,7 @@ private fun ModernCartItemRow(item: CartItem, backendUrl: String, onEvent: (Cart
                 GenesysColumn(usePadding = false) {
                     GenesysText(text = item.name, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
                     item.appointment?.let { appt ->
-                        val time = appt.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
+                        val time = appt.startTime.toLocalDateTime(timeZone)
                         GenesysText(text = "Agendado: ${time.dayOfMonth}/${time.monthNumber} às ${time.hour}:${time.minute.toString().padStart(2, '0')}", style = GenesysTextStyle.Label, color = GenesysTheme.colors.accent)
                     }
                     val priceFormatted = (item.price * 100.0).roundToLong() / 100.0

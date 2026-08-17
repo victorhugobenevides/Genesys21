@@ -67,7 +67,8 @@ class AdaptiveLayoutsSnapshotTest {
                 store = null,
                 backendUrl = "",
                 stripeAppearance = "{}",
-                onEvent = {}
+                onEvent = {},
+                timeZone = kotlinx.datetime.TimeZone.UTC
             )
         }
     }

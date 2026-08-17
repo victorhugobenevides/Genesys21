@@ -32,11 +32,10 @@ fun TemplateShowcaseScreen(
     val templates =
         remember {
             listOf(
-                "Pro Design" to Page.createFromTemplate("pro_design", "tpl_1", "default", "Modern Luxury"),
-                "Social Bio" to Page.createFromTemplate("bio_profile", "tpl_2", "default", "Victor Benevides"),
-                "Blog Article" to Page.createFromTemplate("blog_post", "tpl_3", "default", "Building with KMP"),
-                "Default Store" to Page.createFromTemplate("professional_vitrine", "tpl_4", "default", "My Vintage Store"),
-                "Barber Shop" to Page.createFromTemplate("barber_shop", "tpl_5", "default", "Classic Barbershop"),
+                "Vendas Premium" to Page.createFromTemplate("premium_store", "tpl_1", "default", "Modern Luxury"),
+                "Personal Hub" to Page.createFromTemplate("personal_hub", "tpl_2", "default", "Victor Benevides"),
+                "Agendamento Profissional" to Page.createFromTemplate("service_booking", "tpl_3", "default", "Serviços"),
+                "Página em Branco" to Page.createFromTemplate("empty", "tpl_4", "default", "Nova Página"),
             )
         }
 

@@ -81,9 +81,9 @@ fun Paparazzi.genesysResponsiveSnapshot(
     content: @Composable () -> Unit,
 ) {
     val configs = listOf(
-        "Phone" to DeviceConfig.PIXEL_5 to 393.dp,
-        "Tablet" to DeviceConfig.NEXUS_7 to 600.dp,
-        "Desktop" to DeviceConfig.NEXUS_10.copy(screenWidth = 1200) to 1200.dp
+        "phone" to DeviceConfig.PIXEL_5 to 393.dp,
+        "tablet" to DeviceConfig.NEXUS_7 to 600.dp,
+        "desktop" to DeviceConfig.NEXUS_10.copy(screenWidth = 1200) to 1200.dp
     )
 
     configs.forEach { (pair, widthDp) ->
