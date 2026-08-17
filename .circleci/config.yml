@@ -69,9 +69,9 @@ jobs:
   build-and-push:
     docker:
       - image: cimg/android:2024.01
-    resource_class: xlarge
+    resource_class: large
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx3g -XX:MaxMetaspaceSize=512m"
     steps:
       - checkout
       - prepare-env
