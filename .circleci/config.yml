@@ -69,9 +69,9 @@ jobs:
   build-and-push:
     docker:
       - image: cimg/android:2024.01
-    resource_class: large
+    resource_class: xlarge
     environment:
-      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx5g -XX:MaxMetaspaceSize=512m"
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
     steps:
       - checkout
       - prepare-env
@@ -84,6 +84,7 @@ jobs:
       - run:
           name: Build Web (Wasm)
           command: ./gradlew :composeApp:wasmJsBrowserDistribution --no-daemon
+          no_output_timeout: 30m
       - run:
           name: Prepare Backend Docker Context
           command: |
