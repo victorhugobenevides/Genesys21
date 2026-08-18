@@ -217,15 +217,15 @@ jobs:
       - run:
           name: Build and Push Docker Images
           command: |
-            echo \$OCI_AUTH_TOKEN | docker login gru.ocir.io -u "\$OCI_NAMESPACE/\$OCI_USERNAME" --password-stdin
+            echo "${OCI_AUTH_TOKEN}" | docker login gru.ocir.io -u "${OCI_NAMESPACE}/${OCI_USERNAME}" --password-stdin
 
             # Backend
-            docker build -t "gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest" build/docker/backend/
-            docker push "gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest"
+            docker build -t "gru.ocir.io/${OCI_NAMESPACE}/genesys-server:latest" build/docker/backend/
+            docker push "gru.ocir.io/${OCI_NAMESPACE}/genesys-server:latest"
 
             # Web
-            docker build -t "gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest" build/docker/web/
-            docker push "gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest"
+            docker build -t "gru.ocir.io/${OCI_NAMESPACE}/genesys-web:latest" build/docker/web/
+            docker push "gru.ocir.io/${OCI_NAMESPACE}/genesys-web:latest"
 
   deploy:
     docker:
@@ -238,17 +238,17 @@ jobs:
               mkdir -p ~/app && cd ~/app
 
               # 1. Login no OCIR
-              echo \$OCI_AUTH_TOKEN | sudo docker login gru.ocir.io -u \"\$OCI_NAMESPACE/\$OCI_USERNAME\" --password-stdin
+              echo \"${OCI_AUTH_TOKEN}\" | sudo docker login gru.ocir.io -u \"${OCI_NAMESPACE}/${OCI_USERNAME}\" --password-stdin
 
               # 2. Pull das imagens mais recentes
-              sudo docker pull \"gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest\"
-              sudo docker pull \"gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest\"
+              sudo docker pull \"gru.ocir.io/${OCI_NAMESPACE}/genesys-server:latest\"
+              sudo docker pull \"gru.ocir.io/${OCI_NAMESPACE}/genesys-web:latest\"
 
               # 3. Gerar Docker Compose dinamicamente se necessário (ou usar o existente)
               cat \<<EOF > docker-compose.yml
               services:
                 genesys-server:
-                  image: gru.ocir.io/\$OCI_NAMESPACE/genesys-server:latest
+                  image: gru.ocir.io/${OCI_NAMESPACE}/genesys-server:latest
                   container_name: genesys-server
                   volumes:
                     - ./data:/app/data
@@ -261,7 +261,7 @@ jobs:
                     - genesys-network
 
                 genesys-web:
-                  image: gru.ocir.io/\$OCI_NAMESPACE/genesys-web:latest
+                  image: gru.ocir.io/${OCI_NAMESPACE}/genesys-web:latest
                   container_name: genesys-web
                   ports:
                     - \"80:80\"
