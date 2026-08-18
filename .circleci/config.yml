@@ -256,7 +256,7 @@ jobs:
               sudo docker pull \"gru.ocir.io/${OCI_NAMESPACE}/genesys-web:latest\"
 
               # 3. Gerar Docker Compose dinamicamente se necessário (ou usar o existente)
-              cat <<EOF > docker-compose.yml
+              cat \<<EOF > docker-compose.yml
               services:
                 genesys-server:
                   image: gru.ocir.io/${OCI_NAMESPACE}/genesys-server:latest
