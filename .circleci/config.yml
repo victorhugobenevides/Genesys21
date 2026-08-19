@@ -160,18 +160,18 @@ jobs:
             mkdir -p ~/.ssh
             ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
 
-            # 2. Reconstituir a chave a partir da variável de ambiente
+            # 2. Reconstituir a chave usando Python (mais robusto que echo)
             if [ -n "$OCI_SSH_KEY" ]; then
-              echo "$OCI_SSH_KEY" | base64 --decode > ~/.ssh/id_rsa || echo "$OCI_SSH_KEY" > ~/.ssh/id_rsa
-              chmod 600 ~/.ssh/id_rsa
-              echo "✓ SSH Key configurada."
+              python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
+              chmod 600 ~/.ssh/oracle_key
+              echo "✓ SSH Key configurada com sucesso via Python."
             else
               echo "⚠ ERRO: Variável OCI_SSH_KEY não encontrada no CircleCI."
               exit 1
             fi
 
-            # 3. Executar o Deploy via SSH
-            ssh -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
+            # 3. Executar o Deploy via SSH forçando o uso da chave (-i)
+            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
               mkdir -p ~/app && cd ~/app
 
               # Login no GHCR
