@@ -52,6 +52,15 @@ fun Route.orderRoutes(
                             orderRepository.updateOrderStatus("SYSTEM", orderId, OrderStatus.PROCESSING)
                         }
                     }
+                    "account.updated" -> {
+                        val account = event.dataObjectDeserializer.deserializeUnsafe() as com.stripe.model.Account
+                        println("WEBHOOK: Conta Connect atualizada: ${account.id}")
+                        // Podemos logar ou disparar processos de auditoria aqui
+                    }
+                    "capability.updated" -> {
+                        val capability = event.dataObjectDeserializer.deserializeUnsafe() as com.stripe.model.Capability
+                        println("WEBHOOK: Capacidade atualizada para conta ${capability.account}: ${capability.id} = ${capability.status}")
+                    }
                 }
                 call.respond(HttpStatusCode.OK)
             } catch (e: Exception) {

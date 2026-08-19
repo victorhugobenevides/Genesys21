@@ -1157,4 +1157,9 @@ class PageViewModel(
             }
         }
     }
+
+    suspend fun getAccountSession(storeId: String): Result<String> {
+        val token = authRepository.getCurrentUserToken() ?: return Result.failure(Exception("Não autenticado"))
+        return storeRepository.getAccountSession(storeId, token)
+    }
 }

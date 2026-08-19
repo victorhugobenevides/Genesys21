@@ -100,87 +100,8 @@ jobs:
             cp -r composeApp/build/dist/wasmJs/productionExecutable/* build/docker/web/deploy/web/
             cp Dockerfile.web build/docker/web/Dockerfile
 
-            # --- WEB INTEROP BRIDGE (FIREBASE & PLATFORM) ---
-            cat \<<EOF > build/docker/web/deploy/web/interop.js
-            // Genesys21 Web Interop Bridge
-            const auth = window.firebaseAuth;
-            const db = window.firebaseDb;
-            let oneTapInitialized = false;
-
-            window.firebaseSignIn = (email, pass) => window.firebaseAuth.signInWithEmailAndPassword(window.firebaseAuth.getAuth(), email, pass).then(u => u.user.getIdToken());
-            window.firebaseSignUp = (email, pass) => window.firebaseAuth.createUserWithEmailAndPassword(window.firebaseAuth.getAuth(), email, pass).then(u => u.user.getIdToken());
-            window.firebaseSignInGoogle = () => {
-                const provider = new window.firebaseAuth.GoogleAuthProvider();
-                return window.firebaseAuth.signInWithPopup(window.firebaseAuth.getAuth(), provider).then(u => u.user.getIdToken());
-            };
-            window.firebaseGetToken = () => {
-                const user = window.firebaseAuth.getAuth().currentUser;
-                return user ? user.getIdToken(true) : Promise.resolve(null);
-            };
-            window.firebaseGetUserId = () => {
-                const user = window.firebaseAuth.getAuth().currentUser;
-                return Promise.resolve(user ? user.uid : null);
-            };
-            window.firebaseGetUserEmail = () => {
-                const auth = window.firebaseAuth.getAuth();
-                if (auth.currentUser) return Promise.resolve(auth.currentUser.email);
-                return new Promise((resolve) => {
-                    const unsubscribe = window.firebaseAuth.onAuthStateChanged(auth, user => {
-                        unsubscribe();
-                        resolve(user ? user.email : null);
-                    });
-                });
-            };
-            window.firebaseGetUserName = () => {
-                const auth = window.firebaseAuth.getAuth();
-                if (auth.currentUser) return Promise.resolve(auth.currentUser.displayName);
-                return new Promise((resolve) => {
-                    const unsubscribe = window.firebaseAuth.onAuthStateChanged(auth, user => {
-                        unsubscribe();
-                        resolve(user ? user.displayName : null);
-                    });
-                });
-            };
-            window.firebaseSignOut = () => {
-                oneTapInitialized = false;
-                return window.firebaseAuth.signOut(window.firebaseAuth.getAuth());
-            };
-            window.firebaseOnAuthChanged = (callback) => {
-                window.firebaseAuth.onAuthStateChanged(window.firebaseAuth.getAuth(), (user) => {
-                    callback(user ? user.uid : null);
-                });
-            };
-            window.firebaseInitializeOneTap = () => {
-                if (oneTapInitialized) return;
-                oneTapInitialized = true;
-                console.log("WASM: Initializing One Tap...");
-            };
-
-            // --- STRIPE BRIDGE ---
-            let stripe;
-            let elements;
-            window.stripeInitialize = (publishableKey) => {
-                stripe = Stripe(publishableKey);
-            };
-            window.stripeMountPaymentElement = (clientSecret, appearanceJson, elementId) => {
-                if (!stripe) return Promise.reject("Stripe not initialized");
-                const appearance = JSON.parse(appearanceJson);
-                elements = stripe.elements({ clientSecret, appearance });
-                const paymentElement = elements.create("payment");
-                paymentElement.mount("#" + elementId);
-                return Promise.resolve();
-            };
-            window.stripeConfirmPayment = (returnUrl) => {
-                if (!stripe || !elements) return Promise.reject("Stripe not ready");
-                return stripe.confirmPayment({
-                    elements,
-                    confirmParams: { return_url: returnUrl },
-                });
-            };
-            EOF
-
             # --- NGINX CONFIG ---
-            cat \<<EOF > build/docker/web/nginx.conf
+            cat <<EOF > build/docker/web/nginx.conf
             user  nginx;
             worker_processes  auto;
             error_log  /var/log/nginx/error.log warn;
@@ -215,17 +136,17 @@ jobs:
             EOF
 
       - run:
-          name: Build and Push Docker Images
+          name: Build and Push Docker Images (GHCR)
           command: |
-            echo "${OCI_AUTH_TOKEN}" | docker login "${OCI_REGION}.ocir.io" -u "${OCI_TENANCY_NAMESPACE}/${OCI_USER}" --password-stdin
+            echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_USERNAME}" --password-stdin
 
             # Backend
-            docker build -t "${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest" build/docker/backend/
-            docker push "${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest"
+            docker build -t "ghcr.io/${GITHUB_USERNAME}/genesys-server:latest" build/docker/backend/
+            docker push "ghcr.io/${GITHUB_USERNAME}/genesys-server:latest"
 
             # Web
-            docker build -t "${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-web:latest" build/docker/web/
-            docker push "${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-web:latest"
+            docker build -t "ghcr.io/${GITHUB_USERNAME}/genesys-web:latest" build/docker/web/
+            docker push "ghcr.io/${GITHUB_USERNAME}/genesys-web:latest"
 
   deploy:
     docker:
@@ -237,18 +158,18 @@ jobs:
             ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP "
               mkdir -p ~/app && cd ~/app
 
-              # 1. Login no OCIR
-              echo \"${OCI_AUTH_TOKEN}\" | sudo docker login \"${OCI_REGION}.ocir.io\" -u \"${OCI_TENANCY_NAMESPACE}/${OCI_USER}\" --password-stdin
+              # 1. Login no GHCR
+              echo \"${GITHUB_TOKEN}\" | sudo docker login ghcr.io -u \"${GITHUB_USERNAME}\" --password-stdin
 
               # 2. Pull das imagens mais recentes
-              sudo docker pull \"${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest\"
-              sudo docker pull \"${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-web:latest\"
+              sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-server:latest\"
+              sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-web:latest\"
 
-              # 3. Gerar Docker Compose dinamicamente se necessário (ou usar o existente)
-              cat \<<EOF > docker-compose.yml
+              # 3. Gerar Docker Compose dinamicamente
+              cat <<EOF > docker-compose.yml
               services:
                 genesys-server:
-                  image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-server:latest
+                  image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
                   container_name: genesys-server
                   volumes:
                     - ./data:/app/data
@@ -256,12 +177,13 @@ jobs:
                   environment:
                     - DATABASE_URL=jdbc:sqlite:data/genesys21.db?journal_mode=WAL
                     - PROD_MODE=true
+                    - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
                   restart: unless-stopped
                   networks:
                     - genesys-network
 
                 genesys-web:
-                  image: ${OCI_REGION}.ocir.io/${OCI_TENANCY_NAMESPACE}/genesys-web:latest
+                  image: ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
                   container_name: genesys-web
                   ports:
                     - \"80:80\"

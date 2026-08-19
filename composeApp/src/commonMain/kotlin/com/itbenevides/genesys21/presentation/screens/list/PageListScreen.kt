@@ -37,6 +37,7 @@ import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen
 import com.itbenevides.genesys21.presentation.receipt.ReceiptViewModel
+import com.itbenevides.genesys21.ui.components.StripeConnectComponent
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
@@ -259,7 +260,8 @@ fun PageListScreen(
             onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
             onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
             onDeleteService = { viewModel.deleteBookingService(it) },
-            uriHandler = uriHandler
+            uriHandler = uriHandler,
+            scope = scope
         )
     }
 
@@ -304,7 +306,8 @@ private fun PageListContent(
     onAddService: () -> Unit,
     onEditService: (BookingService) -> Unit,
     onDeleteService: (String) -> Unit,
-    uriHandler: androidx.compose.ui.platform.UriHandler
+    uriHandler: androidx.compose.ui.platform.UriHandler,
+    scope: kotlinx.coroutines.CoroutineScope
 ) {
     val services by viewModel.services.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
@@ -413,7 +416,7 @@ private fun PageListContent(
                                     onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
                                 )
                             }
-                            6 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler)
+                            6 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler, scope)
                             7 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
                             8 -> ProfileScreen(viewModel, router)
                         }
@@ -674,7 +677,8 @@ private fun OrderDetailContent(
 private fun StoreSettingsTabUI(
     viewModel: PageViewModel,
     userProfile: UserProfile?,
-    uriHandler: androidx.compose.ui.platform.UriHandler
+    uriHandler: androidx.compose.ui.platform.UriHandler,
+    scope: kotlinx.coroutines.CoroutineScope
 ) {
     val storeId = userProfile?.id ?: "admin"
     var store by remember { mutableStateOf<Store?>(null) }
@@ -695,6 +699,9 @@ private fun StoreSettingsTabUI(
     var stripeSecret by remember { mutableStateOf("") }
     var asaasKey by remember { mutableStateOf("") }
     var selectedGateway by remember { mutableStateOf("STRIPE") }
+
+    var connectSessionSecret by remember { mutableStateOf<String?>(null) }
+    var activeConnectComponent by remember { mutableStateOf("account-onboarding") }
 
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -784,8 +791,14 @@ private fun StoreSettingsTabUI(
                     icon = GenesysIcons.Payments,
                     onClick = {
                         val userEmail = userProfile?.email ?: ""
-                        viewModel.connectStripe(storeId, userEmail) { url ->
-                            uriHandler.openUri(url)
+                        // Mantemos a criação inicial, mas agora vamos tentar exibir o componente incorporado
+                        viewModel.connectStripe(storeId, userEmail) { _ ->
+                            // Após criar a conta, buscamos a sessão para o componente incorporado
+                            scope.launch {
+                                viewModel.getAccountSession(storeId).onSuccess { secret ->
+                                    connectSessionSecret = secret
+                                }
+                            }
                         }
                     },
                     isLoading = isLoading,
@@ -807,36 +820,85 @@ private fun StoreSettingsTabUI(
                         modifier = Modifier.size(20.dp)
                     )
                     GenesysSpacer(GenesysTheme.spacing.xs)
-                    GenesysText(
-                        text = "Stripe Conectado",
-                        style = GenesysTextStyle.Body,
-                        fontWeight = GenesysFontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    GenesysColumn(usePadding = false) {
+                        GenesysText(
+                            text = "Stripe Conectado",
+                            style = GenesysTextStyle.Body,
+                            fontWeight = GenesysFontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        GenesysText(
+                            text = "ID: ${store?.stripeAccountId}",
+                            style = GenesysTextStyle.Label,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
                 }
 
                 GenesysSpacer(GenesysTheme.spacing.m)
 
-                GenesysLoadingButton(
-                    text = "Abrir Dashboard Stripe",
-                    icon = GenesysIcons.Language,
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    onClick = {
-                        viewModel.openStripeDashboard(storeId) { url ->
-                            uriHandler.openUri(url)
-                        }
-                    },
-                    isLoading = isLoading,
-                    fillWidth = true
+                GenesysRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), usePadding = false) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        GenesysLoadingButton(
+                            text = "Vendas",
+                            icon = GenesysIcons.Payments,
+                            onClick = {
+                                activeConnectComponent = "payments"
+                                scope.launch {
+                                    viewModel.getAccountSession(storeId).onSuccess { secret ->
+                                        connectSessionSecret = secret
+                                    }
+                                }
+                            },
+                            isLoading = isLoading
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        GenesysLoadingButton(
+                            text = "Saques",
+                            icon = GenesysIcons.AccountBalanceWallet,
+                            onClick = {
+                                activeConnectComponent = "payouts"
+                                scope.launch {
+                                    viewModel.getAccountSession(storeId).onSuccess { secret ->
+                                        connectSessionSecret = secret
+                                    }
+                                }
+                            },
+                            isLoading = isLoading
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        GenesysLoadingButton(
+                            text = "Painel",
+                            icon = GenesysIcons.Language,
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            onClick = {
+                                viewModel.openStripeDashboard(storeId) { url ->
+                                    uriHandler.openUri(url)
+                                }
+                            },
+                            isLoading = isLoading
+                        )
+                    }
+                }
+            }
+
+            if (connectSessionSecret != null) {
+                GenesysSpacer(GenesysTheme.spacing.l)
+                // Exibe o componente incorporado
+                StripeConnectComponent(
+                    componentName = if (store?.stripeAccountId.isNullOrBlank()) "account-onboarding" else activeConnectComponent,
+                    publishableKey = stripePublic.ifBlank { "pk_test_placeholder" },
+                    clientSecret = connectSessionSecret!!,
+                    modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(8.dp))
                 )
 
-                GenesysSpacer(GenesysTheme.spacing.xs)
-                GenesysText(
-                    text = "Gerencie seus ganhos, reembolsos e dados bancários.",
-                    style = GenesysTextStyle.Label,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = GenesysTextAlign.Center,
-                    color = GenesysTheme.colors.onSurfaceVariant
+                GenesysSpacer(GenesysTheme.spacing.s)
+                GenesysTextButton(
+                    text = "Fechar Gestão Stripe",
+                    onClick = { connectSessionSecret = null },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
 

@@ -1,10 +1,7 @@
 package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.Store
-import com.itbenevides.genesys21.domain.repository.AuthRepository
-import com.itbenevides.genesys21.domain.repository.ConnectAccountRequest
-import com.itbenevides.genesys21.domain.repository.ConnectLinkResponse
-import com.itbenevides.genesys21.domain.repository.StoreRepository
+import com.itbenevides.genesys21.domain.repository.*
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -90,6 +87,21 @@ class KtorStoreRepository(
             Result.success(response.body<ConnectLinkResponse>().url)
         } else {
             Result.failure(Exception("Erro ao gerar link de dashboard"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getAccountSession(storeId: String, token: String): Result<String> = try {
+        val response = client.post("$baseUrl/api/admin/connect/sessions") {
+            getHeaders().forEach { (k, v) -> header(k, v) }
+            contentType(ContentType.Application.Json)
+            setBody(AccountSessionRequest(storeId))
+        }
+        if (response.status.isSuccess()) {
+            Result.success(response.body<AccountSessionResponse>().clientSecret)
+        } else {
+            Result.failure(Exception("Erro ao criar sessão Stripe"))
         }
     } catch (e: Exception) {
         Result.failure(e)

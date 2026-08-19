@@ -15,6 +15,7 @@ object GenesysIcons {
     val Inventory = Icons.Default.Inventory
     val ReceiptLong = Icons.Default.ReceiptLong
     val Payments = Icons.Default.Payments
+    val AccountBalanceWallet = Icons.Default.AccountBalanceWallet
     val Numbers = Icons.Default.Numbers
     val Category = Icons.Default.Category
     val Description = Icons.Default.Description
