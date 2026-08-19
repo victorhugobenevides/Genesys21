@@ -153,23 +153,35 @@ jobs:
       - image: cimg/base:stable
     steps:
       - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "SHA256:BicWGI+Nn3UAxycCuXPwDB3SZKsChrphDpcSiBL9SqM"
       - run:
-          name: Deploy via SSH
+          name: Setup SSH Key and Deploy
           command: |
+            # 1. Preparar diretório SSH
+            mkdir -p ~/.ssh
+            ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
+
+            # 2. Reconstituir a chave a partir da variável de ambiente
+            if [ -n "$OCI_SSH_KEY" ]; then
+              echo "$OCI_SSH_KEY" | base64 --decode > ~/.ssh/id_rsa || echo "$OCI_SSH_KEY" > ~/.ssh/id_rsa
+              chmod 600 ~/.ssh/id_rsa
+              echo "✓ SSH Key configurada."
+            else
+              echo "⚠ ERRO: Variável OCI_SSH_KEY não encontrada no CircleCI."
+              exit 1
+            fi
+
+            # 3. Executar o Deploy via SSH
             ssh -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
               mkdir -p ~/app && cd ~/app
 
-              # 1. Login no GHCR
+              # Login no GHCR
               echo \"${GITHUB_TOKEN}\" | sudo docker login ghcr.io -u \"${GITHUB_USERNAME}\" --password-stdin
 
-              # 2. Pull das imagens mais recentes
+              # Pull das imagens
               sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-server:latest\"
               sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-web:latest\"
 
-              # 3. Gerar Docker Compose dinamicamente
+              # Gerar Docker Compose
               cat \<<EOF > docker-compose.yml
               services:
                 genesys-server:
@@ -201,7 +213,7 @@ jobs:
                   driver: bridge
             EOF
 
-              # 4. Restart dos serviços
+              # Restart dos serviços
               sudo docker compose up -d --force-recreate
               sudo docker image prune -f
             "
