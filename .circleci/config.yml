@@ -101,7 +101,7 @@ jobs:
             cp Dockerfile.web build/docker/web/Dockerfile
 
             # --- NGINX CONFIG ---
-            cat <<EOF > build/docker/web/nginx.conf
+            cat \<<EOF > build/docker/web/nginx.conf
             user  nginx;
             worker_processes  auto;
             error_log  /var/log/nginx/error.log warn;
@@ -166,7 +166,7 @@ jobs:
               sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-web:latest\"
 
               # 3. Gerar Docker Compose dinamicamente
-              cat <<EOF > docker-compose.yml
+              cat \<<EOF > docker-compose.yml
               services:
                 genesys-server:
                   image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
