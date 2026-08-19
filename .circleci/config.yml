@@ -155,7 +155,7 @@ jobs:
       - run:
           name: Deploy via SSH
           command: |
-            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP "
+            ssh -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
               mkdir -p ~/app && cd ~/app
 
               # 1. Login no GHCR
