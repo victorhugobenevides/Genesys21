@@ -152,6 +152,10 @@ jobs:
     docker:
       - image: cimg/base:stable
     steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:BicWGI+Nn3UAxycCuXPwDB3SZKsChrphDpcSiBL9SqM"
       - run:
           name: Deploy via SSH
           command: |
