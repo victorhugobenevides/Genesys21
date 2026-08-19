@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -244,7 +246,7 @@ private fun ReceiptListContent(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = Icons.Default.ReceiptLong,
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                             contentDescription = null,
                             modifier = Modifier.size(64.dp),
                             tint = GenesysTheme.colors.outline
@@ -488,7 +490,7 @@ fun ReceiptCardItem(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B))
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Launch,
+                                    imageVector = Icons.AutoMirrored.Filled.Launch,
                                     contentDescription = null,
                                     modifier = Modifier.size(14.dp),
                                     tint = Color.White
@@ -527,7 +529,7 @@ fun ScanReceiptDialog(
         }
     }
 
-    AlertDialog(
+    BasicAlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -798,7 +800,7 @@ fun ReceiptDetailDialog(
                 Text("Categoria: ${receipt.categoria}", fontSize = 13.sp)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text("Valor Total: R$ ${formatMoney(receipt.valorTotal)}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = GenesysTheme.colors.brand)
@@ -848,7 +850,7 @@ fun ReceiptDetailDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B))
                 ) {
-                    Icon(Icons.Default.Launch, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.AutoMirrored.Filled.Launch, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Abrir na SEFAZ")
                 }

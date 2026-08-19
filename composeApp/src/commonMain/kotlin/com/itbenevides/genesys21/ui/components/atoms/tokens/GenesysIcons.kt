@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.*
 
 object GenesysIcons {
     val Inventory = Icons.Default.Inventory
-    val ReceiptLong = Icons.Default.ReceiptLong
+    val ReceiptLong = Icons.AutoMirrored.Filled.ReceiptLong
     val Payments = Icons.Default.Payments
     val AccountBalanceWallet = Icons.Default.AccountBalanceWallet
     val Numbers = Icons.Default.Numbers

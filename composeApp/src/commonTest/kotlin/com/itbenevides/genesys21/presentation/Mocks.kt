@@ -215,6 +215,10 @@ class FakeStoreRepository : StoreRepository {
     override suspend fun getConnectLoginLink(storeId: String, token: String): Result<String> {
         return Result.success("https://connect.stripe.com/express/mock")
     }
+
+    override suspend fun getAccountSession(storeId: String, token: String): Result<String> {
+        return Result.success("account_session_secret_mock")
+    }
 }
 
 class FakeShippingRepository : ShippingRepository {

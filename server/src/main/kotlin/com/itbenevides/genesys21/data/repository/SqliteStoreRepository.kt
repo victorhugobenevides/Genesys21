@@ -96,6 +96,10 @@ class SqliteStoreRepository : StoreRepository {
         return Result.failure(Exception("Operação deve ser realizada via API Admin"))
     }
 
+    override suspend fun getAccountSession(storeId: String, token: String): Result<String> {
+        return Result.failure(Exception("Operação deve ser realizada via API Admin"))
+    }
+
     private fun ResultRow.toStore() = Store(
         id = this[StoresTable.id],
         ownerId = this[StoresTable.ownerId],
