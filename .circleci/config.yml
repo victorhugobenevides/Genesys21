@@ -118,7 +118,7 @@ jobs:
                 keepalive_timeout  65;
                 server {
                     listen 80;
-                    server_name localhost;
+                    server_name localhost victorbenevides.dev www.victorbenevides.dev;
                     location / {
                         root   /usr/share/nginx/html;
                         index  index.html index.htm;
@@ -213,8 +213,18 @@ jobs:
                   driver: bridge
             EOF
 
-              # Restart dos serviços
+              # 4. Restart dos serviços
               sudo docker compose up -d --force-recreate
+
+              # 5. Abrir Portas no Firewall do SO (Oracle/Ubuntu standard)
+              # Inserimos no topo da lista INPUT para garantir precedência
+              sudo iptables -I INPUT 6 -p tcp --dport 80 -j ACCEPT
+              sudo iptables -I INPUT 6 -p tcp --dport 443 -j ACCEPT
+              sudo netfilter-persistent save || true
+
+              # 6. Diagnóstico de Status
+              echo \"--- STATUS DOS CONTAINERS ---\"
+              sudo docker ps
               sudo docker image prune -f
             "
 
