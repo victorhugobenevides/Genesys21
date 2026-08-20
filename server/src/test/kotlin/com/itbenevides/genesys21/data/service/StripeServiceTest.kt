@@ -41,11 +41,11 @@ class StripeServiceTest {
         val mockIntent = mockk<PaymentIntent>()
         every { mockIntent.clientSecret } returns "pi_secret_123"
 
-        every { mockClient.v1().paymentIntents().create(any<PaymentIntentCreateParams>()) } returns mockIntent
+        every { mockClient.v1().paymentIntents().create(any<PaymentIntentCreateParams>(), any()) } returns mockIntent
 
         val secret = stripeService.createPaymentIntent(order, "key")
 
         assertEquals("pi_secret_123", secret)
-        verify { mockClient.v1().paymentIntents().create(any<PaymentIntentCreateParams>()) }
+        verify { mockClient.v1().paymentIntents().create(any<PaymentIntentCreateParams>(), any()) }
     }
 }
