@@ -154,75 +154,72 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Setup SSH Key and Deploy
+          name: Setup SSH and Deploy
           command: |
-            # 1. Preparar diretório SSH
+            # 1. Validar variáveis obrigatórias
+            if [ -z "${OCI_HOST}" ]; then echo "ERRO: OCI_HOST não configurada"; exit 1; fi
+            if [ -z "${OCI_SSH_KEY}" ]; then echo "ERRO: OCI_SSH_KEY não configurada"; exit 1; fi
+            if [ -z "${GITHUB_TOKEN}" ]; then echo "ERRO: GITHUB_TOKEN não configurada"; exit 1; fi
+            if [ -z "${GITHUB_USERNAME}" ]; then echo "ERRO: GITHUB_USERNAME não configurada"; exit 1; fi
+
+            # 2. Reconstituir a chave usando Python
             mkdir -p ~/.ssh
+            python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
+            chmod 600 ~/.ssh/oracle_key
             ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
+            echo "✓ SSH configurado."
 
-            # 2. Reconstituir a chave usando Python (mais robusto que echo)
-            if [ -n "$OCI_SSH_KEY" ]; then
-              python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
-              chmod 600 ~/.ssh/oracle_key
-              echo "✓ SSH Key configurada com sucesso via Python."
-            else
-              echo "⚠ ERRO: Variável OCI_SSH_KEY não encontrada no CircleCI."
-              exit 1
-            fi
+            # 3. Gerar Docker Compose LOCALMENTE (Evita problemas de aspas no SSH)
+            cat \<<EOF > docker-compose.yml
+            services:
+              genesys-server:
+                image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
+                container_name: genesys-server
+                volumes:
+                  - ./data:/app/data
+                  - ./uploads:/app/uploads
+                environment:
+                  - DATABASE_URL=jdbc:sqlite:data/genesys21.db?journal_mode=WAL
+                  - PROD_MODE=true
+                  - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+                restart: unless-stopped
+                networks:
+                  - genesys-network
 
-            # 3. Executar o Deploy via SSH forçando o uso da chave (-i)
-            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
-              mkdir -p ~/app && cd ~/app
+              genesys-web:
+                image: ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
+                container_name: genesys-web
+                ports:
+                  - "80:80"
+                  - "443:443"
+                restart: unless-stopped
+                networks:
+                  - genesys-network
 
-              # Login no GHCR
-              echo \"${GITHUB_TOKEN}\" | sudo docker login ghcr.io -u \"${GITHUB_USERNAME}\" --password-stdin
-
-              # Pull das imagens
-              sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-server:latest\"
-              sudo docker pull \"ghcr.io/${GITHUB_USERNAME}/genesys-web:latest\"
-
-              # Gerar Docker Compose
-              cat \<<EOF > docker-compose.yml
-              services:
-                genesys-server:
-                  image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
-                  container_name: genesys-server
-                  volumes:
-                    - ./data:/app/data
-                    - ./uploads:/app/uploads
-                  environment:
-                    - DATABASE_URL=jdbc:sqlite:data/genesys21.db?journal_mode=WAL
-                    - PROD_MODE=true
-                    - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-                  restart: unless-stopped
-                  networks:
-                    - genesys-network
-
-                genesys-web:
-                  image: ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
-                  container_name: genesys-web
-                  ports:
-                    - \"80:80\"
-                    - \"443:443\"
-                  restart: unless-stopped
-                  networks:
-                    - genesys-network
-
-              networks:
-                genesys-network:
-                  driver: bridge
+            networks:
+              genesys-network:
+                driver: bridge
             EOF
 
-              # 4. Restart dos serviços
+            # 4. Enviar arquivo para o servidor
+            echo "Enviando arquivos para o servidor..."
+            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "mkdir -p ~/app"
+            scp -i ~/.ssh/oracle_key docker-compose.yml ubuntu@${OCI_HOST}:~/app/docker-compose.yml
+
+            # 5. Executar comandos no servidor
+            echo "Iniciando atualização dos containers..."
+            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
+              cd ~/app
+              echo \"${GITHUB_TOKEN}\" | sudo docker login ghcr.io -u \"${GITHUB_USERNAME}\" --password-stdin
+              sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
+              sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
               sudo docker compose up -d --force-recreate
 
-              # 5. Abrir Portas no Firewall do SO (Oracle/Ubuntu standard)
-              # Inserimos no topo da lista INPUT para garantir precedência
-              sudo iptables -I INPUT 6 -p tcp --dport 80 -j ACCEPT
-              sudo iptables -I INPUT 6 -p tcp --dport 443 -j ACCEPT
+              # Firewall (Insert at top)
+              sudo iptables -C INPUT -p tcp --dport 80 -j ACCEPT || sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
+              sudo iptables -C INPUT -p tcp --dport 443 -j ACCEPT || sudo iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT
               sudo netfilter-persistent save || true
 
-              # 6. Diagnóstico de Status
               echo \"--- STATUS DOS CONTAINERS ---\"
               sudo docker ps
               sudo docker image prune -f
