@@ -123,19 +123,15 @@ class StripeService(private val clientProvider: (String) -> StripeClient = { Str
                     .build()
             )
 
-        val requestOptions = if (!connectedAccountId.isNullOrBlank()) {
-            RequestOptions.builder()
-                .setStripeAccount(connectedAccountId)
-                .build()
-        } else {
-            null
-        }
+        val requestOptions = RequestOptions.builder().apply {
+            if (!connectedAccountId.isNullOrBlank()) {
+                setStripeAccount(connectedAccountId)
+            }
+            // IDEMPOTÊNCIA: Garante que o mesmo pedido não gere duas cobranças
+            setIdempotencyKey("payment_intent_${order.id}")
+        }.build()
 
-        val paymentIntent = if (requestOptions != null) {
-            client.v1().paymentIntents().create(paramsBuilder.build(), requestOptions)
-        } else {
-            client.v1().paymentIntents().create(paramsBuilder.build())
-        }
+        val paymentIntent = client.v1().paymentIntents().create(paramsBuilder.build(), requestOptions)
 
         return paymentIntent.clientSecret
     }

@@ -374,7 +374,7 @@ class PageViewModel(
 
                 val order =
                     Order(
-                        id = "",
+                        id = com.itbenevides.genesys21.util.GenesysUUID.randomUUID(),
                         storeId = inferredStoreId,
                         customerId = currentUserId, // UID real se logado (ou null)
                         sessionId = currentSessionId, // ID da sessão para visitantes

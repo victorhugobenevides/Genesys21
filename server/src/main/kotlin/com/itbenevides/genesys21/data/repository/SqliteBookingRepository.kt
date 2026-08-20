@@ -427,34 +427,50 @@ class SqliteBookingRepository(
             try {
                 val aid = appointment.id.ifBlank { java.util.UUID.randomUUID().toString() }
 
+                // IDEMPOTÊNCIA: Se este agendamento já existe, apenas ignoramos
+                val existing = AppointmentsTable.selectAll().where { AppointmentsTable.id eq aid }.count()
+                if (existing > 0) return@dbQuery
+
                 // 1. VALIDAÇÃO DE DISPONIBILIDADE (Lado do Servidor / Atomicidade)
                 val start = appointment.startTime.toEpochMilliseconds()
                 val end = appointment.endTime.toEpochMilliseconds()
 
-                val hasOverlap = AppointmentsTable.selectAll()
+                // Busca o serviço para saber o limite de participantes
+                val serviceRow = BookingServicesTable.selectAll()
+                    .where { BookingServicesTable.id eq appointment.serviceId }
+                    .firstOrNull() ?: throw Exception("Serviço não encontrado")
+
+                val maxParticipants = serviceRow[BookingServicesTable.maxParticipants]
+                val isOnline = serviceRow[BookingServicesTable.isOnline]
+                val sName = serviceRow[BookingServicesTable.name]
+                var finalMeetingLink = serviceRow[BookingServicesTable.meetingLink]
+
+                // Busca agendamentos conflitantes
+                val overlappingAppts = AppointmentsTable.selectAll()
                     .where {
                         (AppointmentsTable.storeId eq appointment.storeId) and
                         (AppointmentsTable.deletedAt.isNull()) and
+                        (AppointmentsTable.status neq BookingStatus.CANCELLED.name) and
                         (
-                            (AppointmentsTable.startTime greaterEq start and (AppointmentsTable.startTime less start.plus(1))) or // Exato início
-                            (AppointmentsTable.startTime greaterEq start and (AppointmentsTable.startTime less end)) or // Algum agendamento inicia durante este
-                            (AppointmentsTable.endTime greater start and (AppointmentsTable.endTime lessEq end)) or // Algum agendamento termina durante este
-                            (AppointmentsTable.startTime lessEq start and (AppointmentsTable.endTime greaterEq end)) // Este agendamento está dentro de outro
+                            (AppointmentsTable.startTime greaterEq start and (AppointmentsTable.startTime less end)) or
+                            (AppointmentsTable.endTime greater start and (AppointmentsTable.endTime lessEq end)) or
+                            (AppointmentsTable.startTime lessEq start and (AppointmentsTable.endTime greaterEq end))
                         )
-                    }.count() > 0
+                    }.toList()
 
-                if (hasOverlap) {
-                    throw Exception("CONFLITO: O horário selecionado (${appointment.startTime}) já foi ocupado.")
+                // Regra de conflito:
+                // 1. Se houver agendamento de um serviço DIFERENTE, bloqueia (o profissional está ocupado)
+                // 2. Se for o MESMO serviço, permite até atingir o maxParticipants
+                val hasOtherService = overlappingAppts.any { it[AppointmentsTable.serviceId] != appointment.serviceId }
+                val currentParticipants = overlappingAppts.count { it[AppointmentsTable.serviceId] == appointment.serviceId }
+
+                if (hasOtherService) {
+                    throw Exception("CONFLITO: O profissional já possui um compromisso diferente neste horário.")
                 }
 
-                // Busca o link de reunião do serviço (se houver link estático ou se for online)
-                val serviceRow = BookingServicesTable.selectAll()
-                    .where { BookingServicesTable.id eq appointment.serviceId }
-                    .firstOrNull()
-
-                var finalMeetingLink = serviceRow?.get(BookingServicesTable.meetingLink)
-                val isOnline = serviceRow?.get(BookingServicesTable.isOnline) ?: false
-                val sName = serviceRow?.get(BookingServicesTable.name) ?: "Serviço"
+                if (currentParticipants >= maxParticipants) {
+                    throw Exception("CONFLITO: O horário selecionado (${appointment.startTime}) já atingiu o limite de participantes.")
+                }
 
                 // Se o serviço for ONLINE e tivermos o serviço do Google configurado, gera link dinâmico
                 if (isOnline && googleCalendarService != null) {
