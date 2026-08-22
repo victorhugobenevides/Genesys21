@@ -216,9 +216,9 @@ jobs:
               return 1
             }
 
-            # 5. Executar Deploy com Retry e timeouts menores para falhar rápido
-            SSH_CMD="ssh -i $HOME/.ssh/oracle_key -o StrictHostKeyChecking=no -o ConnectTimeout=15"
-            SCP_CMD="scp -i $HOME/.ssh/oracle_key -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+            # 5. Executar Deploy com Retry, Verbose (-vvv) e timeouts maiores para diagnóstico
+            SSH_CMD="ssh -vvv -i $HOME/.ssh/oracle_key -o StrictHostKeyChecking=no -o ConnectTimeout=30"
+            SCP_CMD="scp -vvv -i $HOME/.ssh/oracle_key -o StrictHostKeyChecking=no -o ConnectTimeout=30"
 
             run_retry ${SSH_CMD} ubuntu@${OCI_HOST} "mkdir -p ~/app"
             run_retry ${SCP_CMD} docker-compose.yml ubuntu@${OCI_HOST}:~/app/docker-compose.yml
