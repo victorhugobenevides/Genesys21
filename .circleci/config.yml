@@ -157,27 +157,21 @@ jobs:
           name: Setup SSH and Deploy
           command: |
             set -x
-            # 1. Validar variáveis (com echo direto para o log)
-            if [ -z "${OCI_HOST}" ]; then echo "ERRO: OCI_HOST (IP do servidor) não configurada"; exit 1; fi
+            # 1. Validar variáveis
+            if [ -z "${OCI_HOST}" ]; then echo "ERRO: OCI_HOST não configurada"; exit 1; fi
             if [ -z "${OCI_SSH_KEY}" ]; then echo "ERRO: OCI_SSH_KEY não configurada"; exit 1; fi
             if [ -z "${GITHUB_TOKEN}" ]; then echo "ERRO: GITHUB_TOKEN não configurada"; exit 1; fi
             if [ -z "${GITHUB_USERNAME}" ]; then echo "ERRO: GITHUB_USERNAME não configurada"; exit 1; fi
 
             # 2. Configurar SSH
             mkdir -p ~/.ssh
-            ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
-            # Reconstituir a chave privada
-            if echo "${OCI_SSH_KEY}" | grep -q "BEGIN RSA PRIVATE KEY"; then
-                echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
-            else
-                echo "${OCI_SSH_KEY}" | base64 --decode > ~/.ssh/oracle_key
-            fi
+            # Reconstituir a chave privada usando Python para evitar problemas de quebra de linha
+            python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
             chmod 600 ~/.ssh/oracle_key
             echo "✓ SSH configurado."
 
-            # 3. Gerar Docker Compose LOCALMENTE
-            # Usamos aspas simples no EOF para evitar que o shell do CircleCI tente expandir as variáveis aqui
-            cat \<<'EOF' > docker-compose.yml.template
+            # 3. Gerar Docker Compose LOCALMENTE (Expansão nativa no CircleCI)
+            cat \<<EOF > docker-compose.yml
             services:
               genesys-server:
                 image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
@@ -207,14 +201,9 @@ jobs:
               genesys-network:
                 driver: bridge
             EOF
-
-            # 4. Injetar variáveis reais no template usando envsubst
-            export GITHUB_USERNAME=${GITHUB_USERNAME}
-            export STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
-            envsubst < docker-compose.yml.template > docker-compose.yml
             echo "✓ docker-compose.yml gerado."
 
-            # 5. Enviar e Executar
+            # 4. Enviar e Executar
             echo "Fazendo upload do arquivo de configuração..."
             ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "mkdir -p ~/app"
             scp -i ~/.ssh/oracle_key docker-compose.yml ubuntu@${OCI_HOST}:~/app/docker-compose.yml
