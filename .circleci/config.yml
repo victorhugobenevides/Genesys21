@@ -165,12 +165,14 @@ jobs:
 
             # 2. Configurar SSH
             mkdir -p ~/.ssh
-            # Reconstituir a chave privada usando Python para evitar problemas de quebra de linha
             python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
             chmod 600 ~/.ssh/oracle_key
-            echo "✓ SSH configurado."
 
-            # 3. Gerar Docker Compose LOCALMENTE (Expansão nativa no CircleCI)
+            # Diagnóstico de rede antes de começar
+            echo "Verificando conectividade com ${OCI_HOST} na porta 22..."
+            nc -zvw10 "${OCI_HOST}" 22 || echo "AVISO: Servidor inacessível na porta 22. O deploy provavelmente falhará por Firewall."
+
+            # 3. Gerar Docker Compose LOCALMENTE
             cat \<<EOF > docker-compose.yml
             services:
               genesys-server:
@@ -201,15 +203,27 @@ jobs:
               genesys-network:
                 driver: bridge
             EOF
-            echo "✓ docker-compose.yml gerado."
 
-            # 4. Enviar e Executar
-            echo "Fazendo upload do arquivo de configuração..."
-            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "mkdir -p ~/app"
-            scp -i ~/.ssh/oracle_key docker-compose.yml ubuntu@${OCI_HOST}:~/app/docker-compose.yml
+            # 4. Função de Retry para comandos instáveis
+            run_retry() {
+              for i in 1 2 3; do
+                echo "Tentativa $i..."
+                if "$@"; then return 0; fi
+                echo "Falha. Aguardando 10s..."
+                sleep 10
+              done
+              return 1
+            }
+
+            # 5. Executar Deploy com Retry e timeouts menores para falhar rápido
+            SSH_CMD="ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+            SCP_CMD="scp -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no -o ConnectTimeout=15"
+
+            run_retry ${SSH_CMD} ubuntu@${OCI_HOST} "mkdir -p ~/app"
+            run_retry ${SCP_CMD} docker-compose.yml ubuntu@${OCI_HOST}:~/app/docker-compose.yml
 
             echo "Iniciando atualização remota..."
-            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} \<<REMOTE_EOF
+            run_retry ${SSH_CMD} ubuntu@${OCI_HOST} \<<REMOTE_EOF
               cd ~/app
               echo "${GITHUB_TOKEN}" | sudo docker login ghcr.io -u "${GITHUB_USERNAME}" --password-stdin
               sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
