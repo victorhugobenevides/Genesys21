@@ -156,21 +156,28 @@ jobs:
       - run:
           name: Setup SSH and Deploy
           command: |
-            # 1. Validar variáveis obrigatórias
-            if [ -z "${OCI_HOST}" ]; then echo "ERRO: OCI_HOST não configurada"; exit 1; fi
+            set -x
+            # 1. Validar variáveis (com echo direto para o log)
+            if [ -z "${OCI_HOST}" ]; then echo "ERRO: OCI_HOST (IP do servidor) não configurada"; exit 1; fi
             if [ -z "${OCI_SSH_KEY}" ]; then echo "ERRO: OCI_SSH_KEY não configurada"; exit 1; fi
             if [ -z "${GITHUB_TOKEN}" ]; then echo "ERRO: GITHUB_TOKEN não configurada"; exit 1; fi
             if [ -z "${GITHUB_USERNAME}" ]; then echo "ERRO: GITHUB_USERNAME não configurada"; exit 1; fi
 
-            # 2. Reconstituir a chave usando Python
+            # 2. Configurar SSH
             mkdir -p ~/.ssh
-            python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
-            chmod 600 ~/.ssh/oracle_key
             ssh-keyscan -H "${OCI_HOST}" >> ~/.ssh/known_hosts
+            # Reconstituir a chave privada
+            if echo "${OCI_SSH_KEY}" | grep -q "BEGIN RSA PRIVATE KEY"; then
+                echo "${OCI_SSH_KEY}" > ~/.ssh/oracle_key
+            else
+                echo "${OCI_SSH_KEY}" | base64 --decode > ~/.ssh/oracle_key
+            fi
+            chmod 600 ~/.ssh/oracle_key
             echo "✓ SSH configurado."
 
-            # 3. Gerar Docker Compose LOCALMENTE (Evita problemas de aspas no SSH)
-            cat \<<EOF > docker-compose.yml
+            # 3. Gerar Docker Compose LOCALMENTE
+            # Usamos aspas simples no EOF para evitar que o shell do CircleCI tente expandir as variáveis aqui
+            cat \<<'EOF' > docker-compose.yml.template
             services:
               genesys-server:
                 image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
@@ -201,29 +208,34 @@ jobs:
                 driver: bridge
             EOF
 
-            # 4. Enviar arquivo para o servidor
-            echo "Enviando arquivos para o servidor..."
+            # 4. Injetar variáveis reais no template usando envsubst
+            export GITHUB_USERNAME=${GITHUB_USERNAME}
+            export STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+            envsubst < docker-compose.yml.template > docker-compose.yml
+            echo "✓ docker-compose.yml gerado."
+
+            # 5. Enviar e Executar
+            echo "Fazendo upload do arquivo de configuração..."
             ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "mkdir -p ~/app"
             scp -i ~/.ssh/oracle_key docker-compose.yml ubuntu@${OCI_HOST}:~/app/docker-compose.yml
 
-            # 5. Executar comandos no servidor
-            echo "Iniciando atualização dos containers..."
-            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} "
+            echo "Iniciando atualização remota..."
+            ssh -i ~/.ssh/oracle_key -o StrictHostKeyChecking=no ubuntu@${OCI_HOST} <<REMOTE_EOF
               cd ~/app
-              echo \"${GITHUB_TOKEN}\" | sudo docker login ghcr.io -u \"${GITHUB_USERNAME}\" --password-stdin
+              echo "${GITHUB_TOKEN}" | sudo docker login ghcr.io -u "${GITHUB_USERNAME}" --password-stdin
               sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
               sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
               sudo docker compose up -d --force-recreate
 
-              # Firewall (Insert at top)
+              # Firewall
               sudo iptables -C INPUT -p tcp --dport 80 -j ACCEPT || sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
               sudo iptables -C INPUT -p tcp --dport 443 -j ACCEPT || sudo iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT
               sudo netfilter-persistent save || true
 
-              echo \"--- STATUS DOS CONTAINERS ---\"
+              echo "--- STATUS FINAL ---"
               sudo docker ps
               sudo docker image prune -f
-            "
+            REMOTE_EOF
 
 workflows:
   version: 2
