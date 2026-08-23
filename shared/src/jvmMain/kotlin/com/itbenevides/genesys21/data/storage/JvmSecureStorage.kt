@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.data.util
+package com.itbenevides.genesys21.data.storage
 
 import java.util.prefs.Preferences
 

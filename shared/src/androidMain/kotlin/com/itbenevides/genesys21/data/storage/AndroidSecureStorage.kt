@@ -35,4 +35,4 @@ class AndroidSecureStorage(context: Context) : SecureStorage {
     }
 }
 
-fun createSecureStorage(context: Context): SecureStorage = AndroidSecureStorage(context)
+actual fun createSecureStorage(context: Any?): SecureStorage = AndroidSecureStorage(context as Context)

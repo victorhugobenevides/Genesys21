@@ -29,3 +29,5 @@ class WasmSecureStorage : SecureStorage {
         jsClear()
     }
 }
+
+actual fun createSecureStorage(context: Any?): SecureStorage = WasmSecureStorage()

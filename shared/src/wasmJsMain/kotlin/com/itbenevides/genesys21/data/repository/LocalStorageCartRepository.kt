@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.data.repository
 
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import io.ktor.client.*
@@ -23,7 +24,7 @@ class LocalStorageCartRepository(
     baseUrl: String,
     json: Json,
     authRepository: AuthRepository,
-    secureStorage: com.itbenevides.genesys21.data.storage.SecureStorage,
+    secureStorage: SecureStorage,
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository, secureStorage) {
     private val CART_STORAGE_KEY = "genesys21_cart"
 

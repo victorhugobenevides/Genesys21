@@ -18,7 +18,7 @@ abstract class BaseCartRepository(
     protected val baseUrl: String,
     protected val json: Json,
     protected val authRepository: AuthRepository,
-    protected val secureStorage: com.itbenevides.genesys21.data.storage.SecureStorage,
+    protected val secureStorage: SecureStorage,
 ) : CartRepository {
     protected val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()

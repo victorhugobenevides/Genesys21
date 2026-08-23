@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.data.repository
 
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import io.ktor.client.*
 import kotlinx.serialization.json.Json
 
@@ -10,22 +11,14 @@ class InMemoryCartRepository(
     baseUrl: String,
     json: Json,
     authRepository: AuthRepository,
-) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
-    private var session: String? = null
+    secureStorage: SecureStorage,
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository, secureStorage) {
 
     override suspend fun saveToLocal(items: List<CartItem>) {
-        // Just in memory
+        // Just in memory, handled by BaseCartRepository._cartItems
     }
 
     override suspend fun loadFromLocal(): List<CartItem> {
         return emptyList()
-    }
-
-    override suspend fun saveSessionId(id: String) {
-        session = id
-    }
-
-    override suspend fun loadSessionId(): String? {
-        return session
     }
 }

@@ -18,6 +18,9 @@ class IosSecureStorage : SecureStorage {
     }
 
     override suspend fun clear() {
-        // Implementation for clearing all keys would need a registry of keys
+        // Simple clear - in real app would use Keychain
+        defaults.removePersistentDomainForName(platform.Foundation.NSBundle.mainBundle.bundleIdentifier ?: "")
     }
 }
+
+actual fun createSecureStorage(context: Any?): SecureStorage = IosSecureStorage()

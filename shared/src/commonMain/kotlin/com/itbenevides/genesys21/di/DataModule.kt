@@ -98,7 +98,7 @@ val dataModule =
         single<ReceiptRepository> {
             // Para Wasm e Android em produção, usamos o backend.
             // Para testes ou local legacional, poderíamos alternar aqui.
-            com.itbenevides.genesys21.data.repository.KtorReceiptRepository(get(), getBaseUrl(), get())
+            KtorReceiptRepository(get(), getBaseUrl(), get())
         }
         single { com.itbenevides.genesys21.domain.service.ReceiptParserService(get(), getBaseUrl()) }
         single { com.itbenevides.genesys21.domain.service.PageAIGeneratorService(get(), getBaseUrl()) }

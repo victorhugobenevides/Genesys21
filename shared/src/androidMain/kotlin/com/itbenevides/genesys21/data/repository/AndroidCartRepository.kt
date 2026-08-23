@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import io.ktor.client.*
@@ -22,7 +23,7 @@ class AndroidCartRepository(
     baseUrl: String,
     json: Json,
     authRepository: AuthRepository,
-    secureStorage: com.itbenevides.genesys21.data.storage.SecureStorage,
+    secureStorage: SecureStorage,
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository, secureStorage) {
 
     private val CART_KEY = stringPreferencesKey("genesys21_cart")

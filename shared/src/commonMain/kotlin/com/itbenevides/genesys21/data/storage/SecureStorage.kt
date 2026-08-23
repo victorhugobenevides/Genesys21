@@ -6,3 +6,5 @@ interface SecureStorage {
     suspend fun remove(key: String)
     suspend fun clear()
 }
+
+expect fun createSecureStorage(context: Any? = null): SecureStorage
