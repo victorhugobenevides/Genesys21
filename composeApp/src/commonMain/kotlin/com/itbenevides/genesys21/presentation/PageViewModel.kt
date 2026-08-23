@@ -69,6 +69,8 @@ class PageViewModel(
     private val getDomainMappingsUseCase: GetDomainMappingsUseCase,
     private val saveDomainMappingUseCase: SaveDomainMappingUseCase,
     private val deleteDomainMappingUseCase: DeleteDomainMappingUseCase,
+    private val getChatMessagesUseCase: GetChatMessagesUseCase,
+    private val sendChatMessageUseCase: SendChatMessageUseCase,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -125,6 +127,20 @@ class PageViewModel(
 
     private val _domainMappings = MutableStateFlow<List<DomainMapping>>(emptyList())
     val domainMappings: StateFlow<List<DomainMapping>> = _domainMappings.asStateFlow()
+
+    private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
+
+    val productSuggestions: StateFlow<List<String>> = _pages.map { allPages ->
+        allPages.flatMap { p -> p.components.filterIsInstance<PageComponent.ProductList>() }
+            .flatMap { comp -> comp.products.map { it.name } }
+            .distinct()
+            .sorted()
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val categorySuggestions: StateFlow<List<String>> = _categories.map { allCats ->
+        allCats.map { it.name }.distinct().sorted()
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _isLoading = MutableStateFlow(value = false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -1203,6 +1219,32 @@ class PageViewModel(
                 handleError("Erro ao excluir domínio", it)
             }
             _isLoading.value = false
+        }
+    }
+
+    fun loadChatMessages(refId: String) {
+        viewModelScope.launch {
+            getChatMessagesUseCase(refId).onSuccess {
+                _chatMessages.value = it
+            }
+        }
+    }
+
+    fun sendChatMessage(refId: String, nick: String, content: String, isFromMerchant: Boolean = false) {
+        viewModelScope.launch {
+            val message = ChatMessage(
+                id = "",
+                refId = refId,
+                senderNick = nick,
+                content = content,
+                isFromMerchant = isFromMerchant,
+                createdAt = now().toEpochMilliseconds()
+            )
+            sendChatMessageUseCase(message).onSuccess {
+                loadChatMessages(refId)
+            }.onFailure {
+                handleError("Erro ao enviar mensagem", it)
+            }
         }
     }
 }

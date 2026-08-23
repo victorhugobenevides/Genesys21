@@ -24,6 +24,7 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.components.molecules.input.GenesysAutocompleteField
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.molecules.layout.GenesysSectionHeader
 import com.itbenevides.genesys21.ui.components.organisms.input.GenesysPhotoPicker
@@ -91,7 +92,8 @@ fun ProductEditorContent(
 ) {
     val isGlobalLoading by viewModel.isLoading.collectAsState()
     val backendUrl = remember { getBaseUrl() }
-    val categories by viewModel.categories.collectAsState()
+    val productSuggestions by viewModel.productSuggestions.collectAsState()
+    val categorySuggestions by viewModel.categorySuggestions.collectAsState()
 
     var showCategoryManagement by remember { mutableStateOf(false) }
 
@@ -138,7 +140,8 @@ fun ProductEditorContent(
         ProductEditorMainLayout(
             state = state,
             backendUrl = backendUrl,
-            categoryOptions = categories.map { it.name },
+            productSuggestions = productSuggestions,
+            categorySuggestions = categorySuggestions,
             onEvent = onEvent,
             onBack = onBack,
             onManageCategories = { showCategoryManagement = true },
@@ -158,7 +161,8 @@ fun ProductEditorContent(
 private fun ProductEditorMainLayout(
     state: ProductEditorState,
     backendUrl: String,
-    categoryOptions: List<String>,
+    productSuggestions: List<String>,
+    categorySuggestions: List<String>,
     onEvent: (ProductEditorEvent) -> Unit,
     onBack: () -> Unit,
     onManageCategories: () -> Unit,
@@ -207,7 +211,7 @@ private fun ProductEditorMainLayout(
                         // Seção Dados (com scroll interno no desktop)
                         Box(modifier = Modifier.weight(0.55f).fillMaxHeight()) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                                DataFormSection(state, productSuggestions, categorySuggestions, onEvent, onManageCategories)
                             }
                         }
                     }
@@ -216,7 +220,7 @@ private fun ProductEditorMainLayout(
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         PhotosSection(state, backendUrl, onEvent)
                         Spacer(Modifier.height(24.dp))
-                        DataFormSection(state, categoryOptions, onEvent, onManageCategories)
+                        DataFormSection(state, productSuggestions, categorySuggestions, onEvent, onManageCategories)
                         Spacer(Modifier.height(64.dp))
                     }
                 }
@@ -253,7 +257,8 @@ private fun PhotosSection(
 @Composable
 private fun DataFormSection(
     state: ProductEditorState,
-    categoryOptions: List<String>,
+    productSuggestions: List<String>,
+    categorySuggestions: List<String>,
     onEvent: (ProductEditorEvent) -> Unit,
     onManageCategories: () -> Unit,
 ) {
@@ -262,11 +267,13 @@ private fun DataFormSection(
             GenesysText(text = GenesysStrings.ProductGeneralInfo, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
             GenesysSpacer(GenesysTheme.spacing.m)
 
-            GenesysTextField(
+            GenesysAutocompleteField(
                 value = state.name,
                 onValueChange = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
+                suggestions = productSuggestions,
                 label = GenesysStrings.ProductName,
                 icon = GenesysIcons.Inventory,
+                onSuggestionSelected = { onEvent(ProductEditorEvent.OnNameChanged(it)) }
             )
 
             GenesysSpacer(GenesysTheme.spacing.m)
@@ -295,14 +302,17 @@ private fun DataFormSection(
 
             GenesysRow(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.weight(1f)) {
-                    GenesysDropdownField(
-                        value = state.categoryName,
+                    GenesysAutocompleteField(
+                        value = state.categoryName.orEmpty(),
                         onValueChange = { name ->
                             onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
                         },
+                        suggestions = categorySuggestions,
                         label = GenesysStrings.ProductCategory,
-                        options = categoryOptions,
                         icon = GenesysIcons.Category,
+                        onSuggestionSelected = { name ->
+                            onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
+                        }
                     )
                 }
                 GenesysSpacer(GenesysTheme.spacing.s)

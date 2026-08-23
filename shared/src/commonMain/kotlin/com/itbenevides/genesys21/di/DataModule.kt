@@ -50,11 +50,14 @@ val dataModule =
         single<ShippingRepository> { KtorShippingRepository(get(), getBaseUrl()) }
         single<StoreRepository> { KtorStoreRepository(get(), getBaseUrl(), get()) }
         single<DomainRepository> { KtorDomainRepository(get()) }
+        single<ChatRepository> { KtorChatRepository(get(), getBaseUrl()) }
 
         // UseCases
         single { GetDomainMappingsUseCase(get()) }
         single { SaveDomainMappingUseCase(get()) }
         single { DeleteDomainMappingUseCase(get()) }
+        single { GetChatMessagesUseCase(get()) }
+        single { SendChatMessageUseCase(get()) }
         single { GetUserProfileUseCase(get()) }
         single { SaveUserProfileUseCase(get()) }
         single { GetAllUsersUseCase(get()) }

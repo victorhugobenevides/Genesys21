@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.util.SearchUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,12 +17,21 @@ fun GenesysAutocompleteField(
     label: String? = null,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
+    autoFilter: Boolean = true,
     onSuggestionSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    val filteredSuggestions = remember(value, suggestions, autoFilter) {
+        if (autoFilter && value.isNotBlank()) {
+            suggestions.filter { SearchUtils.fuzzyMatch(value, it) }
+        } else {
+            suggestions
+        }.take(5)
+    }
+
     ExposedDropdownMenuBox(
-        expanded = expanded && suggestions.isNotEmpty(),
+        expanded = expanded && filteredSuggestions.isNotEmpty(),
         onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
@@ -39,12 +49,12 @@ fun GenesysAutocompleteField(
             }
         )
 
-        if (suggestions.isNotEmpty()) {
+        if (filteredSuggestions.isNotEmpty()) {
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                suggestions.forEach { suggestion ->
+                filteredSuggestions.forEach { suggestion ->
                     DropdownMenuItem(
                         text = { GenesysText(suggestion) },
                         onClick = {

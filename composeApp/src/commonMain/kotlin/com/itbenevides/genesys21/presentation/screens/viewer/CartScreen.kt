@@ -30,6 +30,7 @@ import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
+import com.itbenevides.genesys21.ui.components.molecules.input.GenesysAutocompleteField
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysQuantitySelector
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.organisms.payment.StripePaymentElement
@@ -179,6 +180,19 @@ fun CartScreen(
                 )
                 GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysTextButton(text = "Entrar com e-mail", onClick = { })
+
+                GenesysSpacer(GenesysTheme.spacing.l)
+                GenesysDivider()
+                GenesysSpacer(GenesysTheme.spacing.l)
+
+                GenesysLoadingButton(
+                    text = "Comprar sem Cadastro (Anônimo)",
+                    onClick = {
+                        showLoginDialog = false
+                        onEvent(CartScreenEvent.OnCheckoutClicked) // Prossegue sem login
+                    },
+                    fillWidth = true
+                )
             }
         }
     }
@@ -430,7 +444,15 @@ private fun AddressFormCard(state: CartScreenState, onEvent: (CartScreenEvent) -
             GenesysSpacer(GenesysTheme.spacing.m)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(modifier = Modifier.weight(2f)) { GenesysTextField(value = address.city, onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) }, label = "Cidade") }
-                Box(modifier = Modifier.weight(1f)) { GenesysTextField(value = address.state, onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(state = it))) }, label = "UF") }
+                Box(modifier = Modifier.weight(1.2f)) {
+                    GenesysAutocompleteField(
+                        value = address.state,
+                        onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(state = it))) },
+                        suggestions = BrazilData.states,
+                        label = "UF",
+                        onSuggestionSelected = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(state = it))) }
+                    )
+                }
             }
         }
     }

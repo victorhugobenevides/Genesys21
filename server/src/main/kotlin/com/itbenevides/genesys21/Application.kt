@@ -251,6 +251,7 @@ fun Application.module() {
                 analyticsRoutes(orderRepository)
                 categoryRoutes(pageRepository)
                 bookingRoutes(bookingRepository)
+                chatRoutes(chatRepository)
                 addressRoutes(addressRepository)
                 storeRoutes(storeRepository)
                 shippingRoutes(storeRepository)

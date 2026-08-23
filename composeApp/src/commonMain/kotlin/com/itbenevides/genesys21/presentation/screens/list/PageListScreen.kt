@@ -52,6 +52,7 @@ import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysStatusPicker
 import com.itbenevides.genesys21.ui.components.molecules.navigation.*
+import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
@@ -311,6 +312,7 @@ private fun PageListContent(
 ) {
     val services by viewModel.services.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
+    val chatMessages by viewModel.chatMessages.collectAsState()
     val isSuperAdmin = userProfile?.role == UserRole.SUPERADMIN
 
     // Lista de abas permitidas
@@ -340,6 +342,15 @@ private fun PageListContent(
     LaunchedEffect(permittedTabs) {
         if (permittedTabs.none { it.id == state.selectedTab }) {
             permittedTabs.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
+        }
+    }
+
+    LaunchedEffect(selectedOrderIdForDetail) {
+        selectedOrderIdForDetail?.let { orderId ->
+            while (true) {
+                viewModel.loadChatMessages(orderId)
+                kotlinx.coroutines.delay(5000)
+            }
         }
     }
 
@@ -464,8 +475,12 @@ private fun PageListContent(
                                         if (selectedOrder != null) {
                                             OrderDetailContent(
                                                 order = selectedOrder,
+                                                chatMessages = chatMessages,
                                                 onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(selectedOrder.id, newStatus)) },
-                                                onContact = { onContactCustomer(selectedOrder.customerPhone ?: "", selectedOrder.id, selectedOrder.customerName ?: "Cliente") }
+                                                onContact = { onContactCustomer(selectedOrder.customerPhone ?: "", selectedOrder.id, selectedOrder.customerName ?: "Cliente") },
+                                                onSendMessage = { content ->
+                                                    viewModel.sendChatMessage(selectedOrder.id, "Lojista", content, isFromMerchant = true)
+                                                }
                                             )
                                         } else {
                                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -619,8 +634,10 @@ private fun OrderCardUI(
 @Composable
 private fun OrderDetailContent(
     order: com.itbenevides.genesys21.domain.model.Order,
+    chatMessages: List<ChatMessage>,
     onStatusUpdate: (OrderStatus) -> Unit,
     onContact: () -> Unit,
+    onSendMessage: (String) -> Unit,
 ) {
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         Column {
@@ -629,11 +646,21 @@ private fun OrderDetailContent(
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
-                    GenesysText("Pedido #${order.id.takeLast(6).uppercase()}", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand)
-                    GenesysText(order.customerName ?: "Consumidor", style = GenesysTextStyle.Headline)
+                    GenesysText("Pedido #${order.id.uppercase()}", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand, isSelectable = true)
+                    GenesysText(order.customerName ?: "Consumidor", style = GenesysTextStyle.Headline, isSelectable = true)
                 }
                 GenesysStatusPicker(currentStatus = order.status, onStatusSelected = onStatusUpdate)
             }
+
+            GenesysSpacer(GenesysTheme.spacing.l)
+
+            // CHAT INTERNO (Novo)
+            OrderChatComponent(
+                messages = chatMessages,
+                currentNick = "Lojista",
+                isMerchantView = true,
+                onSendMessage = onSendMessage
+            )
 
             GenesysSpacer(GenesysTheme.spacing.l)
             GenesysDivider()

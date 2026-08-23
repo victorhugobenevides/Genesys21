@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
@@ -31,6 +32,7 @@ import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingBu
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.molecules.layout.GenesysSectionHeader
+import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
@@ -52,6 +54,7 @@ fun OrderTrackingScreen(
 ) {
     val viewModel: PageViewModel = koinViewModel()
     val order by viewModel.trackedOrder.collectAsState()
+    val chatMessages by viewModel.chatMessages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isWaitingForSignal by viewModel.isWaitingForPaymentSignal.collectAsState()
     val clipboardManager = LocalClipboardManager.current
@@ -76,6 +79,13 @@ fun OrderTrackingScreen(
         }
     }
 
+    LaunchedEffect(orderId) {
+        while (true) {
+            viewModel.loadChatMessages(orderId)
+            kotlinx.coroutines.delay(5000) // Polling a cada 5s
+        }
+    }
+
     // 2. Event Handler
     val onEvent: (OrderTrackingEvent) -> Unit = { event ->
         when (event) {
@@ -96,10 +106,16 @@ fun OrderTrackingScreen(
     AppTheme(themeConfig = themeToUse) {
         OrderTrackingContent(
             state = state,
+            chatMessages = chatMessages,
             onEvent = onEvent,
             onContactStore = { phone ->
                 val message = "Olá, estou acompanhando meu pedido #${state.order?.id} e gostaria de falar com a loja."
                 uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
+            },
+            onSendMessage = { content ->
+                state.order?.let {
+                    viewModel.sendChatMessage(it.id, it.customerName ?: "Cliente", content)
+                }
             },
             onOpenCalendar = { link -> uriHandler.openUri(link) }
         )
@@ -110,8 +126,10 @@ fun OrderTrackingScreen(
 @Composable
 private fun OrderTrackingContent(
     state: OrderTrackingState,
+    chatMessages: List<ChatMessage>,
     onEvent: (OrderTrackingEvent) -> Unit,
     onContactStore: (String) -> Unit,
+    onSendMessage: (String) -> Unit,
     onOpenCalendar: (String) -> Unit,
 ) {
     GenesysPage(
@@ -166,6 +184,7 @@ private fun OrderTrackingContent(
                                             text = "${GenesysStrings.OrderPrefix}${currentOrder.id.uppercase()}",
                                             style = GenesysTextStyle.Title,
                                             fontWeight = GenesysFontWeight.ExtraBold,
+                                            isSelectable = true
                                         )
                                         GenesysSpacer(GenesysTheme.spacing.s)
                                         GenesysIconButton(
@@ -194,11 +213,11 @@ private fun OrderTrackingContent(
                             // EVOLUÇÃO UX: Linha do tempo de acompanhamento
                             val isWaitingForSignal = currentOrder.status == com.itbenevides.genesys21.domain.model.OrderStatus.AWAITING_PAYMENT
 
-                                if (isWaitingForSignal) {
-                                    GenesysCard {
-                                        GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
-                                            GenesysLoadingIndicator(modifier = Modifier.size(32.dp))
-                                            GenesysSpacer(GenesysTheme.spacing.m)
+                            if (isWaitingForSignal) {
+                                GenesysCard {
+                                    GenesysColumn(usePadding = true, horizontalAlignment = GenesysAlignment.Center) {
+                                        GenesysLoadingIndicator(modifier = Modifier.size(32.dp))
+                                        GenesysSpacer(GenesysTheme.spacing.m)
                                         GenesysText(
                                             text = "Aguardando confirmação de pagamento...",
                                             style = GenesysTextStyle.Body,
@@ -214,6 +233,16 @@ private fun OrderTrackingContent(
                             }
 
                             GenesysTrackingTimeline(currentStatus = currentOrder.status)
+
+                            GenesysSpacer(GenesysTheme.spacing.l)
+
+                            // CHAT INTERNO (Novo)
+                            OrderChatComponent(
+                                messages = chatMessages,
+                                currentNick = currentOrder.customerName ?: "Cliente",
+                                isMerchantView = false,
+                                onSendMessage = onSendMessage
+                            )
 
                             GenesysSpacer(GenesysTheme.spacing.l)
 
