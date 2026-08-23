@@ -149,6 +149,10 @@ fun getMockModule(mockUserProfile: UserProfile? = null) = module {
             every { appTheme } returns MutableStateFlow<PageThemeConfig>(PageThemeConfig.ELEGANCE)
             every { isLoggedIn } returns MutableStateFlow<Boolean>(mockUserProfile != null)
             every { isWaitingForPaymentSignal } returns MutableStateFlow<Boolean>(false)
+            every { domainMappings } returns MutableStateFlow<List<DomainMapping>>(emptyList())
+            every { chatMessages } returns MutableStateFlow<List<ChatMessage>>(emptyList())
+            every { productSuggestions } returns MutableStateFlow<List<String>>(emptyList())
+            every { categorySuggestions } returns MutableStateFlow<List<String>>(emptyList())
 
             // Flows de eventos
             every { errorEvents } returns MutableSharedFlow<AppError>()
