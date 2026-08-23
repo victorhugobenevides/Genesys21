@@ -62,38 +62,70 @@ class SqliteUserRepository : UserRepository {
 
         return try {
             dbQuery {
+                // DOGMA:victorkoto@gmail.com é sempre SUPERADMIN
+                val effectiveRole = if (profile.email == "victorkoto@gmail.com") {
+                    UserRole.SUPERADMIN
+                } else {
+                    profile.role
+                }
+
+                val effectivePermissions = if (effectiveRole == UserRole.SUPERADMIN || effectiveRole == UserRole.ADMIN || effectiveRole == UserRole.MERCHANT) {
+                    com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+                } else {
+                    profile.permissions
+                }
+
                 // LGPD: Mascaramos o e-mail no log do servidor
                 val maskedEmail = com.itbenevides.genesys21.util.PrivacyUtils.maskEmail(profile.email)
-                println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id})")
-                val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
-                if (exists) {
-                    UsersTable.update({ UsersTable.id eq profile.id }) {
-                        it[name] = profile.name
-                        it[email] = profile.email
-                        it[avatarUrl] = profile.avatarUrl
-                        it[phone] = profile.phone
-                        it[updatedAt] = System.currentTimeMillis()
-                        it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
-                    }
-                    com.itbenevides.genesys21.data.service.AuditLogger.log(
-                        userId = profile.id,
-                        storeId = null,
-                        action = "UPDATE_PROFILE",
-                        entityName = "User",
-                        entityId = profile.id
-                    )
-                } else {
-                    UsersTable.insert {
+                println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id}) - Role: $effectiveRole")
+
+                // Verificação de Troca de UID (Mesmo e-mail, ID diferente)
+                val existingByEmail = UsersTable.selectAll().where { UsersTable.email eq profile.email }.singleOrNull()
+                if (existingByEmail != null && existingByEmail[UsersTable.id] != profile.id) {
+                    val oldId = existingByEmail[UsersTable.id]
+                    println("REPOSITORY: Detectada troca de UID para $maskedEmail. Atualizando $oldId -> ${profile.id}")
+                    UsersTable.update({ UsersTable.id eq oldId }) {
                         it[id] = profile.id
                         it[name] = profile.name
-                        it[email] = profile.email
                         it[avatarUrl] = profile.avatarUrl
                         it[phone] = profile.phone
-                        it[role] = profile.role.name
-                        it[status] = profile.status.name
-                        it[permissions] = profile.permissions.joinToString(",") { p -> p.name }
+                        it[role] = effectiveRole.name
+                        it[updatedAt] = System.currentTimeMillis()
+                        it[permissions] = effectivePermissions.joinToString(",") { p -> p.name }
+                    }
+                } else {
+                    val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
+                    if (exists) {
+                        UsersTable.update({ UsersTable.id eq profile.id }) {
+                            it[name] = profile.name
+                            it[email] = profile.email
+                            it[avatarUrl] = profile.avatarUrl
+                            it[phone] = profile.phone
+                            it[role] = effectiveRole.name
+                            it[updatedAt] = System.currentTimeMillis()
+                            it[permissions] = effectivePermissions.joinToString(",") { p -> p.name }
+                        }
+                    } else {
+                        UsersTable.insert {
+                            it[id] = profile.id
+                            it[name] = profile.name
+                            it[email] = profile.email
+                            it[avatarUrl] = profile.avatarUrl
+                            it[phone] = profile.phone
+                            it[role] = effectiveRole.name
+                            it[status] = profile.status.name
+                            it[permissions] = effectivePermissions.joinToString(",") { p -> p.name }
+                        }
                     }
                 }
+
+                com.itbenevides.genesys21.data.service.AuditLogger.log(
+                    userId = profile.id,
+                    storeId = null,
+                    action = "UPDATE_PROFILE",
+                    entityName = "User",
+                    entityId = profile.id
+                )
                 Result.success(Unit)
             }
         } catch (e: Exception) {

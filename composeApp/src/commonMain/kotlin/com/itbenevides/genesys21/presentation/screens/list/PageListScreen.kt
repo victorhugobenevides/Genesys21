@@ -394,12 +394,6 @@ private fun PageListContent(
              GenesysTopAppBar(
                 title = GenesysStrings.AdminTitle,
                 onBack = null,
-                actions = {
-                    GenesysIconButton(icon = GenesysIcons.Magic, contentDescription = "Design System", onClick = onShowcase)
-                    GenesysIconButton(icon = GenesysIcons.CloudUpload, contentDescription = "Importar Backup", onClick = onImport)
-                    GenesysIconButton(icon = GenesysIcons.Settings, onClick = { onEvent(PageListEvent.OnGlobalSettingsClicked) })
-                    GenesysIconButton(icon = GenesysIcons.Add, onClick = { onEvent(PageListEvent.OnCreatePageClicked) })
-                },
             )
         },
     ) {

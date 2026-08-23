@@ -95,7 +95,7 @@ private fun NavigationWrapper(
     navigationSuiteItems: (NavigationSuiteScope.() -> Unit)?,
     content: @Composable () -> Unit
 ) {
-    if (navigationSuiteItems != null && !LocalTestMode.current) {
+    if (navigationSuiteItems != null) {
         // Deixamos o layoutType como o padrão (AUTO) para que ele mude sozinho entre Barra e Rail
         NavigationSuiteScaffold(
             navigationSuiteItems = navigationSuiteItems,
