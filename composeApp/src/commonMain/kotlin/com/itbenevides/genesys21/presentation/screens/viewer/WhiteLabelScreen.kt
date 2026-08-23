@@ -69,8 +69,11 @@ fun WhiteLabelScreen(
         viewModel.loadPages()
         viewModel.loadCategories()
 
-        viewModel.getDraft(page.id)?.let { updatedDraft ->
-            state = state.copy(page = updatedDraft)
+        // Sync from server if possible
+        viewModel.syncDraftFromServer(page.id) { remoteDraft ->
+            if (remoteDraft != null) {
+                state = state.copy(page = remoteDraft)
+            }
         }
     }
 

@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.data.repository.HybridPageDraftRepository
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
@@ -858,6 +859,14 @@ class PageViewModel(
 
     fun getDraft(pageId: String): Page? {
         return pageDraftRepository.getDraft(pageId)
+    }
+
+    fun syncDraftFromServer(pageId: String, onSynced: (Page?) -> Unit) {
+        viewModelScope.launch {
+            (pageDraftRepository as? HybridPageDraftRepository)?.syncFromRemote(pageId)?.let {
+                onSynced(it)
+            } ?: onSynced(null)
+        }
     }
 
     fun clearDraft(pageId: String) {

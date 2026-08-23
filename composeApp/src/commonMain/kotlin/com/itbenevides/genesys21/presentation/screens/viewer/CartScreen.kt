@@ -104,7 +104,7 @@ fun CartScreen(
             is CartScreenEvent.OnPaymentMethodChanged -> state = state.copy(paymentMethod = event.method)
             is CartScreenEvent.OnStepChanged -> state = state.copy(currentStep = event.step)
             is CartScreenEvent.OnCheckoutClicked -> {
-                if (!isLoggedIn) {
+                if (!isLoggedIn && !state.isGuestCheckout) {
                     showLoginDialog = true
                 } else {
                     viewModel.submitOrder(
@@ -188,8 +188,9 @@ fun CartScreen(
                 GenesysLoadingButton(
                     text = "Comprar sem Cadastro (Anônimo)",
                     onClick = {
+                        state = state.copy(isGuestCheckout = true)
                         showLoginDialog = false
-                        onEvent(CartScreenEvent.OnCheckoutClicked) // Prossegue sem login
+                        onEvent(CartScreenEvent.OnCheckoutClicked)
                     },
                     fillWidth = true
                 )
