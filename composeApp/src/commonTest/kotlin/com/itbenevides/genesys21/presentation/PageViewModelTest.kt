@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.presentation
 
 import com.itbenevides.genesys21.domain.model.*
+import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.mocks.*
 import kotlin.test.*
@@ -26,6 +27,7 @@ class PageViewModelTest {
     private lateinit var fakeStoreRepository: FakeStoreRepository
     private lateinit var fakeShippingRepository: FakeShippingRepository
     private lateinit var fakeDomainRepository: FakeDomainRepository
+    private lateinit var fakeChatRepository: ChatRepository
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -45,6 +47,10 @@ class PageViewModelTest {
         fakeStoreRepository = FakeStoreRepository()
         fakeShippingRepository = FakeShippingRepository()
         fakeDomainRepository = FakeDomainRepository()
+        fakeChatRepository = object : ChatRepository {
+            override suspend fun getMessagesByRefId(refId: String) = Result.success(emptyList<ChatMessage>())
+            override suspend fun sendMessage(message: ChatMessage) = Result.success(Unit)
+        }
 
         viewModel =
             PageViewModel(
@@ -92,7 +98,9 @@ class PageViewModelTest {
                 storeRepository = fakeStoreRepository,
                 getDomainMappingsUseCase = GetDomainMappingsUseCase(fakeDomainRepository),
                 saveDomainMappingUseCase = SaveDomainMappingUseCase(fakeDomainRepository),
-                deleteDomainMappingUseCase = DeleteDomainMappingUseCase(fakeDomainRepository)
+                deleteDomainMappingUseCase = DeleteDomainMappingUseCase(fakeDomainRepository),
+                getChatMessagesUseCase = GetChatMessagesUseCase(fakeChatRepository),
+                sendChatMessageUseCase = SendChatMessageUseCase(fakeChatRepository)
             )
     }
 
