@@ -27,7 +27,12 @@ val viewModelModule =
                 get(), // 37: DeleteUser
                 get(), get(), get(), // 38-40: Addresses
                 get(), // 41: CalculateShipping
-                get()  // 42: StoreRepository
+                get(), // 42: StoreRepository
+                get(), // 43: GetDomainMappings
+                get(), // 44: SaveDomainMapping
+                get(), // 45: DeleteDomainMapping
+                get(), // 46: GetChatMessages
+                get()  // 47: SendChatMessage
             )
         }
 
