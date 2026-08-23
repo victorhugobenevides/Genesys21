@@ -30,8 +30,8 @@ object ProductImagesTable : BaseTable("product_images") {
 /**
  * Tabela de junção para normalizar a relação entre Componentes de Página e Produtos.
  */
-object ComponentProductsTable : Table("component_products") {
-    val id = integer("id").autoIncrement()
+object ComponentProductsTable : BaseTable("component_products") {
+    val id = varchar("id", 50) // UUID
     val componentId = varchar("component_id", 50).references(PageComponentsTable.id, onDelete = ReferenceOption.CASCADE)
     val productId = varchar("product_id", 50).references(ProductsTable.id, onDelete = ReferenceOption.CASCADE)
     val order = integer("product_order")

@@ -22,10 +22,10 @@ class AndroidCartRepository(
     baseUrl: String,
     json: Json,
     authRepository: AuthRepository,
-) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
+    secureStorage: com.itbenevides.genesys21.data.storage.SecureStorage,
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository, secureStorage) {
 
     private val CART_KEY = stringPreferencesKey("genesys21_cart")
-    private val SESSION_KEY = stringPreferencesKey("genesys21_session_id")
 
     override suspend fun saveToLocal(items: List<CartItem>) {
         context.dataStore.edit { preferences ->
@@ -40,15 +40,5 @@ class AndroidCartRepository(
         } catch (e: Exception) {
             emptyList()
         }
-    }
-
-    override suspend fun saveSessionId(id: String) {
-        context.dataStore.edit { preferences ->
-            preferences[SESSION_KEY] = id
-        }
-    }
-
-    override suspend fun loadSessionId(): String? {
-        return context.dataStore.data.map { it[SESSION_KEY] }.first()
     }
 }

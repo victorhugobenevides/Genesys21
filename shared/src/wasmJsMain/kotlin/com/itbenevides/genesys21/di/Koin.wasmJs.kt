@@ -12,5 +12,11 @@ actual fun platformModule(): Module =
         single { createSecureStorage() }
         single<CartRepository> { LocalStorageCartRepository(get(), getBaseUrl(), get(), get()) }
         single<CustomerRepository> { LocalStorageCustomerRepository() }
-        single<PageDraftRepository> { LocalStoragePageDraftRepository(get()) }
+        single<PageDraftRepository> {
+            HybridPageDraftRepository(
+                localRepository = LocalStoragePageDraftRepository(get()),
+                remoteRepository = get(),
+                authRepository = get()
+            )
+        }
     }

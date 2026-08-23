@@ -82,6 +82,7 @@ fun Application.module() {
     val receiptRepository = SqliteReceiptRepository()
     val domainRepository = SqliteDomainRepository()
     val chatRepository = SqliteChatRepository()
+    val draftRepository = SqliteDraftRepository()
 
     // Log de segurança para confirmar se o Gemini está configurado (sem mostrar a chave inteira)
     val geminiKey = System.getenv("GEMINI_API_KEY")
@@ -252,6 +253,7 @@ fun Application.module() {
                 categoryRoutes(pageRepository)
                 bookingRoutes(bookingRepository)
                 chatRoutes(chatRepository)
+                draftRoutes(draftRepository)
                 addressRoutes(addressRepository)
                 storeRoutes(storeRepository)
                 shippingRoutes(storeRepository)

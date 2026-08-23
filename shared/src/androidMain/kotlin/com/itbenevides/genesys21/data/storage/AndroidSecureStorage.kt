@@ -34,3 +34,5 @@ class AndroidSecureStorage(context: Context) : SecureStorage {
         sharedPreferences.edit().clear().apply()
     }
 }
+
+fun createSecureStorage(context: Context): SecureStorage = AndroidSecureStorage(context)

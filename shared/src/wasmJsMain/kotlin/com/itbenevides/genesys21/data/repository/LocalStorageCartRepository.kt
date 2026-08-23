@@ -23,9 +23,9 @@ class LocalStorageCartRepository(
     baseUrl: String,
     json: Json,
     authRepository: AuthRepository,
-) : BaseCartRepository(httpClient, baseUrl, json, authRepository) {
+    secureStorage: com.itbenevides.genesys21.data.storage.SecureStorage,
+) : BaseCartRepository(httpClient, baseUrl, json, authRepository, secureStorage) {
     private val CART_STORAGE_KEY = "genesys21_cart"
-    private val SESSION_STORAGE_KEY = "genesys21_session_id"
 
     override suspend fun saveToLocal(items: List<CartItem>) {
         jsSetItem(CART_STORAGE_KEY, json.encodeToString(items))
@@ -38,14 +38,6 @@ class LocalStorageCartRepository(
         } catch (e: Exception) {
             emptyList()
         }
-    }
-
-    override suspend fun saveSessionId(id: String) {
-        jsSetItem(SESSION_STORAGE_KEY, id)
-    }
-
-    override suspend fun loadSessionId(): String? {
-        return jsGetItem(SESSION_STORAGE_KEY)
     }
 
     override suspend fun clearCart(): Result<Unit> {

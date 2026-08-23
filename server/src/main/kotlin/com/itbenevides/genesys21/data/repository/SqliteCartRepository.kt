@@ -74,6 +74,7 @@ class SqliteCartRepository {
 
         items.forEach { item ->
             CartItemsTable.insert {
+                it[id] = java.util.UUID.randomUUID().toString()
                 it[CartItemsTable.userId] = userId
                 it[productId] = item.product?.id
                 it[serviceId] = item.service?.id

@@ -415,6 +415,7 @@ class SqlitePageRepository : PageRepository {
             }
 
             ComponentProductsTable.insert {
+                it[id] = java.util.UUID.randomUUID().toString()
                 it[ComponentProductsTable.componentId] = componentId
                 it[ComponentProductsTable.productId] = product.id
                 it[ComponentProductsTable.order] = index

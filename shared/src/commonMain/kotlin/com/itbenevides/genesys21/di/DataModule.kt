@@ -3,8 +3,7 @@ package com.itbenevides.genesys21.di
 import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
-import com.itbenevides.genesys21.data.util.SecureStorage
-import com.itbenevides.genesys21.data.util.createSecureStorage
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
@@ -51,6 +50,7 @@ val dataModule =
         single<StoreRepository> { KtorStoreRepository(get(), getBaseUrl(), get()) }
         single<DomainRepository> { KtorDomainRepository(get()) }
         single<ChatRepository> { KtorChatRepository(get(), getBaseUrl()) }
+        single<DraftRepository> { KtorDraftRepository(get(), getBaseUrl()) }
 
         // UseCases
         single { GetDomainMappingsUseCase(get()) }

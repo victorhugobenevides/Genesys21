@@ -150,6 +150,10 @@ class SqliteOrderRepository(
     ): Result<Unit> =
         try {
             dbQuery {
+                val oldStatus = OrdersTable.select(OrdersTable.status)
+                    .where { OrdersTable.id eq orderId }
+                    .singleOrNull()?.get(OrdersTable.status)
+
                 val updated =
                     if (token == "SYSTEM") {
                         // Bypass de segurança para atualizações automáticas via Webhook/Servidor
@@ -167,7 +171,18 @@ class SqliteOrderRepository(
                         }
                     }
 
-                if (updated > 0) Result.success(Unit)
+                if (updated > 0) {
+                    // Log de Mudança de Status
+                    OrderStatusLogsTable.insert {
+                        it[id] = java.util.UUID.randomUUID().toString()
+                        it[this.orderId] = orderId
+                        it[this.oldStatus] = oldStatus
+                        it[this.newStatus] = status.name
+                        it[this.timestamp] = System.currentTimeMillis()
+                        it[this.note] = if (token == "SYSTEM") "Atualizado automaticamente pelo sistema" else "Atualizado pelo lojista"
+                    }
+                    Result.success(Unit)
+                }
                 else Result.failure(Exception("Falha ao atualizar: Pedido $orderId não encontrado ou acesso negado para $token"))
             }
         } catch (e: Exception) {

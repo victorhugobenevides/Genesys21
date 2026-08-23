@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.data.repository
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -17,6 +18,7 @@ abstract class BaseCartRepository(
     protected val baseUrl: String,
     protected val json: Json,
     protected val authRepository: AuthRepository,
+    protected val secureStorage: com.itbenevides.genesys21.data.storage.SecureStorage,
 ) : CartRepository {
     protected val _cartItems = MutableStateFlow<List<CartItem>>(emptyList())
     override val cartItems: StateFlow<List<CartItem>> = _cartItems.asStateFlow()
@@ -25,16 +27,14 @@ abstract class BaseCartRepository(
 
     protected abstract suspend fun loadFromLocal(): List<CartItem>
 
-    protected abstract suspend fun saveSessionId(id: String)
-
-    protected abstract suspend fun loadSessionId(): String?
+    private val SESSION_KEY = "genesys21_session_id"
 
     override suspend fun getSessionId(): String {
-        val cached = loadSessionId()
+        val cached = secureStorage.get(SESSION_KEY)
         if (cached != null) return cached
 
         val newId = "sess_" + (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString("")
-        saveSessionId(newId)
+        secureStorage.save(SESSION_KEY, newId)
         return newId
     }
 
