@@ -153,6 +153,8 @@ fun getMockModule(mockUserProfile: UserProfile? = null) = module {
             every { chatMessages } returns MutableStateFlow<List<ChatMessage>>(emptyList())
             every { productSuggestions } returns MutableStateFlow<List<String>>(emptyList())
             every { categorySuggestions } returns MutableStateFlow<List<String>>(emptyList())
+            every { appointments } returns MutableStateFlow<List<Appointment>>(emptyList())
+            every { upcomingAppointments } returns MutableStateFlow<List<Appointment>>(emptyList())
 
             // Flows de eventos
             every { errorEvents } returns MutableSharedFlow<AppError>()
