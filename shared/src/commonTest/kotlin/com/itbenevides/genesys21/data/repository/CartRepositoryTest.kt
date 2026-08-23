@@ -1,5 +1,6 @@
 package com.itbenevides.genesys21.data.repository
 
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.domain.repository.AuthRepository
@@ -19,13 +20,21 @@ class CartRepositoryTest {
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    class FakeSecureStorage : SecureStorage {
+        private val data = mutableMapOf<String, String>()
+        override suspend fun save(key: String, value: String) { data[key] = value }
+        override suspend fun get(key: String): String? = data[key]
+        override suspend fun remove(key: String) { data.remove(key) }
+        override suspend fun clear() { data.clear() }
+    }
+
     class TestCartRepository(
         httpClient: HttpClient,
         authRepository: AuthRepository,
-        json: Json
-    ) : BaseCartRepository(httpClient, "https://api.example.com", json, authRepository) {
+        json: Json,
+        secureStorage: SecureStorage
+    ) : BaseCartRepository(httpClient, "https://api.example.com", json, authRepository, secureStorage) {
         var localItems = mutableListOf<CartItem>()
-        var sessionId: String? = "test-session"
 
         public override suspend fun saveToLocal(items: List<CartItem>) {
             localItems.clear()
@@ -33,12 +42,6 @@ class CartRepositoryTest {
         }
 
         override suspend fun loadFromLocal(): List<CartItem> = localItems
-
-        override suspend fun saveSessionId(id: String) {
-            sessionId = id
-        }
-
-        override suspend fun loadSessionId(): String? = sessionId
 
         // Helper para o teste injetar estado interno diretamente
         fun setInternalItems(items: List<CartItem>) {
@@ -106,7 +109,8 @@ class CartRepositoryTest {
         }
 
         val authRepository = FakeAuthRepository()
-        val repository = TestCartRepository(httpClient, authRepository, json)
+        val secureStorage = FakeSecureStorage()
+        val repository = TestCartRepository(httpClient, authRepository, json, secureStorage)
 
         // 1. Simular estado de visitante manual
         repository.setInternalItems(guestItems)
