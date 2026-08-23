@@ -1,28 +1,20 @@
-# Walkthrough: Correção dos Testes de Screenshot
+# Walkthrough: Restauração de Sintaxe CI
 
-Resolvi as falhas nos testes de regressão visual atacando três frentes principais: padronização de nomenclatura de arquivos, determinismo de datas e sincronização de dados de templates.
+Restaurei o arquivo `.circleci/config.yml` para o padrão de sintaxe que funcionava anteriormente, garantindo que as variáveis de ambiente sejam expandidas corretamente pelo shell durante a execução.
 
 ## Alterações Realizadas
 
-### 1. Infraestrutura do Paparazzi
-- **Arquivo**: [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- **Mudança**: Alterei os nomes das configurações de `Phone`, `Tablet` e `Desktop` para `phone`, `tablet` e `desktop`.
-- **Motivo**: Os arquivos "goldens" no repositório utilizam sufixos minúsculos. Em sistemas Linux (como o CircleCI), a diferenciação entre maiúsculas e minúsculas impedia que os testes encontrassem as imagens de referência.
-
-### 2. Determinismo de Datas no Carrinho
-- **Arquivo**: [CartScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/CartScreen.kt)
-- **Mudança**: Adicionei suporte para injeção de `TimeZone` nos componentes `CartContent` e `ModernCartItemRow`.
-- **Arquivo**: [AdaptiveLayoutsSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/AdaptiveLayoutsSnapshotTest.kt)
-- **Mudança**: Configurei o teste para usar `TimeZone.UTC`.
-- **Motivo**: Evitar variações no texto de datas (ex: 31/12 vs 01/01) dependendo do fuso horário da máquina que executa o teste.
-
-### 3. Sincronização de Templates
-- **Arquivo**: [TemplateShowcaseScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/editor/TemplateShowcaseScreen.kt)
-- **Mudança**: Atualizei a lista de templates para usar IDs válidos que existem no `PageTemplateRegistry`.
-- **Motivo**: O catálogo estava tentando renderizar templates com IDs antigos/inexistentes, resultando em telas vazias nos snapshots.
+### CircleCI Configuration
+- **Arquivo**: [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
+- **Restauração de Escapes**: Voltei a usar `\$` para variáveis como `\$OCI_NAMESPACE` e `\$OCI_USERNAME`.
+- **Gerenciamento de Memória**: Removi o bloco `environment:` do job (que poderia estar causando conflitos) e passei a definir o `GRADLE_OPTS` via `export` diretamente no início dos comandos de build.
+- **Robustez no Deploy**: Apliquei a mesma restauração de sintaxe no job de deploy remoto via SSH, mantendo a correção do Heredoc (`\<<`).
 
 ## Resultados da Validação
 
-- [x] Verificação de sintaxe via `analyze_file` em todos os arquivos modificados.
-- [x] Nomenclatura de snapshots agora alinhada com os artefatos do repositório.
-- [x] Renderização de datas agora independente do ambiente.
+- [x] Sintaxe `\$` restaurada (padrão que funcionava).
+- [x] Configurações de memória isoladas no escopo do script.
+- [x] Push realizado para o branch `main` (`b1b8aa3`).
+
+> [!NOTE]
+> No CircleCI, quando uma variável é definida no painel de controle do projeto e usada num comando `run:`, o caractere `\` antes do `$` avisa ao CircleCI para não tentar trocar o nome pelo valor agora. Isso deixa para o **Bash** da máquina fazer a troca no momento da execução, o que é mais confiável para segredos e variáveis globais.

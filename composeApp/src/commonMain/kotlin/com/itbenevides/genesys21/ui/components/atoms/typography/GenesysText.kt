@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.ui.components.atoms.typography
 
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,6 +27,7 @@ fun GenesysText(
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
+    isSelectable: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     GenesysTextContent(
@@ -37,6 +39,7 @@ fun GenesysText(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow,
+        isSelectable = isSelectable,
         modifier = modifier,
     )
 }
@@ -51,6 +54,7 @@ internal fun GenesysTextContent(
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
+    isSelectable: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val tokens = GenesysTheme.typography
@@ -85,17 +89,25 @@ internal fun GenesysTextContent(
         }
     } else color
 
-    Text(
-        text = text,
-        style = textStyle,
-        color = finalColor,
-        modifier = modifier,
-        textAlign = composeTextAlign,
-        fontWeight = composeFontWeight,
-        fontSize = fontSize,
-        maxLines = maxLines,
-        overflow = overflow,
-    )
+    val content = @Composable {
+        Text(
+            text = text,
+            style = textStyle,
+            color = finalColor,
+            modifier = modifier,
+            textAlign = composeTextAlign,
+            fontWeight = composeFontWeight,
+            fontSize = fontSize,
+            maxLines = maxLines,
+            overflow = overflow,
+        )
+    }
+
+    if (isSelectable) {
+        SelectionContainer { content() }
+    } else {
+        content()
+    }
 }
 
 @Composable
@@ -108,6 +120,7 @@ fun RowScope.GenesysRowText(
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
+    isSelectable: Boolean = false,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
@@ -121,6 +134,7 @@ fun RowScope.GenesysRowText(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow,
+        isSelectable = isSelectable,
         modifier = finalModifier,
     )
 }
@@ -135,6 +149,7 @@ fun ColumnScope.GenesysColumnText(
     fontSize: TextUnit = TextUnit.Unspecified,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
+    isSelectable: Boolean = false,
     weightValue: Float = 0f,
     modifier: Modifier = Modifier,
 ) {
@@ -148,6 +163,7 @@ fun ColumnScope.GenesysColumnText(
         fontSize = fontSize,
         maxLines = maxLines,
         overflow = overflow,
+        isSelectable = isSelectable,
         modifier = finalModifier,
     )
 }

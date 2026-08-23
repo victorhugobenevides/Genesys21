@@ -80,6 +80,8 @@ fun Application.module() {
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()
     val receiptRepository = SqliteReceiptRepository()
+    val domainRepository = SqliteDomainRepository()
+    val chatRepository = SqliteChatRepository()
 
     // Log de segurança para confirmar se o Gemini está configurado (sem mostrar a chave inteira)
     val geminiKey = System.getenv("GEMINI_API_KEY")
@@ -242,6 +244,7 @@ fun Application.module() {
             rateLimitRoute(RateLimitName("global")) {
                 userRoutes(userRepository)
                 adminRoutes(userRepository)
+                systemRoutes(domainRepository, userRepository)
                 pageRoutes(pageRepository)
                 cartRoutes(cartRepository)
                 orderRoutes(orderRepository, storeRepository, stripeService)

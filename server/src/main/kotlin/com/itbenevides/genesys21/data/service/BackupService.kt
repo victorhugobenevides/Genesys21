@@ -1,10 +1,14 @@
 package com.itbenevides.genesys21.data.service
 
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import org.slf4j.LoggerFactory
 
 object BackupService {
@@ -22,22 +26,32 @@ object BackupService {
             }
 
             val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-            val destination = File(backupFolder, "genesys21_backup_$timestamp.db")
+            val zipFile = File(backupFolder, "genesys21_backup_$timestamp.zip")
 
-            Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            logger.info("BACKUP: Cópia de segurança criada com sucesso em ${destination.absolutePath}")
+            FileOutputStream(zipFile).use { fos ->
+                ZipOutputStream(fos).use { zos ->
+                    val entry = ZipEntry(source.name)
+                    zos.putNextEntry(entry)
+                    FileInputStream(source).use { fis ->
+                        fis.copyTo(zos)
+                    }
+                    zos.closeEntry()
+                }
+            }
+
+            logger.info("BACKUP: Cópia de segurança comprimida (ZIP) criada em ${zipFile.absolutePath}")
 
             cleanOldBackups()
         } catch (e: Exception) {
-            logger.error("BACKUP: Falha ao realizar backup: ${e.message}", e)
+            logger.error("BACKUP: Falha ao realizar backup ZIP: ${e.message}", e)
         }
     }
 
     private fun cleanOldBackups() {
         val files = backupFolder.listFiles() ?: return
-        if (files.size > 7) { // Mantém apenas os últimos 7 backups
+        if (files.size > 30) { // Mantém os últimos 30 dias (Tier 1)
             files.sortedByDescending { it.lastModified() }
-                .drop(7)
+                .drop(30)
                 .forEach {
                     it.delete()
                     logger.info("BACKUP: Removendo backup antigo: ${it.name}")

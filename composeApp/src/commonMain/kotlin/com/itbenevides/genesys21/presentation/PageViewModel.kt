@@ -66,6 +66,9 @@ class PageViewModel(
     private val deleteAddressUseCase: com.itbenevides.genesys21.domain.usecase.DeleteAddressUseCase,
     private val calculateShippingUseCase: com.itbenevides.genesys21.domain.usecase.CalculateShippingUseCase,
     private val storeRepository: com.itbenevides.genesys21.domain.repository.StoreRepository,
+    private val getDomainMappingsUseCase: GetDomainMappingsUseCase,
+    private val saveDomainMappingUseCase: SaveDomainMappingUseCase,
+    private val deleteDomainMappingUseCase: DeleteDomainMappingUseCase,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -119,6 +122,9 @@ class PageViewModel(
 
     private val _templates = MutableStateFlow<List<PageTemplate>>(emptyList())
     val templates: StateFlow<List<PageTemplate>> = _templates.asStateFlow()
+
+    private val _domainMappings = MutableStateFlow<List<DomainMapping>>(emptyList())
+    val domainMappings: StateFlow<List<DomainMapping>> = _domainMappings.asStateFlow()
 
     private val _isLoading = MutableStateFlow(value = false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -1161,5 +1167,42 @@ class PageViewModel(
     suspend fun getAccountSession(storeId: String): Result<String> {
         val token = authRepository.getCurrentUserToken() ?: return Result.failure(Exception("Não autenticado"))
         return storeRepository.getAccountSession(storeId, token)
+    }
+
+    fun loadDomainMappings() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            getDomainMappingsUseCase().onSuccess {
+                _domainMappings.value = it
+            }.onFailure {
+                handleError("Erro ao carregar domínios", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun saveDomainMapping(domain: String, targetPageId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val mapping = DomainMapping(id = "", domain = domain, targetPageId = targetPageId)
+            saveDomainMappingUseCase(mapping).onSuccess {
+                loadDomainMappings()
+            }.onFailure {
+                handleError("Erro ao salvar domínio", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun deleteDomainMapping(id: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            deleteDomainMappingUseCase(id).onSuccess {
+                loadDomainMappings()
+            }.onFailure {
+                handleError("Erro ao excluir domínio", it)
+            }
+            _isLoading.value = false
+        }
     }
 }

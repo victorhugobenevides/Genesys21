@@ -38,6 +38,11 @@ object DatabaseFactory {
         val ds = hikari(jdbcUrl, isSqlite)
         dataSource = ds
 
+        // 0. Database Integrity Check (Tier 1 Resilience)
+        if (isSqlite) {
+            checkIntegrity(ds)
+        }
+
         // 1. Run Flyway Migrations
         runFlyway(ds)
 
@@ -55,6 +60,20 @@ object DatabaseFactory {
             .baselineOnMigrate(true)
             .load()
         flyway.migrate()
+    }
+
+    private fun checkIntegrity(ds: javax.sql.DataSource) {
+        ds.connection.use { conn ->
+            conn.createStatement().use { stmt ->
+                val rs = stmt.executeQuery("PRAGMA integrity_check;")
+                if (rs.next()) {
+                    val result = rs.getString(1)
+                    if (result != "ok") {
+                        throw IllegalStateException("DATABASE CORRUPTION DETECTED: $result")
+                    }
+                }
+            }
+        }
     }
 
     private fun setupDatabaseDirectory() {

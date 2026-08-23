@@ -19,6 +19,8 @@
 - [x] Implement `VisualTransformation` for all sensitive inputs (Login/Password). <!-- id: 7 -->
 
 ## Phase 4: Infrastructure & Quality
+- [x] Unify Web Interop logic into a static `bridge.js` to prevent injection and drift.
+- [x] Migrate Docker Registry to GHCR (Private) and implement OIDC/PAT rotation.
 - [ ] Add a `check-secrets` script to the pipeline to scan for hardcoded keys. <!-- id: 8 -->
 - [ ] Setup Dependabot in the GitHub repository. <!-- id: 9 -->
 - [x] Implement user data export/deletion endpoints (Compliance LGPD). <!-- id: 10 -->

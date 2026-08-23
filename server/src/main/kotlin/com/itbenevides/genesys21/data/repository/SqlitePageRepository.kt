@@ -47,12 +47,25 @@ class SqlitePageRepository : PageRepository {
         try {
             dbQuery {
                 val searchDomain = domain.lowercase().removePrefix("www.")
-                PagesTable.selectAll().where {
-                    (PagesTable.customDomain.lowerCase() eq searchDomain) or
-                        (PagesTable.customDomain.lowerCase() eq "www.$searchDomain")
-                }.firstOrNull()?.let { row ->
-                    val components = fetchComponentsForPage(row[PagesTable.id])
-                    Result.success(row.toPage(components))
+
+                // 1. Verificar Mapeamento Global (SuperAdmin)
+                val globalMapping = DomainMappingsTable.selectAll()
+                    .where { (DomainMappingsTable.domain eq searchDomain) or (DomainMappingsTable.domain eq "www.$searchDomain") }
+                    .firstOrNull()?.get(DomainMappingsTable.targetPageId)
+
+                val targetPageId = globalMapping ?: run {
+                    // 2. Fallback: Verificar vinculado diretamente na página
+                    PagesTable.selectAll().where {
+                        (PagesTable.customDomain.lowerCase() eq searchDomain) or
+                            (PagesTable.customDomain.lowerCase() eq "www.$searchDomain")
+                    }.firstOrNull()?.get(PagesTable.id)
+                }
+
+                targetPageId?.let { id ->
+                    val components = fetchComponentsForPage(id)
+                    PagesTable.selectAll().where { PagesTable.id eq id }.singleOrNull()?.let { row ->
+                         Result.success(row.toPage(components))
+                    } ?: Result.failure(Exception("ID de página mapeado não encontrado"))
                 } ?: Result.failure(Exception("Domínio $domain não vinculado"))
             }
         } catch (e: Exception) {

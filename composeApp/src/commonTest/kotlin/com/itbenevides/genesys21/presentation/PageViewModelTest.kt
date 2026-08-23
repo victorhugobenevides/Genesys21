@@ -2,9 +2,7 @@ package com.itbenevides.genesys21.presentation
 
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.usecase.*
-import com.itbenevides.genesys21.mocks.FakeAuthRepository
-import com.itbenevides.genesys21.mocks.FakePageDraftRepository
-import com.itbenevides.genesys21.mocks.FakePageRepository
+import com.itbenevides.genesys21.mocks.*
 import kotlin.test.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,6 +25,7 @@ class PageViewModelTest {
     private lateinit var fakeAddressRepository: FakeAddressRepository
     private lateinit var fakeStoreRepository: FakeStoreRepository
     private lateinit var fakeShippingRepository: FakeShippingRepository
+    private lateinit var fakeDomainRepository: FakeDomainRepository
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -45,6 +44,7 @@ class PageViewModelTest {
         fakeAddressRepository = FakeAddressRepository()
         fakeStoreRepository = FakeStoreRepository()
         fakeShippingRepository = FakeShippingRepository()
+        fakeDomainRepository = FakeDomainRepository()
 
         viewModel =
             PageViewModel(
@@ -89,7 +89,10 @@ class PageViewModelTest {
                 saveAddressUseCase = SaveAddressUseCase(fakeAddressRepository),
                 deleteAddressUseCase = DeleteAddressUseCase(fakeAddressRepository),
                 calculateShippingUseCase = CalculateShippingUseCase(fakeShippingRepository),
-                storeRepository = fakeStoreRepository
+                storeRepository = fakeStoreRepository,
+                getDomainMappingsUseCase = GetDomainMappingsUseCase(fakeDomainRepository),
+                saveDomainMappingUseCase = SaveDomainMappingUseCase(fakeDomainRepository),
+                deleteDomainMappingUseCase = DeleteDomainMappingUseCase(fakeDomainRepository)
             )
     }
 

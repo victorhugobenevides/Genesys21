@@ -1,41 +1,26 @@
-# Fix Screenshot Tests Failures
+# Plano de Correção: Sincronização de Variáveis e Fluxo de Deploy (CircleCI)
 
-The build failed due to several screenshot tests failing in the `:screenshot-tests` module. Investigation revealed multiple causes including naming mismatches, non-deterministic date rendering, and outdated template IDs.
+Com base na lista de variáveis de ambiente fornecida, identifiquei que o job de `deploy` no CircleCI está tentando realizar conexões SSH sem configurar a chave privada e utilizando nomes de variáveis inconsistentes com o que está cadastrado.
 
-## User Review Required
+## Problemas Identificados
+1. **Configuração de SSH ausente:** O job `deploy` tenta rodar `ssh` sem carregar a chave `OCI_SSH_KEY` ou `oracle_key`.
+2. **Nomes de Variáveis:** O script usa `$SERVER_IP`, mas a variável correta é `OCI_HOST`. O usuário SSH está como `ubuntu` fixo, mas temos `OCI_USERNAME`.
+3. **Escapes de Variáveis:** No comando SSH, algumas variáveis precisam ser expandidas localmente (no CircleCI) e outras remotamente (no servidor).
 
-> [!IMPORTANT]
-> The fixes include changing the naming convention of snapshots in `GenesysPaparazzi.kt` to lowercase (`phone`, `tablet`, `desktop`) to match the existing goldens in the repository. This is critical for Linux CI environments where filenames are case-sensitive.
+## Mudanças Propostas
 
-> [!WARNING]
-> I noticed that several templates mentioned in `TemplateShowcaseScreen.kt` (e.g., `pro_design`, `bio_profile`, `blog_post`) are missing from `PageTemplateRegistry.kt`. I will update the code to use the currently available templates to prevent empty screen snapshots, but if these templates were accidentally deleted, they should be restored.
+### CircleCI Configuration
+#### [MODIFY] [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
+- **Job `deploy`**:
+    - Adicionar um passo para configurar a chave SSH a partir da variável `OCI_SSH_KEY`.
+    - Atualizar o comando SSH para usar `${OCI_USERNAME}@${OCI_HOST}`.
+    - Utilizar a chave configurada com `-i ~/.ssh/id_rsa`.
+    - Garantir que as variáveis do OCIR sejam passadas corretamente para o ambiente remoto.
 
-## Proposed Changes
+## Plano de Execução
+1. Modificar o job `deploy` no `.circleci/config.yml`.
+2. Adicionar a lógica de setup da chave SSH (similar ao que existia em versões anteriores).
+3. Fazer commit e push.
 
-### Core Infrastructure
-
-#### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- Change configuration names from capitalized ("Phone", "Tablet", "Desktop") to lowercase ("phone", "tablet", "desktop") to match the repository's naming standard and fix CI failures.
-
-### UI Components & Determinism
-
-#### [MODIFY] [CartScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/CartScreen.kt)
-- Update `ModernCartItemRow` to accept an optional `TimeZone` (defaulting to `TimeZone.currentSystemDefault()`) to allow deterministic rendering in tests.
-
-#### [MODIFY] [AdaptiveLayoutsSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/AdaptiveLayoutsSnapshotTest.kt)
-- Update `testCartResponsive` to pass `TimeZone.UTC` when rendering `CartContent` to ensure consistent date strings across different CI environments.
-
-### Feature Synchronization
-
-#### [MODIFY] [TemplateShowcaseScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/editor/TemplateShowcaseScreen.kt)
-- Update the hardcoded list of templates to use valid IDs from `PageTemplateRegistry` (e.g., `premium_store` instead of `pro_design`, `personal_hub` instead of `bio_profile`).
-
-## Verification Plan
-
-### Automated Tests
-- Run the specifically failing tests to verify they now pass:
-  ```bash
-  ./gradlew :screenshot-tests:testDebugUnitTest --tests com.itbenevides.genesys21.screenshot.AdaptiveLayoutsSnapshotTest
-  ./gradlew :screenshot-tests:testDebugUnitTest --tests com.itbenevides.genesys21.screenshot.DesignSystemSnapshotTest
-  ./gradlew :screenshot-tests:testDebugUnitTest --tests com.itbenevides.genesys21.screenshot.TemplatesSnapshotTest
-  ```
+## Verificação
+- Acompanhar a pipeline no CircleCI. O job `deploy` deve agora conseguir se conectar ao servidor e realizar o pull das imagens.

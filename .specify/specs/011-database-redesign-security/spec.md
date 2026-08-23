@@ -33,6 +33,10 @@ The current database structure in Genesys21 grew organically as features were ad
 - **Availability**: Weekly configuration and exceptions (holidays).
 - **Appointments**: Linkage between `Service`, `Customer`, and `Store`.
 
+### 4.5. Management & Communication Layer
+- **DomainMappings**: Global registry for custom hostnames.
+- **Messages**: Transient and persistent chat logs for order support.
+
 ## 4. Security & Integrity
 - **UUIDs**: All primary keys transition from `Int` or `String` to `UUID`.
 - **Soft Deletes**: `deleted_at` timestamp on `Pages`, `Products`, `Services`, and `Orders`.

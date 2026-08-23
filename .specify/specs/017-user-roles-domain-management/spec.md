@@ -1,48 +1,52 @@
-# Spec 017: User Roles & Global Domain Management
+# Spec 017: User Roles, Global Domain & Anonymous Flow
 
 ## 1. Overview
-This specification defines a multi-level user management system and a centralized custom domain registry. It allows for secure administrative scaling and gives Super Admins the power to map external domains directly to specific user vitrines.
+This specification defines a comprehensive user management system, a centralized domain registry, and a privacy-first anonymous checkout flow. It also introduces a lightweight internal chat for order/appointment management.
 
 ## 2. User Roles Hierarchy
 
 | Role | Access Level | Description |
 | :--- | :--- | :--- |
-| **CUSTOMER** | Low | Default role. Access to public pages, order history, and personal profile. |
-| **MERCHANT** | Medium | Can manage their own Store, Vitrines, Products, Services, and Orders. |
-| **ADMIN** | High | System-level intermediate role. Can manage multiple merchants but not global settings. |
-| **SUPERADMIN** | Full | Total control. Access to the SuperAdmin panel, global permissions, and domain mappings. |
+| **ANONYMOUS** | Transient | Session-based. Access to public pages, single order tracking via Nick. |
+| **CUSTOMER** | Low | Registered user. Persistent order history and profile. |
+| **MERCHANT** | Medium | Can manage their own Store, Vitrines, Products, and Orders. |
+| **ADMIN** | High | System-level intermediate. Manages multiple merchants. |
+| **SUPERADMIN** | Full | Total control. Global permissions and domain mappings. |
 
 ## 3. Global Domain Management
-Super Admins require a centralized way to handle "White Label" deployments where a domain like `client-store.com` must resolve to a specific `pageId` in Genesys21.
+Super Admins manage mappings between external hostnames and internal page IDs.
+- **Resolver**: The server prioritizes the `DomainMappings` table when an unknown hostname is detected.
+- **White Label**: Allows `client-site.com` to render a specific Genesys21 page directly.
 
-### 3.1. Domain Mapping Registry
-A new table will store these global mappings:
-- `id` (UUID): Unique mapping identifier.
-- `domain` (String, Unique): The full domain name (e.g., `shop.victorben.dev`).
-- `targetPageId` (String): The UUID of the Page to render.
-- `createdAt` / `updatedAt`: Timestamps for auditing.
+## 4. Anonymous Flow & Privacy
+- **Nick-only identity**: Anonymous users provide only a "Nick" for identification.
+- **Transient Data**: Address data (for delivery or local service) is stored **only** within the `Order` or `Appointment` record. It is never linked to a persistent user profile.
+- **Authentication**: Access to order tracking for anonymous users is validated via `sessionId` and `orderId`.
 
-## 4. Feature Requirements
+## 5. Communication: Internal Chat Engine
+To facilitate trust between Anonymous users and Merchants, an integrated chat system is required.
+- **WhatsApp**: Mandatory fallback for delivery/local services (even for anonymous) to ensure logistic reliability.
+- **Internal Chat**:
+    - Lightweight messaging system tied to `orderId` or `appointmentId`.
+    - **Persistence**: Messages for Anonymous users live only as long as the Order/Appointment is active.
+    - **Architecture**: Implemented via **HTTP Long Polling** for maximum WasmJS compatibility.
 
-### 4.1. Secure Role Escalation
-- Only a **SUPERADMIN** can promote a user to **ADMIN** or **SUPERADMIN**.
-- An **ADMIN** can promote a **CUSTOMER** to **MERCHANT**.
+## 6. Data Structures
 
-### 4.2. SuperAdmin Domain Portal
-- A new tab/section in the `SuperAdminDashboard` to list, create, and delete domain mappings.
-- Validation to ensure a domain isn't mapped twice.
+### 6.1. Domain Mapping
+- `domain` (String, Unique)
+- `targetPageId` (String)
 
-### 4.3. High-Performance Resolver
-- The server's domain resolution logic (used for landing on pages via hostname) must check the `DomainMappings` table.
-- Cache mappings in memory (Redis or internal map) to avoid DB hits on every request.
+### 6.2. Lightweight Chat (Messages)
+- `id` (UUID)
+- `refId` (Order ID or Appointment ID)
+- `senderNick` (String)
+- `content` (String)
+- `isFromMerchant` (Boolean)
+- `createdAt` (Long)
 
-## 5. Security & Hardening
-- **Route Protection**: All `/api/admin/system/*` routes must be restricted to users with `UserRole.SUPERADMIN`.
-- **JWT Verification**: Ensure the `role` and `permissions` claims are verified server-side on every request.
-- **Audit Logs**: Every role change or domain mapping update must be logged in `AuditLogsTable`.
-
-## 6. Success Criteria
-- [ ] Merchant cannot promote themselves or others to Admin.
-- [ ] A custom domain registered by a SuperAdmin correctly renders the target page.
-- [ ] Audit logs show the trace of who assigned a domain to a page.
-- [ ] User role hierarchy is consistently applied across the Compose UI (hiding/showing tabs).
+## 7. Success Criteria
+- [ ] Registered domain resolves correctly to the target page.
+- [ ] Anonymous user can complete a checkout using only a Nick.
+- [ ] Address data for anonymous users does not persist outside the Order.
+- [ ] Internal chat works for both registered and anonymous users via the tracking page.

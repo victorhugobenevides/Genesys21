@@ -1,12 +1,6 @@
 package com.itbenevides.genesys21.di
 
-import com.itbenevides.genesys21.data.repository.KtorBookingRepository
-import com.itbenevides.genesys21.data.repository.KtorOrderRepository
-import com.itbenevides.genesys21.data.repository.KtorPageRepository
-import com.itbenevides.genesys21.data.repository.KtorUserRepository
-import com.itbenevides.genesys21.data.repository.KtorAddressRepository
-import com.itbenevides.genesys21.data.repository.KtorShippingRepository
-import com.itbenevides.genesys21.data.repository.KtorStoreRepository
+import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
 import com.itbenevides.genesys21.data.util.SecureStorage
@@ -55,8 +49,12 @@ val dataModule =
         single<AddressRepository> { KtorAddressRepository(get(), getBaseUrl(), get()) }
         single<ShippingRepository> { KtorShippingRepository(get(), getBaseUrl()) }
         single<StoreRepository> { KtorStoreRepository(get(), getBaseUrl(), get()) }
+        single<DomainRepository> { KtorDomainRepository(get()) }
 
         // UseCases
+        single { GetDomainMappingsUseCase(get()) }
+        single { SaveDomainMappingUseCase(get()) }
+        single { DeleteDomainMappingUseCase(get()) }
         single { GetUserProfileUseCase(get()) }
         single { SaveUserProfileUseCase(get()) }
         single { GetAllUsersUseCase(get()) }

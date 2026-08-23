@@ -1,6 +1,5 @@
-# Tarefas de Correção dos Testes de Screenshot
+# Tarefas de Restauração: Variáveis CI
 
-- [ ] `[/]` Corrigir infraestrutura de Paparazzi (nomes minúsculos)
-- [ ] `[ ]` Tornar renderização de datas determinística no Carrinho
-- [ ] `[ ]` Sincronizar IDs de templates no Catálogo
-- [ ] `[ ]` Verificar correções executando os testes
+- [x] Restaurar escapes `\$` nas variáveis OCI
+- [x] Mover `GRADLE_OPTS` para o escopo do script
+- [x] Commit e Push para validar na pipeline
