@@ -129,7 +129,7 @@ fun ProfileScreen(
 
                 GenesysCard(modifier = Modifier.fillMaxWidth()) {
                     GenesysColumn(usePadding = false) {
-                        if (profile.role == UserRole.MERCHANT || profile.role == UserRole.SUPERADMIN) {
+                        if (profile.role == UserRole.MERCHANT || profile.role == UserRole.ADMIN || profile.role == UserRole.SUPERADMIN) {
                             ProfileMenuItem(
                                 icon = GenesysIcons.Dashboard,
                                 title = "Painel Administrativo",

@@ -12,23 +12,36 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class SqliteUserRepository : UserRepository {
 
-    private fun ResultRow.toUserProfile() = UserProfile(
-        id = this[UsersTable.id],
-        email = this[UsersTable.email],
-        name = this[UsersTable.name],
-        avatarUrl = this[UsersTable.avatarUrl],
-        phone = this[UsersTable.phone],
-        role = UserRole.valueOf(this[UsersTable.role]),
-        status = UserStatus.valueOf(this[UsersTable.status]),
-        permissions = this[UsersTable.permissions].split(",")
+    private fun ResultRow.toUserProfile(): UserProfile {
+        val roleStr = this[UsersTable.role]
+        val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.CUSTOMER }
+        val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
+
+        val permissionsRaw = this[UsersTable.permissions].split(",")
             .filter { it.isNotBlank() }
             .mapNotNull {
                 runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
-            }.toSet(),
-        createdAt = this[UsersTable.createdAt],
-        updatedAt = this[UsersTable.updatedAt],
-        deletedAt = this[UsersTable.deletedAt]
-    )
+            }.toSet()
+
+        // BACKWARD COMPATIBILITY: Se as permissões estiverem vazias, atribui o padrão do cargo
+        val permissions = if (permissionsRaw.isEmpty() && (role == UserRole.MERCHANT || role == UserRole.ADMIN || role == UserRole.SUPERADMIN)) {
+            com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+        } else permissionsRaw
+
+        return UserProfile(
+            id = this[UsersTable.id],
+            email = this[UsersTable.email],
+            name = this[UsersTable.name],
+            avatarUrl = this[UsersTable.avatarUrl],
+            phone = this[UsersTable.phone],
+            role = role,
+            status = status,
+            permissions = permissions,
+            createdAt = this[UsersTable.createdAt],
+            updatedAt = this[UsersTable.updatedAt],
+            deletedAt = this[UsersTable.deletedAt]
+        )
+    }
 
     override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
         dbQuery {
