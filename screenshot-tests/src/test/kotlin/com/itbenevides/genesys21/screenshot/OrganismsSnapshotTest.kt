@@ -33,7 +33,7 @@ class OrganismsSnapshotTest {
 
     @Test
     fun testProductListGrid() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             GenesysProductList(
                 products = listOf(sampleProduct, sampleProduct.copy(id = "2"), sampleProduct.copy(id = "3")),
                 isHorizontal = false,
@@ -43,7 +43,7 @@ class OrganismsSnapshotTest {
 
     @Test
     fun testProductListHorizontal() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             GenesysProductList(
                 products = listOf(sampleProduct, sampleProduct.copy(id = "2"), sampleProduct.copy(id = "3")),
                 isHorizontal = true,
@@ -53,7 +53,7 @@ class OrganismsSnapshotTest {
 
     @Test
     fun testTrackingTimeline() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             Box(Modifier.padding(16.dp)) {
                 GenesysTrackingTimeline(currentStatus = OrderStatus.PROCESSING)
             }
@@ -65,7 +65,7 @@ class OrganismsSnapshotTest {
         val fixedDate = LocalDate(2026, 7, 28)
         val fixedDateTime = LocalDateTime(fixedDate, LocalTime(9, 0))
 
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine(
                 selectedDateTime = fixedDateTime,
                 availableSlots = listOf("09:00", "11:00", "15:00"),
@@ -90,7 +90,7 @@ class OrganismsSnapshotTest {
                 )
             )
         )
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer(
                 component = grid,
                 onProductClick = {},

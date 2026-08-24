@@ -32,7 +32,7 @@ class AdaptiveLayoutsSnapshotTest {
 
     @Test
     fun testProductDetailsResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ProductDetailsContent(
                 state = ProductDetailsState(product = sampleProduct),
                 backendUrl = "",
@@ -52,7 +52,7 @@ class AdaptiveLayoutsSnapshotTest {
             endTime = kotlinx.datetime.Instant.fromEpochMilliseconds(1735691400000)
         )
 
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             CartContent(
                 state = CartScreenState(
                     cartItems = listOf(
@@ -75,7 +75,7 @@ class AdaptiveLayoutsSnapshotTest {
 
     @Test
     fun testEditorResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             WhiteLabelContent(
                 state = WhiteLabelState(
                     page = samplePage.copy(components = listOf(

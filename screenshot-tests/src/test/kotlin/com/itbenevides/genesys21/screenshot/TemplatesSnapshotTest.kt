@@ -28,7 +28,7 @@ class TemplatesSnapshotTest {
         templates.forEach { template ->
             val page = PageTemplateRegistry.createPageFromTemplate(template.id, "test-id", "test-store")
 
-            paparazzi.genesysResponsiveSnapshot(namePrefix = template.id) {
+            genesysResponsiveSnapshot(paparazzi = paparazzi, namePrefix = template.id) {
                 val windowSizeClass = LocalWindowSizeClass.current
                 val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
@@ -49,7 +49,7 @@ class TemplatesSnapshotTest {
         val templates = PageTemplateRegistry.templates
         val firstTemplate = templates.first()
 
-        paparazzi.genesysResponsiveSnapshot(namePrefix = "CatalogPreview") {
+        genesysResponsiveSnapshot(paparazzi = paparazzi, namePrefix = "CatalogPreview") {
             val previewPage = PageTemplateRegistry.createPageFromTemplate(firstTemplate.id, "preview", "preview")
 
             com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog(

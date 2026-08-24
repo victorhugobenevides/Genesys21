@@ -35,7 +35,7 @@ class BookingSnapshotTest {
         )
         val samplePage = Page(id = "p1", storeId = "store-1", title = "Barbearia Teste")
 
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ServiceBookingScreen(
                 service = sampleService,
                 page = samplePage,

@@ -19,7 +19,7 @@ class ComponentEditorsSnapshotTest {
 
     @Test
     fun testHeaderComponentEditorResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             HeaderComponentEditor(
                 component = PageComponent.Header(title = "Meu Título"),
                 onSave = {}
@@ -29,7 +29,7 @@ class ComponentEditorsSnapshotTest {
 
     @Test
     fun testTextComponentEditorResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             TextComponentEditor(
                 component = PageComponent.Text(content = "Este é um texto de exemplo para o editor."),
                 onSave = {}
@@ -39,7 +39,7 @@ class ComponentEditorsSnapshotTest {
 
     @Test
     fun testProfileHeaderComponentEditorResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ProfileHeaderComponentEditor(
                 component = PageComponent.ProfileHeader(
                     imageUrl = "https://github.com/victorhugobenevides.png",
@@ -54,7 +54,7 @@ class ComponentEditorsSnapshotTest {
 
     @Test
     fun testSocialLinksComponentEditorResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             SocialLinksComponentEditor(
                 component = PageComponent.SocialLinks(
                     email = "teste@exemplo.com",
@@ -71,7 +71,7 @@ class ComponentEditorsSnapshotTest {
             Product(id = "1", storeId = "s1", name = "Produto 1", price = 10.0, imageUrls = emptyList()),
             Product(id = "2", storeId = "s1", name = "Produto 2", price = 20.0, imageUrls = emptyList())
         )
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ProductListComponentEditor(
                 component = PageComponent.ProductList(products = sampleProducts.take(1)),
                 allAvailableProducts = sampleProducts,
@@ -84,7 +84,7 @@ class ComponentEditorsSnapshotTest {
 
     @Test
     fun testButtonComponentEditorResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ButtonComponentEditor(
                 component = PageComponent.Button(text = "Clique Aqui", url = "https://example.com"),
                 onSave = {}
@@ -101,7 +101,7 @@ class ComponentEditorsSnapshotTest {
                 PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://picsum.photos/100")))
             )
         )
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             com.itbenevides.genesys21.presentation.screens.editor.GridComponentEditor(
                 component = grid,
                 allPageComponents = listOf(PageComponent.Header("H1"), PageComponent.Button("B1", "#")),

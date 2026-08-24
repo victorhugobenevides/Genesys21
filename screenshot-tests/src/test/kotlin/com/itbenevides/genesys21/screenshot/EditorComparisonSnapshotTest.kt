@@ -16,7 +16,7 @@ class EditorComparisonSnapshotTest {
 
     @Test
     fun testEditorComparisonMockupResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             Column(Modifier.padding(16.dp)) {
                 Text("Editor Comparison Showcase")
                 Spacer(Modifier.height(16.dp))

@@ -30,7 +30,7 @@ class ResponsivenessSnapshotTest {
 
     @Test
     fun testProductDetailsResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ProductDetailsContent(
                 state = ProductDetailsState(product = sampleProduct),
                 backendUrl = "",
@@ -41,7 +41,7 @@ class ResponsivenessSnapshotTest {
 
     @Test
     fun testCartResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             CartContent(
                 state = CartScreenState(total = 899.90),
                 store = null,
@@ -54,7 +54,7 @@ class ResponsivenessSnapshotTest {
 
     @Test
     fun testEmbeddedCheckoutResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             val appTheme = com.itbenevides.genesys21.domain.model.PageThemeConfig.ELEGANCE
             val colorScheme = androidx.compose.material3.MaterialTheme.colorScheme
             val appearance = com.itbenevides.genesys21.util.StripeThemeMapper.mapToAppearance(appTheme, colorScheme)
@@ -74,7 +74,7 @@ class ResponsivenessSnapshotTest {
 
     @Test
     fun testTypographyScaling() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             androidx.compose.foundation.layout.Column(
                 modifier = androidx.compose.ui.Modifier.padding(16.dp),
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)

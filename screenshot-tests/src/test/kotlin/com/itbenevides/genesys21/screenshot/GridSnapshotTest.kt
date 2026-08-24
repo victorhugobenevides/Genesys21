@@ -32,7 +32,7 @@ class GridSnapshotTest {
             )
         )
 
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             PageComponentRenderer(
                 component = mainGrid,
                 onProductClick = {},

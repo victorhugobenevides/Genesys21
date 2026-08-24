@@ -20,7 +20,7 @@ class WhiteLabelInteractionSnapshotTest {
             showCatalog = true
         )
 
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             // Testamos o componente do catálogo diretamente.
             // Se o código do catálogo sumir ou quebrar, este teste falhará no CI.
             ComponentCatalogUI(

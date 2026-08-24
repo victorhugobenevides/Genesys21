@@ -3,9 +3,6 @@ package com.itbenevides.genesys21.screenshot
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
-import com.itbenevides.genesys21.domain.model.UserProfile
-import com.itbenevides.genesys21.domain.model.UserRole
-import com.itbenevides.genesys21.domain.model.UserPermission
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorContent
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorState
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorContent
@@ -51,17 +48,26 @@ class ScreensSnapshotTest {
 
     @Test
     fun testLoginScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             LoginScreen(viewModel = koinInject(), onLoginSuccess = {})
         }
     }
 
     @Test
     fun testAdminDashboardResponsive() {
-        paparazzi.genesysResponsiveSnapshot(
+        genesysResponsiveSnapshot(
+            paparazzi = paparazzi,
             mockUserId = "admin-1",
             mockUserRole = "SUPERADMIN",
-            mockUserPermissions = UserPermission.entries.map { it.name }
+            mockUserPermissions = listOf(
+                "MANAGE_VITRINES",
+                "MANAGE_ORDERS",
+                "MANAGE_AGENDA",
+                "MANAGE_SERVICES",
+                "MANAGE_STORE",
+                "MANAGE_RECEIPTS",
+                "ACCESS_ADMIN_PANEL"
+            )
         ) {
             PageListScreen(
                 viewModel = koinInject(),
@@ -76,14 +82,14 @@ class ScreensSnapshotTest {
 
     @Test
     fun testProfileScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ProfileScreen(viewModel = koinInject(), router = koinInject())
         }
     }
 
     @Test
     fun testProductEditorScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             val mockViewModel: PageViewModel = koinInject()
             val state = remember { mutableStateOf(ProductEditorState.initial(sampleProduct)) }
 
@@ -102,7 +108,7 @@ class ScreensSnapshotTest {
 
     @Test
     fun testPageEditorScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             PageEditorContent(
                 state = PageEditorState(id = "p1", title = "Minha Loja", isEditing = true),
                 onEvent = {}
@@ -112,7 +118,7 @@ class ScreensSnapshotTest {
 
     @Test
     fun testServiceEditorScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             val mockViewModel: PageViewModel = koinInject()
             ServiceEditorContent(
                 viewModel = mockViewModel,
@@ -129,7 +135,7 @@ class ScreensSnapshotTest {
 
     @Test
     fun testServiceSelectionScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ServiceSelectionScreen(
                 viewModel = koinInject(),
                 selectedIds = emptyList(),
@@ -142,21 +148,21 @@ class ScreensSnapshotTest {
 
     @Test
     fun testOrderTrackingScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             OrderTrackingScreen(orderId = "order-123", status = "success", onBack = {})
         }
     }
 
     @Test
     fun testCustomerOrderHistoryScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             CustomerOrderHistoryScreen(onBack = {}, onOrderClick = {})
         }
     }
 
     @Test
     fun testTemplateCatalogScreenResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             com.itbenevides.genesys21.presentation.screens.editor.TemplateCatalogScreen(
                 viewModel = koinInject(),
                 onBack = {},

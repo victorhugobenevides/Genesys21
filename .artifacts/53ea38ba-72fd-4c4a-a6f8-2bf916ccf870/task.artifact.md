@@ -1,7 +1,6 @@
-- [x] Refactor `GenesysPaparazzi.kt` to use primitive mock parameters
-- [x] Update `ScreensSnapshotTest.kt` to pass primitives
-- [x] Remove `coerceUserProfile` function
-- [x] Verify logic and check for potential regressions in other tests
-- [/] Commit changes
-- [ ] Push changes
+- [x] Refactor `GenesysPaparazzi.kt`: convert extensions to regular functions and use primitive mocks
+- [x] Refactor `ScreensSnapshotTest.kt`: update call sites and remove Enum usages
+- [x] Refactor all other snapshot test files (14 files) to use new function signatures
+- [x] Verify logic and ensure all project-specific types are avoided in crossing parameters
+- [/] Commit and Push changes
 - [ ] Create walkthrough artifact

@@ -22,7 +22,7 @@ class AtomsSnapshotTest {
 
     @Test
     fun testTypographyResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysText(text = "Headline Large", style = GenesysTextStyle.Headline)
                 GenesysText(text = "Title Medium", style = GenesysTextStyle.Title)
@@ -35,7 +35,7 @@ class AtomsSnapshotTest {
 
     @Test
     fun testBadgesResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysBadge(label = "New", color = Color(0xFF2CB1FF))
                 GenesysBadge(label = "Sale", color = Color(0xFFD81159), showDot = false)
@@ -46,7 +46,7 @@ class AtomsSnapshotTest {
 
     @Test
     fun testIconButtonsResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GenesysIconButton(icon = Icons.Default.ShoppingCart, onClick = {})
                 GenesysIconButton(icon = Icons.Default.Favorite, onClick = {}, tint = Color.Red)

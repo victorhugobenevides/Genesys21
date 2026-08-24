@@ -16,7 +16,7 @@ class EditorSnapshotTest {
 
     @Test
     fun testThemeLabDialogResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ThemeLabDialog(
                 initialConfig =
                     CustomThemeConfig(
@@ -33,7 +33,7 @@ class EditorSnapshotTest {
 
     @Test
     fun testThemeSelectorBottomSheetResponsive() {
-        paparazzi.genesysResponsiveSnapshot {
+        genesysResponsiveSnapshot(paparazzi) {
             ThemeSelectorBottomSheet(
                 currentTheme = PageThemeConfig.ELEGANCE,
                 onThemeSelected = {},

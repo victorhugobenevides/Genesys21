@@ -40,7 +40,8 @@ fun createGenesysPaparazzi(
         maxPercentDifference = 1.0,
     )
 
-fun Paparazzi.genesysSnapshot(
+fun genesysSnapshot(
+    paparazzi: Paparazzi,
     widthOverride: Dp? = null,
     mockUserId: String? = null,
     mockUserRole: String? = null,
@@ -49,7 +50,7 @@ fun Paparazzi.genesysSnapshot(
 ) {
     val widthDp = widthOverride ?: 393.dp
 
-    this.snapshot {
+    paparazzi.snapshot {
         val profile = if (mockUserId != null) {
             UserProfile(
                 id = mockUserId,
@@ -87,7 +88,8 @@ fun Paparazzi.genesysSnapshot(
     }
 }
 
-fun Paparazzi.genesysResponsiveSnapshot(
+fun genesysResponsiveSnapshot(
+    paparazzi: Paparazzi,
     namePrefix: String? = null,
     mockUserId: String? = null,
     mockUserRole: String? = null,
@@ -104,9 +106,9 @@ fun Paparazzi.genesysResponsiveSnapshot(
         val (name, config) = pair
         val snapshotName = if (namePrefix != null) "${namePrefix}_$name" else name
 
-        this.unsafeUpdateConfig(deviceConfig = config)
+        paparazzi.unsafeUpdateConfig(deviceConfig = config)
 
-        this.snapshot(name = snapshotName) {
+        paparazzi.snapshot(name = snapshotName) {
             val profile = if (mockUserId != null) {
                 UserProfile(
                     id = mockUserId,
