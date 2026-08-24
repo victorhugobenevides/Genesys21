@@ -49,41 +49,45 @@ class ScreensSnapshotTest {
 
     @Test
     fun testLoginScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             LoginScreen(viewModel = koinInject(), onLoginSuccess = {})
         }
     }
 
     @Test
     fun testAdminDashboardResponsive() {
-        genesysResponsiveSnapshot(
-            paparazzi = paparazzi,
-            namePrefix = null,
-            mockUserId = "admin-1",
-            mockUserRole = "SUPERADMIN",
-            mockUserPermissions = "MANAGE_VITRINES,MANAGE_ORDERS,MANAGE_AGENDA,MANAGE_SERVICES,MANAGE_STORE,MANAGE_RECEIPTS,ACCESS_ADMIN_PANEL"
-        ) {
-            PageListScreen(
-                viewModel = koinInject(),
-                onAddPage = {},
-                onEditPage = {},
-                onViewPage = {},
-                onLogout = {},
-                onShowcase = {}
-            )
+        System.setProperty("genesys.mock.userId", "admin-1")
+        System.setProperty("genesys.mock.userRole", "SUPERADMIN")
+        System.setProperty("genesys.mock.userPermissions", "MANAGE_VITRINES,MANAGE_ORDERS,MANAGE_AGENDA,MANAGE_SERVICES,MANAGE_STORE,MANAGE_RECEIPTS,ACCESS_ADMIN_PANEL")
+
+        try {
+            paparazzi.genesysResponsiveSnapshot {
+                PageListScreen(
+                    viewModel = koinInject(),
+                    onAddPage = {},
+                    onEditPage = {},
+                    onViewPage = {},
+                    onLogout = {},
+                    onShowcase = {}
+                )
+            }
+        } finally {
+            System.clearProperty("genesys.mock.userId")
+            System.clearProperty("genesys.mock.userRole")
+            System.clearProperty("genesys.mock.userPermissions")
         }
     }
 
     @Test
     fun testProfileScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             ProfileScreen(viewModel = koinInject(), router = koinInject())
         }
     }
 
     @Test
     fun testProductEditorScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             val mockViewModel: PageViewModel = koinInject()
             val state = remember { mutableStateOf(ProductEditorState.initial(sampleProduct)) }
 
@@ -102,7 +106,7 @@ class ScreensSnapshotTest {
 
     @Test
     fun testPageEditorScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             PageEditorContent(
                 state = PageEditorState(id = "p1", title = "Minha Loja", isEditing = true),
                 onEvent = {}
@@ -112,7 +116,7 @@ class ScreensSnapshotTest {
 
     @Test
     fun testServiceEditorScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             val mockViewModel: PageViewModel = koinInject()
             ServiceEditorContent(
                 viewModel = mockViewModel,
@@ -129,7 +133,7 @@ class ScreensSnapshotTest {
 
     @Test
     fun testServiceSelectionScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             ServiceSelectionScreen(
                 viewModel = koinInject(),
                 selectedIds = emptyList(),
@@ -142,21 +146,21 @@ class ScreensSnapshotTest {
 
     @Test
     fun testOrderTrackingScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             OrderTrackingScreen(orderId = "order-123", status = "success", onBack = {})
         }
     }
 
     @Test
     fun testCustomerOrderHistoryScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             CustomerOrderHistoryScreen(onBack = {}, onOrderClick = {})
         }
     }
 
     @Test
     fun testTemplateCatalogScreenResponsive() {
-        genesysResponsiveSnapshot(paparazzi) {
+        paparazzi.genesysResponsiveSnapshot {
             com.itbenevides.genesys21.presentation.screens.editor.TemplateCatalogScreen(
                 viewModel = koinInject(),
                 onBack = {},
