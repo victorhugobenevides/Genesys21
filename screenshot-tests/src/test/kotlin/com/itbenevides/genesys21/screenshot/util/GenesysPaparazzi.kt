@@ -40,13 +40,13 @@ fun createGenesysPaparazzi(
         maxPercentDifference = 1.0,
     )
 
-fun genesysSnapshot(
+inline fun genesysSnapshot(
     paparazzi: Paparazzi,
     widthOverride: Dp? = null,
     mockUserId: String? = null,
     mockUserRole: String? = null,
     mockUserPermissions: List<String>? = null,
-    content: @Composable () -> Unit,
+    crossinline content: @Composable () -> Unit,
 ) {
     val widthDp = widthOverride ?: 393.dp
 
@@ -88,13 +88,13 @@ fun genesysSnapshot(
     }
 }
 
-fun genesysResponsiveSnapshot(
+inline fun genesysResponsiveSnapshot(
     paparazzi: Paparazzi,
     namePrefix: String? = null,
     mockUserId: String? = null,
     mockUserRole: String? = null,
     mockUserPermissions: List<String>? = null,
-    content: @Composable () -> Unit,
+    crossinline content: @Composable () -> Unit,
 ) {
     val configs = listOf(
         "phone" to DeviceConfig.PIXEL_5 to 393.dp,
