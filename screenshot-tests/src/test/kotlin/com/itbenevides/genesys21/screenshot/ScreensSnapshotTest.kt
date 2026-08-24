@@ -58,15 +58,11 @@ class ScreensSnapshotTest {
 
     @Test
     fun testAdminDashboardResponsive() {
-        val sampleSuperAdmin = UserProfile(
-            id = "admin-1",
-            email = "victorkoto@gmail.com",
-            name = "Victor SuperAdmin",
-            role = UserRole.SUPERADMIN,
-            permissions = UserPermission.entries.toSet()
-        )
-
-        paparazzi.genesysResponsiveSnapshot(mockUserProfile = sampleSuperAdmin) {
+        paparazzi.genesysResponsiveSnapshot(
+            mockUserId = "admin-1",
+            mockUserRole = "SUPERADMIN",
+            mockUserPermissions = UserPermission.entries.map { it.name }
+        ) {
             PageListScreen(
                 viewModel = koinInject(),
                 onAddPage = {},

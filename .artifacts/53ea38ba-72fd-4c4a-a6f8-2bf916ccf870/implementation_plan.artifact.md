@@ -1,26 +1,30 @@
-# Fix ClassCastException in ScreensSnapshotTest
+# Fix Persistent ClassCastException in ScreensSnapshotTest
 
-The test `testAdminDashboardResponsive` is failing with a `java.lang.ClassCastException` at line 66 of `ScreensSnapshotTest.kt`. This line corresponds to the call to `paparazzi.genesysResponsiveSnapshot` passing a `mockUserProfile`.
+The previous attempt to fix the `ClassCastException` in `ScreensSnapshotTest.kt` using reflection-based coercion failed. The exception persists at the boundary where the `UserProfile` object crosses classloaders between the test execution and the Paparazzi rendering environment.
 
 ## Analysis
 
-The `ClassCastException` likely stems from a classloader mismatch in the Paparazzi test environment. Paparazzi uses a custom classloader for rendering (LayoutLib), while the test code runs in the standard JUnit/Android test classloader. When a complex object like `UserProfile` is created in the test and passed into the Paparazzi rendering block, it might be seen as a different class if the rendering environment reloads classes.
+The `ClassCastException` occurs because even if the parameter is `Any?`, the runtime still encounters issues when the code inside the rendering block tries to treat the object as a `UserProfile` from its own classloader, while it was instantiated in the test classloader.
 
-Additionally, `GenesysPaparazzi.kt` was creating the Koin `mockModule` outside the `paparazzi.snapshot` block, which further exacerbates classloader issues for the mocked `PageViewModel`.
+The most reliable way to fix this in Paparazzi tests is to **avoid passing project-specific class instances across the classloader boundary**. Instead, we should pass primitive types (Strings, Ints, etc.) and reconstruct the necessary objects inside the rendering block.
 
 ## Proposed Changes
 
 ### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
 
 #### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- Move the creation of `mockModule` inside the `this.snapshot` block to ensure it's evaluated within the correct classloader context.
-- Ensure all MockK expectations return types that exactly match the expected `StateFlow` types.
+- Update `genesysSnapshot` and `genesysResponsiveSnapshot` to accept primitive mock parameters instead of a `UserProfile` object:
+    - `mockUserId: String? = null`
+    - `mockUserRole: String? = null`
+    - `mockUserPermissions: List<String>? = null`
+- Inside the `snapshot` block, reconstruct the `UserProfile` object using these primitives.
+- Remove the `coerceUserProfile` function.
 
 #### [MODIFY] [ScreensSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/ScreensSnapshotTest.kt)
-- Simplify `UserProfile` creation and ensure proper imports to avoid any naming conflicts.
-- Explicitly use `koinInject<PageViewModel>()` to help type inference.
+- Update `testAdminDashboardResponsive` to pass individual strings for ID, Role, and Permissions instead of the `sampleSuperAdmin` object.
 
 ## Verification Plan
 
 ### Automated Tests
-- Run `:screenshot-tests:testDebugUnitTest --tests "com.itbenevides.genesys21.screenshot.ScreensSnapshotTest.testAdminDashboardResponsive"` to verify the fix.
+- Since local Gradle execution is failing due to environment issues, I will verify the logic by ensuring no `UserProfile` instances are passed across the `snapshot` boundary.
+- The user should run `:screenshot-tests:testDebugUnitTest --tests "com.itbenevides.genesys21.screenshot.ScreensSnapshotTest.testAdminDashboardResponsive"` to verify the fix in their environment.
