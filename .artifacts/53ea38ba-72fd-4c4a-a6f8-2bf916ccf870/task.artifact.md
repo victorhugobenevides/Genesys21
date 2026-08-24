@@ -1,5 +1,5 @@
-- [ ] Refactor `GenesysPaparazzi.kt`: Remove `inline` and `crossinline`
-- [ ] Ensure all call sites in screenshot tests (15 files) are compatible with non-inline calls
-- [ ] Commit and Push changes
+- [x] Refactor `GenesysPaparazzi.kt`: Remove `inline` and `crossinline`
+- [x] Ensure all call sites in screenshot tests (15 files) are compatible with non-inline calls
+- [x] Commit and Push changes
 - [ ] Verify in CI
 - [ ] Create walkthrough artifact

@@ -40,18 +40,18 @@ fun createGenesysPaparazzi(
         maxPercentDifference = 1.0,
     )
 
-fun genesysSnapshot(
+/**
+ * Base implementation to avoid default arguments issues with classloaders.
+ */
+fun genesysSnapshotImpl(
     paparazzi: Paparazzi,
-    widthOverride: Dp? = null,
-    content: @Composable () -> Unit,
+    widthDp: Dp,
+    mockUserId: String?,
+    mockUserRole: String?,
+    mockUserPermissions: String?, // Comma separated
+    content: @Composable () -> Unit
 ) {
-    val widthDp = widthOverride ?: 393.dp
-
     paparazzi.snapshot {
-        val mockUserId = System.getProperty("genesys.mock.userId")
-        val mockUserRole = System.getProperty("genesys.mock.userRole")
-        val mockUserPermissions = System.getProperty("genesys.mock.userPermissions")?.split(",")
-
         val mockModule = module {
             single<PageViewModel> {
                 val profile = if (mockUserId != null) {
@@ -60,7 +60,7 @@ fun genesysSnapshot(
                         email = "test@example.com",
                         name = "Test User",
                         role = mockUserRole?.let { UserRole.valueOf(it) } ?: UserRole.CUSTOMER,
-                        permissions = mockUserPermissions?.map { UserPermission.valueOf(it) }?.toSet() ?: emptySet()
+                        permissions = mockUserPermissions?.split(",")?.filter { it.isNotBlank() }?.map { UserPermission.valueOf(it) }?.toSet() ?: emptySet()
                     )
                 } else null
 
@@ -135,10 +135,52 @@ fun genesysSnapshot(
     }
 }
 
+/**
+ * Overload without optional parameters to prevent synthetic method generation.
+ */
+fun genesysSnapshot(
+    paparazzi: Paparazzi,
+    content: @Composable () -> Unit
+) {
+    genesysSnapshotImpl(paparazzi, 393.dp, null, null, null, content)
+}
+
+/**
+ * Overload with all parameters explicit.
+ */
+fun genesysSnapshot(
+    paparazzi: Paparazzi,
+    widthOverride: Dp,
+    mockUserId: String?,
+    mockUserRole: String?,
+    mockUserPermissions: String?,
+    content: @Composable () -> Unit
+) {
+    genesysSnapshotImpl(paparazzi, widthOverride, mockUserId, mockUserRole, mockUserPermissions, content)
+}
+
 fun genesysResponsiveSnapshot(
     paparazzi: Paparazzi,
-    namePrefix: String? = null,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
+) {
+    genesysResponsiveSnapshot(paparazzi, null, null, null, null, content)
+}
+
+fun genesysResponsiveSnapshot(
+    paparazzi: Paparazzi,
+    namePrefix: String?,
+    content: @Composable () -> Unit
+) {
+    genesysResponsiveSnapshot(paparazzi, namePrefix, null, null, null, content)
+}
+
+fun genesysResponsiveSnapshot(
+    paparazzi: Paparazzi,
+    namePrefix: String?,
+    mockUserId: String?,
+    mockUserRole: String?,
+    mockUserPermissions: String?,
+    content: @Composable () -> Unit
 ) {
     val configs = listOf(
         "phone" to DeviceConfig.PIXEL_5 to 393.dp,
@@ -152,91 +194,7 @@ fun genesysResponsiveSnapshot(
 
         paparazzi.unsafeUpdateConfig(deviceConfig = config)
 
-        paparazzi.snapshot(name = snapshotName) {
-            val mockUserId = System.getProperty("genesys.mock.userId")
-            val mockUserRole = System.getProperty("genesys.mock.userRole")
-            val mockUserPermissions = System.getProperty("genesys.mock.userPermissions")?.split(",")
-
-            val mockModule = module {
-                single<PageViewModel> {
-                    val profile = if (mockUserId != null) {
-                        UserProfile(
-                            id = mockUserId,
-                            email = "test@example.com",
-                            name = "Test User",
-                            role = mockUserRole?.let { UserRole.valueOf(it) } ?: UserRole.CUSTOMER,
-                            permissions = mockUserPermissions?.map { UserPermission.valueOf(it) }?.toSet() ?: emptySet()
-                        )
-                    } else null
-
-                    mockk<PageViewModel>(relaxed = true).apply {
-                        every { pages } returns MutableStateFlow<List<Page>>(emptyList())
-                        every { orders } returns MutableStateFlow<List<Order>>(emptyList())
-                        every { cart } returns MutableStateFlow<List<CartItem>>(emptyList())
-                        every { cartTotal } returns MutableStateFlow<Double>(0.0)
-                        every { cartCount } returns MutableStateFlow<Int>(0)
-                        every { trackedOrder } returns MutableStateFlow<Order?>(null)
-                        every { customerName } returns MutableStateFlow<String>("Victor Test")
-                        every { customerPhone } returns MutableStateFlow<String>("11999999999")
-                        every { allAvailableCategories } returns MutableStateFlow<List<String>>(emptyList())
-                        every { isLoading } returns MutableStateFlow<Boolean>(false)
-                        every { userProfile } returns MutableStateFlow<UserProfile?>(profile)
-                        every { services } returns MutableStateFlow<List<BookingService>>(emptyList())
-                        every { allAvailableProducts } returns MutableStateFlow<List<Product>>(emptyList())
-                        every { categories } returns MutableStateFlow<List<Category>>(emptyList())
-                        every { availability } returns MutableStateFlow<MerchantAvailability?>(null)
-                        every { templates } returns MutableStateFlow<List<PageTemplate>>(emptyList())
-                        every { customerOrders } returns MutableStateFlow<List<Order>>(emptyList())
-                        every { customerAppointments } returns MutableStateFlow<List<Appointment>>(emptyList())
-                        every { userAddresses } returns MutableStateFlow<List<Address>>(emptyList())
-                        every { allUsers } returns MutableStateFlow<List<UserProfile>>(emptyList())
-                        every { analytics } returns MutableStateFlow<MerchantAnalytics?>(null)
-                        every { appTheme } returns MutableStateFlow<PageThemeConfig>(PageThemeConfig.ELEGANCE)
-                        every { isLoggedIn } returns MutableStateFlow<Boolean>(profile != null)
-                        every { isWaitingForPaymentSignal } returns MutableStateFlow<Boolean>(false)
-                        every { domainMappings } returns MutableStateFlow<List<DomainMapping>>(emptyList())
-                        every { chatMessages } returns MutableStateFlow<List<ChatMessage>>(emptyList())
-                        every { productSuggestions } returns MutableStateFlow<List<String>>(emptyList())
-                        every { categorySuggestions } returns MutableStateFlow<List<String>>(emptyList())
-                        every { appointments } returns MutableStateFlow<List<Appointment>>(emptyList())
-                        every { upcomingAppointments } returns MutableStateFlow<List<Appointment>>(emptyList())
-
-                        // Flows de eventos
-                        every { errorEvents } returns MutableSharedFlow<AppError>()
-                        every { uiMessages } returns MutableSharedFlow<String>()
-                        every { uiEvent } returns MutableSharedFlow<UiEvent>()
-                    }
-                }
-
-                single { Router(get()) }
-
-                single<String>(org.koin.core.qualifier.named("hostname")) { "localhost" }
-                single<String>(org.koin.core.qualifier.named("baseUrl")) { "http://localhost:8080" }
-            }
-
-            val viewModelStoreOwner = remember {
-                object : ViewModelStoreOwner {
-                    override val viewModelStore: ViewModelStore = ViewModelStore()
-                }
-            }
-
-            val mockActivity = remember { mockk<ComponentActivity>(relaxed = true) }
-
-            CompositionLocalProvider(
-                LocalViewModelStoreOwner provides viewModelStoreOwner,
-                LocalContext provides mockActivity,
-                LocalTestMode provides true
-            ) {
-                KoinApplication(application = {
-                    modules(mockModule)
-                }) {
-                    ProvideWindowSizeClass(widthDp) {
-                        AppTheme {
-                            content()
-                        }
-                    }
-                }
-            }
-        }
+        // We reuse the same impl logic but manually for each config
+        genesysSnapshotImpl(paparazzi, widthDp, mockUserId, mockUserRole, mockUserPermissions, content)
     }
 }

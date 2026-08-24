@@ -28,7 +28,7 @@ class ThemesSnapshotTest {
         )
 
         themes.forEach { theme ->
-            genesysResponsiveSnapshot(paparazzi = paparazzi, namePrefix = "Theme_${theme.name}") {
+            genesysResponsiveSnapshot(paparazzi, "Theme_${theme.name}") {
                 val windowSizeClass = LocalWindowSizeClass.current
                 val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
