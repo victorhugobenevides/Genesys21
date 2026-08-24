@@ -3,6 +3,9 @@ package com.itbenevides.genesys21.screenshot
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.domain.model.UserProfile
+import com.itbenevides.genesys21.domain.model.UserRole
+import com.itbenevides.genesys21.domain.model.UserPermission
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorContent
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorState
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorContent
@@ -55,12 +58,12 @@ class ScreensSnapshotTest {
 
     @Test
     fun testAdminDashboardResponsive() {
-        val sampleSuperAdmin = com.itbenevides.genesys21.domain.model.UserProfile(
+        val sampleSuperAdmin = UserProfile(
             id = "admin-1",
             email = "victorkoto@gmail.com",
             name = "Victor SuperAdmin",
-            role = com.itbenevides.genesys21.domain.model.UserRole.SUPERADMIN,
-            permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+            role = UserRole.SUPERADMIN,
+            permissions = UserPermission.entries.toSet()
         )
 
         paparazzi.genesysResponsiveSnapshot(mockUserProfile = sampleSuperAdmin) {

@@ -1,0 +1,5 @@
+- [x] Refactor `GenesysPaparazzi.kt` to move mock module initialization inside the snapshot block
+- [x] Refactor `ScreensSnapshotTest.kt` to simplify `UserProfile` creation and imports
+- [x] Implement reflection-based `coerceUserProfile` to handle classloader mismatches in Paparazzi tests
+- [x] Verify the fix (bypassing call-site cast and handling object extraction)
+- [x] Create walkthrough artifact

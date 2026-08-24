@@ -42,13 +42,14 @@ fun createGenesysPaparazzi(
 
 fun Paparazzi.genesysSnapshot(
     widthOverride: Dp? = null,
-    mockUserProfile: UserProfile? = null,
+    mockUserProfile: Any? = null,
     content: @Composable () -> Unit,
 ) {
-    val mockModule = getMockModule(mockUserProfile)
     val widthDp = widthOverride ?: 393.dp
 
     this.snapshot {
+        val profile = coerceUserProfile(mockUserProfile)
+        val mockModule = getMockModule(profile)
         val viewModelStoreOwner = remember {
             object : ViewModelStoreOwner {
                 override val viewModelStore: ViewModelStore = ViewModelStore()
@@ -77,7 +78,7 @@ fun Paparazzi.genesysSnapshot(
 
 fun Paparazzi.genesysResponsiveSnapshot(
     namePrefix: String? = null,
-    mockUserProfile: UserProfile? = null,
+    mockUserProfile: Any? = null,
     content: @Composable () -> Unit,
 ) {
     val configs = listOf(
@@ -92,9 +93,9 @@ fun Paparazzi.genesysResponsiveSnapshot(
 
         this.unsafeUpdateConfig(deviceConfig = config)
 
-        val mockModule = getMockModule(mockUserProfile)
-
         this.snapshot(name = snapshotName) {
+            val profile = coerceUserProfile(mockUserProfile)
+            val mockModule = getMockModule(profile)
             val viewModelStoreOwner = remember {
                 object : ViewModelStoreOwner {
                     override val viewModelStore: ViewModelStore = ViewModelStore()
@@ -167,4 +168,27 @@ fun getMockModule(mockUserProfile: UserProfile? = null) = module {
 
     single<String>(org.koin.core.qualifier.named("hostname")) { "localhost" }
     single<String>(org.koin.core.qualifier.named("baseUrl")) { "http://localhost:8080" }
+}
+
+private fun coerceUserProfile(obj: Any?): UserProfile? {
+    if (obj == null) return null
+    if (obj is UserProfile) return obj
+
+    // Fallback reflection for classloader mismatch
+    return try {
+        val id = obj.javaClass.getMethod("getId").invoke(obj) as String
+        val email = obj.javaClass.getMethod("getEmail").invoke(obj) as String
+        val name = obj.javaClass.getMethod("getName").invoke(obj) as String
+        val roleObj = obj.javaClass.getMethod("getRole").invoke(obj)
+        val role = UserRole.valueOf(roleObj?.toString() ?: "CUSTOMER")
+
+        UserProfile(
+            id = id,
+            email = email,
+            name = name,
+            role = role
+        )
+    } catch (e: Exception) {
+        null
+    }
 }

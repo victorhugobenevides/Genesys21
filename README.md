@@ -97,3 +97,9 @@ Open `iosApp/iosApp.xcworkspace` in Xcode and run the `iosApp` scheme.
 
 Copyright © 2024 It Benevides. All rights reserved.
 Developed by [Victor Hugo Benevides](https://github.com/victorhugobenevides).
+
+---
+
+## 🤖 AI Interaction Policy
+
+- **Language**: All AI agent responses and interactions must be conducted in **Portuguese**.
