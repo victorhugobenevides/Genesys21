@@ -1,5 +1,5 @@
-- [x] Refactor `GenesysPaparazzi.kt`: Remove `inline` and `crossinline`
-- [x] Ensure all call sites in screenshot tests (15 files) are compatible with non-inline calls
-- [x] Commit and Push changes
+- [x] Fix `ClassCastException` in `NavigationSuiteScaffold`
+    - [x] Update `NavigationWrapper` in `GenesysPage.kt` to use explicit `layoutType`
+    - [x] Commit and Push changes
 - [ ] Verify in CI
 - [ ] Create walkthrough artifact

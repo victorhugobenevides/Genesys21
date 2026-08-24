@@ -1,27 +1,31 @@
-# Plano de Implementação - Remoção de Inlining para Estabilidade de Classloader
+# Plano de Implementação - Correção de ClassCastException no NavigationSuiteScaffold
 
-A persistência do `ClassCastException` na pipeline de CI, mesmo com o uso de tipos primitivos, sugere que o `inlining` das funções de utilidade está trazendo referências de classes do *classloader* do JUnit para dentro do contexto do Paparazzi/LayoutLib.
+O erro `java.lang.ClassCastException` persistente nos testes de screenshot (especificamente no `testAdminDashboardResponsive`) não é mais relacionado ao mock de usuário, mas sim à detecção automática de tamanho de janela do Material 3 Adaptive.
 
 ## Análise
 
-Quando uma função é `inline`, o código é copiado para o local da chamada. No nosso caso, o código de `genesysResponsiveSnapshot` (que faz referência a `UserProfile`, `UserRole`, etc.) está sendo inserido dentro de `ScreensSnapshotTest`. Como `ScreensSnapshotTest` é carregado pelo *classloader* do JUnit, essas referências de classe podem estar vinculadas ao *classloader* "errado".
+O componente `NavigationSuiteScaffold` utiliza por padrão a função `currentWindowAdaptiveInfo()`, que por sua vez utiliza a biblioteca `androidx.window`. No ambiente do Paparazzi (LayoutLib), essa biblioteca falha ao tentar obter o `WindowManager`, resultando em um erro de cast:
+`class java.lang.Object cannot be cast to class android.view.WindowManager`.
 
-Ao remover o `inline`, forçamos a execução a ocorrer dentro da classe de utilidade, que será carregada pelo Paparazzi no contexto correto de renderização.
+Para corrigir isso, devemos fornecer explicitamente o `layoutType` para o `NavigationSuiteScaffold`, evitando que ele tente calcular as métricas da janela automaticamente.
 
 ## Mudanças Propostas
 
-### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
 
-#### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- Remover as palavras-chave `inline` e `crossinline` das funções `genesysSnapshot` e `genesysResponsiveSnapshot`.
-- Manter o uso de `System.getProperty` para passar dados de mock sem cruzar a fronteira de argumentos com tipos do projeto.
-- Garantir que a reconstrução dos objetos de domínio ocorra estritamente dentro da lambda do Koin.
-
-#### [MODIFY] [ScreensSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/ScreensSnapshotTest.kt)
-- Nenhuma mudança estrutural necessária, mas a remoção do `inline` deve mudar o comportamento do *runtime*.
+#### [MODIFY] [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
+- Atualizar a função `NavigationWrapper` para calcular o `NavigationSuiteType` manualmente com base no nosso `LocalWindowSizeClass`.
+- Passar esse `layoutType` explicitamente para o `NavigationSuiteScaffold`.
+- Mapeamento sugerido:
+    - `COMPACT` -> `NavigationSuiteType.NavigationBar`
+    - `MEDIUM` -> `NavigationSuiteType.NavigationRail`
+    - `EXPANDED` -> `NavigationSuiteType.NavigationRail`
 
 ## Plano de Verificação
 
 ### Testes Automatizados
-- O objetivo é que a stacktrace pare de apontar para a classe de teste (`ScreensSnapshotTest.kt:218`) e passe a apontar para a classe de utilidade, ou melhor ainda, que o erro desapareça.
-- Como o ambiente local não executa os testes devido a erros de infraestrutura do AGP, a validação final será via pipeline de CI.
+- Executar `:screenshot-tests:testDebugUnitTest --tests "com.itbenevides.genesys21.screenshot.ScreensSnapshotTest.testAdminDashboardResponsive"`.
+- Como o ambiente local apresenta erros de infraestrutura do AGP, a validação final será via pipeline de CI ou através do log de execução caso o usuário consiga rodar.
+
+### Verificação Manual
+- Garantir que a navegação continue alternando corretamente entre barra inferior e trilho lateral no app real.

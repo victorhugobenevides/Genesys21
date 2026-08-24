@@ -5,7 +5,7 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerContent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreenState
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
-import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
+import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshotWithPrefix
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import org.junit.Rule
@@ -28,7 +28,7 @@ class ThemesSnapshotTest {
         )
 
         themes.forEach { theme ->
-            genesysResponsiveSnapshot(paparazzi, "Theme_${theme.name}") {
+            genesysResponsiveSnapshotWithPrefix(paparazzi, "Theme_${theme.name}") {
                 val windowSizeClass = LocalWindowSizeClass.current
                 val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 

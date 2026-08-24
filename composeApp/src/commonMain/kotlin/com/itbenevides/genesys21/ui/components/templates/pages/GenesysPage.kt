@@ -96,9 +96,16 @@ private fun NavigationWrapper(
     content: @Composable () -> Unit
 ) {
     if (navigationSuiteItems != null) {
-        // Deixamos o layoutType como o padrão (AUTO) para que ele mude sozinho entre Barra e Rail
+        val windowSizeClass = LocalWindowSizeClass.current
+        val layoutType = when (windowSizeClass) {
+            GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+            GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
+            GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
+        }
+
         NavigationSuiteScaffold(
             navigationSuiteItems = navigationSuiteItems,
+            layoutType = layoutType,
             containerColor = GenesysTheme.colors.background,
             content = content
         )
