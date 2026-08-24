@@ -1,31 +1,27 @@
-# Final Resilient Solution for ClassCastException in Paparazzi Tests
+# Plano de Implementação - Remoção de Inlining para Estabilidade de Classloader
 
-The `ClassCastException` persists because of complex object passing and variable capturing across the Paparazzi/LayoutLib classloader boundary.
+A persistência do `ClassCastException` na pipeline de CI, mesmo com o uso de tipos primitivos, sugere que o `inlining` das funções de utilidade está trazendo referências de classes do *classloader* do JUnit para dentro do contexto do Paparazzi/LayoutLib.
 
-## Analysis
+## Análise
 
-Even with `inline` functions and primitive parameters, the Kotlin compiler may still generate capturing lambdas or use internal cast logic that fails when the function is called across classloader boundaries.
+Quando uma função é `inline`, o código é copiado para o local da chamada. No nosso caso, o código de `genesysResponsiveSnapshot` (que faz referência a `UserProfile`, `UserRole`, etc.) está sendo inserido dentro de `ScreensSnapshotTest`. Como `ScreensSnapshotTest` é carregado pelo *classloader* do JUnit, essas referências de classe podem estar vinculadas ao *classloader* "errado".
 
-The most resilient approach is to **eliminate all parameters except the Paparazzi instance and the content lambda**, and use a **"Side Channel" (System Properties)** to pass mock configuration data.
+Ao remover o `inline`, forçamos a execução a ocorrer dentro da classe de utilidade, que será carregada pelo Paparazzi no contexto correto de renderização.
 
-## Proposed Changes
+## Mudanças Propostas
 
 ### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
 
 #### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- Remove all mock-related parameters from `genesysSnapshot` and `genesysResponsiveSnapshot`.
-- Inside the `snapshot { ... }` block, read mock configuration from System Properties:
-    - `genesys.mock.userId`
-    - `genesys.mock.userRole`
-    - `genesys.mock.userPermissions`
-- Reconstruct the `UserProfile` object **inside** the Koin `single` lambda to ensure zero variable capturing from the outer scope.
+- Remover as palavras-chave `inline` e `crossinline` das funções `genesysSnapshot` e `genesysResponsiveSnapshot`.
+- Manter o uso de `System.getProperty` para passar dados de mock sem cruzar a fronteira de argumentos com tipos do projeto.
+- Garantir que a reconstrução dos objetos de domínio ocorra estritamente dentro da lambda do Koin.
 
 #### [MODIFY] [ScreensSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/ScreensSnapshotTest.kt)
-- In `testAdminDashboardResponsive`, set System Properties before calling `genesysResponsiveSnapshot` and clear them in a `finally` block.
+- Nenhuma mudança estrutural necessária, mas a remoção do `inline` deve mudar o comportamento do *runtime*.
 
-## Verification Plan
+## Plano de Verificação
 
-### Automated Tests
-- This "Side Channel" approach is immune to classloader-based cast exceptions during function calls because the data is passed via the JVM's global system property map, which is shared and only contains standard `java.lang.String` objects.
-- The reconstruction happens entirely within the rendering classloader.
-- The user should run `:screenshot-tests:testDebugUnitTest` to verify.
+### Testes Automatizados
+- O objetivo é que a stacktrace pare de apontar para a classe de teste (`ScreensSnapshotTest.kt:218`) e passe a apontar para a classe de utilidade, ou melhor ainda, que o erro desapareça.
+- Como o ambiente local não executa os testes devido a erros de infraestrutura do AGP, a validação final será via pipeline de CI.

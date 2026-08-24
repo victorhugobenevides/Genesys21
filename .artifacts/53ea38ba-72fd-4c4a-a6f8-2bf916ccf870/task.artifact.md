@@ -1,5 +1,5 @@
-- [x] Refactor `GenesysPaparazzi.kt`: Use System Properties "Side Channel" for mock configuration
-- [x] Refactor `GenesysPaparazzi.kt`: Reconstruct `UserProfile` inside Koin lambda to avoid capturing
-- [x] Update `ScreensSnapshotTest.kt`: Use System Properties in `testAdminDashboardResponsive`
-- [/] Commit and Push changes
+- [ ] Refactor `GenesysPaparazzi.kt`: Remove `inline` and `crossinline`
+- [ ] Ensure all call sites in screenshot tests (15 files) are compatible with non-inline calls
+- [ ] Commit and Push changes
+- [ ] Verify in CI
 - [ ] Create walkthrough artifact

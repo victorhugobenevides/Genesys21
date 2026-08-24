@@ -40,10 +40,10 @@ fun createGenesysPaparazzi(
         maxPercentDifference = 1.0,
     )
 
-inline fun genesysSnapshot(
+fun genesysSnapshot(
     paparazzi: Paparazzi,
     widthOverride: Dp? = null,
-    crossinline content: @Composable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val widthDp = widthOverride ?: 393.dp
 
@@ -135,10 +135,10 @@ inline fun genesysSnapshot(
     }
 }
 
-inline fun genesysResponsiveSnapshot(
+fun genesysResponsiveSnapshot(
     paparazzi: Paparazzi,
     namePrefix: String? = null,
-    crossinline content: @Composable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val configs = listOf(
         "phone" to DeviceConfig.PIXEL_5 to 393.dp,

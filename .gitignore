@@ -73,3 +73,4 @@ ngrok.log
 /.env
 /server/:memory:?cache=shared
 /certbot/
+.gradle_home/
