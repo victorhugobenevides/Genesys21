@@ -55,28 +55,25 @@ class ScreensSnapshotTest {
 
     @Test
     fun testAdminDashboardResponsive() {
-        genesysResponsiveSnapshot(
-            paparazzi = paparazzi,
-            mockUserId = "admin-1",
-            mockUserRole = "SUPERADMIN",
-            mockUserPermissions = listOf(
-                "MANAGE_VITRINES",
-                "MANAGE_ORDERS",
-                "MANAGE_AGENDA",
-                "MANAGE_SERVICES",
-                "MANAGE_STORE",
-                "MANAGE_RECEIPTS",
-                "ACCESS_ADMIN_PANEL"
-            )
-        ) {
-            PageListScreen(
-                viewModel = koinInject(),
-                onAddPage = {},
-                onEditPage = {},
-                onViewPage = {},
-                onLogout = {},
-                onShowcase = {}
-            )
+        System.setProperty("genesys.mock.userId", "admin-1")
+        System.setProperty("genesys.mock.userRole", "SUPERADMIN")
+        System.setProperty("genesys.mock.userPermissions", "MANAGE_VITRINES,MANAGE_ORDERS,MANAGE_AGENDA,MANAGE_SERVICES,MANAGE_STORE,MANAGE_RECEIPTS,ACCESS_ADMIN_PANEL")
+
+        try {
+            genesysResponsiveSnapshot(paparazzi) {
+                PageListScreen(
+                    viewModel = koinInject(),
+                    onAddPage = {},
+                    onEditPage = {},
+                    onViewPage = {},
+                    onLogout = {},
+                    onShowcase = {}
+                )
+            }
+        } finally {
+            System.clearProperty("genesys.mock.userId")
+            System.clearProperty("genesys.mock.userRole")
+            System.clearProperty("genesys.mock.userPermissions")
         }
     }
 

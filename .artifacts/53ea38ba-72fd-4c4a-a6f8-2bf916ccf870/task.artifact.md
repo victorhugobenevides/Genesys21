@@ -1,8 +1,5 @@
-- [x] Refactor `GenesysPaparazzi.kt`: convert extensions to regular functions and use primitive mocks
-- [x] Refactor `ScreensSnapshotTest.kt`: update call sites and remove Enum usages
-- [x] Refactor all other snapshot test files (14 files) to use new function signatures
-- [x] Verify logic and ensure all project-specific types are avoided in crossing parameters
-- [x] Commit and Push changes
-- [x] Apply `inline` to `genesysSnapshot` and `genesysResponsiveSnapshot` to fix persistent classloader issues
-- [ ] Commit and Push the `inline` fix
+- [x] Refactor `GenesysPaparazzi.kt`: Use System Properties "Side Channel" for mock configuration
+- [x] Refactor `GenesysPaparazzi.kt`: Reconstruct `UserProfile` inside Koin lambda to avoid capturing
+- [x] Update `ScreensSnapshotTest.kt`: Use System Properties in `testAdminDashboardResponsive`
+- [/] Commit and Push changes
 - [ ] Create walkthrough artifact
