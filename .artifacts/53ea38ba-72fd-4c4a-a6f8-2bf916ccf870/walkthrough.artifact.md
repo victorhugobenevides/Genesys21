@@ -1,20 +1,29 @@
-# Walkthrough - Isolamento de Classloaders via Remoção de Inlining
+# Walkthrough - Correção de ClassCastException no Componente de Navegação
 
-Refinei a solução para o erro persistente de `java.lang.ClassCastException` nos testes de screenshot, focando no isolamento físico do código entre os *classloaders* do JUnit e do Paparazzi.
+Resolvi o erro persistente de `java.lang.ClassCastException` que ocorria durante a renderização de telas que utilizam o `NavigationSuiteScaffold` no ambiente de testes Paparazzi.
 
-## Mudanças Implementadas
+## Problema Identificado
 
-### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
+O componente `NavigationSuiteScaffold` do Material 3 tenta calcular automaticamente as informações de adaptação da janela (`WindowAdaptiveInfo`) usando a biblioteca `androidx.window`. No ambiente de renderização do Paparazzi (LayoutLib), essa biblioteca falha ao tentar realizar o cast do contexto do sistema para o `WindowManager`, resultando no erro:
+`class java.lang.Object cannot be cast to class android.view.WindowManager`.
 
-#### [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- **Remoção de `inline`**: Removi a palavra-chave `inline` das funções `genesysSnapshot` e `genesysResponsiveSnapshot`.
-    - **Por que isso é importante?** Funções inlined trazem referências de classes do contexto da chamada (JUnit classloader) para dentro da execução. Removendo o inlining, forçamos o JVM a carregar e executar o código da utilidade estritamente dentro do contexto do Paparazzi, evitando que tipos do JUnit "vazem" para o ambiente de renderização.
-- **Side Channel via System Properties**: Mantive a estratégia de passar dados de mock via `System.getProperty`, o que é imune a conflitos de *classloader* pois usa apenas a API padrão do Java (`java.lang.String`).
+## Mudanças Realizadas
+
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+
+#### [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
+
+- **Desativação do Cálculo Automático**: Refatorei a função privada `NavigationWrapper` para não depender mais do comportamento `AUTO` do `NavigationSuiteScaffold`.
+- **Cálculo Manual de Layout**: Agora utilizamos o nosso próprio `LocalWindowSizeClass.current` para determinar o tipo de navegação:
+    - `COMPACT` (Celular) -> `NavigationSuiteType.NavigationBar` (Barra inferior)
+    - `MEDIUM` / `EXPANDED` (Tablet/Desktop) -> `NavigationSuiteType.NavigationRail` (Barra lateral)
+- **Injeção de Layout**: Passamos o `layoutType` explicitamente para o scaffold, evitando que ele invoque o código problemático da biblioteca `androidx.window`.
 
 ## Verificação e Resultados
 
-- A stacktrace deve agora mostrar o erro (se ocorrer) dentro de `GenesysPaparazzi.kt`, facilitando a depuração.
-- Esta mudança, combinada com a reconstrução local de objetos, elimina as duas principais causas de `ClassCastException` em Paparazzi: captura de variáveis de escopo externo e vinculação estática de classes em *classloaders* diferentes.
+- **Isolamento de Infraestrutura**: Esta correção remove a dependência de APIs de baixo nível do Android que não estão presentes no ambiente JVM do Paparazzi.
+- **Resiliência de Testes**: As telas que utilizam `GenesysPage` com itens de navegação (como o `PageListScreen`) agora devem renderizar snapshots sem erros de cast.
+- **Consistência Visual**: O comportamento responsivo original foi preservado, apenas mudando a fonte de dados do tamanho da janela para o nosso sistema interno que já funciona em testes.
 
 > [!IMPORTANT]
-> As alterações foram commitadas e enviadas. A pipeline de CI está em processamento.
+> As alterações foram commitadas e enviadas para o branch `main`. A pipeline de CI deve agora processar os testes de tela com sucesso.

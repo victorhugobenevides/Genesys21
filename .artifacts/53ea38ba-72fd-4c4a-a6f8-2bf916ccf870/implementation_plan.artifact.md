@@ -1,31 +1,39 @@
-# Plano de Implementação - Correção de ClassCastException no NavigationSuiteScaffold
+# Plano de Implementação - Resiliência Máxima nos Testes de Screenshot
 
-O erro `java.lang.ClassCastException` persistente nos testes de screenshot (especificamente no `testAdminDashboardResponsive`) não é mais relacionado ao mock de usuário, mas sim à detecção automática de tamanho de janela do Material 3 Adaptive.
+Os testes de screenshot estão enfrentando falhas em massa devido a dois problemas:
+1. `IllegalStateException`: Provavelmente causado pela gestão do contexto Koin em múltiplas chamadas de snapshot.
+2. `ClassCastException`: Persistência de problemas de classloader no Paparazzi, afetando o `NavigationSuiteScaffold` e a passagem de argumentos.
 
 ## Análise
 
-O componente `NavigationSuiteScaffold` utiliza por padrão a função `currentWindowAdaptiveInfo()`, que por sua vez utiliza a biblioteca `androidx.window`. No ambiente do Paparazzi (LayoutLib), essa biblioteca falha ao tentar obter o `WindowManager`, resultando em um erro de cast:
-`class java.lang.Object cannot be cast to class android.view.WindowManager`.
-
-Para corrigir isso, devemos fornecer explicitamente o `layoutType` para o `NavigationSuiteScaffold`, evitando que ele tente calcular as métricas da janela automaticamente.
+- A remoção do `inline` causou problemas na execução de lambdas `@Composable`.
+- O uso de argumentos padrão em funções chamadas através de classloaders diferentes (JUnit vs Paparazzi) gera métodos sintéticos `$default` que frequentemente falham com `ClassCastException`.
+- `NavigationSuiteScaffold` tenta acessar o `WindowManager` mesmo quando fornecemos o `layoutType`, devido a inicializações internas ou parâmetros padrão remanescentes.
 
 ## Mudanças Propostas
 
 ### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
 
 #### [MODIFY] [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
-- Atualizar a função `NavigationWrapper` para calcular o `NavigationSuiteType` manualmente com base no nosso `LocalWindowSizeClass`.
-- Passar esse `layoutType` explicitamente para o `NavigationSuiteScaffold`.
-- Mapeamento sugerido:
-    - `COMPACT` -> `NavigationSuiteType.NavigationBar`
-    - `MEDIUM` -> `NavigationSuiteType.NavigationRail`
-    - `EXPANDED` -> `NavigationSuiteType.NavigationRail`
+- Adicionar uma verificação de `LocalTestMode.current`. Se estivermos em modo de teste, usaremos um Scaffold simples em vez do `NavigationSuiteScaffold` se a navegação não for estritamente necessária para o teste visual, OU forneceremos o `layoutType` de forma ainda mais isolada.
+- Na verdade, vou tentar fornecer um `WindowAdaptiveInfo` fixo via `CompositionLocalProvider` se possível, para silenciar a biblioteca `androidx.window`.
+
+### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
+
+#### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
+- **Voltar para `inline`**: Essencial para o funcionamento correto das lambdas do Compose.
+- **Nomes Únicos para Overloads**: Remover sobrecargas com o mesmo nome para evitar confusão de assinatura no bytecode.
+    - `genesysResponsiveSnapshot` (Simples)
+    - `genesysResponsiveSnapshotWithPrefix` (Com prefixo)
+    - `genesysResponsiveSnapshotFull` (Com mock de usuário)
+- **Sem Argumentos Opcionais**: Todas as funções terão argumentos explícitos para evitar a geração de métodos `$default` problemáticos.
+- **Gestão de Koin**: Garantir que o `KoinApplication` seja o único ponto de entrada do Koin dentro do snapshot.
+
+#### [MODIFY] [ScreensSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/ScreensSnapshotTest.kt) (e outros arquivos de teste)
+- Atualizar as chamadas para os novos nomes únicos das funções.
 
 ## Plano de Verificação
 
 ### Testes Automatizados
-- Executar `:screenshot-tests:testDebugUnitTest --tests "com.itbenevides.genesys21.screenshot.ScreensSnapshotTest.testAdminDashboardResponsive"`.
-- Como o ambiente local apresenta erros de infraestrutura do AGP, a validação final será via pipeline de CI ou através do log de execução caso o usuário consiga rodar.
-
-### Verificação Manual
-- Garantir que a navegação continue alternando corretamente entre barra inferior e trilho lateral no app real.
+- O foco é eliminar o `IllegalStateException` em todos os testes e o `ClassCastException` no `testAdminDashboardResponsive`.
+- Como não consigo rodar localmente com sucesso total, aplicarei as mudanças e solicitarei a execução/log ao usuário.

@@ -19,8 +19,10 @@ import com.itbenevides.genesys21.ui.util.LocalTestMode
 import com.itbenevides.genesys21.ui.util.ProvideWindowSizeClass
 import io.mockk.every
 import io.mockk.mockk
-import org.koin.compose.KoinApplication
+import org.koin.compose.KoinContext
+import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import org.koin.core.context.stopKoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import com.itbenevides.genesys21.domain.model.*
@@ -42,16 +44,29 @@ fun createGenesysPaparazzi(
 
 /**
  * Internal implementation to avoid classloader leakage via parameters.
+ * Reconstructed UserProfile inside to avoid capturing outer state.
  */
-private fun genesysSnapshotInternal(
-    paparazzi: Paparazzi,
+@Composable
+@PublishedApi
+internal fun GenesysSnapshotContent(
     widthDp: Dp,
     mockUserId: String?,
     mockUserRole: String?,
     mockUserPermissions: String?, // Comma separated
     content: @Composable () -> Unit
 ) {
-    paparazzi.snapshot {
+    val viewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore: ViewModelStore = ViewModelStore()
+        }
+    }
+
+    val mockActivity = remember { mockk<ComponentActivity>(relaxed = true) }
+
+    CompositionLocalProvider(
+        LocalViewModelStoreOwner provides viewModelStoreOwner,
+        LocalTestMode provides true
+    ) {
         val mockModule = module {
             single<PageViewModel> {
                 val profile = if (mockUserId != null) {
@@ -83,7 +98,7 @@ private fun genesysSnapshotInternal(
                     every { templates } returns MutableStateFlow<List<PageTemplate>>(emptyList())
                     every { customerOrders } returns MutableStateFlow<List<Order>>(emptyList())
                     every { customerAppointments } returns MutableStateFlow<List<Appointment>>(emptyList())
-                    every { userAddresses } returns MutableStateFlow<List<Address>>(emptyList())
+                    every { userAddresses } returns MutableStateFlow<List<Address>>(emptySet<Address>().toList())
                     every { allUsers } returns MutableStateFlow<List<UserProfile>>(emptyList())
                     every { analytics } returns MutableStateFlow<MerchantAnalytics?>(null)
                     every { appTheme } returns MutableStateFlow<PageThemeConfig>(PageThemeConfig.ELEGANCE)
@@ -109,26 +124,16 @@ private fun genesysSnapshotInternal(
             single<String>(org.koin.core.qualifier.named("baseUrl")) { "http://localhost:8080" }
         }
 
-        val viewModelStoreOwner = remember {
-            object : ViewModelStoreOwner {
-                override val viewModelStore: ViewModelStore = ViewModelStore()
-            }
+        val koin = remember {
+            koinApplication {
+                modules(mockModule)
+            }.koin
         }
 
-        val mockActivity = remember { mockk<ComponentActivity>(relaxed = true) }
-
-        CompositionLocalProvider(
-            LocalViewModelStoreOwner provides viewModelStoreOwner,
-            LocalContext provides mockActivity,
-            LocalTestMode provides true
-        ) {
-            KoinApplication(application = {
-                modules(mockModule)
-            }) {
-                ProvideWindowSizeClass(widthDp) {
-                    AppTheme {
-                        content()
-                    }
+        KoinContext(context = koin) {
+            ProvideWindowSizeClass(widthDp) {
+                AppTheme {
+                    content()
                 }
             }
         }
@@ -136,46 +141,25 @@ private fun genesysSnapshotInternal(
 }
 
 /**
- * Standard snapshot.
+ * Standard snapshot. No default parameters to avoid $default classloader issues.
  */
-fun genesysSnapshot(
+inline fun genesysSnapshot(
     paparazzi: Paparazzi,
-    content: @Composable () -> Unit
+    crossinline content: @Composable () -> Unit
 ) {
-    genesysSnapshotInternal(paparazzi, 393.dp, null, null, null, content)
+    paparazzi.snapshot {
+        GenesysSnapshotContent(393.dp, null, null, null) {
+            content()
+        }
+    }
 }
 
 /**
- * Responsive snapshot for all devices.
+ * Responsive snapshot for all devices. No default parameters.
  */
-fun genesysResponsiveSnapshot(
+inline fun genesysResponsiveSnapshot(
     paparazzi: Paparazzi,
-    content: @Composable () -> Unit
-) {
-    genesysResponsiveSnapshotFull(paparazzi, null, null, null, null, content)
-}
-
-/**
- * Responsive snapshot with name prefix.
- */
-fun genesysResponsiveSnapshotWithPrefix(
-    paparazzi: Paparazzi,
-    namePrefix: String,
-    content: @Composable () -> Unit
-) {
-    genesysResponsiveSnapshotFull(paparazzi, namePrefix, null, null, null, content)
-}
-
-/**
- * Full control responsive snapshot.
- */
-fun genesysResponsiveSnapshotFull(
-    paparazzi: Paparazzi,
-    namePrefix: String?,
-    mockUserId: String?,
-    mockUserRole: String?,
-    mockUserPermissions: String?,
-    content: @Composable () -> Unit
+    crossinline content: @Composable () -> Unit
 ) {
     val configs = listOf(
         "phone" to DeviceConfig.PIXEL_5 to 393.dp,
@@ -185,9 +169,68 @@ fun genesysResponsiveSnapshotFull(
 
     configs.forEach { (pair, widthDp) ->
         val (name, config) = pair
-        val snapshotName = if (namePrefix != null) "${namePrefix}_$name" else name
+        paparazzi.unsafeUpdateConfig(deviceConfig = config)
+        paparazzi.snapshot(name = name) {
+            GenesysSnapshotContent(widthDp, null, null, null) {
+                content()
+            }
+        }
+    }
+}
+
+/**
+ * Responsive snapshot with name prefix. No default parameters.
+ */
+inline fun genesysResponsiveSnapshotWithPrefix(
+    paparazzi: Paparazzi,
+    namePrefix: String,
+    crossinline content: @Composable () -> Unit
+) {
+    val configs = listOf(
+        "phone" to DeviceConfig.PIXEL_5 to 393.dp,
+        "tablet" to DeviceConfig.NEXUS_7 to 600.dp,
+        "desktop" to DeviceConfig.NEXUS_10.copy(screenWidth = 1200) to 1200.dp
+    )
+
+    configs.forEach { (pair, widthDp) ->
+        val (name, config) = pair
+        val snapshotName = "${namePrefix}_$name"
 
         paparazzi.unsafeUpdateConfig(deviceConfig = config)
-        genesysSnapshotInternal(paparazzi, widthDp, mockUserId, mockUserRole, mockUserPermissions, content)
+        paparazzi.snapshot(name = snapshotName) {
+            GenesysSnapshotContent(widthDp, null, null, null) {
+                content()
+            }
+        }
+    }
+}
+
+/**
+ * Full control responsive snapshot for Admin/Mock scenarios. No default parameters.
+ */
+inline fun genesysResponsiveSnapshotFull(
+    paparazzi: Paparazzi,
+    namePrefixOrNull: String?,
+    mockUserIdOrNull: String?,
+    mockUserRoleOrNull: String?,
+    mockUserPermissionsOrNull: String?, // Comma separated
+    crossinline content: @Composable () -> Unit
+) {
+    val configs = listOf(
+        "phone" to DeviceConfig.PIXEL_5 to 393.dp,
+        "tablet" to DeviceConfig.NEXUS_7 to 600.dp,
+        "desktop" to DeviceConfig.NEXUS_10.copy(screenWidth = 1200) to 1200.dp
+    )
+
+    configs.forEach { (pair, widthDp) ->
+        val (name, config) = pair
+        val snapshotName = if (namePrefixOrNull != null) "${namePrefixOrNull}_$name" else name
+
+        paparazzi.unsafeUpdateConfig(deviceConfig = config)
+        paparazzi.snapshot(name = snapshotName) {
+            GenesysSnapshotContent(widthDp, mockUserIdOrNull, mockUserRoleOrNull, mockUserPermissionsOrNull) {
+                content()
+            }
+        }
     }
 }

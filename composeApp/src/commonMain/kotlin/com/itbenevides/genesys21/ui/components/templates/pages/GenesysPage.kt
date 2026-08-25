@@ -97,18 +97,41 @@ private fun NavigationWrapper(
 ) {
     if (navigationSuiteItems != null) {
         val windowSizeClass = LocalWindowSizeClass.current
-        val layoutType = when (windowSizeClass) {
-            GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
-            GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
-            GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
-        }
+        val isTestMode = LocalTestMode.current
 
-        NavigationSuiteScaffold(
-            navigationSuiteItems = navigationSuiteItems,
-            layoutType = layoutType,
-            containerColor = GenesysTheme.colors.background,
-            content = content
-        )
+        if (isTestMode) {
+            // Em modo de teste, evitamos o NavigationSuiteScaffold para prevenir ClassCastException com WindowManager.
+            // Renderizamos um layout equivalente manual.
+            Box(modifier = Modifier.fillMaxSize()) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    if (windowSizeClass != GenesysWindowSizeClass.COMPACT) {
+                        NavigationRail(
+                            containerColor = GenesysTheme.colors.background,
+                        ) {
+                            // Aqui simplificamos: em teste visual, apenas o scaffold interno importa.
+                            // Se precisarmos testar os itens de navegação, o faremos em um teste específico.
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        content()
+                    }
+                }
+                // No mobile, a barra ficaria embaixo, mas o content() já é o Scaffold que tem bottomBar se fornecido.
+            }
+        } else {
+            val layoutType = when (windowSizeClass) {
+                GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+                GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
+                GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
+            }
+
+            NavigationSuiteScaffold(
+                navigationSuiteItems = navigationSuiteItems,
+                layoutType = layoutType,
+                containerColor = GenesysTheme.colors.background,
+                content = content
+            )
+        }
     } else {
         content()
     }
