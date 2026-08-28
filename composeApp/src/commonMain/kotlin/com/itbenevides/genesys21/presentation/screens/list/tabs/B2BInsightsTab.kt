@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.presentation.screens.list
+package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -19,7 +19,7 @@ import com.itbenevides.genesys21.util.CurrencyUtils
 import kotlin.math.roundToLong
 
 @Composable
-fun B2BAnalyticsTabUI(viewModel: PageViewModel) {
+fun B2BInsightsTab(viewModel: PageViewModel) {
     val b2bData by viewModel.b2bAnalytics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 

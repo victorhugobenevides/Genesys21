@@ -127,4 +127,19 @@ class KtorOrderRepository(
             Result.failure(e)
         }
     }
+
+    override suspend fun getAuditLogs(token: String): Result<List<Map<String, String>>> {
+        return try {
+            val response = client.get("$baseUrl/api/admin/audit") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Erro ao buscar logs: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

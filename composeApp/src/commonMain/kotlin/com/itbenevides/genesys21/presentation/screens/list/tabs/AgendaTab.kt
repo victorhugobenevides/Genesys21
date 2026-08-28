@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.presentation.screens.list
+package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -13,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.screens.list.PageListEvent
+import com.itbenevides.genesys21.presentation.screens.list.PageListState
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
@@ -35,7 +37,7 @@ import kotlinx.datetime.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MerchantAgendaTabUI(
+fun AgendaTab(
     state: PageListState,
     viewModel: PageViewModel,
     onEvent: (PageListEvent) -> Unit,

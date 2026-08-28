@@ -73,6 +73,7 @@ class PageViewModel(
     private val getChatMessagesUseCase: GetChatMessagesUseCase,
     private val sendChatMessageUseCase: SendChatMessageUseCase,
     private val getB2BAnalyticsUseCase: GetB2BAnalyticsUseCase,
+    private val getAuditLogsUseCase: GetAuditLogsUseCase,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -120,6 +121,9 @@ class PageViewModel(
 
     private val _b2bAnalytics = MutableStateFlow<B2BAnalytics?>(null)
     val b2bAnalytics: StateFlow<B2BAnalytics?> = _b2bAnalytics.asStateFlow()
+
+    private val _auditLogs = MutableStateFlow<List<Map<String, String>>>(emptyList())
+    val auditLogs: StateFlow<List<Map<String, String>>> = _auditLogs.asStateFlow()
 
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
@@ -313,6 +317,19 @@ class PageViewModel(
                 _b2bAnalytics.value = it
             }.onFailure {
                 handleError("Erro ao carregar B2B Insights", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun loadAuditLogs() {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            _isLoading.value = true
+            getAuditLogsUseCase(token).onSuccess {
+                _auditLogs.value = it
+            }.onFailure {
+                handleError("Erro ao carregar logs", it)
             }
             _isLoading.value = false
         }

@@ -25,4 +25,6 @@ interface OrderRepository {
     suspend fun getAnalytics(token: String): Result<MerchantAnalytics>
 
     suspend fun getB2BAnalytics(token: String): Result<B2BAnalytics>
+
+    suspend fun getAuditLogs(token: String): Result<List<Map<String, String>>>
 }

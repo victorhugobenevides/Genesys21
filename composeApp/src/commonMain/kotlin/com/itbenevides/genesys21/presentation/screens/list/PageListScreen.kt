@@ -42,7 +42,6 @@ import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
-import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
 import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
 import com.itbenevides.genesys21.ui.theme.*
@@ -293,11 +292,10 @@ private fun PageListContent(
     val services by viewModel.services.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
     val chatMessages by viewModel.chatMessages.collectAsState()
-    val isSuperAdmin = userProfile?.role == UserRole.SUPERADMIN
 
     val menuItems = remember(userProfile, state.pendingOrdersCount) {
         AdminMenuItem.getVisibleItems(
-            role = userProfile?.role ?: UserRole.CUSTOMER,
+            user = userProfile,
             pendingOrders = state.pendingOrdersCount
         )
     }
@@ -356,8 +354,8 @@ private fun PageListContent(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             when (state.selectedTab) {
-                0 -> MerchantAnalyticsTabUI(viewModel)
-                9 -> B2BAnalyticsTabUI(viewModel)
+                0 -> MainDashboardTab(viewModel)
+                9 -> B2BInsightsTab(viewModel)
                 1 -> PagesTab(state, onEvent, onViewPage, onEditPage)
                 2 -> OrdersTab(
                     state = state,
@@ -369,7 +367,7 @@ private fun PageListContent(
                     onContactCustomer = onContactCustomer,
                     chatMessages = chatMessages
                 )
-                3 -> MerchantAgendaTabUI(state, viewModel, onEvent)
+                3 -> AgendaTab(state, viewModel, onEvent)
                 4 -> ServicesTab(services, onAddService, onEditService, onDeleteService)
                 5 -> {
                     val receiptViewModel: ReceiptViewModel = koinInject()
@@ -379,9 +377,11 @@ private fun PageListContent(
                         onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
                     )
                 }
-                6 -> StoreSettingsTab(viewModel, userProfile, uriHandler, scope)
+                6 -> PaymentsTab(viewModel, userProfile, uriHandler, scope)
                 10 -> StoreSettingsTab(viewModel, userProfile, uriHandler, scope)
-                7 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
+                11 -> GlobalUsersTab(viewModel)
+                12 -> GlobalDomainsTab(viewModel)
+                13 -> AuditLogsTab(viewModel)
                 8 -> ProfileScreen(viewModel, router)
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Selecione uma opção no menu")

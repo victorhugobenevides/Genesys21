@@ -1,4 +1,4 @@
-package com.itbenevides.genesys21.presentation.screens.list
+package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
@@ -29,7 +29,7 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.CurrencyUtils
 
 @Composable
-fun MerchantAnalyticsTabUI(
+fun MainDashboardTab(
     viewModel: PageViewModel
 ) {
     val analytics by viewModel.analytics.collectAsState()

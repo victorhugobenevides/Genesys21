@@ -4,6 +4,7 @@ import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.domain.model.UserStatus
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import io.ktor.http.*
+import org.jetbrains.exposed.sql.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -82,6 +83,31 @@ fun Route.adminRoutes(userRepository: UserRepository) {
                     call.respond(HttpStatusCode.OK)
                 }.onFailure {
                     call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao atualizar permissões")
+                }
+            }
+
+            get("/audit") {
+                // Buscamos os últimos 100 logs de auditoria do banco
+                try {
+                    val logs = com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery {
+                        com.itbenevides.genesys21.data.database.AuditLogsTable
+                            .selectAll()
+                            .orderBy(com.itbenevides.genesys21.data.database.AuditLogsTable.createdAt to SortOrder.DESC)
+                            .limit(100)
+                            .map { row ->
+                                mapOf(
+                                    "id" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.id],
+                                    "userId" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.userId],
+                                    "action" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.action],
+                                    "entityName" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.entityName],
+                                    "details" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.details],
+                                    "createdAt" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.createdAt]
+                                )
+                            }
+                    }
+                    call.respond(logs)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao buscar logs")
                 }
             }
         }

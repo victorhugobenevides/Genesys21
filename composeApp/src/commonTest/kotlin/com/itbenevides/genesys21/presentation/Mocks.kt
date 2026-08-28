@@ -89,6 +89,16 @@ class FakeOrderRepository : OrderRepository {
             averageTicket = 0.0
         )
     )
+
+    override suspend fun getB2BAnalytics(token: String) = Result.success(
+        B2BAnalytics(
+            totalMerchants = 0,
+            platformGMV = 0.0,
+            globalAverageTicket = 0.0,
+            topMerchants = emptyList(),
+            globalDailyRevenue = emptyList()
+        )
+    )
 }
 
 class FakeBookingRepository : BookingRepository {

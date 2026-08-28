@@ -33,7 +33,8 @@ val viewModelModule =
                 get(), // 45: DeleteDomainMapping
                 get(), // 46: GetChatMessages
                 get(), // 47: SendChatMessage
-                get()  // 48: GetB2BAnalytics
+                get(), // 48: GetB2BAnalytics
+                get()  // 49: GetAuditLogs
             )
         }
 
