@@ -1,23 +1,28 @@
-# Execução do Plano de Pentest & Hardening
+# Tarefas: B2B Insights e Interactive Product Tour
 
-Organização das tarefas para validar e reforçar a segurança do Genesys21.
+## 🛠️ Build & Hardening
+- [x] Corrigir erro de Smart Cast em `SqliteOrderRepository.kt`.
+- [ ] Validar compilação do módulo `server`.
 
-## 🛠️ Autenticação e Autorização (RBAC)
-- [ ] Criar teste de integração para validar bloqueio de rotas `/api/admin` para usuários sem permissão.
-- [ ] Validar se o "Dogma Admin" (`victorkoto@gmail.com`) está protegido contra manipulação de headers.
+## 🏗️ Fase 1: Domínio e Shared (B2B)
+- [x] Criar `B2BAnalytics` e `MerchantPerformance` no módulo `shared`.
+- [x] Implementar `GetB2BAnalyticsUseCase`.
 
-## 🛡️ Proteção de APIs (OWASP)
-- [ ] **Fix**: Implementar validação de preço no servidor em `OrderRoutes.kt` (recalculando o total com base no banco antes de criar o pedido).
-- [ ] Auditar `SqliteOrderRepository` para garantir que o `orderId` não permite enumeração simples.
-- [ ] Revisar `saveUserProfile` para prevenir Mass Assignment de campos sensíveis como `role`.
+## 🛡️ Fase 2: Backend (Server B2B)
+- [x] Implementar agregação global no `SqliteOrderRepository`.
+- [x] Criar e proteger rota `/api/admin/b2b/summary`.
 
-## 💳 Segurança Stripe
-- [ ] Criar script de teste para simular Webhook Spoofing e validar falha de assinatura.
-- [ ] Verificar se chaves secretas nunca aparecem em logs ou respostas de erro do Ktor.
+## 🎨 Fase 3: Front-end (B2B UI)
+- [x] Adicionar aba "B2B" ao `PageListScreen.kt`.
+- [x] Criar `B2BAnalyticsTabUI.kt`.
 
-## 🌐 Segurança de Front-end & Infra
-- [ ] Refinar a Content-Security-Policy (CSP) para ser mais restritiva em produção.
-- [ ] Validar isolamento de dados entre lojistas (Multitenancy check).
+## ✨ Fase 4: The Genesys Experience (Página de Vendas)
+- [x] Adicionar rota `/experience`.
+- [x] Implementar Seção Hero Animada.
+- [x] Criar "Magic Theme Switcher".
+- [x] Criar "Device Sandbox" (Preview responsivo).
+- [x] Criar "Stripe Demo".
 
-## 📄 Relatório e Documentação
-- [ ] Atualizar o `SECURITY.md` com as descobertas e correções aplicadas.
+## 📄 Fase 5: Finalização
+- [x] Atualizar documentação e README.
+- [x] Consolidar walkthrough.

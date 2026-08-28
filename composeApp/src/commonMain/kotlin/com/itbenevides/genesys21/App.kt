@@ -19,6 +19,7 @@ import com.itbenevides.genesys21.presentation.screens.editor.*
 import com.itbenevides.genesys21.presentation.screens.list.PageListScreen
 import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
 import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
+import com.itbenevides.genesys21.presentation.screens.sales.ExperienceScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
@@ -329,6 +330,9 @@ fun App() {
                                                         onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
                                                     )
                                                 }
+                                                is Route.Experience -> ExperienceScreen(
+                                                    onStartNow = { router.navigateTo(Route.Login) }
+                                                )
                                             }
                                         }
 

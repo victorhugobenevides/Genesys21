@@ -14,6 +14,8 @@
 
 - 🛠️ **Real-time WhiteLabel Editor**: Live preview engine to customize themes, components, and products.
 - 📊 **Advanced Merchant Cockpit**: Built-in Analytics Dashboard with revenue charts (Canvas), top products, and booking management.
+- 🏢 **B2B Insights (SuperAdmin)**: Aggregated platform metrics, GMV tracking, and merchant performance ranking for network owners.
+- ✨ **The Genesys Experience**: Interactive, zero-login product tour to experiment with themes, devices, and checkout flows in real-time.
 - 💳 **Stripe Dynamic Checkout**: Embedded **Payment Element** for a seamless, on-site purchase experience without redirects.
 - 🎨 **Dynamic Theme Engine**: Advanced styling with Glassmorphism, custom palettes, and curated typography.
 - 📱 **Adaptive UI**: High-fidelity experiences optimized for Mobile (393dp), Tablet (600dp), and Desktop (1200dp).

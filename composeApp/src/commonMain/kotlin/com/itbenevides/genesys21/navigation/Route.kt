@@ -42,4 +42,6 @@ sealed class Route {
     data class ServiceBooking(val service: BookingService, val page: Page) : Route()
 
     object Receipts : Route()
+
+    object Experience : Route()
 }

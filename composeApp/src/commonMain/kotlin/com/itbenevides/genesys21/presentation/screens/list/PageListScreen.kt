@@ -328,6 +328,7 @@ private fun PageListContent(
 
         if (isSuperAdmin) {
             list.add(PermittedTab(7, "SuperAdmin", GenesysIcons.AdminPanelSettings))
+            list.add(PermittedTab(9, "B2B Insights", GenesysIcons.BusinessCenter))
         }
 
         // Perfil sempre no menu para visibilidade
@@ -422,6 +423,7 @@ private fun PageListContent(
                             6 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler, scope)
                             7 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
                             8 -> ProfileScreen(viewModel, router)
+                            9 -> B2BAnalyticsTabUI(viewModel)
                         }
                     }
                 }

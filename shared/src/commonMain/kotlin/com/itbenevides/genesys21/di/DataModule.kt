@@ -93,6 +93,7 @@ val dataModule =
         single { DeleteAddressUseCase(get()) }
         single { CalculateShippingUseCase(get()) }
         single { GetAnalyticsUseCase(get()) }
+        single { GetB2BAnalyticsUseCase(get()) }
         single { DeleteUserUseCase(get()) }
 
         single<ReceiptRepository> {

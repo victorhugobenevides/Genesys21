@@ -1,62 +1,48 @@
-# Plano de Teste de Invasão (Pentest) - Genesys21
+# Plano de Implementação - B2B Insights & The Genesys Experience
 
-Este plano detalha a estratégia de segurança para validar a resiliência do motor White-Label **Genesys21** contra ataques cibernéticos, cobrindo desde a autenticação até a infraestrutura de pagamentos.
+Este plano detalha a implementação de duas frentes estratégicas: o painel de métricas globais para administradores e a página pública interativa para demonstração do produto.
 
-## Objetivos do Pentest
-- Validar a eficácia da autenticação Firebase e controle de cargos (RBAC).
-- Testar a robustez das APIs REST contra vulnerabilidades OWASP Top 10.
-- Verificar o isolamento de dados entre lojistas (Multitenancy).
-- Avaliar a segurança da integração com Stripe e processamento de pagamentos.
-- Garantir conformidade com a LGPD no tratamento de dados sensíveis.
+## 🛠️ Build Fix (Crítico)
+- Corrigido erro de *smart cast* em `SqliteOrderRepository.kt` capturando propriedades de módulos externos em variáveis locais.
 
 ---
 
-## 🛡️ Escopo Técnica
+## 1. B2B Metrics Dashboard (B2B Insights)
+Permitir que o SuperAdmin monitore a saúde da rede de lojas.
 
-### 1. Autenticação e Autorização (IAM)
-- **Firebase Token Bypass**: Tentar forjar ou reutilizar tokens expirados.
-- **Privilege Escalation**: Tentar acessar rotas de `/api/admin` ou `/api/superadmin` com um token de `CUSTOMER`.
-- **Session Fixation**: Avaliar como o sistema lida com a troca de contexto de usuário.
-- **Dogma Admin Check**: Validar se a regra de promoção automática para `victorkoto@gmail.com` pode ser explorada por outros domínios ou via injeção de e-mail.
+### [shared](file:///Users/victorben/AndroidStudioProjects/genesys21/shared)
+- **Modelos**: Criar `B2BAnalytics` e `MerchantPerformance` em `domain/model`.
+- **Casos de Uso**: Criar `GetB2BAnalyticsUseCase`.
 
-### 2. Segurança da API (OWASP Top 10)
-- **IDOR (Insecure Direct Object Reference)**: Tentar acessar pedidos (`/api/public/orders/{id}`) ou perfis de outros usuários alterando o UUID na URL.
-- **Injeção de SQL**: Testar filtros de busca e campos de cadastro contra injeções no SQLite (Exposed ORM).
-- **Mass Assignment**: Tentar atualizar campos protegidos (ex: `role` ou `stripe_secret_key`) enviando metadados extras no POST de perfil.
-- **Rate Limiting**: Validar se os limites de 100/min (global) e 5/min (sensível) podem ser contornados via troca de IP ou cabeçalhos `X-Forwarded-For`.
+### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
+- **Repositório**: Implementar queries agregadas (GMV global, total de lojistas ativos) no repositório.
+- **Rotas**: Criar `GET /api/admin/b2b/summary` protegido por verificação de SuperAdmin.
 
-### 3. Integração Financeira (Stripe)
-- **Webhook Spoofing**: Tentar enviar payloads falsos para `/api/public/orders/webhook` sem assinatura válida ou com assinaturas de contas teste.
-- **Price Manipulation**: Tentar alterar o valor do pedido no front-end (Wasm) e verificar se o backend valida o `total` contra o banco de dados antes de criar o `PaymentIntent`.
-- **Key Exposure**: Verificar se chaves `sk_test` ou `pk_test` estão vazando em logs, metadados de imagem ou erros de serialização.
-
-### 4. Segurança de Front-end (Wasm/JS)
-- **XSS (Cross-Site Scripting)**: Injetar scripts em nomes de produtos, bio de perfis ou metadados de templates.
-- **CSP Validation**: Tentar carregar scripts externos não autorizados (violando a política de `script-src`).
-- **Sensitive Data in Bridge**: Avaliar se informações sensíveis do Firebase/Stripe ficam expostas no objeto `window` ou na ponte JavaScript.
-
-### 5. Privacidade e LGPD
-- **PII Leakage**: Validar se rotas públicas `/public/users/profile/{id}` realmente retornam apenas o DTO mascarado.
-- **Right to Erasure**: Confirmar se a deleção de conta anonimiza corretamente os logs de auditoria e remove arquivos de `/uploads`.
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+- **Navegação**: Adicionar aba "B2B" no `PageListScreen`.
+- **UI**: Criar `B2BAnalyticsTabUI.kt` com KPIs e gráficos globais.
 
 ---
 
-## 🛠️ Ferramentas Sugeridas
-- **Burp Suite**: Para interceptação e manipulação de tráfego.
-- **Postman/Newman**: Para testes automatizados de segurança em endpoints.
-- **OWASP ZAP**: Scanner automatizado de vulnerabilidades web.
-- **Snyk/Checkmarx**: Para análise de vulnerabilidades em dependências KMP.
+## 2. The Genesys Experience (Tour Interativo)
+Página pública para converter visitantes através da experimentação direta.
+
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+- **Navegação**: Rota `/experience` disponível sem login.
+- **Interatividade**:
+    - **Magic Theme Switcher**: Mudança de tema em tempo real.
+    - **Device Sandbox**: Preview em molduras de Celular, Tablet e Desktop.
+    - **Stripe Simulator**: Demonstração visual do checkout integrado.
+- **Dados**: Utilizar mocks locais para garantir carregamento instantâneo.
 
 ---
 
-## 📅 Cronograma de Execução
-1. **Fase de Reconhecimento**: Mapeamento de endpoints e superfícies de ataque.
-2. **Testes de Autenticação**: Foco total no Firebase e RBAC.
-3. **Exploração de APIs**: Testes de IDOR, Injeção e Rate Limit.
-4. **Validação de Pagamentos**: Testes de Webhook e integridade de preços.
-5. **Relatório de Vulnerabilidades**: Documentação de achados e planos de remediação.
+## Plano de Verificação
 
-> [!CAUTION]
-> Este pentest deve ser executado apenas em ambiente de **Staging** ou **Local**. Nunca execute ataques de negação de serviço ou manipulação de dados em produção sem backup e janela de manutenção aprovada.
+### B2B Insights
+- Validar se lojistas comuns (`MERCHANT`) recebem 403 Forbidden na nova rota.
+- Verificar consistência dos cálculos de faturamento no banco.
 
-**O plano atende às suas necessidades ou deseja aprofundar em algum módulo específico?**
+### Genesys Experience
+- Testar transições de temas e responsividade do simulador de dispositivos no Wasm.
+- Validar o fluxo de conversão (CTA final para cadastro).

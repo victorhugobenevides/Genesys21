@@ -112,4 +112,19 @@ class KtorOrderRepository(
             Result.failure(e)
         }
     }
+
+    override suspend fun getB2BAnalytics(token: String): Result<B2BAnalytics> {
+        return try {
+            val response = client.get("$baseUrl/api/admin/b2b/summary") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Erro ao buscar B2B analytics: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

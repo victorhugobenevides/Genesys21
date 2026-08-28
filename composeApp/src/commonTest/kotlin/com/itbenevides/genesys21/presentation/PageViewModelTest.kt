@@ -100,7 +100,8 @@ class PageViewModelTest {
                 saveDomainMappingUseCase = SaveDomainMappingUseCase(fakeDomainRepository),
                 deleteDomainMappingUseCase = DeleteDomainMappingUseCase(fakeDomainRepository),
                 getChatMessagesUseCase = GetChatMessagesUseCase(fakeChatRepository),
-                sendChatMessageUseCase = SendChatMessageUseCase(fakeChatRepository)
+                sendChatMessageUseCase = SendChatMessageUseCase(fakeChatRepository),
+                getB2BAnalyticsUseCase = GetB2BAnalyticsUseCase(fakeOrderRepository)
             )
     }
 

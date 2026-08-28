@@ -32,7 +32,8 @@ val viewModelModule =
                 get(), // 44: SaveDomainMapping
                 get(), // 45: DeleteDomainMapping
                 get(), // 46: GetChatMessages
-                get()  // 47: SendChatMessage
+                get(), // 47: SendChatMessage
+                get()  // 48: GetB2BAnalytics
             )
         }
 

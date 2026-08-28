@@ -72,6 +72,7 @@ class PageViewModel(
     private val deleteDomainMappingUseCase: DeleteDomainMappingUseCase,
     private val getChatMessagesUseCase: GetChatMessagesUseCase,
     private val sendChatMessageUseCase: SendChatMessageUseCase,
+    private val getB2BAnalyticsUseCase: GetB2BAnalyticsUseCase,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -116,6 +117,9 @@ class PageViewModel(
 
     private val _analytics = MutableStateFlow<MerchantAnalytics?>(null)
     val analytics: StateFlow<MerchantAnalytics?> = _analytics.asStateFlow()
+
+    private val _b2bAnalytics = MutableStateFlow<B2BAnalytics?>(null)
+    val b2bAnalytics: StateFlow<B2BAnalytics?> = _b2bAnalytics.asStateFlow()
 
     private val _trackedOrder = MutableStateFlow<Order?>(null)
     val trackedOrder: StateFlow<Order?> = _trackedOrder.asStateFlow()
@@ -296,6 +300,19 @@ class PageViewModel(
                 _analytics.value = it
             }.onFailure {
                 handleError("Erro ao carregar analytics", it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun loadB2BAnalytics() {
+        viewModelScope.launch {
+            val token = authRepository.getCurrentUserToken() ?: return@launch
+            _isLoading.value = true
+            getB2BAnalyticsUseCase(token).onSuccess {
+                _b2bAnalytics.value = it
+            }.onFailure {
+                handleError("Erro ao carregar B2B Insights", it)
             }
             _isLoading.value = false
         }

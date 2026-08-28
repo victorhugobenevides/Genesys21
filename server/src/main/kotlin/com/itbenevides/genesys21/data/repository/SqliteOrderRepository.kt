@@ -76,13 +76,16 @@ class SqliteOrderRepository(
                 // 1. Recalcular total real (Segurança: Anti-manipulação de preço)
                 var calculatedTotal = 0.0
                 order.items.forEach { item ->
+                    val product = item.product
+                    val service = item.service
+
                     val actualPrice = when {
-                        item.product != null -> {
-                            ProductsTable.selectAll().where { ProductsTable.id eq item.product.id }
+                        product != null -> {
+                            ProductsTable.selectAll().where { ProductsTable.id eq product.id }
                                 .map { it[ProductsTable.price] }.singleOrNull() ?: item.price
                         }
-                        item.service != null -> {
-                            BookingServicesTable.selectAll().where { BookingServicesTable.id eq item.service.id }
+                        service != null -> {
+                            BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }
                                 .map { it[BookingServicesTable.price] }.singleOrNull() ?: item.price
                         }
                         else -> item.price
@@ -265,6 +268,72 @@ class SqliteOrderRepository(
                     bookingSummary = bookingSummary,
                     totalOrders = allOrders.size,
                     averageTicket = if (allOrders.isNotEmpty()) allOrders.average() else 0.0
+                )
+            )
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getB2BAnalytics(token: String): Result<B2BAnalytics> = try {
+        dbQuery {
+            // 1. Total de lojistas ativos (Lojistas com pelo menos um pedido ou página)
+            val activeMerchantsCount = StoresTable.selectAll().count()
+
+            // 2. GMV Global (Gross Merchandise Volume) - Soma de todos os pedidos COMPLETED
+            val globalGMV = OrdersTable.selectAll()
+                .where { OrdersTable.status eq OrderStatus.COMPLETED.name }
+                .sumOf { it[OrdersTable.total] }
+
+            // 3. Ticket Médio Global
+            val completedOrders = OrdersTable.selectAll()
+                .where { OrdersTable.status eq OrderStatus.COMPLETED.name }
+            val globalAverageTicket = if (completedOrders.count() > 0) {
+                globalGMV / completedOrders.count()
+            } else 0.0
+
+            // 4. Top Merchants (Ranking de Performance)
+            // Agrupamos pedidos completados por StoreId
+            val revenueSum = OrdersTable.total.sum()
+            val orderCountSum = OrdersTable.id.count()
+
+            val topMerchants = OrdersTable
+                .select(OrdersTable.storeId, revenueSum, orderCountSum)
+                .where { OrdersTable.status eq OrderStatus.COMPLETED.name }
+                .groupBy(OrdersTable.storeId)
+                .orderBy(revenueSum to SortOrder.DESC)
+                .limit(10)
+                .map { row ->
+                    val sid = row[OrdersTable.storeId]
+                    val storeName = StoresTable.select(StoresTable.name).where { StoresTable.id eq sid }.singleOrNull()?.get(StoresTable.name) ?: "Loja Desconhecida"
+                    MerchantPerformance(
+                        merchantName = storeName,
+                        totalRevenue = row[revenueSum] ?: 0.0,
+                        orderCount = row[orderCountSum].toInt()
+                    )
+                }
+
+            // 5. Receita Diária Global (Últimos 30 dias)
+            val thirtyDaysAgo = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
+            val dailyRevenueSum = OrdersTable.total.sum()
+            val globalDailyRevenue = OrdersTable
+                .select(OrdersTable.createdAt, dailyRevenueSum)
+                .where { (OrdersTable.status eq OrderStatus.COMPLETED.name) and (OrdersTable.createdAt greaterEq thirtyDaysAgo) }
+                .groupBy(OrdersTable.createdAt)
+                .map { row ->
+                    DailyRevenue(
+                        date = row[OrdersTable.createdAt].toString(),
+                        amount = row[dailyRevenueSum] ?: 0.0
+                    )
+                }
+
+            Result.success(
+                B2BAnalytics(
+                    totalMerchants = activeMerchantsCount.toInt(),
+                    platformGMV = globalGMV,
+                    globalAverageTicket = globalAverageTicket,
+                    topMerchants = topMerchants,
+                    globalDailyRevenue = globalDailyRevenue
                 )
             )
         }

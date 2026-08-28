@@ -39,6 +39,7 @@ object GenesysIcons {
     val WebAssetOff = Icons.Default.WebAssetOff
     val ShoppingBag = Icons.Default.ShoppingBag
     val Palette = Icons.Default.Palette
+    val BusinessCenter = Icons.Default.BusinessCenter
     val ExpandMore = Icons.Default.ExpandMore
     val ArrowUp = Icons.Default.ArrowUpward
     val ArrowDown = Icons.Default.ArrowDownward

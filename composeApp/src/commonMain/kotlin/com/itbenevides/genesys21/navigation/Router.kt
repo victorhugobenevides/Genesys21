@@ -98,6 +98,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.TemplateShowcase -> "Catálogo de Templates"
                 is Route.ServiceBooking -> "Agendamento: ${route.service.name}"
                 is Route.Receipts -> "Notas Fiscais"
+                is Route.Experience -> "The Genesys Experience"
             }
         AnalyticsManager.trackPageView(pageName)
     }
@@ -132,6 +133,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.TemplateShowcase -> Triple(null, null, "Catálogo de Templates")
                 is Route.ServiceBooking -> Triple(current.page.id, current.service.id, "Agendar: ${current.service.name}")
                 is Route.Receipts -> Triple(null, null, "Notas Fiscais")
+                is Route.Experience -> Triple(null, null, "Experience - Genesys21")
             }
 
         val screen =
@@ -155,6 +157,7 @@ class Router(val viewModel: PageViewModel) {
                 is Route.TemplateShowcase -> Screen.TemplateShowcase
                 is Route.ServiceBooking -> Screen.ServiceBooking
                 is Route.Receipts -> Screen.List
+                is Route.Experience -> Screen.Experience
             }
 
         syncUrlWithScreen(screen, pageId, productId, title ?: "Genesys21", replace = replace)
@@ -264,6 +267,7 @@ class Router(val viewModel: PageViewModel) {
                         urlPath.startsWith("/about") || urlPath.startsWith("/showcase") -> Route.DesignSystemShowcase
                         urlPath.startsWith("/editor-showcase") -> Route.EditorShowcase
                         urlPath.startsWith("/templates") -> Route.TemplateShowcase
+                        urlPath.startsWith("/experience") -> Route.Experience
                         else -> {
                             if (isLoggedIn) {
                                 Route.PageList

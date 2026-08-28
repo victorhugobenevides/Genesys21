@@ -17,4 +17,5 @@ enum class Screen {
     EditorShowcase,
     TemplateShowcase,
     ServiceBooking,
+    Experience,
 }
