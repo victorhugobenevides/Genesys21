@@ -3,5 +3,5 @@
     - [x] Atualizar `GenesysPage.kt` para usar a nova verificação
     - [x] Refatorar `GenesysPaparazzi.kt` (Propriedades de Sistema + Koin estável)
     - [x] Limpar arquivos temporários e verificar consistência
-- [/] Commit e Push das alterações
-- [ ] Criar artefato de walkthrough
+- [x] Commit e Push das alterações
+- [x] Criar artefato de walkthrough
