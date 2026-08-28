@@ -1,32 +1,27 @@
-# Plano de Implementação - Estabilização Final e Resiliência de Testes
+# Plano de Implementação - Promoção Garantida de SuperAdmin
 
-Os testes de screenshot continuam falhando devido a problemas de infraestrutura de composição (CompositionLocals) e ciclo de vida do Koin. Mesmo fornecendo o `LocalTestMode`, o código parece cair no bloco `else` que invoca o `NavigationSuiteScaffold`.
+O usuário `victorkoto@gmail.com` está enfrentando problemas onde, ao logar via Google, ele não é imediatamente reconhecido como `SUPERADMIN` no front-end, resultando em uma tela administrativa sem as opções privilegiadas.
 
 ## Análise
 
-- **Falha de Propagação**: O `LocalTestMode` pode estar sendo "perdido" ou não respeitado devido à forma como o Paparazzi e o Koin interagem com a árvore de composição.
-- **Koin 4.0**: O uso de `KoinContext` ou `KoinApplication` em loops de snapshot responsivo precisa ser extremamente cuidadoso para evitar o `IllegalStateException`.
-- **NavigationSuiteScaffold**: Este componente é a fonte principal de `ClassCastException` no Paparazzi. Precisamos de uma forma garantida de ignorá-lo em testes.
+1.  **Estado do Front-end (Bug)**: Na função `syncInitialProfile` do `PageViewModel`, quando um novo perfil é criado localmente para sincronização, ele é inicializado com `role = UserRole.CUSTOMER`. Após salvar no servidor (onde o servidor força a promoção para `SUPERADMIN` baseada no e-mail), o front-end atualiza o estado local com o objeto que tem o cargo de `CUSTOMER`, em vez de recarregar o perfil atualizado do servidor.
+2.  **Persistência**: Embora o banco de dados esteja correto, o estado reativo do Compose fica preso no valor inicial até que o App seja reiniciado ou o perfil seja recarregado manualmente.
+3.  **Visibilidade de Abas**: No `PageListScreen`, a aba "SuperAdmin" depende estritamente do `userProfile?.role == UserRole.SUPERADMIN`.
 
 ## Mudanças Propostas
 
 ### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
 
-#### [MODIFY] [ResponsiveUtils.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/util/ResponsiveUtils.kt)
-- Adicionar uma função auxiliar `isTestMode()` que verifica tanto o `LocalTestMode.current` quanto uma Propriedade de Sistema (`System.getProperty("genesys.test_mode")`). Isso garante redundância.
-
-#### [MODIFY] [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
-- Usar a nova função `isTestMode()` para decidir entre o layout manual e o `NavigationSuiteScaffold`.
-
-### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
-
-#### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- Configurar `System.setProperty("genesys.test_mode", "true")`.
-- Simplificar a injeção do Koin: usar a abordagem clássica de Paparazzi com o `KoinApplication` mas garantindo que ele não tente iniciar o Koin globalmente (usando o parâmetro `application` do Koin).
-- Remover o override manual de `LocalContext`. O Paparazzi já fornece um contexto adequado para renderização.
+#### [MODIFY] [PageViewModel.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/PageViewModel.kt)
+- Atualizar `syncInitialProfile` para invocar `loadUserProfile(userId)` imediatamente após o sucesso do `saveUserProfileUseCase`. Isso garante que o front-end receba o cargo de `SUPERADMIN` (e as permissões completas) que o servidor atribuiu.
+- Remover a atribuição manual `_userProfile.value = newProfile` dentro do bloco de sucesso, pois o `loadUserProfile` fará isso com os dados reais do banco.
 
 ## Plano de Verificação
 
-### Testes Automatizados
-- Executar `:screenshot-tests:testDebugUnitTest`.
-- O sucesso será atingido quando a pipeline de CI completar sem `IllegalStateException` e os snapshots forem gerados.
+### Verificação Manual
+- Solicitar ao usuário que faça Logout e Login novamente após a aplicação da correção.
+- Verificar se a aba "SuperAdmin" aparece no menu lateral/inferior.
+- Confirmar se as opções de gerenciamento de usuários e sistema estão visíveis.
+
+### Logs
+- Observar os logs do console: deve aparecer "VIEWMODEL: Perfil inicial sincronizado com sucesso" seguido pelo carregamento do perfil real.

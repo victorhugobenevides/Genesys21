@@ -923,8 +923,8 @@ class PageViewModel(
         )
 
         saveUserProfileUseCase(newProfile).onSuccess {
-            _userProfile.value = newProfile
-            loadUserAddresses(userId)
+            // Recarrega do servidor para garantir que promoções (como SUPERADMIN) sejam aplicadas imediatamente
+            loadUserProfile(userId)
             println("VIEWMODEL: Perfil inicial sincronizado com sucesso.")
         }.onFailure { e ->
             handleError("Erro ao sincronizar perfil", e)

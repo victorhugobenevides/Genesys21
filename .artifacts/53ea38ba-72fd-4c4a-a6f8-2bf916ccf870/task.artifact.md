@@ -1,7 +1,6 @@
-- [x] Estabilização Final e Resiliência de Testes
-    - [x] Adicionar redundância de `isTestMode` em `ResponsiveUtils.kt`
-    - [x] Atualizar `GenesysPage.kt` para usar a nova verificação
-    - [x] Refatorar `GenesysPaparazzi.kt` (Propriedades de Sistema + Koin estável)
-    - [x] Limpar arquivos temporários e verificar consistência
-- [x] Commit e Push das alterações
-- [x] Criar artefato de walkthrough
+- [x] Garantir Promoção de SuperAdmin no Front-end
+    - [x] Modificar `syncInitialProfile` no `PageViewModel.kt` para recarregar o perfil do servidor
+    - [x] Remover atribuição manual de perfil local com role incorreto
+- [x] Verificar consistência do estado reativo
+- [/] Commit e Push das alterações
+- [ ] Criar artefato de walkthrough
