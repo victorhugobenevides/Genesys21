@@ -1,6 +1,6 @@
-- [x] Garantir Promoção de SuperAdmin no Front-end
-    - [x] Modificar `syncInitialProfile` no `PageViewModel.kt` para recarregar o perfil do servidor
-    - [x] Remover atribuição manual de perfil local com role incorreto
-- [x] Verificar consistência do estado reativo
+- [x] Correção Definitiva Stripe e SuperAdmin
+    - [x] Aplicar "Dogma" dinâmico em `SqliteUserRepository.kt`
+    - [x] Forçar atualização de chaves Stripe reais no `Seeder.kt`
+- [x] Verificar integridade do banco de dados
 - [/] Commit e Push das alterações
 - [ ] Criar artefato de walkthrough

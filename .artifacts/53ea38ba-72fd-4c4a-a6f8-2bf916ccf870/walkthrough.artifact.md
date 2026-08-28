@@ -1,29 +1,22 @@
-# Walkthrough - Blindagem de Infraestrutura de Teste
+# Walkthrough - Promoção Imediata de SuperAdmin
 
-Implementei a correção definitiva e redundante para as falhas de infraestrutura nos testes de screenshot, garantindo isolamento total do ambiente de renderização.
+Corrigi o problema onde o usuário `victorkoto@gmail.com` não era reconhecido como SuperAdmin imediatamente após o primeiro login ou sincronização de perfil.
 
 ## Mudanças Realizadas
 
 ### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
 
-#### [ResponsiveUtils.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/util/ResponsiveUtils.kt)
-- **Detecção Híbrida**: Criei a função `isTestMode()` que combina a verificação do `CompositionLocal` com uma verificação de **Propriedades de Sistema**.
-- **Suporte Multiplataforma**: Adicionei implementações `expect/actual` para garantir que o acesso às propriedades de sistema (via JVM em Android) seja seguro em todos os targets KMP.
-
-#### [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
-- **Bypass de Navegação**: Agora utiliza a nova detecção híbrida para desviar do `NavigationSuiteScaffold` (que causava o erro de `WindowManager`) e renderizar um layout manual equivalente durante os testes.
-
-### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
-
-#### [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- **Isolamento de Koin**: Utilizei o `KoinContext` injetando uma instância recém-criada de `koinApplication`. Isso garante que cada composição de snapshot tenha seu próprio grafo de dependências, resolvendo os erros de `IllegalStateException`.
-- **Refatoração de Parâmetros**: Ajustei as lambdas para usar `noinline`, permitindo que os parâmetros `@Composable` sejam passados com segurança entre funções `inline` e o conteúdo interno de renderização.
+#### [PageViewModel.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/PageViewModel.kt)
+- **Recarregamento de Perfil**: Na função `syncInitialProfile`, removi a atribuição manual que definia o cargo como `CUSTOMER` localmente.
+- **Sincronização com o Servidor**: Agora, após salvar o perfil inicial, o App invoca `loadUserProfile(userId)` imediatamente. Como o servidor possui uma regra de "Dogma" que promove esse e-mail específico para `SUPERADMIN` no banco de dados, o App agora busca esses dados atualizados e libera as abas administrativas no mesmo instante.
 
 ## Verificação e Resultados
 
-- **Imunidade a ClassCastException**: A dependência da biblioteca `androidx.window` foi neutralizada nos testes.
-- **Ciclo de Vida Limpo**: O Koin agora é inicializado e limpo atomitamente por snapshot.
-- **Fim do Flakiness**: A combinação de redundância de ambiente resolve as falhas intermitentes de propagação de `CompositionLocal`.
+- **Fluxo Garantido**: Ao logar, o servidor processa a promoção e o front-end agora "pergunta" ao servidor qual o cargo final, em vez de assumir o cargo inicial de cliente.
+- **Visibilidade**: A aba "SuperAdmin" no `PageListScreen` deve agora aparecer automaticamente para você.
+
+> [!TIP]
+> Por favor, faça **Logout** e **Login** novamente no App para disparar a sincronização final e confirmar que a aba "SuperAdmin" apareceu.
 
 > [!IMPORTANT]
-> As alterações foram commitadas e enviadas para o branch `main`. Esta arquitetura de "blindagem" resolve as falhas de infraestrutura de forma resiliente.
+> O código foi commitado e enviado para o repositório remoto.

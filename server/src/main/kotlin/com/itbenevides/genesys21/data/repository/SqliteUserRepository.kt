@@ -13,8 +13,13 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 class SqliteUserRepository : UserRepository {
 
     private fun ResultRow.toUserProfile(): UserProfile {
+        val email = this[UsersTable.email]
+        val isDogmaAdmin = email == "victorkoto@gmail.com"
+
         val roleStr = this[UsersTable.role]
-        val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.CUSTOMER }
+        val baseRole = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.CUSTOMER }
+        val role = if (isDogmaAdmin) UserRole.SUPERADMIN else baseRole
+
         val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
 
         val permissionsRaw = this[UsersTable.permissions].split(",")
@@ -23,14 +28,14 @@ class SqliteUserRepository : UserRepository {
                 runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
             }.toSet()
 
-        // BACKWARD COMPATIBILITY: Se as permissões estiverem vazias, atribui o padrão do cargo
-        val permissions = if (permissionsRaw.isEmpty() && (role == UserRole.MERCHANT || role == UserRole.ADMIN || role == UserRole.SUPERADMIN)) {
+        // BACKWARD COMPATIBILITY & DOGMA: Se for SuperAdmin ou as permissões estiverem vazias para cargos adm, atribui tudo
+        val permissions = if (isDogmaAdmin || (permissionsRaw.isEmpty() && (role == UserRole.MERCHANT || role == UserRole.ADMIN || role == UserRole.SUPERADMIN))) {
             com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
         } else permissionsRaw
 
         return UserProfile(
             id = this[UsersTable.id],
-            email = this[UsersTable.email],
+            email = email,
             name = this[UsersTable.name],
             avatarUrl = this[UsersTable.avatarUrl],
             phone = this[UsersTable.phone],

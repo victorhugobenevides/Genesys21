@@ -61,7 +61,12 @@ object Seeder {
                 val currentStore = StoresTable.selectAll().where { StoresTable.id eq defaultStoreId }.first()
                 val currentSk = currentStore[StoresTable.stripeSecretKey]
 
-                if (currentSk == null || currentSk.length < 50) {
+                // Força atualização se as chaves de ambiente forem REAIS (diferentes do default) e o banco estiver com o default
+                val isEnvReal = pk != "pk_test_genesys_default" && sk != "sk_test_genesys_default"
+                val isDbDefault = currentSk == "sk_test_genesys_default" || currentSk.isNullOrBlank()
+
+                if (isEnvReal && isDbDefault) {
+                    println("Seeder: Detectadas chaves Stripe reais no ambiente. Atualizando loja padrão...")
                     StoresTable.update({ StoresTable.id eq defaultStoreId }) {
                         it[stripePublicKey] = pk
                         it[stripeSecretKey] = sk
