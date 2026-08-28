@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
@@ -71,6 +72,21 @@ fun GenesysPage(
     }
 
     if (drawerContent != null && isExpanded) {
+        PermanentNavigationDrawer(
+            drawerContent = {
+                PermanentDrawerSheet(
+                    drawerContainerColor = GenesysTheme.colors.surface,
+                    drawerContentColor = GenesysTheme.colors.onSurface,
+                    modifier = Modifier.width(280.dp)
+                ) {
+                    drawerContent()
+                }
+            },
+            content = {
+                NavigationWrapper(navigationSuiteItems, isExpanded, true, scaffoldContent)
+            }
+        )
+    } else if (drawerContent != null) {
         ModalNavigationDrawer(
             drawerContent = {
                 ModalDrawerSheet(
@@ -81,11 +97,11 @@ fun GenesysPage(
                 }
             },
             content = {
-                NavigationWrapper(navigationSuiteItems, scaffoldContent)
+                NavigationWrapper(navigationSuiteItems, isExpanded, true, scaffoldContent)
             }
         )
     } else {
-        NavigationWrapper(navigationSuiteItems, scaffoldContent)
+        NavigationWrapper(navigationSuiteItems, isExpanded, false, scaffoldContent)
     }
 }
 
@@ -93,6 +109,8 @@ fun GenesysPage(
 @Composable
 private fun NavigationWrapper(
     navigationSuiteItems: (NavigationSuiteScope.() -> Unit)?,
+    isExpanded: Boolean,
+    hasSidebar: Boolean,
     content: @Composable () -> Unit
 ) {
     if (navigationSuiteItems != null) {
@@ -100,37 +118,33 @@ private fun NavigationWrapper(
         val testMode = isTestMode()
 
         if (testMode) {
-            // Em modo de teste, evitamos o NavigationSuiteScaffold para prevenir ClassCastException com WindowManager.
-            // Renderizamos um layout equivalente manual.
+            // ... (keep test mode logic)
             Box(modifier = Modifier.fillMaxSize()) {
                 Row(modifier = Modifier.fillMaxSize()) {
                     if (windowSizeClass != GenesysWindowSizeClass.COMPACT) {
-                        NavigationRail(
-                            containerColor = GenesysTheme.colors.background,
-                        ) {
-                            // Aqui simplificamos: em teste visual, apenas o scaffold interno importa.
-                            // Se precisarmos testar os itens de navegação, o faremos em um teste específico.
-                        }
+                        NavigationRail(containerColor = GenesysTheme.colors.background) {}
                     }
-                    Box(modifier = Modifier.weight(1f)) {
-                        content()
-                    }
+                    Box(modifier = Modifier.weight(1f)) { content() }
                 }
-                // No mobile, a barra ficaria embaixo, mas o content() já é o Scaffold que tem bottomBar se fornecido.
             }
         } else {
-            val layoutType = when (windowSizeClass) {
-                GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
-                GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
-                GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
-            }
+            // SE tivermos Sidebar e estivermos no Expanded, omitimos a NavigationRail para evitar duplicidade
+            if (isExpanded && hasSidebar) {
+                content()
+            } else {
+                val layoutType = when (windowSizeClass) {
+                    GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+                    GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
+                    GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
+                }
 
-            NavigationSuiteScaffold(
-                navigationSuiteItems = navigationSuiteItems,
-                layoutType = layoutType,
-                containerColor = GenesysTheme.colors.background,
-                content = content
-            )
+                NavigationSuiteScaffold(
+                    navigationSuiteItems = navigationSuiteItems,
+                    layoutType = layoutType,
+                    containerColor = GenesysTheme.colors.background,
+                    content = content
+                )
+            }
         }
     } else {
         content()

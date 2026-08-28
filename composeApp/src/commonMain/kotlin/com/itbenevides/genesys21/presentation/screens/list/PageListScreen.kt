@@ -1,13 +1,8 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,10 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,7 +27,6 @@ import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen
 import com.itbenevides.genesys21.presentation.receipt.ReceiptViewModel
-import com.itbenevides.genesys21.ui.components.StripeConnectComponent
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
@@ -43,13 +34,10 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
-import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
-import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysStatusPicker
-import com.itbenevides.genesys21.ui.components.molecules.navigation.*
 import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
@@ -57,25 +45,19 @@ import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.presentation.screens.admin.SuperAdminDashboard
 import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
-import com.itbenevides.genesys21.domain.model.UserProfile
-import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.downloadFile
 import com.itbenevides.genesys21.util.rememberFileHandler
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminMenuItem
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminSidebar
+import com.itbenevides.genesys21.presentation.screens.list.tabs.*
 import kotlin.math.roundToLong
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
-
-private data class PermittedTab(
-    val id: Int,
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val badgeCount: Int = 0
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -313,34 +295,17 @@ private fun PageListContent(
     val chatMessages by viewModel.chatMessages.collectAsState()
     val isSuperAdmin = userProfile?.role == UserRole.SUPERADMIN
 
-    // Lista de abas permitidas
-    val permittedTabs = remember(userProfile, state.pages) {
-        val list = mutableListOf<PermittedTab>()
-
-        // Vitrines e Ferramentas ADM liberadas se logado
-        list.add(PermittedTab(0, "Painel", GenesysIcons.Analytics))
-        list.add(PermittedTab(1, GenesysStrings.VitrineTab, GenesysIcons.Web))
-        list.add(PermittedTab(2, GenesysStrings.OrdersTab, GenesysIcons.List, state.pendingOrdersCount))
-        list.add(PermittedTab(3, "Agenda", GenesysIcons.Schedule))
-        list.add(PermittedTab(4, "Serviços", GenesysIcons.Inventory))
-        list.add(PermittedTab(5, "Notas", GenesysIcons.ReceiptLong))
-        list.add(PermittedTab(6, "Loja", GenesysIcons.Settings))
-
-        if (isSuperAdmin) {
-            list.add(PermittedTab(7, "SuperAdmin", GenesysIcons.AdminPanelSettings))
-            list.add(PermittedTab(9, "B2B Insights", GenesysIcons.BusinessCenter))
-        }
-
-        // Perfil sempre no menu para visibilidade
-        list.add(PermittedTab(8, "Perfil", GenesysIcons.Person))
-
-        list
+    val menuItems = remember(userProfile, state.pendingOrdersCount) {
+        AdminMenuItem.getVisibleItems(
+            role = userProfile?.role ?: UserRole.CUSTOMER,
+            pendingOrders = state.pendingOrdersCount
+        )
     }
 
     // Ajusta aba selecionada se a atual não for permitida
-    LaunchedEffect(permittedTabs) {
-        if (permittedTabs.none { it.id == state.selectedTab }) {
-            permittedTabs.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
+    LaunchedEffect(menuItems) {
+        if (menuItems.none { it.id == state.selectedTab }) {
+            menuItems.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
         }
     }
 
@@ -353,154 +318,73 @@ private fun PageListContent(
         }
     }
 
-    val suiteItemColors = NavigationSuiteDefaults.itemColors(
-        navigationRailItemColors = NavigationRailItemDefaults.colors(
-            selectedIconColor = GenesysTheme.colors.brand,
-            unselectedIconColor = GenesysTheme.colors.onSurfaceVariant,
-            selectedTextColor = GenesysTheme.colors.brand,
-            unselectedTextColor = GenesysTheme.colors.onSurfaceVariant,
-            indicatorColor = GenesysTheme.colors.brandContainer.copy(alpha = 0.3f)
-        ),
-        navigationBarItemColors = NavigationBarItemDefaults.colors(
-            selectedIconColor = GenesysTheme.colors.brand,
-            unselectedIconColor = GenesysTheme.colors.onSurfaceVariant,
-            selectedTextColor = GenesysTheme.colors.brand,
-            unselectedTextColor = GenesysTheme.colors.onSurfaceVariant,
-            indicatorColor = GenesysTheme.colors.brandContainer.copy(alpha = 0.3f)
-        )
-    )
-
     GenesysPage(
         navigationSuiteItems = {
-            permittedTabs.forEach { tab ->
+            menuItems.forEach { item ->
                 item(
-                    selected = state.selectedTab == tab.id,
-                    onClick = { onEvent(PageListEvent.OnTabSelected(tab.id)) },
+                    selected = state.selectedTab == item.id,
+                    onClick = { onEvent(PageListEvent.OnTabSelected(item.id)) },
                     icon = {
                         BadgedBox(
                             badge = {
-                                if (tab.badgeCount > 0) Badge { Text(tab.badgeCount.toString()) }
+                                if (item.badgeCount > 0) Badge { Text(item.badgeCount.toString()) }
                             }
                         ) {
-                            Icon(tab.icon, contentDescription = tab.label)
+                            Icon(item.icon, contentDescription = item.label)
                         }
                     },
-                    label = { Text(tab.label) },
-                    alwaysShowLabel = isExpanded,
-                    colors = suiteItemColors
+                    label = { Text(item.label) },
+                    alwaysShowLabel = isExpanded
                 )
             }
         },
+        drawerContent = {
+            AdminSidebar(
+                items = menuItems,
+                selectedItemId = state.selectedTab,
+                onItemClick = {
+                    onEvent(PageListEvent.OnTabSelected(it.id))
+                }
+            )
+        },
         topBar = {
              GenesysTopAppBar(
-                title = GenesysStrings.AdminTitle,
+                title = "Genesys Console",
                 onBack = null,
             )
         },
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(bottom = 64.dp),
-            ) {
-                item {
-                    GenesysColumn(modifier = Modifier.widthIn(max = 1200.dp), usePadding = false) {
-                        when (state.selectedTab) {
-                            0 -> MerchantAnalyticsTabUI(viewModel)
-                            1 -> PagesTabUI(state, onEvent, onViewPage, onEditPage)
-                            2 -> OrdersHeaderUI(state, onEvent)
-                            3 -> MerchantAgendaTabUI(state, viewModel, onEvent)
-                            4 -> ServicesTabUI(services, onAddService, onEditService, onDeleteService)
-                            5 -> {
-                                val receiptViewModel: ReceiptViewModel = koinInject()
-                                ReceiptListScreen(
-                                    viewModel = receiptViewModel,
-                                    isEmbedded = true,
-                                    onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
-                                )
-                            }
-                            6 -> StoreSettingsTabUI(viewModel, userProfile, uriHandler, scope)
-                            7 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
-                            8 -> ProfileScreen(viewModel, router)
-                            9 -> B2BAnalyticsTabUI(viewModel)
-                        }
-                    }
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (state.selectedTab) {
+                0 -> MerchantAnalyticsTabUI(viewModel)
+                9 -> B2BAnalyticsTabUI(viewModel)
+                1 -> PagesTab(state, onEvent, onViewPage, onEditPage)
+                2 -> OrdersTab(
+                    state = state,
+                    viewModel = viewModel,
+                    isExpanded = isExpanded,
+                    selectedOrderIdForDetail = selectedOrderIdForDetail,
+                    onSelectOrderForDetail = onSelectOrderForDetail,
+                    onEvent = onEvent,
+                    onContactCustomer = onContactCustomer,
+                    chatMessages = chatMessages
+                )
+                3 -> MerchantAgendaTabUI(state, viewModel, onEvent)
+                4 -> ServicesTab(services, onAddService, onEditService, onDeleteService)
+                5 -> {
+                    val receiptViewModel: ReceiptViewModel = koinInject()
+                    ReceiptListScreen(
+                        viewModel = receiptViewModel,
+                        isEmbedded = true,
+                        onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
+                    )
                 }
-
-                if (state.selectedTab == 2) {
-                    val filteredOrders =
-                        state.orders.filter { order ->
-                            val matchesSearch =
-                                state.searchQuery.isBlank() ||
-                                    order.id.contains(state.searchQuery, ignoreCase = true) ||
-                                    (order.customerName?.contains(state.searchQuery, ignoreCase = true) == true)
-                            val matchesStatus = state.selectedStatusFilter == null || order.status == state.selectedStatusFilter
-                            matchesSearch && matchesStatus
-                        }
-
-                    if (filteredOrders.isEmpty() && !state.isLoading) {
-                        item {
-                            GenesysEmptyState(
-                                icon = GenesysIcons.SearchOff,
-                                title = GenesysStrings.NoOrdersFound,
-                                description = GenesysStrings.NoOrdersDescription,
-                            )
-                        }
-                    } else {
-                        if (isExpanded) {
-                            item {
-                                Row(modifier = Modifier.fillMaxWidth().heightIn(min = 600.dp)) {
-                                    Column(modifier = Modifier.weight(1f).padding(16.dp)) {
-                                        filteredOrders.forEach { order ->
-                                            OrderCardUI(
-                                                order = order,
-                                                isSelected = order.id == selectedOrderIdForDetail,
-                                                onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
-                                                onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
-                                                onClick = { onSelectOrderForDetail(order.id) }
-                                            )
-                                            GenesysSpacer(GenesysTheme.spacing.s)
-                                        }
-                                    }
-
-                                    Column(modifier = Modifier.weight(1.5f).padding(16.dp)) {
-                                        val selectedOrder = filteredOrders.find { it.id == selectedOrderIdForDetail }
-                                        if (selectedOrder != null) {
-                                            OrderDetailContent(
-                                                order = selectedOrder,
-                                                chatMessages = chatMessages,
-                                                onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(selectedOrder.id, newStatus)) },
-                                                onContact = { onContactCustomer(selectedOrder.customerPhone ?: "", selectedOrder.id, selectedOrder.customerName ?: "Cliente") },
-                                                onSendMessage = { content ->
-                                                    viewModel.sendChatMessage(selectedOrder.id, "Lojista", content, isFromMerchant = true)
-                                                }
-                                            )
-                                        } else {
-                                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                GenesysText("Selecione um pedido para ver os detalhes", color = GenesysTheme.colors.outline)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            items(items = filteredOrders, key = { it.id }) { order ->
-                                GenesysBox(modifier = Modifier.widthIn(max = 1200.dp).padding(horizontal = 16.dp)) {
-                                    OrderCardUI(
-                                        order = order,
-                                        onStatusUpdate = { newStatus -> onEvent(PageListEvent.OnUpdateOrderStatus(order.id, newStatus)) },
-                                        onContact = { onContactCustomer(order.customerPhone ?: "", order.id, order.customerName ?: "Cliente") },
-                                    )
-                                }
-                                GenesysSpacer(GenesysTheme.spacing.m)
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    Spacer(Modifier.height(GenesysTheme.spacing.huge))
+                6 -> StoreSettingsTab(viewModel, userProfile, uriHandler, scope)
+                10 -> StoreSettingsTab(viewModel, userProfile, uriHandler, scope)
+                7 -> if (isSuperAdmin) SuperAdminDashboard(viewModel)
+                8 -> ProfileScreen(viewModel, router)
+                else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Selecione uma opção no menu")
                 }
             }
         }
@@ -508,7 +392,7 @@ private fun PageListContent(
 }
 
 @Composable
-private fun OrderCardUI(
+internal fun OrderCardUI(
     order: com.itbenevides.genesys21.domain.model.Order,
     isSelected: Boolean = false,
     onStatusUpdate: (OrderStatus) -> Unit,
@@ -516,12 +400,7 @@ private fun OrderCardUI(
     onClick: (() -> Unit)? = null
 ) {
     GenesysCard(
-        modifier = Modifier.fillMaxWidth().animateContentSize(
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessLow
-            )
-        ),
+        modifier = Modifier.fillMaxWidth(),
         elevation = if (isSelected) 4.dp else 1.dp,
         border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null,
         onClick = onClick
@@ -626,7 +505,7 @@ private fun OrderCardUI(
 }
 
 @Composable
-private fun OrderDetailContent(
+internal fun OrderDetailContent(
     order: com.itbenevides.genesys21.domain.model.Order,
     chatMessages: List<ChatMessage>,
     onStatusUpdate: (OrderStatus) -> Unit,
@@ -648,7 +527,6 @@ private fun OrderDetailContent(
 
             GenesysSpacer(GenesysTheme.spacing.l)
 
-            // CHAT INTERNO (Novo)
             OrderChatComponent(
                 messages = chatMessages,
                 currentNick = "Lojista",
@@ -695,431 +573,7 @@ private fun OrderDetailContent(
 }
 
 @Composable
-private fun StoreSettingsTabUI(
-    viewModel: PageViewModel,
-    userProfile: UserProfile?,
-    uriHandler: androidx.compose.ui.platform.UriHandler,
-    scope: kotlinx.coroutines.CoroutineScope
-) {
-    val storeId = userProfile?.id ?: "admin"
-    var store by remember { mutableStateOf<Store?>(null) }
-
-    var originZip by remember { mutableStateOf("") }
-    var originStreet by remember { mutableStateOf("") }
-    var originNumber by remember { mutableStateOf("") }
-    var originNeighborhood by remember { mutableStateOf("") }
-    var originCity by remember { mutableStateOf("") }
-    var originState by remember { mutableStateOf("") }
-
-    var allowPayLocal by remember { mutableStateOf(true) }
-    var allowPayApp by remember { mutableStateOf(true) }
-    var allowPickup by remember { mutableStateOf(true) }
-    var allowDelivery by remember { mutableStateOf(true) }
-
-    var stripePublic by remember { mutableStateOf("") }
-    var stripeSecret by remember { mutableStateOf("") }
-    var asaasKey by remember { mutableStateOf("") }
-    var selectedGateway by remember { mutableStateOf("STRIPE") }
-
-    var connectSessionSecret by remember { mutableStateOf<String?>(null) }
-    var activeConnectComponent by remember { mutableStateOf("account-onboarding") }
-
-    val isLoading by viewModel.isLoading.collectAsState()
-
-    LaunchedEffect(storeId) {
-        viewModel.getStore(storeId).onSuccess { s ->
-            store = s
-            originZip = s.originZipCode ?: ""
-            originStreet = s.originStreet ?: ""
-            originNumber = s.originNumber ?: ""
-            originNeighborhood = s.originNeighborhood ?: ""
-            originCity = s.originCity ?: ""
-            originState = s.originState ?: ""
-            allowPayLocal = s.allowPayOnLocation
-            allowPayApp = s.allowPayInApp
-            allowPickup = s.allowPickup
-            allowDelivery = s.allowDelivery
-            stripePublic = s.stripePublicKey ?: ""
-            stripeSecret = s.stripeSecretKey ?: ""
-            asaasKey = s.asaasApiKey ?: ""
-            selectedGateway = s.paymentGateway
-        }
-    }
-
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        GenesysText(text = "Configurações da Loja", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-        GenesysText(text = "Configure os dados de remetente e as opções do checkout.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysTextField(value = originZip, onValueChange = { originZip = it }, label = "CEP de Origem", icon = GenesysIcons.Search)
-                GenesysSpacer(GenesysTheme.spacing.m)
-                GenesysTextField(value = originStreet, onValueChange = { originStreet = it }, label = "Rua/Logradouro")
-                GenesysSpacer(GenesysTheme.spacing.m)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) { GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número") }
-                    Box(Modifier.weight(2f)) { GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro") }
-                }
-                GenesysSpacer(GenesysTheme.spacing.m)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(2f)) { GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade") }
-                    Box(Modifier.weight(1f)) { GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF") }
-                }
-            }
-        }
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { allowPayLocal = it }
-                ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { allowPayApp = it }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                ToggleOptionRow("Permitir Retirada no Local", allowPickup) { allowPickup = it }
-                ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { allowDelivery = it }
-            }
-        }
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-    GenesysCard {
-        GenesysColumn(usePadding = false) {
-            GenesysText(
-                text = "Pagamentos (Stripe Connect)",
-                style = GenesysTextStyle.Title,
-                fontWeight = GenesysFontWeight.Bold
-            )
-            GenesysText(
-                text = "Receba pagamentos diretamente em sua conta bancária.",
-                style = GenesysTextStyle.Label,
-                color = GenesysTheme.colors.onSurfaceVariant
-            )
-
-            GenesysSpacer(GenesysTheme.spacing.m)
-
-            if (store?.stripeAccountId.isNullOrBlank()) {
-                GenesysLoadingButton(
-                    text = "Conectar com Stripe",
-                    icon = GenesysIcons.Payments,
-                    onClick = {
-                        val userEmail = userProfile?.email ?: ""
-                        // Mantemos a criação inicial, mas agora vamos tentar exibir o componente incorporado
-                        viewModel.connectStripe(storeId, userEmail) { _ ->
-                            // Após criar a conta, buscamos a sessão para o componente incorporado
-                            scope.launch {
-                                viewModel.getAccountSession(storeId).onSuccess { secret ->
-                                    connectSessionSecret = secret
-                                }
-                            }
-                        }
-                    },
-                    isLoading = isLoading,
-                    fillWidth = true
-                )
-            } else {
-                GenesysRow(
-                    modifier = Modifier.fillMaxWidth().background(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                        RoundedCornerShape(GenesysTheme.spacing.s)
-                    ).padding(GenesysTheme.spacing.s),
-                    verticalAlignment = Alignment.CenterVertically,
-                    usePadding = false
-                ) {
-                    Icon(
-                        GenesysIcons.Check,
-                        null,
-                        tint = Color(0xFF34C759),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    GenesysSpacer(GenesysTheme.spacing.xs)
-                    GenesysColumn(usePadding = false) {
-                        GenesysText(
-                            text = "Stripe Conectado",
-                            style = GenesysTextStyle.Body,
-                            fontWeight = GenesysFontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        GenesysText(
-                            text = "ID: ${store?.stripeAccountId}",
-                            style = GenesysTextStyle.Label,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), usePadding = false) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        GenesysLoadingButton(
-                            text = "Vendas",
-                            icon = GenesysIcons.Payments,
-                            onClick = {
-                                activeConnectComponent = "payments"
-                                scope.launch {
-                                    viewModel.getAccountSession(storeId).onSuccess { secret ->
-                                        connectSessionSecret = secret
-                                    }
-                                }
-                            },
-                            isLoading = isLoading
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        GenesysLoadingButton(
-                            text = "Saques",
-                            icon = GenesysIcons.AccountBalanceWallet,
-                            onClick = {
-                                activeConnectComponent = "payouts"
-                                scope.launch {
-                                    viewModel.getAccountSession(storeId).onSuccess { secret ->
-                                        connectSessionSecret = secret
-                                    }
-                                }
-                            },
-                            isLoading = isLoading
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        GenesysLoadingButton(
-                            text = "Painel",
-                            icon = GenesysIcons.Language,
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            onClick = {
-                                viewModel.openStripeDashboard(storeId) { url ->
-                                    uriHandler.openUri(url)
-                                }
-                            },
-                            isLoading = isLoading
-                        )
-                    }
-                }
-            }
-
-            if (connectSessionSecret != null) {
-                GenesysSpacer(GenesysTheme.spacing.l)
-                // Exibe o componente incorporado
-                StripeConnectComponent(
-                    componentName = if (store?.stripeAccountId.isNullOrBlank()) "account-onboarding" else activeConnectComponent,
-                    publishableKey = stripePublic.ifBlank { "pk_test_placeholder" },
-                    clientSecret = connectSessionSecret!!,
-                    modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(8.dp))
-                )
-
-                GenesysSpacer(GenesysTheme.spacing.s)
-                GenesysTextButton(
-                    text = "Fechar Gestão Stripe",
-                    onClick = { connectSessionSecret = null },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-
-            // Manter campos extras apenas para o Asaas (ou remover se não usar mais)
-            if (selectedGateway == "ASAAS") {
-                GenesysSpacer(GenesysTheme.spacing.l)
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                GenesysSpacer(GenesysTheme.spacing.m)
-                GenesysTextField(
-                    value = asaasKey,
-                    onValueChange = { asaasKey = it },
-                    label = "Asaas API Key",
-                    placeholder = "$"
-                )
-            }
-        }
-    }
-
-        GenesysSpacer(GenesysTheme.spacing.huge)
-
-        GenesysLoadingButton(
-            text = "Salvar Configurações",
-            onClick = {
-                val currentStore = store ?: Store(
-                    id = storeId,
-                    ownerId = "",
-                    name = "Minha Loja"
-                )
-                val updated = currentStore.copy(
-                    originZipCode = originZip,
-                    originStreet = originStreet,
-                    originNumber = originNumber,
-                    originNeighborhood = originNeighborhood,
-                    originCity = originCity,
-                    originState = originState,
-                    allowPayOnLocation = allowPayLocal,
-                    allowPayInApp = allowPayApp,
-                    allowPickup = allowPickup,
-                    allowDelivery = allowDelivery,
-                    stripePublicKey = if (selectedGateway == "STRIPE") stripePublic else null,
-                    stripeSecretKey = if (selectedGateway == "STRIPE") stripeSecret else null,
-                    stripeAccountId = currentStore.stripeAccountId, // Preserva o ID da conta Connect
-                    asaasApiKey = asaasKey,
-                    paymentGateway = selectedGateway
-                )
-                viewModel.saveStore(updated) {
-                    // Feedback opcional
-                }
-            },
-            fillWidth = true,
-            isLoading = isLoading
-        )
-    }
-}
-
-@Composable
-private fun ToggleOptionRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        GenesysText(text = label, style = GenesysTextStyle.Body)
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun PagesTabUI(
-    state: PageListState,
-    onEvent: (PageListEvent) -> Unit,
-    onViewPage: (Page) -> Unit,
-    onEditPage: (Page) -> Unit,
-) {
-    val clipboardManager = LocalClipboardManager.current
-
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        GenesysText(text = GenesysStrings.ManageVitrines, style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-        GenesysText(
-            text = GenesysStrings.ManageVitrinesSubtitle,
-            style = GenesysTextStyle.Body,
-            color = GenesysTheme.colors.onSurfaceVariant,
-        )
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        if (state.pages.isEmpty() && !state.isLoading) {
-            GenesysEmptyState(
-                icon = GenesysIcons.WebAssetOff,
-                title = GenesysStrings.NoPagesFound,
-                description = GenesysStrings.NoPagesDescription,
-                action = {
-                    GenesysLoadingButton(
-                        text = "Criar Minha Primeira Página",
-                        icon = GenesysIcons.Add,
-                        onClick = { onEvent(PageListEvent.OnCreatePageClicked) }
-                    )
-                }
-            )
-        } else {
-            state.pages.forEach { page ->
-                PageItemRow(
-                    page = page,
-                    onView = { onViewPage(page) },
-                    onEdit = { onEditPage(page) },
-                    onRename = { onEvent(PageListEvent.OnRenamePageClicked(page)) },
-                    onCopyUrl = {
-                        val baseUrl = getWebBaseUrl()
-                        val url = "$baseUrl/p/${page.id}"
-                        clipboardManager.setText(AnnotatedString(url))
-                    },
-                    onExport = { onEvent(PageListEvent.OnExportPageClicked(page)) },
-                    onDelete = { onEvent(PageListEvent.OnDeletePageClicked(page.id)) },
-                )
-                GenesysSpacer(GenesysTheme.spacing.m)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ServicesTabUI(
-    services: List<BookingService>,
-    onAddService: () -> Unit,
-    onEditService: (BookingService) -> Unit,
-    onDeleteService: (String) -> Unit,
-) {
-    val windowSizeClass = LocalWindowSizeClass.current
-    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
-
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                GenesysText(text = "Gestão de Serviços", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-                GenesysText(
-                    text = "Configure os tratamentos e preços do seu negócio.",
-                    style = GenesysTextStyle.Body,
-                    color = GenesysTheme.colors.onSurfaceVariant,
-                )
-            }
-            GenesysLoadingButton(
-                text = if (isCompact) "" else "Novo Serviço",
-                icon = GenesysIcons.Add,
-                onClick = onAddService,
-                fillWidth = false
-            )
-        }
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        if (services.isEmpty()) {
-            GenesysEmptyState(
-                icon = GenesysIcons.Inventory,
-                title = "Nenhum serviço cadastrado",
-                description = "Comece adicionando o primeiro serviço do seu negócio.",
-                action = {
-                    GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
-                }
-            )
-        } else {
-            val columns = if (isCompact) 1 else 2
-
-            Column {
-                services.chunked(columns).forEach { rowServices ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                    ) {
-                        rowServices.forEach { service ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                ServiceCard(
-                                    service = service,
-                                    onClick = { onEditService(service) }
-                                )
-                                Row(modifier = Modifier.align(Alignment.TopEnd).padding(GenesysTheme.spacing.xs)) {
-                                    GenesysIconButton(
-                                        icon = GenesysIcons.Delete,
-                                        tint = Color.Red.copy(alpha = 0.6f),
-                                        onClick = { onDeleteService(service.id) }
-                                    )
-                                }
-                            }
-                        }
-                        if (rowServices.size < columns) {
-                            Spacer(Modifier.weight(1f))
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun OrdersHeaderUI(
+internal fun OrdersHeaderUI(
     state: PageListState,
     onEvent: (PageListEvent) -> Unit,
 ) {
@@ -1190,7 +644,7 @@ private fun OrdersHeaderUI(
 }
 
 @Composable
-private fun PageItemRow(
+internal fun PageItemRow(
     page: Page,
     onView: () -> Unit,
     onEdit: () -> Unit,
@@ -1229,6 +683,18 @@ private fun PageItemRow(
                 GenesysIconButton(icon = GenesysIcons.Delete, onClick = onDelete, tint = MaterialTheme.colorScheme.error)
             }
         }
+    }
+}
+
+@Composable
+internal fun ToggleOptionRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        GenesysText(text = label, style = GenesysTextStyle.Body)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
