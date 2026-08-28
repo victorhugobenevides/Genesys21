@@ -20,6 +20,20 @@ val LocalWindowSizeClass = compositionLocalOf { GenesysWindowSizeClass.COMPACT }
  */
 val LocalTestMode = compositionLocalOf { false }
 
+/**
+ * Retorna true se estiver rodando em ambiente de teste.
+ * Verifica tanto o CompositionLocal quanto uma propriedade de sistema para redundância garantida.
+ */
+@Composable
+fun isTestMode(): Boolean {
+    val local = LocalTestMode.current
+    // No KMP, System.getProperty pode não estar disponível em todas as plataformas.
+    // Usamos uma verificação segura.
+    return local || isSystemTestPropertyEnabled()
+}
+
+expect fun isSystemTestPropertyEnabled(): Boolean
+
 @Composable
 fun ProvideWindowSizeClass(width: Dp, content: @Composable () -> Unit) {
     val sizeClass = when {

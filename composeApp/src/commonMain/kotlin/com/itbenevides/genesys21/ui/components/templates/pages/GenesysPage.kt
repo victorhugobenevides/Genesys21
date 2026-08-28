@@ -11,8 +11,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
-import com.itbenevides.genesys21.ui.util.LocalTestMode
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
+import com.itbenevides.genesys21.ui.util.isTestMode
 
 /**
  * GenesysPage: O container mestre do Design System.
@@ -97,9 +97,9 @@ private fun NavigationWrapper(
 ) {
     if (navigationSuiteItems != null) {
         val windowSizeClass = LocalWindowSizeClass.current
-        val isTestMode = LocalTestMode.current
+        val testMode = isTestMode()
 
-        if (isTestMode) {
+        if (testMode) {
             // Em modo de teste, evitamos o NavigationSuiteScaffold para prevenir ClassCastException com WindowManager.
             // Renderizamos um layout equivalente manual.
             Box(modifier = Modifier.fillMaxSize()) {

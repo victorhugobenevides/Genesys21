@@ -1,27 +1,32 @@
-# Plano de Implementação - Estabilização e Depuração de AssertionError
+# Plano de Implementação - Estabilização Final e Resiliência de Testes
 
-O erro `java.lang.AssertionError` no teste `testAdminDashboardResponsive` (o único que falha agora) indica que o snapshot foi gerado mas não corresponde à imagem de referência (golden image) ou houve uma falha de asserção interna do Paparazzi.
+Os testes de screenshot continuam falhando devido a problemas de infraestrutura de composição (CompositionLocals) e ciclo de vida do Koin. Mesmo fornecendo o `LocalTestMode`, o código parece cair no bloco `else` que invoca o `NavigationSuiteScaffold`.
 
 ## Análise
 
-- O fato de 56 testes passarem e apenas o `testAdminDashboardResponsive` falhar é um sinal positivo de que o isolamento do Koin e do `NavigationSuiteScaffold` está funcionando.
-- O erro ocorre em `ScreensSnapshotTest.kt:208`. Como o arquivo tem 168 linhas, o `inlining` está mascarando o local real.
-- Falhas de snapshot no CI são comuns devido a pequenas variações de renderização de fontes ou componentes dinâmicos.
+- **Falha de Propagação**: O `LocalTestMode` pode estar sendo "perdido" ou não respeitado devido à forma como o Paparazzi e o Koin interagem com a árvore de composição.
+- **Koin 4.0**: O uso de `KoinContext` ou `KoinApplication` em loops de snapshot responsivo precisa ser extremamente cuidadoso para evitar o `IllegalStateException`.
+- **NavigationSuiteScaffold**: Este componente é a fonte principal de `ClassCastException` no Paparazzi. Precisamos de uma forma garantida de ignorá-lo em testes.
 
 ## Mudanças Propostas
+
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+
+#### [MODIFY] [ResponsiveUtils.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/util/ResponsiveUtils.kt)
+- Adicionar uma função auxiliar `isTestMode()` que verifica tanto o `LocalTestMode.current` quanto uma Propriedade de Sistema (`System.getProperty("genesys.test_mode")`). Isso garante redundância.
+
+#### [MODIFY] [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
+- Usar a nova função `isTestMode()` para decidir entre o layout manual e o `NavigationSuiteScaffold`.
 
 ### [screenshot-tests](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests)
 
 #### [MODIFY] [GenesysPaparazzi.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/util/GenesysPaparazzi.kt)
-- **Remover `inline` completamente**: Isso nos dará stacktraces reais com números de linha corretos, facilitando a depuração se o erro persistir.
-- **Aumentar Tolerância**: Alterar `maxPercentDifference` de `1.0` para `5.0` para absorver variações irrelevantes de renderização no CI.
-- **Isolamento de Koin**: Refinar a limpeza do Koin para garantir que não haja vazamento entre snapshots responsivos.
-
-#### [MODIFY] [ScreensSnapshotTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/screenshot-tests/src/test/kotlin/com/itbenevides/genesys21/screenshot/ScreensSnapshotTest.kt)
-- Nenhuma mudança estrutural, mas a remoção do `inline` afetará a stacktrace.
+- Configurar `System.setProperty("genesys.test_mode", "true")`.
+- Simplificar a injeção do Koin: usar a abordagem clássica de Paparazzi com o `KoinApplication` mas garantindo que ele não tente iniciar o Koin globalmente (usando o parâmetro `application` do Koin).
+- Remover o override manual de `LocalContext`. O Paparazzi já fornece um contexto adequado para renderização.
 
 ## Plano de Verificação
 
 ### Testes Automatizados
-- O usuário deve rodar o teste novamente e fornecer o log. Sem o `inline`, saberemos exatamente onde o `AssertionError` é lançado.
-- Se o erro for de fato um mismatch de imagem, o aumento da tolerância deve resolvê-lo.
+- Executar `:screenshot-tests:testDebugUnitTest`.
+- O sucesso será atingido quando a pipeline de CI completar sem `IllegalStateException` e os snapshots forem gerados.

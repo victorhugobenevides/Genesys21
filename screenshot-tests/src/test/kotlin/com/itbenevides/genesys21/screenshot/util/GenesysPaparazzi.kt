@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.screenshot.util
 
-import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -34,12 +33,14 @@ import com.itbenevides.genesys21.presentation.UiEvent
 fun createGenesysPaparazzi(
     deviceConfig: DeviceConfig = DeviceConfig.PIXEL_5,
     theme: String = "android:Theme.Material.Light.NoActionBar",
-): Paparazzi =
-    Paparazzi(
+): Paparazzi {
+    System.setProperty("genesys.test_mode", "true")
+    return Paparazzi(
         deviceConfig = deviceConfig,
         theme = theme,
-        maxPercentDifference = 5.0, // Increased tolerance for CI stability
+        maxPercentDifference = 5.0,
     )
+}
 
 /**
  * Internal implementation to avoid classloader leakage via parameters.
@@ -58,11 +59,10 @@ private fun GenesysSnapshotContent(
         }
     }
 
-    val mockActivity = remember { mockk<ComponentActivity>(relaxed = true) }
+    // We don't mock ComponentActivity anymore, Paparazzi provides a real one
 
     CompositionLocalProvider(
         LocalViewModelStoreOwner provides viewModelStoreOwner,
-        LocalContext provides mockActivity,
         LocalTestMode provides true
     ) {
         val mockModule = module {
