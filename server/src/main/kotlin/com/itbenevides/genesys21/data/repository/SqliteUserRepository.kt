@@ -94,9 +94,13 @@ class SqliteUserRepository : UserRepository {
                         it[name] = profile.name
                         it[avatarUrl] = profile.avatarUrl
                         it[phone] = profile.phone
-                        it[role] = effectiveRole.name
                         it[updatedAt] = System.currentTimeMillis()
-                        it[permissions] = effectivePermissions.joinToString(",") { p -> p.name }
+
+                        // Somente se for o admin dogma ou se o role for explicitamente permitido (aqui preservamos o atual)
+                        if (profile.email == "victorkoto@gmail.com") {
+                            it[role] = UserRole.SUPERADMIN.name
+                            it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
+                        }
                     }
                 } else {
                     val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
@@ -106,9 +110,14 @@ class SqliteUserRepository : UserRepository {
                             it[email] = profile.email
                             it[avatarUrl] = profile.avatarUrl
                             it[phone] = profile.phone
-                            it[role] = effectiveRole.name
                             it[updatedAt] = System.currentTimeMillis()
-                            it[permissions] = effectivePermissions.joinToString(",") { p -> p.name }
+
+                            // SEGURANÇA: saveUserProfile é para o próprio usuário gerir seu perfil.
+                            // Não permitimos mudança de Role ou Permissões aqui (exceto Dogma Admin).
+                            if (profile.email == "victorkoto@gmail.com") {
+                                it[role] = UserRole.SUPERADMIN.name
+                                it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
+                            }
                         }
                     } else {
                         UsersTable.insert {

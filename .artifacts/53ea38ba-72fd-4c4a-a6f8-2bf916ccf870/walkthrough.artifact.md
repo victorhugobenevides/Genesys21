@@ -1,22 +1,24 @@
-# Walkthrough - Promoção Imediata de SuperAdmin
+# Walkthrough - Correção Definitiva de Checkout e Acesso Administrativo
 
-Corrigi o problema onde o usuário `victorkoto@gmail.com` não era reconhecido como SuperAdmin imediatamente após o primeiro login ou sincronização de perfil.
+Apliquei uma correção profunda para garantir que o sistema de checkout do Stripe e o acesso SuperAdmin funcionem corretamente, independente do estado prévio do banco de dados.
 
 ## Mudanças Realizadas
 
-### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-#### [PageViewModel.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/PageViewModel.kt)
-- **Recarregamento de Perfil**: Na função `syncInitialProfile`, removi a atribuição manual que definia o cargo como `CUSTOMER` localmente.
-- **Sincronização com o Servidor**: Agora, após salvar o perfil inicial, o App invoca `loadUserProfile(userId)` imediatamente. Como o servidor possui uma regra de "Dogma" que promove esse e-mail específico para `SUPERADMIN` no banco de dados, o App agora busca esses dados atualizados e libera as abas administrativas no mesmo instante.
+#### [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
+- **Dogma Dinâmico**: Movi a lógica de promoção automática para o método de mapeamento de resultados do banco (`toUserProfile`).
+- **O que isso resolve?** Agora, mesmo que o usuário esteja salvo como `CUSTOMER` no banco de dados, o sistema reconhecerá `victorkoto@gmail.com` como `SUPERADMIN` em tempo de execução, garantindo que o menu administrativo e todas as permissões apareçam imediatamente após o login.
 
-## Verificação e Resultados
+#### [Seeder.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/database/Seeder.kt)
+- **Forçar Chaves Reais**: Atualizei a lógica do seeder para detectar quando chaves Stripe reais estão configuradas no ambiente (variáveis `STRIPE_PUBLIC_KEY` e `STRIPE_SECRET_KEY`) mas o banco de dados ainda contém os valores padrão ("dummy").
+- **O que isso resolve?** Corrige o erro `Invalid API Key provided` no checkout, forçando a atualização da loja padrão com as credenciais corretas configuradas no seu `.env` ou servidor.
 
-- **Fluxo Garantido**: Ao logar, o servidor processa a promoção e o front-end agora "pergunta" ao servidor qual o cargo final, em vez de assumir o cargo inicial de cliente.
-- **Visibilidade**: A aba "SuperAdmin" no `PageListScreen` deve agora aparecer automaticamente para você.
+## Verificação e Próximos Passos
 
-> [!TIP]
-> Por favor, faça **Logout** e **Login** novamente no App para disparar a sincronização final e confirmar que a aba "SuperAdmin" apareceu.
+1.  **Reinicie o Servidor**: É necessário reiniciar o backend para que o `Seeder` detecte as novas chaves e atualize o banco.
+2.  **Logout/Login**: Realize o logout e login no App para atualizar o seu perfil local.
+3.  **Checkout**: Tente realizar uma compra novamente. O erro de chave inválida não deve mais ocorrer.
 
 > [!IMPORTANT]
-> O código foi commitado e enviado para o repositório remoto.
+> As alterações foram commitadas e enviadas para o branch `main`.

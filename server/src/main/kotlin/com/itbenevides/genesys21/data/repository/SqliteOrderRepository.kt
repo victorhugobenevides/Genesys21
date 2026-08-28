@@ -73,7 +73,24 @@ class SqliteOrderRepository(
                     return@dbQuery Result.success(OrderResponse(finalId)) // Já processado
                 }
 
-                // 1. Inserir cabeçalho do pedido
+                // 1. Recalcular total real (Segurança: Anti-manipulação de preço)
+                var calculatedTotal = 0.0
+                order.items.forEach { item ->
+                    val actualPrice = when {
+                        item.product != null -> {
+                            ProductsTable.selectAll().where { ProductsTable.id eq item.product.id }
+                                .map { it[ProductsTable.price] }.singleOrNull() ?: item.price
+                        }
+                        item.service != null -> {
+                            BookingServicesTable.selectAll().where { BookingServicesTable.id eq item.service.id }
+                                .map { it[BookingServicesTable.price] }.singleOrNull() ?: item.price
+                        }
+                        else -> item.price
+                    }
+                    calculatedTotal += actualPrice * item.quantity
+                }
+
+                // Inserir cabeçalho do pedido
                 OrdersTable.insert {
                     it[id] = finalId
                     it[storeId] = order.storeId
@@ -81,7 +98,7 @@ class SqliteOrderRepository(
                     it[sessionId] = order.sessionId
                     it[customerName] = order.customerName
                     it[customerPhone] = order.customerPhone
-                    it[total] = order.total
+                    it[total] = calculatedTotal // Usa o total recalculado pelo servidor
                     it[status] = order.status.name
                     it[paymentMethod] = order.paymentMethod.name
                     it[whatsappContact] = order.whatsappContact
@@ -89,7 +106,7 @@ class SqliteOrderRepository(
                     it[createdAt] = System.currentTimeMillis()
                     it[updatedAt] = System.currentTimeMillis()
 
-                    // Dados de Frete
+                    // Dados de Frete (Validação simples de frete aqui se necessário)
                     it[shippingStreet] = order.shippingAddress?.street
                     it[shippingNumber] = order.shippingAddress?.number
                     it[shippingComplement] = order.shippingAddress?.complement

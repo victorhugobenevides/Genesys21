@@ -26,13 +26,15 @@ fun Route.orderRoutes(
         // WEBHOOK DA STRIPE (Suporte a PaymentIntent)
         post("/webhook") {
             val payload = call.receiveText()
-            val sigHeader = call.request.header("Stripe-Signature")
+            val sigHeader = call.request.header("Stripe-Signature") ?: ""
 
-            val envSecret = System.getenv("STRIPE_WEBHOOK_SECRET")
-            val endpointSecret = envSecret ?: "whsec_f3f2d698e8f7104ceb2ecc2bbe59d54c1680da981260b000404dc940f91ebfe6"
+            // SEGURANÇA: Nunca usar segredos hardcoded em produção.
+            // O segredo deve vir de variável de ambiente segura.
+            val endpointSecret = System.getenv("STRIPE_WEBHOOK_SECRET")
+                ?: "whsec_test_internal_placeholder" // Somente para dev local
 
             try {
-                val event = Webhook.constructEvent(payload, sigHeader ?: "", endpointSecret)
+                val event = Webhook.constructEvent(payload, sigHeader, endpointSecret)
                 println("WEBHOOK: Evento '${event.type}' recebido.")
 
                 when (event.type) {
