@@ -1,9 +1,10 @@
 - [x] Console Adm Centralizado (Enterprise UI)
     - [x] Criar `AdminMenu.kt` com a estrutura de categorias, itens e permissões.
     - [x] Organizar pacotes e criar diretório `screens/list/tabs/`.
-    - [x] Extrair abas para arquivos próprios (`PagesTab`, `OrdersTab`, `ServicesTab`, `StoreSettingsTab`).
-    - [x] Refatorar `PageListScreen.kt` para usar o novo menu lateral/drawer.
-    - [x] Atualizar `GenesysPage.kt` para suportar itens de navegação com categorias.
-    - [x] Implementar filtro dinâmico de itens de menu baseado no `UserProfile.role`.
+    - [x] Extrair abas para arquivos próprios (`PagesTab`, `OrdersTab`, `ServicesTab`, `StoreSettingsTab`, `PaymentsTab`, `MainDashboardTab`, `B2BInsightsTab`, `AgendaTab`, `GlobalUsersTab`, `GlobalDomainsTab`, `AuditLogsTab`).
+    - [x] Refatorar `PageListScreen.kt` para usar o novo menu lateral/drawer e centralizar componentes de UI em `AdminUIComponents.kt`.
+    - [x] Atualizar `GenesysPage.kt` para suportar sidebar permanente em Desktop/Tablet.
+    - [x] Implementar filtro dinâmico de itens de menu baseado no `UserProfile.role` e `UserPermission`.
+    - [x] Corrigir erros de compilação do CI (import ausente e membro não implementado no repositório).
 - [x] Commit e Push das alterações
 - [x] Criar artefato de walkthrough

@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.presentation.screens.admin.UserAdminCard
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*

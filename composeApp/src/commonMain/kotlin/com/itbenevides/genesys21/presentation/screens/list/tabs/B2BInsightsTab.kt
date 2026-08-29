@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
@@ -27,84 +28,76 @@ fun B2BInsightsTab(viewModel: PageViewModel) {
         viewModel.loadB2BAnalytics()
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        GenesysText(
-            text = "B2B Insights",
-            style = GenesysTextStyle.Headline,
-            fontWeight = GenesysFontWeight.ExtraBold
-        )
-        GenesysText(
-            text = "Visão macro da performance de toda a rede de lojistas.",
-            style = GenesysTextStyle.Body,
-            color = GenesysTheme.colors.onSurfaceVariant
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+        AdminTabHeader(
+            title = "B2B Insights",
+            subtitle = "Visão macro da performance de toda a rede de lojistas."
         )
 
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        if (isLoading && b2bData == null) {
-            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GenesysTheme.colors.brand)
-            }
-        } else {
-            b2bData?.let { data ->
-                // KPI Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                ) {
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "GMV Global",
-                            value = "R$ ${CurrencyUtils.formatDisplay(data.platformGMV)}",
-                            color = Color(0xFF34C759)
-                        )
-                    }
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "Lojistas Ativos",
-                            value = data.totalMerchants.toString(),
-                            color = GenesysTheme.colors.brand
-                        )
-                    }
+        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+            if (isLoading && b2bData == null) {
+                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
                 }
-
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                ) {
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "Ticket Médio Rede",
-                            value = "R$ ${CurrencyUtils.formatDisplay(data.globalAverageTicket)}",
-                            color = Color(0xFF5856D6)
-                        )
+            } else {
+                b2bData?.let { data ->
+                    // KPI Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
+                    ) {
+                        Box(Modifier.weight(1f)) {
+                            GenesysStatsCard(
+                                label = "GMV Global",
+                                value = "R$ ${CurrencyUtils.formatDisplay(data.platformGMV)}",
+                                color = Color(0xFF34C759)
+                            )
+                        }
+                        Box(Modifier.weight(1f)) {
+                            GenesysStatsCard(
+                                label = "Lojistas Ativos",
+                                value = data.totalMerchants.toString(),
+                                color = GenesysTheme.colors.brand
+                            )
+                        }
                     }
-                    Box(Modifier.weight(1f)) {
-                        // Placeholder para outra métrica global
-                        GenesysStatsCard(
-                            label = "Conversão Média",
-                            value = "3.2%",
-                            color = Color(0xFFFF9500)
-                        )
+
+                    GenesysSpacer(GenesysTheme.spacing.m)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
+                    ) {
+                        Box(Modifier.weight(1f)) {
+                            GenesysStatsCard(
+                                label = "Ticket Médio Rede",
+                                value = "R$ ${CurrencyUtils.formatDisplay(data.globalAverageTicket)}",
+                                color = Color(0xFF5856D6)
+                            )
+                        }
+                        Box(Modifier.weight(1f)) {
+                            GenesysStatsCard(
+                                label = "Conversão Média",
+                                value = "3.2%",
+                                color = Color(0xFFFF9500)
+                            )
+                        }
                     }
-                }
 
-                GenesysSpacer(GenesysTheme.spacing.xl)
+                    GenesysSpacer(GenesysTheme.spacing.xl)
 
-                // Ranking de Lojistas
-                GenesysText(
-                    text = "Ranking de Performance (Top Lojistas)",
-                    style = GenesysTextStyle.Title,
-                    fontWeight = GenesysFontWeight.Bold
-                )
-                GenesysSpacer(GenesysTheme.spacing.m)
+                    // Ranking de Lojistas
+                    GenesysText(
+                        text = "Ranking de Performance (Top Lojistas)",
+                        style = GenesysTextStyle.Title,
+                        fontWeight = GenesysFontWeight.Bold
+                    )
+                    GenesysSpacer(GenesysTheme.spacing.m)
 
-                data.topMerchants.forEachIndexed { index, merchant ->
-                    MerchantPerformanceRow(index + 1, merchant)
-                    GenesysSpacer(GenesysTheme.spacing.s)
+                    data.topMerchants.forEachIndexed { index, merchant ->
+                        MerchantPerformanceRow(index + 1, merchant)
+                        GenesysSpacer(GenesysTheme.spacing.s)
+                    }
                 }
             }
         }

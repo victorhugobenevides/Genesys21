@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
@@ -27,6 +28,9 @@ import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.CurrencyUtils
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 @Composable
 fun MainDashboardTab(
@@ -39,49 +43,50 @@ fun MainDashboardTab(
         viewModel.loadAnalytics()
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        GenesysText(text = "Painel de Controle", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-        GenesysText(text = "Visão geral da saúde do seu negócio.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+        AdminTabHeader(
+            title = "Painel de Controle",
+            subtitle = "Visão geral da saúde do seu negócio."
+        )
 
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        if (isLoading && analytics == null) {
-            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GenesysTheme.colors.brand)
-            }
-        } else {
-            analytics?.let { data ->
-                // Quick Stats
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    GenesysStatsCard(
-                        label = "Pedidos",
-                        value = data.totalOrders.toString(),
-                        color = GenesysTheme.colors.brand,
-                        modifier = Modifier.weight(1f)
-                    )
-                    GenesysStatsCard(
-                        label = "Ticket Médio",
-                        value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                        color = GenesysTheme.colors.accent,
-                        modifier = Modifier.weight(1f)
-                    )
+        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+            if (isLoading && analytics == null) {
+                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
                 }
+            } else {
+                analytics?.let { data ->
+                    // Quick Stats
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        GenesysStatsCard(
+                            label = "Pedidos",
+                            value = data.totalOrders.toString(),
+                            color = GenesysTheme.colors.brand,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GenesysStatsCard(
+                            label = "Ticket Médio",
+                            value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
+                            color = GenesysTheme.colors.accent,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-                GenesysSpacer(GenesysTheme.spacing.m)
+                    GenesysSpacer(GenesysTheme.spacing.m)
 
-                // Revenue Chart
-                DailyRevenueChart(data.dailyRevenue)
+                    // Revenue Chart
+                    DailyRevenueChart(data.dailyRevenue)
 
-                GenesysSpacer(GenesysTheme.spacing.l)
+                    GenesysSpacer(GenesysTheme.spacing.l)
 
-                // Best Sellers
-                TopProductsCard(data.topProducts)
+                    // Best Sellers
+                    TopProductsCard(data.topProducts)
 
-                GenesysSpacer(GenesysTheme.spacing.l)
+                    GenesysSpacer(GenesysTheme.spacing.l)
 
-                // Booking Summary
-                BookingStatusCard(data.bookingSummary)
+                    // Booking Summary
+                    BookingStatusCard(data.bookingSummary)
+                }
             }
         }
     }

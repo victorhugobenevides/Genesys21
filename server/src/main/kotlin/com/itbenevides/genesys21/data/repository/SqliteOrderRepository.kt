@@ -341,6 +341,28 @@ class SqliteOrderRepository(
         Result.failure(e)
     }
 
+    override suspend fun getAuditLogs(token: String): Result<List<Map<String, String>>> = try {
+        dbQuery {
+            val logs = AuditLogsTable
+                .selectAll()
+                .orderBy(AuditLogsTable.createdAt to SortOrder.DESC)
+                .limit(100)
+                .map { row ->
+                    mapOf(
+                        "id" to row[AuditLogsTable.id],
+                        "userId" to row[AuditLogsTable.userId].toString(),
+                        "action" to row[AuditLogsTable.action],
+                        "entityName" to row[AuditLogsTable.entityName],
+                        "details" to row[AuditLogsTable.details].toString(),
+                        "createdAt" to row[AuditLogsTable.createdAt].toString()
+                    )
+                }
+            Result.success(logs)
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     private fun fetchOrderItems(orderId: String, storeId: String): List<CartItem> {
         return OrderItemsTable.selectAll().where { OrderItemsTable.orderId eq orderId }
             .map { row ->

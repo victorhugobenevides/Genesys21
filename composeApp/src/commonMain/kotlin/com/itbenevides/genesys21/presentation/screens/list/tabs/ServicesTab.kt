@@ -6,6 +6,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.itbenevides.genesys21.domain.model.BookingService
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
@@ -27,68 +28,60 @@ fun ServicesTab(
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                GenesysText(text = "Gestão de Serviços", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-                GenesysText(
-                    text = "Configure os tratamentos e preços do seu negócio.",
-                    style = GenesysTextStyle.Body,
-                    color = GenesysTheme.colors.onSurfaceVariant,
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+        AdminTabHeader(
+            title = "Gestão de Serviços",
+            subtitle = "Configure os tratamentos e preços do seu negócio.",
+            action = {
+                GenesysLoadingButton(
+                    text = "Novo Serviço",
+                    icon = GenesysIcons.Add,
+                    onClick = onAddService,
+                    fillWidth = false
                 )
             }
-            GenesysLoadingButton(
-                text = if (isCompact) "" else "Novo Serviço",
-                icon = GenesysIcons.Add,
-                onClick = onAddService,
-                fillWidth = false
-            )
-        }
-        GenesysSpacer(GenesysTheme.spacing.l)
+        )
 
-        if (services.isEmpty()) {
-            GenesysEmptyState(
-                icon = GenesysIcons.Inventory,
-                title = "Nenhum serviço cadastrado",
-                description = "Comece adicionando o primeiro serviço do seu negócio.",
-                action = {
-                    GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
-                }
-            )
-        } else {
-            val columns = if (isCompact) 1 else 2
+        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+            if (services.isEmpty()) {
+                GenesysEmptyState(
+                    icon = GenesysIcons.Inventory,
+                    title = "Nenhum serviço cadastrado",
+                    description = "Comece adicionando o primeiro serviço do seu negócio.",
+                    action = {
+                        GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
+                    }
+                )
+            } else {
+                val columns = if (isCompact) 1 else 2
 
-            Column {
-                services.chunked(columns).forEach { rowServices ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                    ) {
-                        rowServices.forEach { service ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                ServiceCard(
-                                    service = service,
-                                    onClick = { onEditService(service) }
-                                )
-                                Row(modifier = Modifier.align(Alignment.TopEnd).padding(GenesysTheme.spacing.xs)) {
-                                    GenesysIconButton(
-                                        icon = GenesysIcons.Delete,
-                                        tint = Color.Red.copy(alpha = 0.6f),
-                                        onClick = { onDeleteService(service.id) }
+                Column {
+                    services.chunked(columns).forEach { rowServices ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
+                        ) {
+                            rowServices.forEach { service ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    ServiceCard(
+                                        service = service,
+                                        onClick = { onEditService(service) }
                                     )
+                                    Row(modifier = Modifier.align(Alignment.TopEnd).padding(GenesysTheme.spacing.xs)) {
+                                        GenesysIconButton(
+                                            icon = GenesysIcons.Delete,
+                                            tint = Color.Red.copy(alpha = 0.6f),
+                                            onClick = { onDeleteService(service.id) }
+                                        )
+                                    }
                                 }
                             }
+                            if (rowServices.size < columns) {
+                                Spacer(Modifier.weight(1f))
+                            }
                         }
-                        if (rowServices.size < columns) {
-                            Spacer(Modifier.weight(1f))
-                        }
+                        Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
                     }
-                    Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
                 }
             }
         }
