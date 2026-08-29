@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
@@ -33,11 +34,12 @@ import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
+import com.itbenevides.genesys21.util.CurrencyUtils
 import kotlin.math.roundToLong
 
 @Composable
 fun OrderCardUI(
-    order: com.itbenevides.genesys21.domain.model.Order,
+    order: Order,
     isSelected: Boolean = false,
     onStatusUpdate: (OrderStatus) -> Unit,
     onContact: () -> Unit,
@@ -67,7 +69,7 @@ fun OrderCardUI(
                         Text(
                             text = initials,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                            fontWeight = FontWeight.ExtraBold,
                             color = GenesysTheme.colors.accent,
                         )
                     }
@@ -76,13 +78,13 @@ fun OrderCardUI(
                         Text(
                             text = "${GenesysStrings.OrderPrefix}${order.id.takeLast(6).uppercase()}",
                             style = GenesysTheme.typography.label,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            fontWeight = FontWeight.Bold,
                             color = GenesysTheme.colors.brand,
                         )
                         Text(
                             text = order.customerName ?: "Consumidor",
                             style = GenesysTheme.typography.title,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                            fontWeight = FontWeight.ExtraBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -96,7 +98,7 @@ fun OrderCardUI(
                     Text(
                         text = "${item.quantity}x",
                         style = GenesysTheme.typography.body,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        fontWeight = FontWeight.Bold,
                         color = GenesysTheme.colors.brand,
                         modifier = Modifier.width(GenesysTheme.spacing.xl),
                     )
@@ -111,7 +113,7 @@ fun OrderCardUI(
                     Text(
                         text = "${GenesysStrings.PricePrefix}$subtotal",
                         style = GenesysTheme.typography.body,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             }
@@ -131,7 +133,7 @@ fun OrderCardUI(
                     Text(
                         text = "${GenesysStrings.PricePrefix}$totalFormatted",
                         style = GenesysTheme.typography.headline,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                        fontWeight = FontWeight.ExtraBold,
                     )
                 }
                 if (!order.customerPhone.isNullOrBlank()) {
@@ -150,7 +152,7 @@ fun OrderCardUI(
 
 @Composable
 fun OrderDetailContent(
-    order: com.itbenevides.genesys21.domain.model.Order,
+    order: Order,
     chatMessages: List<ChatMessage>,
     onStatusUpdate: (OrderStatus) -> Unit,
     onContact: () -> Unit,
@@ -374,5 +376,116 @@ fun AdminTabHeader(
             }
         }
         GenesysSpacer(GenesysTheme.spacing.l)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun UserAdminCard(
+    user: UserProfile,
+    onRoleChange: (UserRole) -> Unit,
+    onPermissionChange: (UserPermission, Boolean) -> Unit
+) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (isCompact) {
+                UserInfoSection(user)
+                GenesysSpacer(GenesysTheme.spacing.m)
+                UserActionsSection(user, onRoleChange, modifier = Modifier.fillMaxWidth())
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    UserInfoSection(user, modifier = Modifier.weight(1f))
+                    UserActionsSection(user, onRoleChange)
+                }
+            }
+
+            GenesysSpacer(GenesysTheme.spacing.m)
+            GenesysDivider()
+            GenesysSpacer(GenesysTheme.spacing.m)
+
+            GenesysText(text = "Permissões Granulares:", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
+            GenesysSpacer(GenesysTheme.spacing.s)
+
+            // Grid de Permissões
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                UserPermission.entries.forEach { permission ->
+                    PermissionCheckbox(
+                        label = when(permission) {
+                            UserPermission.MANAGE_VITRINES -> "Vitrines"
+                            UserPermission.MANAGE_ORDERS -> "Pedidos"
+                            UserPermission.MANAGE_AGENDA -> "Agenda"
+                            UserPermission.MANAGE_SERVICES -> "Serviços"
+                            UserPermission.MANAGE_STORE -> "Loja"
+                            UserPermission.MANAGE_RECEIPTS -> "Notas"
+                            UserPermission.ACCESS_ADMIN_PANEL -> "Painel Adm"
+                        },
+                        checked = user.permissions.contains(permission),
+                        onCheckedChange = { onPermissionChange(permission, it) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionCheckbox(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = CheckboxDefaults.colors(
+                checkedColor = GenesysTheme.colors.brand,
+                uncheckedColor = GenesysTheme.colors.outline
+            )
+        )
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = GenesysTheme.colors.onSurface)
+    }
+}
+
+@Composable
+private fun UserInfoSection(user: UserProfile, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        GenesysText(text = user.name, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+        GenesysText(text = user.email, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
+        GenesysSpacer(GenesysTheme.spacing.s)
+        GenesysRow(verticalAlignment = Alignment.CenterVertically, usePadding = false) {
+            GenesysText(text = "Cargo: ", style = GenesysTextStyle.Label)
+            GenesysText(text = user.role.name, style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand, fontWeight = GenesysFontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun UserActionsSection(
+    user: UserProfile,
+    onRoleChange: (UserRole) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
+        if (user.role == UserRole.CUSTOMER) {
+            GenesysLoadingButton(
+                text = "Tornar Merchant",
+                onClick = { onRoleChange(UserRole.MERCHANT) },
+                fillWidth = modifier != Modifier
+            )
+        } else if (user.role == UserRole.MERCHANT) {
+            GenesysTextButton(
+                text = "Remover Acesso",
+                onClick = { onRoleChange(UserRole.CUSTOMER) },
+                color = GenesysTheme.colors.error,
+                modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier
+            )
+        }
     }
 }

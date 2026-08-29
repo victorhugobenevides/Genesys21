@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
@@ -30,38 +31,33 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
         viewModel.loadDomainMappings()
     }
 
-    GenesysColumn(usePadding = true, modifier = Modifier.fillMaxWidth()) {
-        GenesysText(text = "Domínios Globais", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-        GenesysText(text = "Gerencie o mapeamento de domínios customizados para as vitrines.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            GenesysText(text = "Mapeamentos Ativos", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-            GenesysLoadingButton(
-                text = "Novo Domínio",
-                onClick = { showAddDialog = true },
-                icon = GenesysIcons.Add
-            )
-        }
-
-        GenesysSpacer(GenesysTheme.spacing.m)
-
-        if (isLoading && mappings.isEmpty()) {
-            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GenesysTheme.colors.brand)
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+        AdminTabHeader(
+            title = "Domínios Globais",
+            subtitle = "Gerencie o mapeamento de domínios customizados para as vitrines.",
+            action = {
+                GenesysLoadingButton(
+                    text = "Novo Domínio",
+                    onClick = { showAddDialog = true },
+                    icon = GenesysIcons.Add,
+                    fillWidth = false
+                )
             }
-        } else if (mappings.isEmpty()) {
-            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                GenesysText(text = "Nenhum domínio mapeado.", style = GenesysTextStyle.Body)
-            }
-        } else {
-            mappings.forEach { mapping ->
-                DomainMappingCard(mapping, onDelete = { viewModel.deleteDomainMapping(mapping.id) })
+        )
+
+        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+            if (isLoading && mappings.isEmpty()) {
+                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
+                }
+            } else if (mappings.isEmpty()) {
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    GenesysText(text = "Nenhum domínio mapeado.", style = GenesysTextStyle.Body)
+                }
+            } else {
+                mappings.forEach { mapping ->
+                    DomainMappingCard(mapping, onDelete = { viewModel.deleteDomainMapping(mapping.id) })
+                }
             }
         }
     }

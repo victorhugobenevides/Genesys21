@@ -15,16 +15,13 @@ import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.PageListEvent
 import com.itbenevides.genesys21.presentation.screens.list.PageListState
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
@@ -63,50 +60,39 @@ fun AgendaTab(
         }
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                GenesysText(text = "Gestão de Agenda", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-                GenesysText(
-                    text = "Acompanhe e configure seus atendimentos.",
-                    style = GenesysTextStyle.Body,
-                    color = GenesysTheme.colors.onSurfaceVariant,
-                )
-            }
-        }
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        // Seletor de Visualização
-        GenesysTabRow(
-            selectedTabIndex = agendaViewMode,
-            tabs = listOf(
-                GenesysTabData("Vista Diária", GenesysIcons.Schedule),
-                GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
-                GenesysTabData("Horários", GenesysIcons.Settings)
-            ),
-            onTabSelected = { agendaViewMode = it }
+    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+        AdminTabHeader(
+            title = "Gestão de Agenda",
+            subtitle = "Acompanhe e configure seus atendimentos."
         )
 
-        GenesysSpacer(GenesysTheme.spacing.l)
+        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+            // Seletor de Visualização
+            GenesysTabRow(
+                selectedTabIndex = agendaViewMode,
+                tabs = listOf(
+                    GenesysTabData("Vista Diária", GenesysIcons.Schedule),
+                    GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
+                    GenesysTabData("Horários", GenesysIcons.Settings)
+                ),
+                onTabSelected = { agendaViewMode = it }
+            )
 
-        when (agendaViewMode) {
-            0 -> {
-                DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
-            }
-            1 -> {
-                UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
-            }
-            2 -> {
-                AvailabilityManagementView(
-                    initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-                    onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
-                )
+            GenesysSpacer(GenesysTheme.spacing.l)
+
+            when (agendaViewMode) {
+                0 -> {
+                    DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
+                }
+                1 -> {
+                    UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
+                }
+                2 -> {
+                    AvailabilityManagementView(
+                        initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
+                        onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+                    )
+                }
             }
         }
     }

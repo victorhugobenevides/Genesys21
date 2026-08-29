@@ -12,7 +12,7 @@ import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.presentation.screens.list.ToggleOptionRow
+import com.itbenevides.genesys21.presentation.screens.list.components.ToggleOptionRow
 import com.itbenevides.genesys21.ui.components.StripeConnectComponent
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
@@ -25,6 +25,9 @@ import com.itbenevides.genesys21.ui.theme.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+/**
+ * Tab de Configurações da Loja.
+ */
 @Composable
 fun StoreSettingsTab(
     viewModel: PageViewModel,
@@ -89,18 +92,35 @@ fun StoreSettingsTab(
                 GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
                 GenesysSpacer(GenesysTheme.spacing.m)
 
-                GenesysTextField(value = originZip, onValueChange = { originZip = it }, label = "CEP de Origem", icon = GenesysIcons.Search)
+                GenesysTextField(
+                    value = originZip,
+                    onValueChange = { originZip = it },
+                    label = "CEP de Origem",
+                    icon = GenesysIcons.Search
+                )
                 GenesysSpacer(GenesysTheme.spacing.m)
-                GenesysTextField(value = originStreet, onValueChange = { originStreet = it }, label = "Rua/Logradouro")
+                GenesysTextField(
+                    value = originStreet,
+                    onValueChange = { originStreet = it },
+                    label = "Rua/Logradouro"
+                )
                 GenesysSpacer(GenesysTheme.spacing.m)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) { GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número") }
-                    Box(Modifier.weight(2f)) { GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro") }
+                    Box(Modifier.weight(1f)) {
+                        GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número")
+                    }
+                    Box(Modifier.weight(2f)) {
+                        GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro")
+                    }
                 }
                 GenesysSpacer(GenesysTheme.spacing.m)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(2f)) { GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade") }
-                    Box(Modifier.weight(1f)) { GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF") }
+                    Box(Modifier.weight(2f)) {
+                        GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade")
+                    }
+                    Box(Modifier.weight(1f)) {
+                        GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF")
+                    }
                 }
             }
         }
@@ -112,158 +132,21 @@ fun StoreSettingsTab(
                 GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
                 GenesysSpacer(GenesysTheme.spacing.m)
 
-                ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { allowPayLocal = it }
-                ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { allowPayApp = it }
+                ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { newVal: Boolean ->
+                    allowPayLocal = newVal
+                }
+                ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { newVal: Boolean ->
+                    allowPayApp = newVal
+                }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                ToggleOptionRow("Permitir Retirada no Local", allowPickup) { allowPickup = it }
-                ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { allowDelivery = it }
-            }
-        }
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-    GenesysCard {
-        GenesysColumn(usePadding = false) {
-            GenesysText(
-                text = "Pagamentos (Stripe Connect)",
-                style = GenesysTextStyle.Title,
-                fontWeight = GenesysFontWeight.Bold
-            )
-            GenesysText(
-                text = "Receba pagamentos diretamente em sua conta bancária.",
-                style = GenesysTextStyle.Label,
-                color = GenesysTheme.colors.onSurfaceVariant
-            )
-
-            GenesysSpacer(GenesysTheme.spacing.m)
-
-            if (store?.stripeAccountId.isNullOrBlank()) {
-                GenesysLoadingButton(
-                    text = "Conectar com Stripe",
-                    icon = GenesysIcons.Payments,
-                    onClick = {
-                        val userEmail = userProfile?.email ?: ""
-                        viewModel.connectStripe(storeId, userEmail) { _ ->
-                            scope.launch {
-                                viewModel.getAccountSession(storeId).onSuccess { secret ->
-                                    connectSessionSecret = secret
-                                }
-                            }
-                        }
-                    },
-                    isLoading = isLoading,
-                    fillWidth = true
-                )
-            } else {
-                GenesysRow(
-                    modifier = Modifier.fillMaxWidth().background(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                        RoundedCornerShape(GenesysTheme.spacing.s)
-                    ).padding(GenesysTheme.spacing.s),
-                    verticalAlignment = Alignment.CenterVertically,
-                    usePadding = false
-                ) {
-                    Icon(
-                        GenesysIcons.Check,
-                        null,
-                        tint = Color(0xFF34C759),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    GenesysSpacer(GenesysTheme.spacing.xs)
-                    GenesysColumn(usePadding = false) {
-                        GenesysText(
-                            text = "Stripe Conectado",
-                            style = GenesysTextStyle.Body,
-                            fontWeight = GenesysFontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        GenesysText(
-                            text = "ID: ${store?.stripeAccountId}",
-                            style = GenesysTextStyle.Label,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                    }
+                ToggleOptionRow("Permitir Retirada no Local", allowPickup) { newVal: Boolean ->
+                    allowPickup = newVal
                 }
-
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), usePadding = false) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        GenesysLoadingButton(
-                            text = "Vendas",
-                            icon = GenesysIcons.Payments,
-                            onClick = {
-                                activeConnectComponent = "payments"
-                                scope.launch {
-                                    viewModel.getAccountSession(storeId).onSuccess { secret ->
-                                        connectSessionSecret = secret
-                                    }
-                                }
-                            },
-                            isLoading = isLoading
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        GenesysLoadingButton(
-                            text = "Saques",
-                            icon = GenesysIcons.AccountBalanceWallet,
-                            onClick = {
-                                activeConnectComponent = "payouts"
-                                scope.launch {
-                                    viewModel.getAccountSession(storeId).onSuccess { secret ->
-                                        connectSessionSecret = secret
-                                    }
-                                }
-                            },
-                            isLoading = isLoading
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f)) {
-                        GenesysLoadingButton(
-                            text = "Painel",
-                            icon = GenesysIcons.Language,
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            onClick = {
-                                viewModel.openStripeDashboard(storeId) { url ->
-                                    uriHandler.openUri(url)
-                                }
-                            },
-                            isLoading = isLoading
-                        )
-                    }
+                ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { newVal: Boolean ->
+                    allowDelivery = newVal
                 }
             }
-
-            if (connectSessionSecret != null) {
-                GenesysSpacer(GenesysTheme.spacing.l)
-                StripeConnectComponent(
-                    componentName = if (store?.stripeAccountId.isNullOrBlank()) "account-onboarding" else activeConnectComponent,
-                    publishableKey = stripePublic.ifBlank { "pk_test_placeholder" },
-                    clientSecret = connectSessionSecret!!,
-                    modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(8.dp))
-                )
-
-                GenesysSpacer(GenesysTheme.spacing.s)
-                GenesysTextButton(
-                    text = "Fechar Gestão Stripe",
-                    onClick = { connectSessionSecret = null },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-
-            if (selectedGateway == "ASAAS") {
-                GenesysSpacer(GenesysTheme.spacing.l)
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                GenesysSpacer(GenesysTheme.spacing.m)
-                GenesysTextField(
-                    value = asaasKey,
-                    onValueChange = { asaasKey = it },
-                    label = "Asaas API Key",
-                    placeholder = "$"
-                )
-            }
         }
-    }
 
         GenesysSpacer(GenesysTheme.spacing.huge)
 

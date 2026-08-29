@@ -348,14 +348,14 @@ class SqliteOrderRepository(
                 .orderBy(AuditLogsTable.createdAt to SortOrder.DESC)
                 .limit(100)
                 .map { row ->
-                    mapOf(
-                        "id" to row[AuditLogsTable.id],
-                        "userId" to row[AuditLogsTable.userId].toString(),
-                        "action" to row[AuditLogsTable.action],
-                        "entityName" to row[AuditLogsTable.entityName],
-                        "details" to row[AuditLogsTable.details].toString(),
-                        "createdAt" to row[AuditLogsTable.createdAt].toString()
-                    )
+                    val auditLogMap = mutableMapOf<String, String>()
+                    auditLogMap["id"] = row[AuditLogsTable.id]
+                    auditLogMap["userId"] = row[AuditLogsTable.userId]?.toString() ?: "Sistema"
+                    auditLogMap["action"] = row[AuditLogsTable.action]
+                    auditLogMap["entityName"] = row[AuditLogsTable.entityName]
+                    auditLogMap["details"] = row[AuditLogsTable.details] ?: ""
+                    auditLogMap["createdAt"] = row[AuditLogsTable.createdAt].toString()
+                    auditLogMap.toMap()
                 }
             Result.success(logs)
         }
