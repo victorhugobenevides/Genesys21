@@ -1,6 +1,7 @@
-- [/] Final Fix for Security Hardening Tests
-    - [ ] Update `SqliteOrderRepository.kt` to persist corrected prices in items
-    - [ ] Update `SqliteUserRepository.kt` to strictly lock roles during updates
-    - [ ] Refactor `SecurityHardeningTest.kt` for total isolation and better diagnostics
-- [ ] Run local build and verify tests
-- [ ] Push and monitor CI
+- [x] Correção de Compilação e Validação Local
+    - [x] Identificar falhas de Smart Cast em `SqliteOrderRepository.kt`
+    - [x] Aplicar captura de propriedades em variáveis locais
+    - [x] Validar com `analyze_file`
+    - [x] Validar com `gradle_build` (Compilação do Servidor OK)
+- [x] Push das correções validadas
+- [x] Criar walkthrough

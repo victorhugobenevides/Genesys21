@@ -64,15 +64,18 @@ class SqliteOrderRepository(
             // 1. RECALCULAR TOTAL REAL (Zero Trust Logic)
             var calculatedTotal = 0.0
             val officialItemsData = order.items.map { item ->
+                val product = item.product
+                val service = item.service
+
                 val (name, price) = when {
-                    item.product != null -> {
-                        val row = ProductsTable.selectAll().where { ProductsTable.id eq item.product.id }.singleOrNull()
-                            ?: throw Exception("Produto ${item.product.id} inválido")
+                    product != null -> {
+                        val row = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.singleOrNull()
+                            ?: throw Exception("Produto ${product.id} inválido")
                         row[ProductsTable.name] to row[ProductsTable.price]
                     }
-                    item.service != null -> {
-                        val row = BookingServicesTable.selectAll().where { BookingServicesTable.id eq item.service.id }.singleOrNull()
-                            ?: throw Exception("Serviço ${item.service.id} inválido")
+                    service != null -> {
+                        val row = BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }.singleOrNull()
+                            ?: throw Exception("Serviço ${service.id} inválido")
                         row[BookingServicesTable.name] to row[BookingServicesTable.price]
                     }
                     else -> item.name to item.price
