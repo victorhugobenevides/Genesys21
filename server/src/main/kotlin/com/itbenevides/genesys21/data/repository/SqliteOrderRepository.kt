@@ -123,20 +123,36 @@ class SqliteOrderRepository(
 
                 // 2. Inserir itens e atualizar estoque
                 order.items.forEach { item ->
-                    // Salva o item no histórico do pedido
+                    val product = item.product
+                    val service = item.service
+
+                    // SEGURANÇA: Busca o preço REAL do banco para persistir no item do pedido
+                    val actualPrice = when {
+                        product != null -> {
+                            ProductsTable.selectAll().where { ProductsTable.id eq product.id }
+                                .map { it[ProductsTable.price] }.singleOrNull() ?: item.price
+                        }
+                        service != null -> {
+                            BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }
+                                .map { it[BookingServicesTable.price] }.singleOrNull() ?: item.price
+                        }
+                        else -> item.price
+                    }
+
+                    // Salva o item no histórico do pedido com o preço OFICIAL
                     OrderItemsTable.insert {
                         it[id] = java.util.UUID.randomUUID().toString()
                         it[orderId] = finalId
-                        it[productId] = item.product?.id
-                        it[serviceId] = item.service?.id
+                        it[productId] = product?.id
+                        it[serviceId] = service?.id
                         it[appointmentId] = item.appointment?.id
                         it[productName] = item.name
-                        it[productPrice] = item.price
+                        it[productPrice] = actualPrice
                         it[quantity] = item.quantity
                     }
 
                     // CONTROLE DE ESTOQUE: Diminui a quantidade disponível se for produto
-                    item.product?.let { prod ->
+                    product?.let { prod ->
                         ProductsTable.update({ ProductsTable.id eq prod.id }) {
                             it.update(stock, stock minus item.quantity)
                         }
@@ -144,7 +160,7 @@ class SqliteOrderRepository(
 
                     // AGENDAMENTO: Se for um serviço, cria o Appointment real de forma atômica
                     val appt = item.appointment
-                    if (item.service != null && appt != null) {
+                    if (service != null && appt != null) {
                         bookingRepository.createAppointment(
                             appt.copy(
                                 customerId = order.customerId ?: appt.customerId,

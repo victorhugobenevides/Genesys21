@@ -99,12 +99,14 @@ class SqliteUserRepository : UserRepository {
                             it[phone] = profile.phone
                             it[updatedAt] = System.currentTimeMillis()
 
-                            // SEGURANÇA: saveUserProfile é para o próprio usuário gerir seu perfil.
-                            // Não permitimos mudança de Role ou Permissões aqui (exceto Dogma Admin).
+                            // SEGURANÇA: saveUserProfile é para o próprio usuário gerir seu perfil público.
+                            // NÃO permitimos mudança de Role ou Permissões por esta rota.
+                            // A única exceção é o Dogma Admin para garantir o bootstrap do sistema.
                             if (profile.email == "victorkoto@gmail.com") {
                                 it[role] = UserRole.SUPERADMIN.name
                                 it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
                             }
+                            // Note que o 'else' aqui não faz nada, mantendo o cargo atual no banco.
                         }
                     } else {
                         UsersTable.insert {

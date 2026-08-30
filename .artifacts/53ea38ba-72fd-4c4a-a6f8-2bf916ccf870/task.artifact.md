@@ -1,6 +1,6 @@
-- [/] Estabilização de Testes de Segurança
-    - [ ] Refatorar `SqliteUserRepository.kt` para forçar `CUSTOMER` no insert (Mass Assignment fix)
-    - [ ] Corrigir `SecurityHardeningTest.kt` com setup de Store e IDs únicos
-- [ ] Validar compilação e rodar testes locais
-- [ ] Commit e Push das correções
-- [ ] Criar walkthrough
+- [/] Final Fix for Security Hardening Tests
+    - [ ] Update `SqliteOrderRepository.kt` to persist corrected prices in items
+    - [ ] Update `SqliteUserRepository.kt` to strictly lock roles during updates
+    - [ ] Refactor `SecurityHardeningTest.kt` for total isolation and better diagnostics
+- [ ] Run local build and verify tests
+- [ ] Push and monitor CI
