@@ -1,6 +1,9 @@
 package com.itbenevides.genesys21
 
 import com.itbenevides.genesys21.data.database.DatabaseFactory
+import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
+import com.itbenevides.genesys21.data.database.ProductsTable
+import com.itbenevides.genesys21.data.database.StoresTable
 import com.itbenevides.genesys21.data.repository.SqliteUserRepository
 import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.data.service.StripeService
@@ -20,9 +23,7 @@ import io.ktor.server.testing.*
 import io.mockk.mockk
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -30,7 +31,7 @@ class SecurityHardeningTest {
 
     @BeforeTest
     fun setup() {
-        // Usamos um nome de banco único por execução de teste para evitar conflitos de cache:shared em paralelo
+        // Garantir banco limpo e isolado por teste
         val dbName = "securitytest_${System.nanoTime()}"
         DatabaseFactory.init("jdbc:sqlite:file:$dbName?mode=memory&cache=shared", rebuild = true)
     }
@@ -79,7 +80,8 @@ class SecurityHardeningTest {
 
         // 3. Verify that the role remains CUSTOMER in the database
         val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
-        assertEquals(UserRole.CUSTOMER, savedProfile.role, "Security Vulnerability: Role escalation via Mass Assignment detected!")
+        println("DEBUG: User role after attack: ${savedProfile.role}")
+        assertEquals(UserRole.CUSTOMER, savedProfile.role, "Security Vulnerability: Role escalation via Mass Assignment detected! Actual role: ${savedProfile.role}")
     }
 
     @Test
@@ -90,14 +92,14 @@ class SecurityHardeningTest {
         val mockStripeService = mockk<StripeService>(relaxed = true)
 
         // Setup a product and store in the DB
-        transaction {
-            com.itbenevides.genesys21.data.database.StoresTable.insert {
+        dbQuery {
+            StoresTable.insert {
                 it[id] = "s1"
                 it[ownerId] = "u1"
                 it[name] = "Test Store"
                 it[paymentGateway] = "STRIPE"
             }
-            com.itbenevides.genesys21.data.database.ProductsTable.insert {
+            ProductsTable.insert {
                 it[id] = "real-prod"
                 it[storeId] = "s1"
                 it[name] = "Expensive Product"
@@ -110,6 +112,9 @@ class SecurityHardeningTest {
             install(ContentNegotiation) { json() }
             install(RateLimit) {
                 register(RateLimitName("global")) {
+                    rateLimiter(limit = 100, refillPeriod = 60.seconds)
+                }
+                register(RateLimitName("sensitive")) {
                     rateLimiter(limit = 100, refillPeriod = 60.seconds)
                 }
             }
@@ -140,7 +145,7 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(fakeOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status, "Order creation should succeed but with corrected price")
+        assertEquals(HttpStatusCode.Created, response.status, "Order creation should succeed but with corrected price. Body: ${response.bodyAsText()}")
 
         // Verify that the saved order has the CORRECT recalculated price
         val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
