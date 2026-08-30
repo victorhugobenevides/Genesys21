@@ -17,7 +17,13 @@ class SqliteUserRepository : UserRepository {
         val isDogmaAdmin = email == "victorkoto@gmail.com"
 
         val roleStr = this[UsersTable.role]
-        val baseRole = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.CUSTOMER }
+        val baseRole = try {
+            UserRole.valueOf(roleStr)
+        } catch (e: Exception) {
+            println("REPOSITORY: Falha ao converter role '$roleStr', assumindo CUSTOMER")
+            UserRole.CUSTOMER
+        }
+
         val role = if (isDogmaAdmin) UserRole.SUPERADMIN else baseRole
 
         val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
@@ -67,15 +73,14 @@ class SqliteUserRepository : UserRepository {
 
         return try {
             dbQuery {
-                // LGPD: Mascaramos o e-mail no log do servidor
                 val maskedEmail = com.itbenevides.genesys21.util.PrivacyUtils.maskEmail(profile.email)
-                println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id})")
+                println("REPOSITORY: saveUserProfile para $maskedEmail. Role no DTO: ${profile.role}")
 
-                // Verificação de Troca de UID (Mesmo e-mail, ID diferente)
+                // Verificação de Troca de UID
                 val existingByEmail = UsersTable.selectAll().where { UsersTable.email eq profile.email }.singleOrNull()
                 if (existingByEmail != null && existingByEmail[UsersTable.id] != profile.id) {
                     val oldId = existingByEmail[UsersTable.id]
-                    println("REPOSITORY: Detectada troca de UID para $maskedEmail. Atualizando $oldId -> ${profile.id}")
+                    println("REPOSITORY: Atualizando UID de $oldId para ${profile.id}")
                     UsersTable.update({ UsersTable.id eq oldId }) {
                         it[id] = profile.id
                         it[name] = profile.name
@@ -83,7 +88,7 @@ class SqliteUserRepository : UserRepository {
                         it[phone] = profile.phone
                         it[updatedAt] = System.currentTimeMillis()
 
-                        // Somente se for o admin dogma ou se o role for explicitamente permitido (aqui preservamos o atual)
+                        // BLOQUEIO DE ROLE: Apenas Dogma Admin pode ter SUPERADMIN atribuído via profile save
                         if (profile.email == "victorkoto@gmail.com") {
                             it[role] = UserRole.SUPERADMIN.name
                             it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
@@ -92,6 +97,7 @@ class SqliteUserRepository : UserRepository {
                 } else {
                     val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
                     if (exists) {
+                        println("REPOSITORY: Atualizando usuário existente ${profile.id}")
                         UsersTable.update({ UsersTable.id eq profile.id }) {
                             it[name] = profile.name
                             it[email] = profile.email
@@ -99,16 +105,15 @@ class SqliteUserRepository : UserRepository {
                             it[phone] = profile.phone
                             it[updatedAt] = System.currentTimeMillis()
 
-                            // SEGURANÇA: saveUserProfile é para o próprio usuário gerir seu perfil público.
-                            // NÃO permitimos mudança de Role ou Permissões por esta rota.
-                            // A única exceção é o Dogma Admin para garantir o bootstrap do sistema.
+                            // SEGURANÇA: Bloqueia escalada de privilégios.
+                            // O campo 'role' do DTO é IGNOERADO para usuários comuns.
                             if (profile.email == "victorkoto@gmail.com") {
                                 it[role] = UserRole.SUPERADMIN.name
                                 it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
                             }
-                            // Note que o 'else' aqui não faz nada, mantendo o cargo atual no banco.
                         }
                     } else {
+                        println("REPOSITORY: Inserindo novo usuário ${profile.id}")
                         UsersTable.insert {
                             it[id] = profile.id
                             it[name] = profile.name
@@ -116,8 +121,7 @@ class SqliteUserRepository : UserRepository {
                             it[avatarUrl] = profile.avatarUrl
                             it[phone] = profile.phone
 
-                            // SEGURANÇA: Novos usuários SEMPRE começam como CUSTOMER.
-                            // Promoções de cargo devem ser feitas via Admin Panel.
+                            // SEGURANÇA: Novos usuários são SEMPRE CUSTOMER por padrão.
                             if (profile.email == "victorkoto@gmail.com") {
                                 it[role] = UserRole.SUPERADMIN.name
                                 it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }

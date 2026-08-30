@@ -61,13 +61,17 @@ fun Application.module() {
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
-    if (isTesting) {
-        val testDbId = System.nanoTime()
-        DatabaseFactory.init("jdbc:sqlite:file:testdb-$testDbId?mode=memory&cache=shared", rebuild = true)
+    if (!DatabaseFactory.isInitialized()) {
+        if (isTesting) {
+            val testDbId = System.nanoTime()
+            DatabaseFactory.init("jdbc:sqlite:file:testdb-$testDbId?mode=memory&cache=shared", rebuild = true)
+        } else {
+            logger.info("Inicializando Banco de Dados (rebuild=$shouldRebuild)...")
+            DatabaseFactory.init(rebuild = shouldRebuild)
+            logger.info("Banco de Dados inicializado com sucesso.")
+        }
     } else {
-        logger.info("Inicializando Banco de Dados (rebuild=$shouldRebuild)...")
-        DatabaseFactory.init(rebuild = shouldRebuild)
-        logger.info("Banco de Dados inicializado com sucesso.")
+        logger.info("Banco de Dados já inicializado. Pulando re-inicialização.")
     }
 
     val pageRepository = SqlitePageRepository()

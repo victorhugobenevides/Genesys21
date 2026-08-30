@@ -82,13 +82,15 @@ class SqliteOrderRepository(
                     val actualPrice = when {
                         product != null -> {
                             ProductsTable.selectAll().where { ProductsTable.id eq product.id }
-                                .map { it[ProductsTable.price] }.singleOrNull() ?: item.price
+                                .map { it[ProductsTable.price] }.singleOrNull()
+                                ?: throw Exception("Produto ${product.id} não encontrado no catálogo")
                         }
                         service != null -> {
                             BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }
-                                .map { it[BookingServicesTable.price] }.singleOrNull() ?: item.price
+                                .map { it[BookingServicesTable.price] }.singleOrNull()
+                                ?: throw Exception("Serviço ${service.id} não encontrado no catálogo")
                         }
-                        else -> item.price
+                        else -> item.price // Item customizado (sem ID de produto/serviço)
                     }
                     calculatedTotal += actualPrice * item.quantity
                 }
@@ -109,7 +111,7 @@ class SqliteOrderRepository(
                     it[createdAt] = System.currentTimeMillis()
                     it[updatedAt] = System.currentTimeMillis()
 
-                    // Dados de Frete (Validação simples de frete aqui se necessário)
+                    // Dados de Frete
                     it[shippingStreet] = order.shippingAddress?.street
                     it[shippingNumber] = order.shippingAddress?.number
                     it[shippingComplement] = order.shippingAddress?.complement
@@ -130,11 +132,13 @@ class SqliteOrderRepository(
                     val actualPrice = when {
                         product != null -> {
                             ProductsTable.selectAll().where { ProductsTable.id eq product.id }
-                                .map { it[ProductsTable.price] }.singleOrNull() ?: item.price
+                                .map { it[ProductsTable.price] }.singleOrNull()
+                                ?: throw Exception("Produto ${product.id} não encontrado")
                         }
                         service != null -> {
                             BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }
-                                .map { it[BookingServicesTable.price] }.singleOrNull() ?: item.price
+                                .map { it[BookingServicesTable.price] }.singleOrNull()
+                                ?: throw Exception("Serviço ${service.id} não encontrado")
                         }
                         else -> item.price
                     }

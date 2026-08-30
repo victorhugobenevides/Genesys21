@@ -24,29 +24,19 @@ import io.mockk.mockk
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.insert
-import java.io.File
+import org.jetbrains.exposed.sql.selectAll
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
 
 class SecurityHardeningTest {
 
-    private var currentDbFile: String? = null
-
     @BeforeTest
     fun setup() {
-        // Forçar isolamento total usando um arquivo físico único por teste
+        // Forçar isolamento total usando um banco em memória PRIVATE por teste.
+        // Como os testes de rota usam o servidor embutido, precisamos garantir que
+        // a conexão aberta no setup seja a MESMA que o servidor usará.
         val testId = System.nanoTime()
-        val dbFile = "build/security_test_$testId.db"
-        currentDbFile = dbFile
-
-        // Inicializa o banco (Flyway rodará e criará as tabelas)
-        DatabaseFactory.init("jdbc:sqlite:$dbFile", rebuild = true)
-    }
-
-    @AfterTest
-    fun tearDown() {
-        // Limpa o arquivo após o teste
-        currentDbFile?.let { File(it).delete() }
+        DatabaseFactory.init("jdbc:sqlite:file:test_$testId?mode=memory&cache=shared", rebuild = true)
     }
 
     @Test
@@ -56,8 +46,8 @@ class SecurityHardeningTest {
         application {
             install(ContentNegotiation) { json() }
             install(RateLimit) {
-                register(RateLimitName("global")) { rateLimiter(limit = 100, refillPeriod = 60.seconds) }
-                register(RateLimitName("sensitive")) { rateLimiter(limit = 100, refillPeriod = 60.seconds) }
+                register(RateLimitName("global")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
+                register(RateLimitName("sensitive")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
             }
             install(Authentication) {
                 bearer("firebase") {
@@ -67,16 +57,16 @@ class SecurityHardeningTest {
             routing { userRoutes(userRepo) }
         }
 
-        // 1. Criar um usuário comum
+        // 1. Criar um usuário comum no banco
         val initialProfile = UserProfile(
             id = "attacker-id",
             email = "attacker@evil.com",
             name = "Attacker",
             role = UserRole.CUSTOMER
         )
-        userRepo.saveUserProfile(initialProfile)
+        userRepo.saveUserProfile(initialProfile).getOrThrow()
 
-        // 2. Tentar se promover para SUPERADMIN via POST
+        // 2. Tentar se promover para SUPERADMIN via POST (Mass Assignment Attack)
         val evilProfile = initialProfile.copy(role = UserRole.SUPERADMIN)
 
         val response = client.post("/api/users/profile") {
@@ -85,14 +75,14 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(evilProfile))
         }
 
-        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK")
+        assertEquals(HttpStatusCode.OK, response.status, "Update profile should succeed but ignore sensitive fields")
 
         // 3. Verificar se o cargo CONTINUA como CUSTOMER no banco
         val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
         assertEquals(
             UserRole.CUSTOMER,
             savedProfile.role,
-            "Security Vulnerability: User was able to escalate role to ${savedProfile.role} via Mass Assignment!"
+            "VULNERABILIDADE: O usuário conseguiu mudar seu cargo para ${savedProfile.role} via API!"
         )
     }
 
@@ -103,16 +93,20 @@ class SecurityHardeningTest {
         val mockStoreRepo = mockk<com.itbenevides.genesys21.domain.repository.StoreRepository>(relaxed = true)
         val mockStripeService = mockk<StripeService>(relaxed = true)
 
-        // Setup de dados reais no banco de teste
+        val testStoreId = "s1"
+        val testProdId = "real-prod"
+
+        // Setup de dados reais diretamente no banco compartilhado
         dbQuery {
             StoresTable.insert {
-                it[id] = "s1"
+                it[id] = testStoreId
                 it[ownerId] = "u1"
                 it[name] = "Test Store"
+                it[paymentGateway] = "STRIPE"
             }
             ProductsTable.insert {
-                it[id] = "real-prod"
-                it[storeId] = "s1"
+                it[id] = testProdId
+                it[storeId] = testStoreId
                 it[name] = "Expensive Product"
                 it[price] = 1000.0
                 it[stock] = 10
@@ -122,7 +116,7 @@ class SecurityHardeningTest {
         application {
             install(ContentNegotiation) { json() }
             install(RateLimit) {
-                register(RateLimitName("global")) { rateLimiter(limit = 100, refillPeriod = 60.seconds) }
+                register(RateLimitName("global")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
             }
             install(Authentication) {
                 bearer("firebase") { authenticate { UserIdPrincipal("test-user") } }
@@ -133,21 +127,20 @@ class SecurityHardeningTest {
         // Atacante envia um pedido com preço forjado de R$ 1.00
         val fakeOrder = Order(
             id = "evil-order",
-            storeId = "s1",
+            storeId = testStoreId,
             items = listOf(
                 CartItem(
-                    product = Product(id = "real-prod", storeId = "s1", name = "Expensive Product", price = 1000.0),
-                    quantity = 1,
-                    customPrice = 1.0 // Tentativa de manipulação no DTO
-                ).copy(customPrice = 1.0) // Garante que o campo price do CartItem também seja 1.0
+                    product = Product(id = testProdId, storeId = testStoreId, name = "Expensive Product", price = 1000.0),
+                    quantity = 1
+                )
             ),
-            total = 1.0, // Tentativa de manipulação no total do pedido
+            total = 1.0, // Tentativa de pagar R$ 1.00
             paymentMethod = PaymentMethod.LOCAL
         )
 
-        // Precisamos garantir que o CartItem.price seja 1.0 para o teste ser efetivo
-        val manipulatedOrder = fakeOrder.copy(
-            items = fakeOrder.items.map { it.copy(customPrice = 1.0) }
+        // Manipulamos o DTO para simular a interceptação do front-end
+        val manipulatedOrder = Json.decodeFromString<Order>(
+            Json.encodeToString(fakeOrder).replace("1000.0", "1.0")
         )
 
         val response = client.post("/api/public/orders") {
@@ -155,22 +148,21 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(manipulatedOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status, "Order should be created even with manipulated price. Response: ${response.bodyAsText()}")
+        assertEquals(HttpStatusCode.Created, response.status, "Order should be created. Body: ${response.bodyAsText()}")
 
-        // VERIFICAÇÃO CRÍTICA: O pedido salvo deve ter o valor de 1000.0 (do banco) e não 1.0 (do atacante)
+        // VERIFICAÇÃO: O servidor deve ter ignorado o preço do DTO e usado o do banco
         val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
 
         assertEquals(
             1000.0,
             savedOrder.total,
-            "Security Vulnerability: Price manipulation accepted! Server saved total as ${savedOrder.total} instead of 1000.0"
+            "VULNERABILIDADE: O servidor aceitou o preço forjado de ${savedOrder.total}!"
         )
 
-        // Verifica se cada item individual também teve o preço corrigido
         assertEquals(
             1000.0,
             savedOrder.items.first().price,
-            "Security Vulnerability: Individual item price manipulation accepted!"
+            "VULNERABILIDADE: O preço individual do item não foi corrigido!"
         )
     }
 }

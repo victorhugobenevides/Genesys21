@@ -13,6 +13,8 @@ object DatabaseFactory {
     private var database: Database? = null
     private var dataSource: HikariDataSource? = null
 
+    fun isInitialized(): Boolean = database != null
+
     fun init(
         jdbcUrl: String = System.getenv("DATABASE_URL") ?: "jdbc:sqlite:data/genesys21.db?journal_mode=WAL&busy_timeout=10000",
         rebuild: Boolean = false,
