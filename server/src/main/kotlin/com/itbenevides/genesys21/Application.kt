@@ -63,8 +63,9 @@ fun Application.module() {
 
     if (!DatabaseFactory.isInitialized()) {
         if (isTesting) {
-            val testDbId = System.nanoTime()
-            DatabaseFactory.init("jdbc:sqlite:file:testdb-$testDbId?mode=memory&cache=shared", rebuild = true)
+            // URI Constante para compartilhar o banco entre o setup do teste e o servidor
+            val testJdbcUrl = "jdbc:sqlite:file:genesys_test_db?mode=memory&cache=shared"
+            DatabaseFactory.init(testJdbcUrl, rebuild = true)
         } else {
             logger.info("Inicializando Banco de Dados (rebuild=$shouldRebuild)...")
             DatabaseFactory.init(rebuild = shouldRebuild)

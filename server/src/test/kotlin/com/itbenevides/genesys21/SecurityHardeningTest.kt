@@ -32,9 +32,10 @@ class SecurityHardeningTest {
 
     @BeforeTest
     fun setup() {
-        // Banco de dados único por classe de teste para evitar colisões
-        val testId = "security_final"
-        DatabaseFactory.init("jdbc:sqlite:file:$testId?mode=memory&cache=shared", rebuild = true)
+        // Usamos exatamente a mesma URI definida na Application.kt para testes.
+        // O cache=shared garante que o Ktor embutido enxergue o que o setup escreveu.
+        val testJdbcUrl = "jdbc:sqlite:file:genesys_test_db?mode=memory&cache=shared"
+        DatabaseFactory.init(testJdbcUrl, rebuild = true)
     }
 
     @Test

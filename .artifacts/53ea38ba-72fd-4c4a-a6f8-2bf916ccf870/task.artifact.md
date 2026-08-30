@@ -1,7 +1,6 @@
-- [x] Correção de Compilação e Validação Local
-    - [x] Identificar falhas de Smart Cast em `SqliteOrderRepository.kt`
-    - [x] Aplicar captura de propriedades em variáveis locais
-    - [x] Validar com `analyze_file`
-    - [x] Validar com `gradle_build` (Compilação do Servidor OK)
-- [x] Push das correções validadas
-- [x] Criar walkthrough
+- [/] Unificação do Banco de Dados de Teste
+    - [ ] Atualizar `Application.kt` com URI de teste constante
+    - [ ] Atualizar `SecurityHardeningTest.kt` para usar a mesma URI
+    - [ ] Garantir que o servidor não resete o banco inicializado pelo teste
+- [ ] Validar build e testes locais
+- [ ] Push final
