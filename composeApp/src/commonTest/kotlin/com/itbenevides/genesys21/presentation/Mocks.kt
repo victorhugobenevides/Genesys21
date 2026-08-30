@@ -99,6 +99,8 @@ class FakeOrderRepository : OrderRepository {
             globalDailyRevenue = emptyList()
         )
     )
+
+    override suspend fun getAuditLogs(token: String) = Result.success(emptyList<Map<String, String>>())
 }
 
 class FakeBookingRepository : BookingRepository {
