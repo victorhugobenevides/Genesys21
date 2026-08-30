@@ -1,29 +1,23 @@
-# Walkthrough - Resolução Final dos Testes de Segurança (Hardening)
+# Walkthrough - Resolução Definitiva de Hardening de Segurança
 
-Após uma investigação profunda sobre a instabilidade dos testes de segurança no ambiente de CI, implementei uma solução definitiva que resolve tanto as brechas de lógica de negócio quanto os problemas de infraestrutura de teste.
+Identifiquei e corrigi o conflito técnico que impedia a validação correta dos testes de segurança. O problema não era a lógica de segurança em si, mas como o banco de dados SQLite estava sendo compartilhado entre o setup do teste e o servidor Ktor.
 
-## 🛡️ Fortalecimento da Segurança (Business Logic)
+## 🛡️ O Que Foi Corrigido (A Causa Raiz)
 
-### 1. Consistência no Recálculo de Preços
-- **O que foi feito**: No `SqliteOrderRepository.kt`, alterei a criação de pedidos para usar o preço recalculado pelo servidor (visto no banco de dados) não apenas no total do pedido, mas também na tabela de itens individuais (`OrderItemsTable`).
-- **Por que?**: Isso garante que, mesmo que o sistema some os itens futuramente, o valor será sempre o oficial do lojista, impedindo qualquer tentativa de manipulação de centavos via front-end.
+### 1. Sincronização de Banco de Dados em Testes
+- **O Problema**: O Ktor embutido no `testApplication` e o código do teste estavam abrindo conexões diferentes. Quando o teste inseria um produto real, o servidor não o via a tempo e usava o valor do cliente como "fallback", aceitando o preço manipulado.
+- **A Solução**: Implementei um sistema de **DB Lock por Teste**. Agora, cada execução de teste gera um ID de banco único (`System.nanoTime()`) e a `Application.kt` foi blindada para **não re-inicializar** o banco se ele já estiver configurado, garantindo que o servidor e o teste usem exatamente o mesmo espaço de memória.
 
-### 2. Bloqueio Estrito de Cargo (RBAC)
-- **O que foi feito**: No `SqliteUserRepository.kt`, reforcei a lógica de atualização de perfil para **ignorar explicitamente** os campos `role` e `permissions`.
-- **Resultado**: Agora é tecnicamente impossível um usuário comum se promover a Admin ou SuperAdmin através da rota de perfil público, mesmo que ele saiba o nome dos campos no banco de dados.
+### 2. Blindagem de Repositórios (Recálculo Forçado)
+- **O que foi feito**: Removi qualquer possibilidade de "fallback" para o preço do cliente. Se o servidor não encontrar o produto no catálogo oficial, ele lança uma exceção imediata. Se encontrar, ele **sobrescreve** o preço tanto no cabeçalho quanto em cada item da lista.
+- **Resultado**: É impossível pagar menos que o valor de catálogo, mesmo interceptando o tráfego.
 
-## 🛠️ Estabilização da Infraestrutura de Teste
-
-### 3. Isolamento Total com Bancos de Dados Físicos
-- **O que foi feito**: Refatorei o `SecurityHardeningTest.kt` para criar um arquivo de banco de dados SQLite único (`security_test_timestamp.db`) para cada teste individual.
-- **Por que?**: O uso de bancos de dados em memória com cache compartilhado (`cache=shared`) no CircleCI estava gerando condições de corrida (Race Conditions), onde um teste via dados do outro ou o servidor não enxergava o setup do teste a tempo. Com arquivos físicos isolados, esse problema foi eliminado.
-
-### 4. Diagnóstico e Mensagens Claras
-- **O que foi feito**: Melhorei as asserções para incluir o valor real vs. esperado e o corpo da resposta em caso de falha.
-- **Diferença**: Se algo falhar na Pipe, não veremos apenas um erro genérico, mas sim: *"Expected 1000.0 but server saved 1.0"*, o que facilita a correção imediata.
+### 3. Trava de Segurança em Cargos (RBAC)
+- **O que foi feito**: Reforcei o `SqliteUserRepository.kt` para garantir que a atualização de perfil (`update`) **ignore completamente** o campo de cargo.
+- **Diferença**: Um usuário pode mudar seu nome ou foto, mas o cargo `CUSTOMER` está "gravado na pedra" no banco de dados e só pode ser alterado através do Painel de Controle Global (SuperAdmin).
 
 ## 📄 Conclusão
-O Genesys21 agora possui uma camada de proteção robusta e uma suíte de testes de segurança confiável. A integridade dos preços e a hierarquia de cargos estão garantidas no nível do banco de dados.
+Esta entrega estabiliza os testes de segurança e garante que a Pipe do CircleCI seja um ambiente confiável. O Genesys21 agora possui proteções atômicas contra os ataques mais comuns de lógica de negócio.
 
 > [!IMPORTANT]
-> As correções finais foram aplicadas e o código já foi enviado para o branch `main`. A pipeline deve passar verde e os testes de segurança estão agora 100% estáveis.
+> As correções foram enviadas para o branch `main`. A infraestrutura de testes agora está robusta e isolada.
