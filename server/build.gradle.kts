@@ -69,3 +69,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlin.testJunit)
 }
+
+tasks.withType<Test> {
+    maxParallelForks = 1
+}
