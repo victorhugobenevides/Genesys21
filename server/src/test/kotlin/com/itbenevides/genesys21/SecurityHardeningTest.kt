@@ -1,11 +1,8 @@
 package com.itbenevides.genesys21
 
-import com.itbenevides.genesys21.data.database.DatabaseFactory
+import com.itbenevides.genesys21.data.database.*
 import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
-import com.itbenevides.genesys21.data.database.ProductsTable
-import com.itbenevides.genesys21.data.database.StoresTable
-import com.itbenevides.genesys21.data.repository.SqliteUserRepository
-import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
+import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.domain.model.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -16,33 +13,44 @@ import io.mockk.mockk
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.insert
+import java.io.File
 import kotlin.test.*
 
 class SecurityHardeningTest {
 
+    private var testDbPath: String = ""
+
     @BeforeTest
     fun setup() {
-        // Reset the singleton before each test to ensure isolation
+        // Cria um arquivo físico de banco para este teste específico
+        val testId = System.nanoTime()
+        testDbPath = "build/test-db/security_$testId.db"
+        File("build/test-db").mkdirs()
+
+        // Inicializa o banco (FLYWAY criará tabelas)
         DatabaseFactory.reset()
+        DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = true)
+        println("TEST SETUP: Database file created at $testDbPath")
+    }
+
+    @AfterTest
+    fun tearDown() {
+        DatabaseFactory.reset()
+        File(testDbPath).delete()
     }
 
     @Test
     fun `regular user should not be able to escalate role via saveUserProfile`() = testApplication {
-        val testDbId = System.nanoTime().toString()
         environment {
             config = MapApplicationConfig(
                 "ktor.testing" to "true",
-                "ktor.test.db_id" to testDbId
+                "ktor.test.db_path" to testDbPath
             )
         }
 
-        // Initialize DB for setup
-        val testJdbcUrl = "jdbc:sqlite:file:db_$testDbId?mode=memory&cache=shared"
-        DatabaseFactory.init(testJdbcUrl, rebuild = true)
-
         val userRepo = SqliteUserRepository()
 
-        // 1. Criar um usuário comum no banco
+        // 1. Criar usuário comum
         val initialProfile = UserProfile(
             id = "attacker-id",
             email = "attacker@evil.com",
@@ -51,7 +59,7 @@ class SecurityHardeningTest {
         )
         userRepo.saveUserProfile(initialProfile).getOrThrow()
 
-        // 2. Ataque via API
+        // 2. Ataque
         val evilProfile = initialProfile.copy(role = UserRole.SUPERADMIN)
 
         val response = client.post("/api/users/profile") {
@@ -64,50 +72,43 @@ class SecurityHardeningTest {
 
         // 3. Verificação
         val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
-        assertEquals(UserRole.CUSTOMER, savedProfile.role, "VULNERABILIDADE: O cargo mudou!")
+        assertEquals(UserRole.CUSTOMER, savedProfile.role, "VULNERABILIDADE: Cargo alterado!")
     }
 
     @Test
     fun `order total should be recalculated on server to prevent price manipulation`() = testApplication {
-        val testDbId = System.nanoTime().toString()
         environment {
             config = MapApplicationConfig(
                 "ktor.testing" to "true",
-                "ktor.test.db_id" to testDbId
+                "ktor.test.db_path" to testDbPath
             )
         }
 
-        // Initialize DB for setup
-        val testJdbcUrl = "jdbc:sqlite:file:db_$testDbId?mode=memory&cache=shared"
-        DatabaseFactory.init(testJdbcUrl, rebuild = true)
-
-        val testStoreId = "s1"
-        val testProdId = "real-prod"
+        val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
 
         // Setup CATALOGO
         dbQuery {
             StoresTable.insert {
-                it[id] = testStoreId
+                it[id] = "s1"
                 it[ownerId] = "u1"
                 it[name] = "Test Store"
-                it[paymentGateway] = "STRIPE"
             }
             ProductsTable.insert {
-                it[id] = testProdId
-                it[storeId] = testStoreId
+                it[id] = "real-prod"
+                it[storeId] = "s1"
                 it[name] = "Expensive Product"
                 it[price] = 1000.0
                 it[stock] = 10
             }
         }
 
-        // Atacante envia 1.0 no JSON
+        // Ataque: JSON com R$ 1.00
         val fakeOrder = Order(
             id = "evil-order",
-            storeId = testStoreId,
+            storeId = "s1",
             items = listOf(
                 CartItem(
-                    product = Product(id = testProdId, storeId = testStoreId, name = "Expensive Product", price = 1.0),
+                    product = Product(id = "real-prod", storeId = "s1", name = "Expensive Product", price = 1.0),
                     quantity = 1
                 )
             ),
@@ -120,10 +121,10 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(fakeOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status)
+        assertEquals(HttpStatusCode.Created, response.status, response.bodyAsText())
 
-        // Verificação: O servidor deve ter ignorado o 1.0 e salvo 1000.0
-        val savedOrder = SqliteOrderRepository(mockk(relaxed = true)).getOrderById("evil-order").getOrThrow()
+        // Verificação final
+        val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
         assertEquals(1000.0, savedOrder.total, "VULNERABILIDADE: Preço aceito!")
     }
 }

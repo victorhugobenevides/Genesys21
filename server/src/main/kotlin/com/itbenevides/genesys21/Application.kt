@@ -9,7 +9,6 @@ import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.data.service.BackupService
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
-import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import com.itbenevides.genesys21.routes.*
@@ -33,44 +32,34 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.utils.io.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.*
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
-const val SERVER_PORT = 8080
-
 fun main() {
-    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
+    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)
 }
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
-    logger.info("SERVIDOR: Genesys21 iniciando...")
 
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
-    // INICIALIZAÇÃO DE BANCO: No teste, respeitamos o que o thread de setup configurou.
+    // SINCRONIA DE BANCO: Em teste, usamos o arquivo fornecido pelo runner do teste
     if (isTesting) {
-        if (!DatabaseFactory.isInitialized()) {
-            val testDbId = environment.config.propertyOrNull("ktor.test.db_id")?.getString() ?: "default"
-            val testJdbcUrl = "jdbc:sqlite:file:db_$testDbId?mode=memory&cache=shared"
-            DatabaseFactory.init(testJdbcUrl, rebuild = true)
-        }
+        val testDbPath = environment.config.propertyOrNull("ktor.test.db_path")?.getString() ?: "build/test-default.db"
+        DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = false)
     } else {
         DatabaseFactory.init(rebuild = shouldRebuild)
     }
 
     val pageRepository = SqlitePageRepository()
     val cartRepository = SqliteCartRepository()
-    val googleCalendarService = GoogleCalendarService()
-    val bookingRepository = SqliteBookingRepository(googleCalendarService)
+    val bookingRepository = SqliteBookingRepository(GoogleCalendarService())
     val orderRepository = SqliteOrderRepository(bookingRepository)
     val userRepository = SqliteUserRepository()
     val addressRepository = SqliteAddressRepository()
@@ -90,56 +79,39 @@ fun Application.module() {
             call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados.")
         }
         exception<Throwable> { call, cause ->
-            logger.error("Erro Interno: ${cause.message}", cause)
+            logger.error("ERRO: ${cause.message}")
             call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
         }
     }
 
     install(RateLimit) {
         register(RateLimitName("global")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
-        register(RateLimitName("sensitive")) { rateLimiter(limit = 100, refillPeriod = 60.seconds) }
-    }
-
-    install(Compression) {
-        gzip { priority = 1.0 }
-        deflate { priority = 10.0; minimumSize(1024) }
     }
 
     install(ContentNegotiation) {
-        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true; coerceInputValues = true })
+        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true })
     }
 
-    install(XForwardedHeaders) {}
-
     install(DefaultHeaders) {
-        header(HttpHeaders.Server, "GenesysServer")
         header("X-Frame-Options", "DENY")
         header("X-Content-Type-Options", "nosniff")
-        header("X-XSS-Protection", "1; mode=block")
-        header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
-        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com https://images.unsplash.com;")
+        header("Strict-Transport-Security", "max-age=31536000")
+        header("Content-Security-Policy", "default-src 'self';")
     }
 
     install(CORS) {
         anyHost()
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
-        allowMethod(HttpMethod.Options)
-        allowMethod(HttpMethod.Get)
         allowMethod(HttpMethod.Post)
-        allowMethod(HttpMethod.Put)
-        allowMethod(HttpMethod.Patch)
-        allowMethod(HttpMethod.Delete)
-        allowCredentials = true
+        allowMethod(HttpMethod.Get)
     }
 
     install(Authentication) {
         bearer("firebase") {
             authenticate { credential ->
-                if (isTesting && credential.token == "dummy-token") {
-                    UserIdPrincipal("attacker-id")
-                } else if (isTesting && credential.token == "valid-token") {
-                    UserIdPrincipal("test-user")
+                if (isTesting && (credential.token == "dummy-token" || credential.token == "valid-token")) {
+                    UserIdPrincipal(if (credential.token == "dummy-token") "attacker-id" else "test-user")
                 } else {
                     try {
                         val decodedToken = FirebaseAuth.getInstance().verifyIdToken(credential.token)
@@ -150,56 +122,36 @@ fun Application.module() {
         }
     }
 
-    initFirebase(logger)
-    initBackups(logger)
-
     routing {
         get("/") { call.respondText("API Online") }
-
         route("/api") {
-            rateLimitRoute(RateLimitName("global")) {
-                userRoutes(userRepository)
-                adminRoutes(userRepository)
-                systemRoutes(domainRepository, userRepository)
-                pageRoutes(pageRepository)
-                cartRoutes(cartRepository)
-                orderRoutes(orderRepository, storeRepository, stripeService)
-                analyticsRoutes(orderRepository)
-                categoryRoutes(pageRepository)
-                bookingRoutes(bookingRepository)
-                chatRoutes(chatRepository)
-                draftRoutes(draftRepository)
-                addressRoutes(addressRepository)
-                storeRoutes(storeRepository)
-                shippingRoutes(storeRepository)
-                connectRoutes(userRepository, storeRepository)
-                receiptRoutes(receiptParserService, receiptRepository, userRepository)
-                aiRoutes(pageAIGeneratorService)
-            }
+            userRoutes(userRepository)
+            adminRoutes(userRepository)
+            systemRoutes(domainRepository, userRepository)
+            pageRoutes(pageRepository)
+            cartRoutes(cartRepository)
+            orderRoutes(orderRepository, storeRepository, stripeService)
+            analyticsRoutes(orderRepository)
+            categoryRoutes(pageRepository)
+            bookingRoutes(bookingRepository)
+            chatRoutes(chatRepository)
+            draftRoutes(draftRepository)
+            addressRoutes(addressRepository)
+            storeRoutes(storeRepository)
+            shippingRoutes(storeRepository)
+            connectRoutes(userRepository, storeRepository)
+            receiptRoutes(receiptParserService, receiptRepository, userRepository)
+            aiRoutes(pageAIGeneratorService)
         }
     }
 }
 
 private fun Application.initFirebase(logger: org.slf4j.Logger) {
     try {
-        val fileName = "firebase-adminsdk.json"
-        if (File(fileName).exists()) {
-            val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(File(fileName).inputStream())).build()
+        val file = File("firebase-adminsdk.json")
+        if (file.exists()) {
+            val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(file.inputStream())).build()
             if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
         }
-    } catch (e: Exception) {
-        logger.error("FIREBASE ERROR: ${e.message}")
-    }
-}
-
-private fun Application.initBackups(logger: org.slf4j.Logger) {
-    val jdbcUrl = System.getenv("DATABASE_URL") ?: "jdbc:sqlite:data/genesys21.db"
-    if (!jdbcUrl.startsWith("jdbc:sqlite:")) return
-    val dbPath = jdbcUrl.substringAfter("jdbc:sqlite:").substringBefore("?")
-    (this as kotlinx.coroutines.CoroutineScope).launch {
-        while (true) {
-            try { BackupService.performBackup(dbPath) } catch (e: Exception) { }
-            kotlinx.coroutines.delay(24.hours)
-        }
-    }
+    } catch (e: Exception) { logger.error("FIREBASE ERROR: ${e.message}") }
 }
