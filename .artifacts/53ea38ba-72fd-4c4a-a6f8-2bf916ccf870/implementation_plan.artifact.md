@@ -1,56 +1,35 @@
-# Plano de Implementação - Console Adm Centralizado (Enterprise UI)
+# Plano de Implementação - Estabilização de Testes de Segurança
 
-Este plano visa transformar a área administrativa do **Genesys21** de uma lista simples de abas para um **Console Centralizado** profissional, com menu categorizado e controle rigoroso de hierarquia de acesso (RBAC).
+Este plano visa corrigir as falhas nos testes de `SecurityHardeningTest.kt` no ambiente de CI, garantindo que as validações de segurança sejam executadas corretamente e sem interferências de infraestrutura de banco de dados.
 
-## 1. Visão Geral
-A UI atual do `PageListScreen` cresceu organicamente e as abas estão misturando funcionalidades de operação, financeiro e configuração. Vamos reorganizar tudo em um menu lateral (Sidebar) para Desktop/Tablet e um Drawer para Mobile, agrupando por domínio de negócio.
+## Análise das Falhas
 
-## 2. Nova Estrutura de Menu (Hierarquia)
+### 1. Falha no Recálculo de Preço
+- **Erro**: `java.lang.Exception at SqliteOrderRepository.kt:42` (Pedido não encontrado).
+- **Causa**: O pedido não está sendo salvo no banco de dados durante o POST, provavelmente devido a uma falha de integridade referencial (falta da Loja/Store no banco de dados de teste).
+- **Solução**: Inserir explicitamente uma loja (`StoresTable`) no setup do teste antes de tentar criar o pedido.
 
-### 📊 DASHBOARD
-- **Painel Principal**: Métricas de faturamento e vendas da loja atual.
-- **Insights da Rede** (B2B): Visão macro da plataforma (Exclusivo SuperAdmin).
+### 2. Falha na Prevenção de Escalada de Cargo
+- **Erro**: `java.lang.AssertionError` (O cargo foi alterado ou não permaneceu como `CUSTOMER`).
+- **Causa**: Possível persistência de dados entre testes devido ao uso de `:memory:` com `cache=shared` ou erro na lógica de detecção de existência do usuário no repositório.
+- **Solução**:
+    - Refatorar `saveUserProfile` para ser ainda mais rígido: novos usuários (insert) SEMPRE serão criados como `CUSTOMER`, independente do que for enviado no JSON (exceto o admin Dogma).
+    - Garantir isolamento total do banco de dados entre os testes.
 
-### 🛍️ OPERAÇÕES
-- **Vitrines**: Gerenciamento de páginas e landing pages.
-- **Pedidos**: Fluxo de atendimento e chat com clientes.
-- **Agenda**: Calendário de agendamentos.
-- **Serviços**: Cadastro e preços de serviços.
+## Mudanças Propostas
 
-### 💰 FINANCEIRO
-- **Notas Fiscais**: Histórico de recibos e impostos.
-- **Pagamentos**: Configurações do Stripe Connect e gateway.
+### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-### ⚙️ CONFIGURAÇÕES
-- **Minha Loja**: Dados de remetente, entrega e temas.
-- **Meu Perfil**: Dados do usuário e segurança.
-- **Controle Global** (SuperAdmin): Gestão de usuários, cargos e domínios (Exclusivo SuperAdmin).
+#### [MODIFY] [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
+- Alterar o bloco `else` (insert) do `saveUserProfile` para forçar `it[role] = UserRole.CUSTOMER.name` (exceto para o dogma admin). Isso fecha completamente a brecha de mass assignment na criação de conta.
 
-## 3. Mudanças Propostas
+#### [MODIFY] [SecurityHardeningTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/test/kotlin/com/itbenevides/genesys21/SecurityHardeningTest.kt)
+- Adicionar a criação de uma Store no setup do teste de pedidos.
+- Adicionar verificações de `HttpStatusCode` nas respostas das APIs para facilitar o diagnóstico de falhas.
+- Usar IDs únicos por teste para evitar conflitos de cache do SQLite.
 
-### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+## Plano de Verificação
 
-#### [NEW] [AdminMenu.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/components/AdminMenu.kt)
-- Centralizar a definição dos itens de menu, ícones, categorias e permissões necessárias.
-
-#### [MODIFY] [PageListScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/PageListScreen.kt)
-- Refatorar para usar o novo `NavigationWrapper` com categorias.
-- Mover as sub-UIs (PagesTabUI, ServicesTabUI, etc.) para arquivos próprios no pacote `screens/list/tabs/` para reduzir o tamanho do arquivo principal.
-
-#### [MODIFY] [NavigationSuiteScaffold](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
-- Ajustar para suportar agrupamento visual ou separadores entre categorias de menu.
-
-## 4. Hierarquia de Acesso (RBAC)
-- **CUSTOMER**: Acesso negado ao Console Adm (redireciona para Login/Home).
-- **MERCHANT**: Acesso a Dashboard, Operações, Financeiro e Configurações (da sua loja).
-- **ADMIN**: Mesmas permissões do Merchant + Gestão de outros Merchants (opcional).
-- **SUPERADMIN**: Acesso total (incluindo B2B Insights e Controle Global).
-
-## 5. Plano de Verificação
-
-### Testes de UI (Paparazzi)
-- Criar snapshots do novo layout de menu em Phone, Tablet e Desktop.
-
-### Verificação Manual
-- Validar se um usuário `MERCHANT` **não** visualiza as opções "Insights Rede" e "Controle Global".
-- Confirmar se a navegação entre categorias está fluida e mantém o estado da tela anterior.
+### Testes Automatizados
+- Rodar `./gradlew :server:test --tests "com.itbenevides.genesys21.SecurityHardeningTest"` localmente (simulando ambiente limpo).
+- Verificar logs do CircleCI após o push.

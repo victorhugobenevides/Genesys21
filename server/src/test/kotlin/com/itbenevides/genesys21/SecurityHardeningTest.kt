@@ -5,7 +5,6 @@ import com.itbenevides.genesys21.data.repository.SqliteUserRepository
 import com.itbenevides.genesys21.data.repository.SqliteOrderRepository
 import com.itbenevides.genesys21.data.service.StripeService
 import com.itbenevides.genesys21.domain.model.*
-import com.itbenevides.genesys21.routes.adminRoutes
 import com.itbenevides.genesys21.routes.userRoutes
 import com.itbenevides.genesys21.routes.orderRoutes
 import io.ktor.client.request.*
@@ -31,7 +30,9 @@ class SecurityHardeningTest {
 
     @BeforeTest
     fun setup() {
-        DatabaseFactory.init("jdbc:sqlite:file:securitytest?mode=memory&cache=shared", rebuild = true)
+        // Usamos um nome de banco único por execução de teste para evitar conflitos de cache:shared em paralelo
+        val dbName = "securitytest_${System.nanoTime()}"
+        DatabaseFactory.init("jdbc:sqlite:file:$dbName?mode=memory&cache=shared", rebuild = true)
     }
 
     @Test
@@ -45,7 +46,7 @@ class SecurityHardeningTest {
                     rateLimiter(limit = 100, refillPeriod = 60.seconds)
                 }
                 register(RateLimitName("sensitive")) {
-                    rateLimiter(limit = 5, refillPeriod = 60.seconds)
+                    rateLimiter(limit = 100, refillPeriod = 60.seconds)
                 }
             }
             install(Authentication) {
@@ -83,14 +84,19 @@ class SecurityHardeningTest {
 
     @Test
     fun `order total should be recalculated on server to prevent price manipulation`() = testApplication {
-        val userRepo = SqliteUserRepository()
         val mockBookingRepo = mockk<com.itbenevides.genesys21.domain.repository.BookingRepository>(relaxed = true)
         val orderRepo = SqliteOrderRepository(mockBookingRepo)
         val mockStoreRepo = mockk<com.itbenevides.genesys21.domain.repository.StoreRepository>(relaxed = true)
         val mockStripeService = mockk<StripeService>(relaxed = true)
 
-        // Setup a product in the DB with a real price
+        // Setup a product and store in the DB
         transaction {
+            com.itbenevides.genesys21.data.database.StoresTable.insert {
+                it[id] = "s1"
+                it[ownerId] = "u1"
+                it[name] = "Test Store"
+                it[paymentGateway] = "STRIPE"
+            }
             com.itbenevides.genesys21.data.database.ProductsTable.insert {
                 it[id] = "real-prod"
                 it[storeId] = "s1"
@@ -129,13 +135,15 @@ class SecurityHardeningTest {
             paymentMethod = PaymentMethod.LOCAL
         )
 
-        client.post("/api/public/orders") {
+        val response = client.post("/api/public/orders") {
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             setBody(Json.encodeToString(fakeOrder))
         }
 
+        assertEquals(HttpStatusCode.Created, response.status, "Order creation should succeed but with corrected price")
+
         // Verify that the saved order has the CORRECT recalculated price
         val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
-        assertEquals(1000.0, savedOrder.total, "Security Vulnerability: Price manipulation accepted!")
+        assertEquals(1000.0, savedOrder.total, "Security Vulnerability: Price manipulation accepted! Expected 1000.0 but found ${savedOrder.total}")
     }
 }

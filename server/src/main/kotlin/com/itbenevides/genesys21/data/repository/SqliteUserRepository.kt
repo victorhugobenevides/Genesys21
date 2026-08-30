@@ -67,22 +67,9 @@ class SqliteUserRepository : UserRepository {
 
         return try {
             dbQuery {
-                // DOGMA:victorkoto@gmail.com é sempre SUPERADMIN
-                val effectiveRole = if (profile.email == "victorkoto@gmail.com") {
-                    UserRole.SUPERADMIN
-                } else {
-                    profile.role
-                }
-
-                val effectivePermissions = if (effectiveRole == UserRole.SUPERADMIN || effectiveRole == UserRole.ADMIN || effectiveRole == UserRole.MERCHANT) {
-                    com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-                } else {
-                    profile.permissions
-                }
-
                 // LGPD: Mascaramos o e-mail no log do servidor
                 val maskedEmail = com.itbenevides.genesys21.util.PrivacyUtils.maskEmail(profile.email)
-                println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id}) - Role: $effectiveRole")
+                println("REPOSITORY: Salvando perfil de usuário $maskedEmail (${profile.id})")
 
                 // Verificação de Troca de UID (Mesmo e-mail, ID diferente)
                 val existingByEmail = UsersTable.selectAll().where { UsersTable.email eq profile.email }.singleOrNull()
@@ -126,9 +113,20 @@ class SqliteUserRepository : UserRepository {
                             it[email] = profile.email
                             it[avatarUrl] = profile.avatarUrl
                             it[phone] = profile.phone
-                            it[role] = effectiveRole.name
+
+                            // SEGURANÇA: Novos usuários SEMPRE começam como CUSTOMER.
+                            // Promoções de cargo devem ser feitas via Admin Panel.
+                            if (profile.email == "victorkoto@gmail.com") {
+                                it[role] = UserRole.SUPERADMIN.name
+                                it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
+                            } else {
+                                it[role] = UserRole.CUSTOMER.name
+                                it[permissions] = ""
+                            }
+
                             it[status] = profile.status.name
-                            it[permissions] = effectivePermissions.joinToString(",") { p -> p.name }
+                            it[createdAt] = System.currentTimeMillis()
+                            it[updatedAt] = System.currentTimeMillis()
                         }
                     }
                 }
