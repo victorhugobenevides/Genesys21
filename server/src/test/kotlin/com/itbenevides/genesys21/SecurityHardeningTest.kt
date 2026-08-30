@@ -15,6 +15,7 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.mockk.mockk
@@ -24,6 +25,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.test.*
+import kotlin.time.Duration.Companion.seconds
 
 class SecurityHardeningTest {
 
@@ -38,6 +40,14 @@ class SecurityHardeningTest {
 
         application {
             install(ContentNegotiation) { json() }
+            install(RateLimit) {
+                register(RateLimitName("global")) {
+                    rateLimiter(limit = 100, refillPeriod = 60.seconds)
+                }
+                register(RateLimitName("sensitive")) {
+                    rateLimiter(limit = 5, refillPeriod = 60.seconds)
+                }
+            }
             install(Authentication) {
                 bearer("firebase") {
                     authenticate { UserIdPrincipal("attacker-id") }
@@ -92,6 +102,16 @@ class SecurityHardeningTest {
 
         application {
             install(ContentNegotiation) { json() }
+            install(RateLimit) {
+                register(RateLimitName("global")) {
+                    rateLimiter(limit = 100, refillPeriod = 60.seconds)
+                }
+            }
+            install(Authentication) {
+                bearer("firebase") {
+                    authenticate { UserIdPrincipal("test-user") }
+                }
+            }
             routing { orderRoutes(orderRepo, mockStoreRepo, mockStripeService) }
         }
 
