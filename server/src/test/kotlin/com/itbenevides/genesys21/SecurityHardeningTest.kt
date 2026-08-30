@@ -22,30 +22,36 @@ class SecurityHardeningTest {
 
     @BeforeTest
     fun setup() {
-        // Inicializa o banco de dados de teste com uma URI constante.
-        // O cache=shared e o nome fixo garantem que o Ktor (Application.module)
-        // enxergue exatamente o mesmo banco que este código de setup.
-        val testJdbcUrl = "jdbc:sqlite:file:genesys_test_db?mode=memory&cache=shared"
-        DatabaseFactory.init(testJdbcUrl, rebuild = true)
-        println("TEST SETUP: Database initialized at $testJdbcUrl")
+        // Reset the singleton before each test to ensure isolation
+        DatabaseFactory.reset()
     }
 
     @Test
     fun `regular user should not be able to escalate role via saveUserProfile`() = testApplication {
+        val testDbId = System.nanoTime().toString()
         environment {
-            config = MapApplicationConfig("ktor.testing" to "true")
+            config = MapApplicationConfig(
+                "ktor.testing" to "true",
+                "ktor.test.db_id" to testDbId
+            )
         }
 
-        // 1. Criar um usuário comum via Repository (escrita direta no banco compartilhado)
+        // Initialize DB for setup
+        val testJdbcUrl = "jdbc:sqlite:file:db_$testDbId?mode=memory&cache=shared"
+        DatabaseFactory.init(testJdbcUrl, rebuild = true)
+
+        val userRepo = SqliteUserRepository()
+
+        // 1. Criar um usuário comum no banco
         val initialProfile = UserProfile(
             id = "attacker-id",
             email = "attacker@evil.com",
             name = "Attacker",
             role = UserRole.CUSTOMER
         )
-        SqliteUserRepository().saveUserProfile(initialProfile).getOrThrow()
+        userRepo.saveUserProfile(initialProfile).getOrThrow()
 
-        // 2. Ataque: Tentar se promover para SUPERADMIN via POST na API
+        // 2. Ataque via API
         val evilProfile = initialProfile.copy(role = UserRole.SUPERADMIN)
 
         val response = client.post("/api/users/profile") {
@@ -56,32 +62,35 @@ class SecurityHardeningTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
 
-        // 3. Verificação: O cargo deve continuar como CUSTOMER
-        val savedProfile = SqliteUserRepository().getUserProfile("attacker-id").getOrThrow()
-        println("TEST VERIFY: Role após ataque: ${savedProfile.role}")
-
-        assertEquals(
-            UserRole.CUSTOMER,
-            savedProfile.role,
-            "VULNERABILIDADE: Usuário conseguiu se promover para ${savedProfile.role} via API!"
-        )
+        // 3. Verificação
+        val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
+        assertEquals(UserRole.CUSTOMER, savedProfile.role, "VULNERABILIDADE: O cargo mudou!")
     }
 
     @Test
     fun `order total should be recalculated on server to prevent price manipulation`() = testApplication {
+        val testDbId = System.nanoTime().toString()
         environment {
-            config = MapApplicationConfig("ktor.testing" to "true")
+            config = MapApplicationConfig(
+                "ktor.testing" to "true",
+                "ktor.test.db_id" to testDbId
+            )
         }
+
+        // Initialize DB for setup
+        val testJdbcUrl = "jdbc:sqlite:file:db_$testDbId?mode=memory&cache=shared"
+        DatabaseFactory.init(testJdbcUrl, rebuild = true)
 
         val testStoreId = "s1"
         val testProdId = "real-prod"
 
-        // Setup: Inserir catálogo oficial no banco compartilhado
+        // Setup CATALOGO
         dbQuery {
             StoresTable.insert {
                 it[id] = testStoreId
                 it[ownerId] = "u1"
                 it[name] = "Test Store"
+                it[paymentGateway] = "STRIPE"
             }
             ProductsTable.insert {
                 it[id] = testProdId
@@ -92,7 +101,7 @@ class SecurityHardeningTest {
             }
         }
 
-        // Ataque: Enviar pedido com preço manipulado de R$ 1.00
+        // Atacante envia 1.0 no JSON
         val fakeOrder = Order(
             id = "evil-order",
             storeId = testStoreId,
@@ -111,16 +120,10 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(fakeOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status, "Order body: ${response.bodyAsText()}")
+        assertEquals(HttpStatusCode.Created, response.status)
 
-        // Verificação: O servidor deve ter forçado o preço de R$ 1000.00 do banco
+        // Verificação: O servidor deve ter ignorado o 1.0 e salvo 1000.0
         val savedOrder = SqliteOrderRepository(mockk(relaxed = true)).getOrderById("evil-order").getOrThrow()
-        println("TEST VERIFY: Total salvo no banco: R$ ${savedOrder.total}")
-
-        assertEquals(
-            1000.0,
-            savedOrder.total,
-            "VULNERABILIDADE: Servidor aceitou preço de R$ ${savedOrder.total} em vez de R$ 1000.0!"
-        )
+        assertEquals(1000.0, savedOrder.total, "VULNERABILIDADE: Preço aceito!")
     }
 }

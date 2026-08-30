@@ -9,43 +9,38 @@ import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.data.service.BackupService
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
-
-import com.itbenevides.genesys21.domain.service.ReceiptParserService
-import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
 import com.itbenevides.genesys21.domain.model.PageComponent
+import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
+import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import com.itbenevides.genesys21.routes.*
-import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.client.*
 import io.ktor.client.engine.java.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.plugins.defaultheaders.DefaultHeaders
+import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.ratelimit.RateLimitName
 import io.ktor.server.plugins.ratelimit.rateLimit as rateLimitRoute
-import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.launch
-import net.coobird.thumbnailator.Thumbnails
+import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.serialization.json.Json
 
 const val SERVER_PORT = 8080
 
@@ -61,14 +56,15 @@ fun Application.module() {
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
-    // UNIFICAÇÃO DE BANCO: Se o teste já inicializou o DatabaseFactory, o servidor REUTILIZA a conexão.
-    if (!DatabaseFactory.isInitialized()) {
-        if (isTesting) {
-            val testJdbcUrl = "jdbc:sqlite:file:genesys_test_db?mode=memory&cache=shared"
+    // INICIALIZAÇÃO DE BANCO: No teste, respeitamos o que o thread de setup configurou.
+    if (isTesting) {
+        if (!DatabaseFactory.isInitialized()) {
+            val testDbId = environment.config.propertyOrNull("ktor.test.db_id")?.getString() ?: "default"
+            val testJdbcUrl = "jdbc:sqlite:file:db_$testDbId?mode=memory&cache=shared"
             DatabaseFactory.init(testJdbcUrl, rebuild = true)
-        } else {
-            DatabaseFactory.init(rebuild = shouldRebuild)
         }
+    } else {
+        DatabaseFactory.init(rebuild = shouldRebuild)
     }
 
     val pageRepository = SqlitePageRepository()
@@ -85,16 +81,12 @@ fun Application.module() {
     val chatRepository = SqliteChatRepository()
     val draftRepository = SqliteDraftRepository()
 
-    val client = HttpClient(io.ktor.client.engine.java.Java)
+    val client = HttpClient(Java)
     val receiptParserService = ReceiptParserService(client)
     val pageAIGeneratorService = PageAIGeneratorService(client)
 
-    val uploadPath = if (isTesting) "build/test-uploads" else "/app/uploads"
-    val uploadDir = File(uploadPath).absoluteFile
-    if (!uploadDir.exists()) uploadDir.mkdirs()
-
     install(StatusPages) {
-        exception<io.ktor.serialization.JsonConvertException> { call, cause ->
+        exception<io.ktor.serialization.JsonConvertException> { call, _ ->
             call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados.")
         }
         exception<Throwable> { call, cause ->
@@ -105,17 +97,45 @@ fun Application.module() {
 
     install(RateLimit) {
         register(RateLimitName("global")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
-        register(RateLimitName("sensitive")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
+        register(RateLimitName("sensitive")) { rateLimiter(limit = 100, refillPeriod = 60.seconds) }
+    }
+
+    install(Compression) {
+        gzip { priority = 1.0 }
+        deflate { priority = 10.0; minimumSize(1024) }
     }
 
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true; coerceInputValues = true })
     }
 
+    install(XForwardedHeaders) {}
+
+    install(DefaultHeaders) {
+        header(HttpHeaders.Server, "GenesysServer")
+        header("X-Frame-Options", "DENY")
+        header("X-Content-Type-Options", "nosniff")
+        header("X-XSS-Protection", "1; mode=block")
+        header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+        header("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.gstatic.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com https://images.unsplash.com;")
+    }
+
+    install(CORS) {
+        anyHost()
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+        allowCredentials = true
+    }
+
     install(Authentication) {
         bearer("firebase") {
             authenticate { credential ->
-                // Mock simplificado para ambiente de teste se o token for dummy
                 if (isTesting && credential.token == "dummy-token") {
                     UserIdPrincipal("attacker-id")
                 } else if (isTesting && credential.token == "valid-token") {
@@ -137,23 +157,25 @@ fun Application.module() {
         get("/") { call.respondText("API Online") }
 
         route("/api") {
-            userRoutes(userRepository)
-            adminRoutes(userRepository)
-            systemRoutes(domainRepository, userRepository)
-            pageRoutes(pageRepository)
-            cartRoutes(cartRepository)
-            orderRoutes(orderRepository, storeRepository, stripeService)
-            analyticsRoutes(orderRepository)
-            categoryRoutes(pageRepository)
-            bookingRoutes(bookingRepository)
-            chatRoutes(chatRepository)
-            draftRoutes(draftRepository)
-            addressRoutes(addressRepository)
-            storeRoutes(storeRepository)
-            shippingRoutes(storeRepository)
-            connectRoutes(userRepository, storeRepository)
-            receiptRoutes(receiptParserService, receiptRepository, userRepository)
-            aiRoutes(pageAIGeneratorService)
+            rateLimitRoute(RateLimitName("global")) {
+                userRoutes(userRepository)
+                adminRoutes(userRepository)
+                systemRoutes(domainRepository, userRepository)
+                pageRoutes(pageRepository)
+                cartRoutes(cartRepository)
+                orderRoutes(orderRepository, storeRepository, stripeService)
+                analyticsRoutes(orderRepository)
+                categoryRoutes(pageRepository)
+                bookingRoutes(bookingRepository)
+                chatRoutes(chatRepository)
+                draftRoutes(draftRepository)
+                addressRoutes(addressRepository)
+                storeRoutes(storeRepository)
+                shippingRoutes(storeRepository)
+                connectRoutes(userRepository, storeRepository)
+                receiptRoutes(receiptParserService, receiptRepository, userRepository)
+                aiRoutes(pageAIGeneratorService)
+            }
         }
     }
 }
@@ -166,7 +188,7 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
             if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
         }
     } catch (e: Exception) {
-        logger.error("FIREBASE: Erro na inicialização: ${e.message}")
+        logger.error("FIREBASE ERROR: ${e.message}")
     }
 }
 

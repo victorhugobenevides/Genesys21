@@ -15,6 +15,12 @@ object DatabaseFactory {
 
     fun isInitialized(): Boolean = database != null
 
+    fun reset() {
+        dataSource?.close()
+        database = null
+        dataSource = null
+    }
+
     fun init(
         jdbcUrl: String = System.getenv("DATABASE_URL") ?: "jdbc:sqlite:data/genesys21.db?journal_mode=WAL&busy_timeout=10000",
         rebuild: Boolean = false,

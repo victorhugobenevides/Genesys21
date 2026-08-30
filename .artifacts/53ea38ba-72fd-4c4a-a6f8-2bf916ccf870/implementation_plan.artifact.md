@@ -1,27 +1,35 @@
-# Plano de Implementação - Unificação e Estabilização do Banco de Dados de Teste
+# Plano de Implementação - Refinamento e Realização do Console Administrativo
 
-Este plano visa resolver o conflito de conexão entre o código de teste e o servidor Ktor, garantindo que ambos compartilhem exatamente o mesmo banco de dados em memória e que o estado não seja resetado durante a execução.
+Este plano visa concluir a melhoria das funcionalidades da página ADM, transformando os "placeholders" do backend em funcionalidades reais e integradas, além de expandir a cobertura de auditoria para ações críticas.
 
-## 🔍 Causa Raiz Identificada
-O código de teste e a `Application.module` do Ktor estavam gerando IDs de banco de dados aleatórios diferentes (`System.nanoTime()`). Mesmo com `cache=shared`, o SQLite só compartilha o cache se o nome do arquivo (mesmo que virtual) for idêntico. Como os nomes divergiam, o servidor enxergava um banco vazio enquanto o teste inseria dados em outro.
+## 🎯 Objetivos
+- Tornar o **B2B Insights** funcional com métricas reais de toda a rede.
+- Implementar a visualização real de **Logs de Auditoria** para o SuperAdmin.
+- Integrar um feed de "Atividades Recentes" no Dashboard do lojista.
+- Garantir que toda mudança sensível (status de pedido, cargo, permissões) seja registrada.
 
 ## 🛠️ Mudanças Propostas
 
 ### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-#### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
-- Definir uma URI constante para o banco de dados de teste: `jdbc:sqlite:file:genesys_test_db?mode=memory&cache=shared`.
-- Remover a geração de `testDbId` aleatório.
-- Garantir que a `module()` respeite uma inicialização prévia feita pelo thread de teste.
+#### [MODIFY] [SqliteOrderRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteOrderRepository.kt)
+- **getB2BAnalytics**: Implementar queries para contar lojistas ativos, somar GMV Global e calcular o ranking de performance.
+- **getAuditLogs**: Implementar a busca real na `AuditLogsTable`.
+- **updateOrderStatus**: Adicionar log de auditoria ao mudar o status de um pedido.
 
-#### [MODIFY] [DatabaseFactory.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/database/DatabaseFactory.kt)
-- Adicionar logs explícitos de inicialização.
+#### [MODIFY] [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
+- **updateUserRole / updateUserPermissions**: Adicionar logs de auditoria detalhados para estas ações críticas.
 
-#### [MODIFY] [SecurityHardeningTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/test/kotlin/com/itbenevides/genesys21/SecurityHardeningTest.kt)
-- Usar a mesma URI constante definida no servidor.
-- Garantir que o `rebuild = true` ocorra apenas uma vez no `@BeforeTest`.
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
 
-## 📅 Plano de Verificação
-- Rodar a compilação local: `./gradlew :server:compileKotlin`.
-- Rodar os testes de segurança: `./gradlew :server:test --tests "com.itbenevides.genesys21.SecurityHardeningTest"`.
-- Confirmar que as mensagens de log mostram a mesma URI de banco para ambos.
+#### [MODIFY] [MainDashboardTab.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/tabs/MainDashboardTab.kt)
+- Adicionar uma seção de "Atividades Recentes" que consome os logs de auditoria (filtrados pela loja do usuário).
+
+## 📅 Cronograma de Execução
+1.  **Fase 1: Backend Real** - Implementar as queries SQL agregadas.
+2.  **Fase 2: Auditoria Total** - Espalhar os logs de auditoria nos repositórios.
+3.  **Fase 3: Dashboard Conectado** - Exibir as atividades no front-end.
+
+## ✅ Verificação
+- Validar se o B2B Insights exibe os números corretos (comparando com o banco).
+- Verificar se cada mudança de status de pedido gera uma nova linha na aba de Auditoria.
