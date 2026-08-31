@@ -86,13 +86,13 @@ fun Route.orderRoutes(
                     if (order.paymentMethod == PaymentMethod.APP) {
                         val store = storeRepository.getStore(order.storeId).getOrNull()
 
-                        // FALLBACK: Se o lojista não configurou uma chave real, tentamos usar a chave mestra do ambiente
-                        val rawSecretKey = store?.stripeSecretKey
-                        val secretKey = if (rawSecretKey.isNullOrBlank() || rawSecretKey == "sk_test_genesys_default") {
-                            System.getenv("STRIPE_SECRET_KEY")?.takeIf { it.isNotBlank() } ?: rawSecretKey
-                        } else {
-                            rawSecretKey
-                        }
+                        // PRIORIDADE: Primeiro tentamos pegar a chave das variáveis de ambiente (System Settings)
+                        // Caso não existam, usamos as chaves configuradas na loja do usuário.
+                        val systemSecretKey = System.getenv("STRIPE_SECRET_KEY")
+                        val systemPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
+
+                        val secretKey = if (!systemSecretKey.isNullOrBlank()) systemSecretKey else store?.stripeSecretKey
+                        val publishableKey = if (!systemPublishableKey.isNullOrBlank()) systemPublishableKey else store?.stripePublicKey
 
                         if (!secretKey.isNullOrBlank()) {
                             try {
@@ -108,7 +108,7 @@ fun Route.orderRoutes(
                                     OrderResponse(
                                         orderId = generatedId,
                                         stripeClientSecret = clientSecret,
-                                        stripePublishableKey = store?.stripePublicKey // Lojista deve fornecer para o bridge
+                                        stripePublishableKey = publishableKey
                                     )
                                 )
                             } catch (e: Exception) {

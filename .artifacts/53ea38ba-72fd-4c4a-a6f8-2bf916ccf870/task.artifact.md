@@ -1,8 +1,7 @@
-- [x] Correção de Erros de Produção e Auditoria de Role
-    - [x] Refinar CORS e Error Handling em `Application.kt`
-    - [x] Blindar Dogma Admin em `SqliteUserRepository.kt`
-    - [x] Estabilizar Carrinho em `SqliteCartRepository.kt`
-    - [x] Implementar Fallback de Stripe Key em `OrderRoutes.kt`
-- [x] Validar compilação local (SUCCESSFUL)
-- [x] Commit e Push
-- [x] Criar walkthrough
+- [/] Final Production Stabilization
+    - [ ] Force `SUPERADMIN` in `SqliteUserRepository.toUserProfile` response
+    - [ ] Prioritize System Environment Stripe Keys in `OrderRoutes.kt`
+    - [ ] Fix CORS duplication by removing redundant headers
+    - [ ] Make `SqliteCartRepository` bulletproof against 500s
+- [ ] Validate server build
+- [ ] Push to main

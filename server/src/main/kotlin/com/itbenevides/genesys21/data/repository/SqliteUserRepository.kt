@@ -14,6 +14,10 @@ class SqliteUserRepository : UserRepository {
     private fun ResultRow.toUserProfile(): UserProfile {
         val rawEmail = this[UsersTable.email]
         val email = rawEmail.lowercase().trim()
+
+        // DOGMA:victorkoto@gmail.com é o dono do sistema.
+        // Forçamos o cargo SUPERADMIN aqui para garantir que, mesmo que o banco de dados
+        // tenha sido corrompido ou o cargo alterado acidentalmente, o acesso seja restaurado.
         val isDogmaAdmin = email == "victorkoto@gmail.com"
 
         val roleStr = this[UsersTable.role]
@@ -23,9 +27,7 @@ class SqliteUserRepository : UserRepository {
             UserRole.CUSTOMER
         }
 
-        // DOGMA: Força SUPERADMIN se o e-mail for o do proprietário, ignorando o que está no banco
         val role = if (isDogmaAdmin) UserRole.SUPERADMIN else baseRole
-
         val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
 
         val permissionsRaw = this[UsersTable.permissions].split(",")
@@ -34,14 +36,14 @@ class SqliteUserRepository : UserRepository {
                 runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
             }.toSet()
 
-        // DOGMA: Se for SuperAdmin, garante todas as permissões
+        // DOGMA: SuperAdmins e o Admin Oficial sempre possuem todas as permissões
         val permissions = if (isDogmaAdmin || (permissionsRaw.isEmpty() && (role == UserRole.MERCHANT || role == UserRole.ADMIN || role == UserRole.SUPERADMIN))) {
             com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
         } else permissionsRaw
 
         return UserProfile(
             id = this[UsersTable.id],
-            email = rawEmail, // Mantém o e-mail original da tabela para o DTO
+            email = rawEmail,
             name = this[UsersTable.name],
             avatarUrl = this[UsersTable.avatarUrl],
             phone = this[UsersTable.phone],
