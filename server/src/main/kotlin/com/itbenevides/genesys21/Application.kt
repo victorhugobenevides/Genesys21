@@ -96,13 +96,19 @@ fun Application.module() {
         }
     }
 
-    // RATE LIMITING: Registramos os nomes esperados pelas rotas (apenas em produção/dev real)
-    if (!isTesting) {
-        install(RateLimit) {
-            register(RateLimitName("global")) {
+    // RATE LIMITING: Obrigatório instalar para que as rotas possam referenciar os nomes
+    install(RateLimit) {
+        register(RateLimitName("global")) {
+            if (isTesting) {
+                rateLimiter(limit = 1000, refillPeriod = 1.seconds)
+            } else {
                 rateLimiter(limit = 100, refillPeriod = 60.seconds)
             }
-            register(RateLimitName("sensitive")) {
+        }
+        register(RateLimitName("sensitive")) {
+            if (isTesting) {
+                rateLimiter(limit = 1000, refillPeriod = 1.seconds)
+            } else {
                 rateLimiter(limit = 5, refillPeriod = 60.seconds)
             }
         }

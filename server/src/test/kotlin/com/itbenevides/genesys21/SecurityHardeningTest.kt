@@ -19,12 +19,15 @@ import kotlin.test.*
 
 class SecurityHardeningTest {
 
-    private val testDbPath: String = "/tmp/genesys_security_test.db"
+    private val testDbPath: String = "build/test-db/security_hardening.db"
 
     @BeforeTest
     fun setup() {
-        // Inicializa o banco físico para o teste
+        // Garante que o singleton DatabaseFactory seja limpo antes de cada teste
         DatabaseFactory.reset()
+        File("build/test-db").mkdirs()
+
+        // Inicializa o banco físico para o teste
         DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = true)
         println("TEST SETUP: Database initialized at $testDbPath")
     }
@@ -32,7 +35,18 @@ class SecurityHardeningTest {
     @AfterTest
     fun tearDown() {
         DatabaseFactory.reset()
-        File(testDbPath).delete()
+        // O arquivo é mantido em build/ para debug se necessário, Flyway recriará no próximo rebuild=true
+    }
+
+    private suspend fun verifySetup() {
+        dbQuery {
+            val productCount = ProductsTable.selectAll().count()
+            val storeCount = StoresTable.selectAll().count()
+            println("VERIFY SETUP: Stores=$storeCount, Products=$productCount")
+            if (storeCount == 0L || productCount == 0L) {
+                error("SETUP DATA FAILED: Database tables are empty!")
+            }
+        }
     }
 
     @Test
@@ -44,13 +58,8 @@ class SecurityHardeningTest {
             )
         }
 
-        application {
-            module() // CARREGA TUDO: Rotas, Plugins, Autenticação, etc.
-        }
-
+        // 1. Criar um usuário comum diretamente no banco
         val userRepo = SqliteUserRepository()
-
-        // 1. Criar um usuário comum
         val initialProfile = UserProfile(
             id = "attacker-id",
             email = "attacker@evil.com",
@@ -68,16 +77,16 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(evilProfile))
         }
 
-        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK")
+        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK even if role is ignored")
 
-        // 3. Verificação: O cargo deve continuar como CUSTOMER
+        // 3. Verificação: O cargo deve continuar como CUSTOMER no banco
         val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
         println("TEST VERIFY: Role após ataque: ${savedProfile.role}")
 
         assertEquals(
             UserRole.CUSTOMER,
             savedProfile.role,
-            "VULNERABILIDADE: Usuário conseguiu se promover para ${savedProfile.role}!"
+            "Security Vulnerability: User successfully escalated role to ${savedProfile.role} via Mass Assignment!"
         )
     }
 
@@ -90,13 +99,7 @@ class SecurityHardeningTest {
             )
         }
 
-        application {
-            module() // CARREGA TUDO
-        }
-
-        val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
-
-        // Setup: Inserir catálogo oficial
+        // Setup: Inserir catálogo oficial diretamente no banco
         dbQuery {
             StoresTable.insert {
                 it[id] = "s1"
@@ -111,6 +114,10 @@ class SecurityHardeningTest {
                 it[stock] = 10
             }
         }
+
+        verifySetup()
+
+        val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
 
         // Ataque: Enviar pedido com preço manipulado de R$ 1.00
         val fakeOrder = Order(
@@ -131,16 +138,16 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(fakeOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status, "Response: ${response.bodyAsText()}")
+        assertEquals(HttpStatusCode.Created, response.status, "Order creation response: ${response.bodyAsText()}")
 
-        // Verificação: O servidor deve ter forçado o preço de R$ 1000.00 do banco
+        // Verificação final no banco
         val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
         println("TEST VERIFY: Total salvo no banco: R$ ${savedOrder.total}")
 
         assertEquals(
             1000.0,
             savedOrder.total,
-            "VULNERABILIDADE: Servidor aceitou preço de R$ ${savedOrder.total}!"
+            "Security Vulnerability: Server accepted manipulated price of ${savedOrder.total} instead of recalculating to 1000.0!"
         )
     }
 }
