@@ -23,10 +23,12 @@ object Seeder {
                     it[email] = adminEmail
                     it[name] = "Victor Hugo"
                     it[role] = UserRole.SUPERADMIN.name
+                    it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
                 }
             } else {
                 UsersTable.update({ UsersTable.id eq adminId }) {
                     it[role] = UserRole.SUPERADMIN.name
+                    it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
                 }
             }
 

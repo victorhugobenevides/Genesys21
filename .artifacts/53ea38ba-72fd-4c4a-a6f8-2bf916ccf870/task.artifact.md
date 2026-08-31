@@ -1,7 +1,7 @@
-- [/] Final Production Stabilization
-    - [ ] Force `SUPERADMIN` in `SqliteUserRepository.toUserProfile` response
-    - [ ] Prioritize System Environment Stripe Keys in `OrderRoutes.kt`
-    - [ ] Fix CORS duplication by removing redundant headers
-    - [ ] Make `SqliteCartRepository` bulletproof against 500s
-- [ ] Validate server build
-- [ ] Push to main
+- [/] Reset Seguro e Blindagem SuperAdmin
+    - [ ] Implementar Auto-Reparo de Role em `SqliteUserRepository.kt`
+    - [ ] Atualizar `Seeder.kt` com permissões completas
+    - [ ] Adicionar logs de diagnóstico na `Application.kt`
+- [ ] Validar build local
+- [ ] Commit e Push
+- [ ] Instruir o usuário sobre o trigger de reset (opcional)

@@ -58,10 +58,29 @@ class SqliteUserRepository : UserRepository {
 
     override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
         dbQuery {
-            UsersTable.selectAll().where { UsersTable.id eq id }
-                .map { it.toUserProfile() }
-                .singleOrNull()?.let { Result.success(it) }
-                ?: Result.failure(Exception("Usuário não encontrado"))
+            val userRow = UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()
+
+            if (userRow != null) {
+                val profile = userRow.toUserProfile()
+
+                // AUTO-REPARO: Se for o admin principal mas o banco estiver desatualizado, corrigimos na hora
+                if (profile.email.lowercase().trim() == "victorkoto@gmail.com" && profile.role != UserRole.SUPERADMIN) {
+                    println("REPOSITORY: Detectado Admin Dogma com cargo incorreto. Reparando...")
+                    UsersTable.update({ UsersTable.id eq id }) {
+                        it[role] = UserRole.SUPERADMIN.name
+                        it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
+                    }
+                    // Retorna o perfil já corrigido
+                    Result.success(profile.copy(
+                        role = UserRole.SUPERADMIN,
+                        permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+                    ))
+                } else {
+                    Result.success(profile)
+                }
+            } else {
+                Result.failure(Exception("Usuário não encontrado"))
+            }
         }
     } catch (e: Exception) {
         Result.failure(e)

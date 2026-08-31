@@ -53,6 +53,10 @@ fun Application.module() {
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
+    if (shouldRebuild) {
+        logger.warn("⚠️ MODO DB_REBUILD ATIVO: O banco de dados será deletado e recriado!")
+    }
+
     // DATABASE INITIALIZATION
     if (isTesting) {
         val testDbPath = environment.config.propertyOrNull("ktor.test.db_path")?.getString()
