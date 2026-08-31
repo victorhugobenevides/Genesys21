@@ -19,21 +19,33 @@ class SqliteCartRepository {
                 return@dbQuery emptyList<CartItem>()
             }
 
-            // 2. Busca com tratamento de nulos para produtos de template
+            // 2. Busca com tratamento de nulos para produtos/serviços que podem ter sido removidos
             CartItemsTable
                 .selectAll().where { CartItemsTable.userId eq userId }
-                .map { row ->
-                    val productId = row[CartItemsTable.productId]
-                    val serviceId = row[CartItemsTable.serviceId]
+                .mapNotNull { row ->
+                    try {
+                        val productId = row[CartItemsTable.productId]
+                        val serviceId = row[CartItemsTable.serviceId]
 
-                    CartItem(
-                        product = if (productId != null) fetchProduct(productId) else null,
-                        service = if (serviceId != null) fetchService(serviceId) else null,
-                        appointment = row[CartItemsTable.appointmentData]?.let {
-                            try { json.decodeFromString<Appointment>(it) } catch (e: Exception) { null }
-                        },
-                        quantity = row[CartItemsTable.quantity]
-                    )
+                        val product = if (productId != null) fetchProduct(productId) else null
+                        val service = if (serviceId != null) fetchService(serviceId) else null
+
+                        // Se era um produto/serviço e não existe mais no catálogo, ignoramos para não dar erro 500
+                        if (productId != null && product == null) return@mapNotNull null
+                        if (serviceId != null && service == null) return@mapNotNull null
+
+                        CartItem(
+                            product = product,
+                            service = service,
+                            appointment = row[CartItemsTable.appointmentData]?.let {
+                                try { json.decodeFromString<Appointment>(it) } catch (e: Exception) { null }
+                            },
+                            quantity = row[CartItemsTable.quantity]
+                        )
+                    } catch (e: Exception) {
+                        println("CART_REPO: Erro ao processar item do carrinho para usuário $userId: ${e.message}")
+                        null
+                    }
                 }
         }
 

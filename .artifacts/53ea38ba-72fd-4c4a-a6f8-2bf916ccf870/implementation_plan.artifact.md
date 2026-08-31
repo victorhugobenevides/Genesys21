@@ -1,35 +1,29 @@
-# Plano de Implementação - Refinamento e Realização do Console Administrativo
+# Plano de Implementação - Correção de Produção e Auditoria de Role
 
-Este plano visa concluir a melhoria das funcionalidades da página ADM, transformando os "placeholders" do backend em funcionalidades reais e integradas, além de expandir a cobertura de auditoria para ações críticas.
+Este plano visa corrigir os erros de infraestrutura no servidor e investigar/corrigir o motivo de o usuário administrador estar sendo carregado como `CUSTOMER`.
 
 ## 🎯 Objetivos
-- Tornar o **B2B Insights** funcional com métricas reais de toda a rede.
-- Implementar a visualização real de **Logs de Auditoria** para o SuperAdmin.
-- Integrar um feed de "Atividades Recentes" no Dashboard do lojista.
-- Garantir que toda mudança sensível (status de pedido, cargo, permissões) seja registrada.
+- Resolver bloqueio de **CORS** duplicado (`*, *`).
+- Corrigir falha de **Stripe** por chaves padrão (sk_test_genesys_default).
+- Eliminar o **Erro 500** no Carrinho.
+- Garantir que o e-mail `victorkoto@gmail.com` seja forçado como `SUPERADMIN`.
 
 ## 🛠️ Mudanças Propostas
 
 ### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-#### [MODIFY] [SqliteOrderRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteOrderRepository.kt)
-- **getB2BAnalytics**: Implementar queries para contar lojistas ativos, somar GMV Global e calcular o ranking de performance.
-- **getAuditLogs**: Implementar a busca real na `AuditLogsTable`.
-- **updateOrderStatus**: Adicionar log de auditoria ao mudar o status de um pedido.
+#### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
+- **CORS**: Substituir `anyHost()` por uma lista restrita (`victorbenevides.dev`, `radarani.site`, `localhost`). Isso evita que o Ktor envie o wildcard `*` se o proxy (Nginx) já o fizer.
+- **Stripe Fallback**: Inserir lógica no `OrderRoutes` ou `StripeService` para detectar a chave padrão e tentar ler `System.getenv("STRIPE_SECRET_KEY")`.
 
 #### [MODIFY] [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
-- **updateUserRole / updateUserPermissions**: Adicionar logs de auditoria detalhados para estas ações críticas.
+- Investigar falha na comparação de e-mail. Adicionar `.lowercase().trim()` na verificação do "Dogma Admin".
+- Reforçar a injeção do cargo em todos os pontos de retorno (`getUserProfile` e `getAllUsers`).
 
-### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+#### [MODIFY] [SqliteCartRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteCartRepository.kt)
+- Adicionar blocos `try-catch` individuais no carregamento de itens do carrinho. Se um produto for deletado, o item deve ser ignorado ou retornado como "Indisponível", em vez de causar erro 500 na requisição inteira.
 
-#### [MODIFY] [MainDashboardTab.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/tabs/MainDashboardTab.kt)
-- Adicionar uma seção de "Atividades Recentes" que consome os logs de auditoria (filtrados pela loja do usuário).
-
-## 📅 Cronograma de Execução
-1.  **Fase 1: Backend Real** - Implementar as queries SQL agregadas.
-2.  **Fase 2: Auditoria Total** - Espalhar os logs de auditoria nos repositórios.
-3.  **Fase 3: Dashboard Conectado** - Exibir as atividades no front-end.
-
-## ✅ Verificação
-- Validar se o B2B Insights exibe os números corretos (comparando com o banco).
-- Verificar se cada mudança de status de pedido gera uma nova linha na aba de Auditoria.
+## 📅 Plano de Verificação
+1.  Monitorar o console do navegador após o deploy.
+2.  Logar como `victorkoto@gmail.com` e verificar se a aba "B2B" e "Admin" aparecem no Sidebar.
+3.  Simular checkout e validar que o `PaymentIntent` é gerado sem erro de "Invalid API Key".

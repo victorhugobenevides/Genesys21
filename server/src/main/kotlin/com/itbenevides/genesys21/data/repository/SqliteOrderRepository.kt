@@ -8,7 +8,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.*
 
 class SqliteOrderRepository(
     private val bookingRepository: com.itbenevides.genesys21.domain.repository.BookingRepository
@@ -204,10 +203,10 @@ class SqliteOrderRepository(
         customerPhone = this[OrdersTable.customerPhone],
         items = items,
         total = this[OrdersTable.total],
-        status = try { OrderStatus.valueOf(this[OrdersTable.status]) } catch (e: Exception) { OrderStatus.PENDING },
-        paymentMethod = try { PaymentMethod.valueOf(this[OrdersTable.paymentMethod]) } catch (e: Exception) { PaymentMethod.LOCAL },
+        status = try { OrderStatus.valueOf(this[OrdersTable.status]) } catch (_: Exception) { OrderStatus.PENDING },
+        paymentMethod = try { PaymentMethod.valueOf(this[OrdersTable.paymentMethod]) } catch (_: Exception) { PaymentMethod.LOCAL },
         createdAt = this[OrdersTable.createdAt],
         updatedAt = this[OrdersTable.updatedAt],
-        theme = try { PageThemeConfig.valueOf(this[OrdersTable.theme]) } catch (e: Exception) { PageThemeConfig.ELEGANCE }
+        theme = try { PageThemeConfig.valueOf(this[OrdersTable.theme]) } catch (_: Exception) { PageThemeConfig.ELEGANCE }
     )
 }

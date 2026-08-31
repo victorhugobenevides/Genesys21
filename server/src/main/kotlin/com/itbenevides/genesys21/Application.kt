@@ -116,14 +116,28 @@ fun Application.module() {
     }
 
     install(CORS) {
-        anyHost()
+        // SEGURANÇA: Lista restrita de hosts para evitar duplicidade de Access-Control-Allow-Origin (ex: *, *)
+        val allowedHosts = listOf(
+            "victorbenevides.dev", "www.victorbenevides.dev", "staging.victorbenevides.dev",
+            "radarani.site", "www.radarani.site", "localhost", "0.0.0.0"
+        )
+
+        allowedHosts.forEach { host ->
+            allowHost(host, schemes = listOf("http", "https"))
+        }
+
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
-        allowMethod(HttpMethod.Post)
+        allowHeader(HttpHeaders.CacheControl)
+        allowHeader("X-Cart-Session-Id")
+        allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
         allowCredentials = true
+        maxAgeInSeconds = 3600
     }
 
     install(Authentication) {

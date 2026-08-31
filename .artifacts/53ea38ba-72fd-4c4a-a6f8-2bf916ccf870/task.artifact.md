@@ -1,15 +1,8 @@
-# Status das Tarefas - Console Adm Centralizado
-
-## ✅ Concluído
-- [x] Reestruturação Enterprise UI (Sidebar/Drawer).
-- [x] Filtro dinâmico por Hierarquia (RBAC).
-- [x] Modularização das abas administrativas.
-- [x] Estabilização de infraestrutura de teste (SQLite unificado).
-- [x] Hardening de Segurança (Preço e Cargo).
-
-## 🚀 Próximos Passos (Melhoria de Funcionalidades)
-- [ ] **T001** Implementar queries reais para `B2B Insights` (GMV Global, Ranking).
-- [ ] **T002** Implementar busca real de `Audit Logs` no banco de dados.
-- [ ] **T003** Adicionar cobertura de Auditoria em `UpdateOrderStatus` e `UpdateUserRole`.
-- [ ] **T004** Criar widget de "Atividades Recentes" no Painel Principal do lojista.
-- [ ] **T005** Validar integridade dos dados analíticos.
+- [x] Correção de Erros de Produção e Auditoria de Role
+    - [x] Refinar CORS e Error Handling em `Application.kt`
+    - [x] Blindar Dogma Admin em `SqliteUserRepository.kt`
+    - [x] Estabilizar Carrinho em `SqliteCartRepository.kt`
+    - [x] Implementar Fallback de Stripe Key em `OrderRoutes.kt`
+- [x] Validar compilação local (SUCCESSFUL)
+- [x] Commit e Push
+- [x] Criar walkthrough
