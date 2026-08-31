@@ -70,21 +70,23 @@ class SqliteOrderRepository(
                     product != null -> {
                         val row = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.singleOrNull()
                         if (row == null) {
-                            val count = ProductsTable.selectAll().count()
-                            println("PRODUCT NOT FOUND! DB STORE COUNT: $count")
+                            println("REPOSITORY ERROR: Produto ${product.id} não encontrado no catálogo oficial!")
                             throw Exception("Produto ${product.id} inválido")
                         }
-                        println("CHECKING DB FOR PRODUCT ${product.id}: FOUND ${row[ProductsTable.name]} PRICE ${row[ProductsTable.price]}")
                         row[ProductsTable.name] to row[ProductsTable.price]
                     }
                     service != null -> {
                         val row = BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }.singleOrNull()
-                            ?: throw Exception("Serviço ${service.id} inválido")
+                        if (row == null) {
+                            println("REPOSITORY ERROR: Serviço ${service.id} não encontrado no catálogo oficial!")
+                            throw Exception("Serviço ${service.id} inválido")
+                        }
                         row[BookingServicesTable.name] to row[BookingServicesTable.price]
                     }
                     else -> item.name to item.price
                 }
                 calculatedTotal += price * item.quantity
+                // Forçamos o uso do preço oficial no DTO que será processado
                 item.copy(customName = name, customPrice = price)
             }
 

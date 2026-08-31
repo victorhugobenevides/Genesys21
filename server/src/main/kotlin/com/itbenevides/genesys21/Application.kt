@@ -61,6 +61,7 @@ fun Application.module() {
     if (isTesting) {
         val testDbPath = environment.config.propertyOrNull("ktor.test.db_path")?.getString()
         if (testDbPath != null) {
+            println("SERVER: Inicializando banco de teste em $testDbPath")
             DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = false)
         } else if (!DatabaseFactory.isInitialized()) {
             DatabaseFactory.init("jdbc:sqlite:file:testdb?mode=memory&cache=shared", rebuild = true)

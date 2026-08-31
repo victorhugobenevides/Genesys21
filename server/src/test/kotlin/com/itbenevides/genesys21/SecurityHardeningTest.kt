@@ -15,6 +15,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import java.io.File
+import java.util.UUID
 import kotlin.test.*
 
 class SecurityHardeningTest {
@@ -30,27 +31,15 @@ class SecurityHardeningTest {
         DatabaseFactory.reset()
     }
 
-    private fun createTestDb(): String {
-        val path = "build/test-db/security_${java.util.UUID.randomUUID()}.db"
+    private fun createUniqueTestDb(): String {
+        val path = "build/test-db/security_${UUID.randomUUID()}.db"
         DatabaseFactory.init("jdbc:sqlite:$path", rebuild = true)
         return path
     }
 
-    private suspend fun verifySetup() {
-        dbQuery {
-            val productCount = ProductsTable.selectAll().count()
-            val storeCount = StoresTable.selectAll().count()
-            println("VERIFY SETUP: Stores=$storeCount, Products=$productCount")
-            if (storeCount == 0L || productCount == 0L) {
-                error("SETUP DATA FAILED: Database tables are empty!")
-            }
-        }
-    }
-
     @Test
     fun `regular user should not be able to escalate role via saveUserProfile`() = testApplication {
-        val dbPath = createTestDb()
-
+        val dbPath = createUniqueTestDb()
         environment {
             config = MapApplicationConfig(
                 "ktor.testing" to "true",
@@ -58,8 +47,11 @@ class SecurityHardeningTest {
             )
         }
 
-        // 1. Criar um usuário comum diretamente no banco
+        application { module() }
+
         val userRepo = SqliteUserRepository()
+
+        // 1. Criar um usuário comum diretamente no banco
         val initialProfile = UserProfile(
             id = "attacker-id",
             email = "attacker@evil.com",
@@ -77,23 +69,21 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(evilProfile))
         }
 
-        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK even if role is ignored")
+        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK")
 
         // 3. Verificação: O cargo deve continuar como CUSTOMER no banco
         val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
-        println("TEST VERIFY: Role após ataque: ${savedProfile.role}")
 
         assertEquals(
             UserRole.CUSTOMER,
             savedProfile.role,
-            "Security Vulnerability: User successfully escalated role to ${savedProfile.role} via Mass Assignment!"
+            "Security Vulnerability: User escalated role to ${savedProfile.role}! Database: $dbPath"
         )
     }
 
     @Test
     fun `order total should be recalculated on server to prevent price manipulation`() = testApplication {
-        val dbPath = createTestDb()
-
+        val dbPath = createUniqueTestDb()
         environment {
             config = MapApplicationConfig(
                 "ktor.testing" to "true",
@@ -101,7 +91,9 @@ class SecurityHardeningTest {
             )
         }
 
-        // Setup: Inserir catálogo oficial diretamente no banco
+        application { module() }
+
+        // Setup: Inserir catálogo oficial
         dbQuery {
             StoresTable.insert {
                 it[id] = "s1"
@@ -116,8 +108,6 @@ class SecurityHardeningTest {
                 it[stock] = 10
             }
         }
-
-        verifySetup()
 
         val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
 
@@ -140,16 +130,15 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(fakeOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status, "Order creation response: ${response.bodyAsText()}")
+        assertEquals(HttpStatusCode.Created, response.status, "Order response body: ${response.bodyAsText()}")
 
         // Verificação final no banco
         val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
-        println("TEST VERIFY: Total salvo no banco: R$ ${savedOrder.total}")
 
         assertEquals(
             1000.0,
             savedOrder.total,
-            "Security Vulnerability: Server accepted manipulated price of ${savedOrder.total} instead of recalculating to 1000.0!"
+            "Security Vulnerability: Server accepted manipulated price of ${savedOrder.total} instead of 1000.0!"
         )
     }
 }

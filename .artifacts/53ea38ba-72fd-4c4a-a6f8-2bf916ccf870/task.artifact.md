@@ -1,6 +1,7 @@
-- [x] Estabilização Final dos Testes do Servidor
-    - [x] Instalar `RateLimit` incondicionalmente na `Application.kt`
-    - [x] Atualizar caminhos de banco e mensagens de erro em `SecurityHardeningTest.kt`
-    - [x] Garantir reset do singleton `DatabaseFactory` no setup dos testes
-- [x] Validar build e testes locais (Verificação lógica concluída)
-- [x] Push final para main
+- [/] Estabilização de Segurança e Testes
+    - [ ] Implementar isolamento total de banco por método de teste
+    - [ ] Reforçar Zero Trust Logic em `SqliteOrderRepository`
+    - [ ] Corrigir estado do plugin `RateLimit` na `Application.kt`
+    - [ ] Adicionar diagnósticos de asserção detalhados
+- [ ] Validar compilação e testes locais
+- [ ] Push final para main
