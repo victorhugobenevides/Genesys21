@@ -19,23 +19,21 @@ import kotlin.test.*
 
 class SecurityHardeningTest {
 
-    private val testDbPath: String = "build/test-db/security_hardening.db"
-
     @BeforeTest
     fun setup() {
-        // Garante que o singleton DatabaseFactory seja limpo antes de cada teste
         DatabaseFactory.reset()
         File("build/test-db").mkdirs()
-
-        // Inicializa o banco físico para o teste
-        DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = true)
-        println("TEST SETUP: Database initialized at $testDbPath")
     }
 
     @AfterTest
     fun tearDown() {
         DatabaseFactory.reset()
-        // O arquivo é mantido em build/ para debug se necessário, Flyway recriará no próximo rebuild=true
+    }
+
+    private fun createTestDb(): String {
+        val path = "build/test-db/security_${java.util.UUID.randomUUID()}.db"
+        DatabaseFactory.init("jdbc:sqlite:$path", rebuild = true)
+        return path
     }
 
     private suspend fun verifySetup() {
@@ -51,10 +49,12 @@ class SecurityHardeningTest {
 
     @Test
     fun `regular user should not be able to escalate role via saveUserProfile`() = testApplication {
+        val dbPath = createTestDb()
+
         environment {
             config = MapApplicationConfig(
                 "ktor.testing" to "true",
-                "ktor.test.db_path" to testDbPath
+                "ktor.test.db_path" to dbPath
             )
         }
 
@@ -92,10 +92,12 @@ class SecurityHardeningTest {
 
     @Test
     fun `order total should be recalculated on server to prevent price manipulation`() = testApplication {
+        val dbPath = createTestDb()
+
         environment {
             config = MapApplicationConfig(
                 "ktor.testing" to "true",
-                "ktor.test.db_path" to testDbPath
+                "ktor.test.db_path" to dbPath
             )
         }
 

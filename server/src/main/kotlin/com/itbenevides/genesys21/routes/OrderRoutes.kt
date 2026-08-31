@@ -86,17 +86,22 @@ fun Route.orderRoutes(
                     if (order.paymentMethod == PaymentMethod.APP) {
                         val store = storeRepository.getStore(order.storeId).getOrNull()
 
-                        // PRIORIDADE: Primeiro tentamos pegar a chave das variáveis de ambiente (System Settings)
-                        // Caso não existam, usamos as chaves configuradas na loja do usuário.
-                        // BLOQUEIO: Ignoramos as chaves padrão que indicam configuração incompleta.
-                        val systemSecretKey = System.getenv("STRIPE_SECRET_KEY")
-                        val systemPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
+                        // EXCLUSIVO: Se a chave da loja for inválida (null, vazia ou contendo 'default'),
+                        // usamos OBRIGATORIAMENTE a chave do sistema via variável de ambiente.
+                        val storeSecretKey = store?.stripeSecretKey
+                        val storePublishableKey = store?.stripePublicKey
 
-                        val storeSecretKey = store?.stripeSecretKey?.takeIf { !it.contains("default") && it.isNotBlank() }
-                        val storePublishableKey = store?.stripePublicKey?.takeIf { !it.contains("default") && it.isNotBlank() }
+                        val secretKey = if (storeSecretKey.isNullOrBlank() || storeSecretKey.contains("default")) {
+                            System.getenv("STRIPE_SECRET_KEY")
+                        } else {
+                            storeSecretKey
+                        }
 
-                        val secretKey = if (!systemSecretKey.isNullOrBlank()) systemSecretKey else storeSecretKey
-                        val publishableKey = if (!systemPublishableKey.isNullOrBlank()) systemPublishableKey else storePublishableKey
+                        val publishableKey = if (storePublishableKey.isNullOrBlank() || storePublishableKey.contains("default")) {
+                            System.getenv("STRIPE_PUBLIC_KEY")
+                        } else {
+                            storePublishableKey
+                        }
 
                         if (!secretKey.isNullOrBlank()) {
                             try {
