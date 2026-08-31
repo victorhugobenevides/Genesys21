@@ -1,7 +1,8 @@
-- [/] Restauração de Admin e Fix de Checkout Stripe
-    - [ ] Adicionar rota `/api/users/profile/me` em `UserRoutes.kt`
-    - [ ] Atualizar `KtorUserRepository.kt` para usar a rota privada de perfil
-    - [ ] Refinar fallback de chaves Stripe em `OrderRoutes.kt`
-- [ ] Validar compilação local
-- [ ] Push para main
+- [/] Estabilização Final de Produção e Segurança
+    - [ ] Remover restrição de FK em `CartsTable` para evitar Erro 500
+    - [ ] Desativar RateLimit em testes na `Application.kt`
+    - [ ] Reforçar Dogma Admin em `SqliteUserRepository.kt`
+    - [ ] Priorizar Stripe Keys do ambiente no servidor
+- [ ] Validar build local
+- [ ] Push final
 - [ ] Criar walkthrough

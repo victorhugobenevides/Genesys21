@@ -92,8 +92,8 @@ fun Route.orderRoutes(
                         val systemSecretKey = System.getenv("STRIPE_SECRET_KEY")
                         val systemPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
 
-                        val storeSecretKey = store?.stripeSecretKey?.takeIf { it != "sk_test_genesys_default" }
-                        val storePublishableKey = store?.stripePublicKey?.takeIf { it != "pk_test_genesys_default" }
+                        val storeSecretKey = store?.stripeSecretKey?.takeIf { !it.contains("default") && it.isNotBlank() }
+                        val storePublishableKey = store?.stripePublicKey?.takeIf { !it.contains("default") && it.isNotBlank() }
 
                         val secretKey = if (!systemSecretKey.isNullOrBlank()) systemSecretKey else storeSecretKey
                         val publishableKey = if (!systemPublishableKey.isNullOrBlank()) systemPublishableKey else storePublishableKey
