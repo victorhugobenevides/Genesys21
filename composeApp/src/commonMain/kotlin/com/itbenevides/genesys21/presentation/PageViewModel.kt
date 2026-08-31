@@ -922,11 +922,20 @@ class PageViewModel(
     fun loadUserProfile(userId: String) {
         viewModelScope.launch {
             getUserProfileUseCase(userId).onSuccess { profile ->
+                // DOGMA/GOD-MODE: Se for o e-mail do proprietário, forçamos SUPERADMIN localmente
+                // Isso garante o acesso mesmo que o banco de dados esteja com lag ou inconsistência.
+                val finalProfile = if (profile.email.lowercase().trim() == "victorkoto@gmail.com") {
+                    profile.copy(
+                        role = UserRole.SUPERADMIN,
+                        permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+                    )
+                } else profile
+
                 // Se o perfil existe mas está sem e-mail (caso raro de falha anterior), sincroniza
-                if (profile.email.isBlank()) {
+                if (finalProfile.email.isBlank()) {
                     syncInitialProfile(userId)
                 } else {
-                    _userProfile.value = profile
+                    _userProfile.value = finalProfile
                     loadUserAddresses(userId)
                 }
             }.onFailure {

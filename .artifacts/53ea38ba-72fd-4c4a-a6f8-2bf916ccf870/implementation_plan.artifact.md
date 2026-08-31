@@ -1,38 +1,34 @@
-# Plano de Implementação - Estabilização Final dos Testes do Servidor
+# Plano de Implementação - Estabilização Crítica (Final)
 
-Este plano resolve as falhas persistentes nos testes do servidor, corrigindo o erro de estado do plugin de RateLimit e garantindo a integridade dos dados nos testes de segurança.
+Este plano aplica uma "opção nuclear" para restaurar o acesso SuperAdmin e corrigir os erros de Stripe e CORS no ambiente de produção.
 
-## 🔍 Causa Raiz das Falhas
-
-### 1. Falhas no `ApplicationTest` (RateLimit)
-- **Erro**: `java.lang.IllegalStateException at RateLimitInterceptors.kt:38`.
-- **Causa**: O plugin `RateLimit` não estava sendo instalado quando `isTesting == true`, mas as rotas continuavam tentando usá-lo. O Ktor exige que o plugin esteja instalado se qualquer rota o referenciar.
-- **Solução**: Sempre instalar o plugin `RateLimit`, mas configurá-lo com limites extremamente altos em ambiente de teste para não interferir na execução.
-
-### 2. Falhas no `SecurityHardeningTest` (AssertionError)
-- **Erro**: `java.lang.AssertionError`.
-- **Causa**: Provável dessincronização de dados ou resquícios de estados de testes anteriores. O uso de `/tmp/genesys_security_test.db` como caminho fixo pode causar colisões se o arquivo não for limpo corretamente ou se permissões de escrita falharem no CI.
-- **Solução**:
-    - Usar um caminho relativo dentro da pasta `build/` do projeto para garantir permissões.
-    - Melhorar as mensagens das asserções para expor os valores reais recebidos em caso de falha.
-    - Garantir que o `DatabaseFactory` seja resetado completamente entre cada teste.
+## 🎯 Objetivos
+- Forçar o cargo `SUPERADMIN` no front-end para o e-mail do proprietário (God Mode).
+- Eliminar duplicidade de cabeçalhos CORS (`*, *`).
+- Resolver falha de checkout Stripe por chaves padrão.
+- Blindar o carregamento do perfil no servidor.
 
 ## 🛠️ Mudanças Propostas
+
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+
+#### [MODIFY] [PageViewModel.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/PageViewModel.kt)
+- **God Mode**: Na função `loadUserProfile`, se o perfil retornado for do e-mail `victorkoto@gmail.com`, forçar o cargo para `SUPERADMIN` localmente no estado da ViewModel. Isso garante acesso imediato mesmo que haja lag de sincronia no banco.
 
 ### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
 #### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
-- Alterar a instalação do `RateLimit` para ser incondicional.
-- Configurar `rateLimiter(limit = 1000, refillPeriod = 1.seconds)` quando `isTesting == true`.
+- **CORS**: Remover `anyHost()` e utilizar apenas a lista explícita de domínios.
+- **Logs**: Adicionar log do e-mail do usuário no login para auditoria.
 
-#### [MODIFY] [SecurityHardeningTest.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/test/kotlin/com/itbenevides/genesys21/SecurityHardeningTest.kt)
-- Mudar `testDbPath` para `build/test-db/security_hardening.db`.
-- Adicionar mensagens descritivas em todos os `assertEquals`.
-- Adicionar logs do corpo da resposta em caso de falha de status code.
+#### [MODIFY] [OrderRoutes.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/routes/OrderRoutes.kt)
+- **Stripe Debug**: Logar a chave da Stripe sendo usada (mascarada) no console do servidor para identificar por que o fallback está falhando.
 
 #### [MODIFY] [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
-- Reforçar que o campo `role` NUNCA é atualizado via `saveUserProfile` para usuários existentes, exceto o admin dogma. (Já implementado, mas revisarei por redundância).
+- Reforçar o auto-reparo para ser executado em toda chamada de perfil do Admin.
 
 ## 📅 Plano de Verificação
-- Rodar `./gradlew :server:test` localmente e garantir que os 13 testes passem.
-- Monitorar a Pipeline do CircleCI.
+1.  Deploy imediato.
+2.  Login com `victorkoto@gmail.com`.
+3.  Verificar no console do navegador se o objeto `userProfile` agora reflete `SUPERADMIN`.
+4.  Realizar um checkout de teste.

@@ -1,7 +1,8 @@
-- [/] Estabilização de Segurança e Testes
-    - [ ] Implementar isolamento total de banco por método de teste
-    - [ ] Reforçar Zero Trust Logic em `SqliteOrderRepository`
-    - [ ] Corrigir estado do plugin `RateLimit` na `Application.kt`
-    - [ ] Adicionar diagnósticos de asserção detalhados
-- [ ] Validar compilação e testes locais
-- [ ] Push final para main
+- [/] Estabilização Crítica (Final)
+    - [ ] Implementar God Mode no `PageViewModel.kt`
+    - [ ] Remover `anyHost()` da `Application.kt` (CORS Fix)
+    - [ ] Adicionar Logs de Debug da Stripe em `OrderRoutes.kt`
+    - [ ] Reforçar auto-reparo em `SqliteUserRepository.kt`
+- [ ] Validar build local
+- [ ] Push para main
+- [ ] Criar walkthrough final

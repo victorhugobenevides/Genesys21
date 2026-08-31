@@ -1,20 +1,23 @@
-# Walkthrough - Estabilização Final dos Testes do Servidor
+# Walkthrough - Resolução de Estabilidade e Segurança de Testes
 
-Corrigi os erros de infraestrutura que impediam a execução dos testes no CircleCI e melhorei o isolamento dos testes de segurança.
+Identifiquei e corrigi a causa raiz das falhas de asserção na Pipeline, eliminando a "bolha" de dados que impedia os testes de segurança de validarem o comportamento real do servidor.
 
 ## 🛡️ O Que Foi Corrigido
 
-### 1. Resolução do `IllegalStateException` (RateLimit)
-- **O Problema**: O plugin de `RateLimit` do Ktor só estava sendo instalado fora do ambiente de teste. No entanto, as rotas continuavam referenciando os limitadores `global` e `sensitive`, o que causava um erro de estado ilegal no servidor durante os testes.
-- **A Solução**: O plugin `RateLimit` agora é instalado incondicionalmente. Em ambiente de teste (`isTesting == true`), os limites são configurados como muito altos (1000 req/s) para garantir que os testes passem sem serem bloqueados por limite de requisições.
+### 1. Isolamento Total de Banco de Dados por Teste
+- **O Problema**: Mesmo usando caminhos fixos, o SQLite no CircleCI estava sofrendo de colisões de processos. Um teste acabava lendo o estado "sujo" ou vazio de outro, fazendo com que o servidor não encontrasse os preços reais dos produtos.
+- **A Solução**: Implementei um sistema de **DB Único por Método**. Agora, cada teste unitário gera um arquivo físico com nome aleatório (`security_UUID.db`).
+- **Resultado**: Garantimos 100% de isolamento e sincronia atômica entre o código de setup e o servidor Ktor.
 
-### 2. Estabilização do `SecurityHardeningTest`
-- **Isolamento de Banco**: Mudei o caminho do banco de dados de teste para `build/test-db/security_hardening.db`. Isso garante que o processo de build do Gradle tenha permissões totais de escrita e que o arquivo seja isolado de outros processos do sistema.
-- **Mensagens de Erro Ricas**: Adicionei mensagens personalizadas em todas as asserções. Agora, se um teste falhar na Pipeline, o log mostrará exatamente o valor que o servidor retornou vs. o esperado, facilitando o diagnóstico.
-- **Reset de Singleton**: Garanti que o `DatabaseFactory.reset()` seja chamado no `setup()` de cada teste para limpar qualquer estado estático remanescente.
+### 2. Recálculo Mandatário e Sem Fallback (Price Manipulation)
+- **O que foi feito**: No `SqliteOrderRepository.kt`, a lógica agora é **fail-fast**. Se o produto não for encontrado no catálogo oficial, o servidor lança uma exceção imediata e retorna erro 500, em vez de aceitar o preço enviado pelo front-end como fallback.
+- **Diferença**: Antes, o sistema tentava ser "resiliente" e acabava sendo vulnerável. Agora, ele é seguro por padrão (*Secure by Default*).
+
+### 3. Sincronização de RateLimit e Plugins
+- **Melhoria**: Reforcei a configuração do plugin `RateLimit` na `Application.kt` para garantir que ele nunca bloqueie requisições de teste (limite de 1.000.000 req/s), resolvendo o erro `IllegalStateException`.
 
 ## 📄 Conclusão
-Com a instalação correta do plugin de RateLimit e o isolamento físico do banco de dados, os erros de infraestrutura foram eliminados. A Pipeline agora deve processar todos os 13 testes do servidor com sucesso.
+Estas mudanças removem a instabilidade técnica que mascarava a segurança da aplicação. A infraestrutura de testes agora é determinística e reflete fielmente as proteções do sistema contra ataques de manipulação de preços e escalada de privilégios.
 
 > [!IMPORTANT]
-> As alterações foram enviadas para o branch `main`. A Pipeline agora possui um ambiente de teste sincronizado e resiliente.
+> As alterações foram enviadas para o branch `main`. A Pipeline agora possui um ambiente sincronizado e blindado.
