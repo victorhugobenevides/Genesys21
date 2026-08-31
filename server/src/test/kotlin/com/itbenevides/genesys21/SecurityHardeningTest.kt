@@ -13,24 +13,20 @@ import io.mockk.mockk
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import java.io.File
 import kotlin.test.*
 
 class SecurityHardeningTest {
 
-    private var testDbPath: String = ""
+    private val testDbPath: String = "/tmp/genesys_security_test.db"
 
     @BeforeTest
     fun setup() {
-        // Cria um arquivo físico de banco para este teste específico
-        val testId = System.nanoTime()
-        testDbPath = "build/test-db/security_$testId.db"
-        File("build/test-db").mkdirs()
-
-        // Inicializa o banco (FLYWAY criará tabelas)
+        // Inicializa o banco físico para o teste
         DatabaseFactory.reset()
         DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = true)
-        println("TEST SETUP: Database file created at $testDbPath")
+        println("TEST SETUP: Database initialized at $testDbPath")
     }
 
     @AfterTest
@@ -48,9 +44,13 @@ class SecurityHardeningTest {
             )
         }
 
+        application {
+            module() // CARREGA TUDO: Rotas, Plugins, Autenticação, etc.
+        }
+
         val userRepo = SqliteUserRepository()
 
-        // 1. Criar usuário comum
+        // 1. Criar um usuário comum
         val initialProfile = UserProfile(
             id = "attacker-id",
             email = "attacker@evil.com",
@@ -59,7 +59,7 @@ class SecurityHardeningTest {
         )
         userRepo.saveUserProfile(initialProfile).getOrThrow()
 
-        // 2. Ataque
+        // 2. Ataque: Tentar se promover para SUPERADMIN via POST na API
         val evilProfile = initialProfile.copy(role = UserRole.SUPERADMIN)
 
         val response = client.post("/api/users/profile") {
@@ -68,11 +68,17 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(evilProfile))
         }
 
-        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK")
 
-        // 3. Verificação
+        // 3. Verificação: O cargo deve continuar como CUSTOMER
         val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
-        assertEquals(UserRole.CUSTOMER, savedProfile.role, "VULNERABILIDADE: Cargo alterado!")
+        println("TEST VERIFY: Role após ataque: ${savedProfile.role}")
+
+        assertEquals(
+            UserRole.CUSTOMER,
+            savedProfile.role,
+            "VULNERABILIDADE: Usuário conseguiu se promover para ${savedProfile.role}!"
+        )
     }
 
     @Test
@@ -84,9 +90,13 @@ class SecurityHardeningTest {
             )
         }
 
+        application {
+            module() // CARREGA TUDO
+        }
+
         val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
 
-        // Setup CATALOGO
+        // Setup: Inserir catálogo oficial
         dbQuery {
             StoresTable.insert {
                 it[id] = "s1"
@@ -102,7 +112,7 @@ class SecurityHardeningTest {
             }
         }
 
-        // Ataque: JSON com R$ 1.00
+        // Ataque: Enviar pedido com preço manipulado de R$ 1.00
         val fakeOrder = Order(
             id = "evil-order",
             storeId = "s1",
@@ -121,10 +131,16 @@ class SecurityHardeningTest {
             setBody(Json.encodeToString(fakeOrder))
         }
 
-        assertEquals(HttpStatusCode.Created, response.status, response.bodyAsText())
+        assertEquals(HttpStatusCode.Created, response.status, "Response: ${response.bodyAsText()}")
 
-        // Verificação final
+        // Verificação: O servidor deve ter forçado o preço de R$ 1000.00 do banco
         val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
-        assertEquals(1000.0, savedOrder.total, "VULNERABILIDADE: Preço aceito!")
+        println("TEST VERIFY: Total salvo no banco: R$ ${savedOrder.total}")
+
+        assertEquals(
+            1000.0,
+            savedOrder.total,
+            "VULNERABILIDADE: Servidor aceitou preço de R$ ${savedOrder.total}!"
+        )
     }
 }

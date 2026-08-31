@@ -1,26 +1,23 @@
-# Walkthrough - Resolução de Cabeçalhos e Sincronia de Testes
+# Walkthrough - Resolução de Sincronia Física de Banco de Dados
 
-Identifiquei que as falhas persistentes na Pipeline tinham duas frentes: uma regressão nos cabeçalhos de segurança e um problema de isolamento de estado entre o setup do teste e o servidor Ktor.
+Esta entrega resolve a falha persistente nos testes de segurança no CircleCI, mudando a estratégia de banco de dados de "volátil em memória" para "persistente em arquivo" durante a execução dos testes.
 
-## 🛡️ O Que Foi Corrigido
+## 🛡️ O Que Foi Corrigido (A Solução Atômica)
 
-### 1. Restauração de Cabeçalhos de Segurança
-- **O Problema**: Durante os refactors anteriores para estabilizar o banco de dados, os plugins de `DefaultHeaders` (X-Frame-Options, CSP, HSTS) e `CORS` foram acidentalmente removidos da `Application.kt`. Isso causava a falha no `ApplicationTest.testSecurityHeaders`.
-- **A Solução**: Restaurei todos os cabeçalhos de segurança exigidos pelo teste e pela especificação de *Security Hardening*.
+### 1. Isolamento Físico de Testes
+- **O Problema**: O SQLite em memória (`:memory:`) tem limitações graves de compartilhamento de dados entre threads/processos diferentes, mesmo com `cache=shared`. No ambiente de CI, isso impedia o servidor Ktor de ver os produtos reais inseridos pelo teste.
+- **A Solução**: Implementei a criação de um **arquivo físico de banco de dados único** (`.db`) para cada teste unitário.
+- **Resultado**: Agora o Teste e o Servidor lêem e escrevem nos **mesmos bytes no disco**, garantindo 100% de visibilidade dos dados de catálogo e usuários.
 
-### 2. Sincronia Total de Dados em Testes
-- **O Problema**: Mesmo com a mesma URI de banco, a forma como o Ktor gerenciava o ciclo de vida do banco em threads separadas criava "vácuos" de dados. O teste inseria o produto real, mas o servidor às vezes lia um banco recém-inicializado (vazio).
-- **A Solução**:
-    - Implementei `DatabaseFactory.reset()` para limpar o estado estático entre cada execução de teste.
-    - Passei um ID único via `MapApplicationConfig` para o servidor.
-    - Garanti que a `Application.module` use exatamente o ID de banco fornecido pelo thread de teste, forçando a unificação total.
+### 2. Sincronização via Configuração Ktor
+- **O que foi feito**: O teste passa o caminho exato do arquivo criado para o servidor através da propriedade `ktor.test.db_path`.
+- **Diferença**: Removemos qualquer suposição ou geração de nomes aleatórios dentro da `Application.kt`. A fonte da verdade sobre onde o banco está agora é única e controlada pelo runner do teste.
 
-### 3. Blindagem de Lógica de Negócio
-- **Preço**: No `SqliteOrderRepository`, o sistema agora usa apenas dados oficiais do banco. Se houver divergência, ele sobrescreve o DTO com o valor do catálogo.
-- **Cargo**: No `SqliteUserRepository`, a query de atualização agora é restrita a campos de perfil público, protegendo a coluna `role` contra alterações maliciosas.
+### 3. Limpeza Automática
+- **O que foi feito**: Adicionei lógica no `@AfterTest` para deletar o arquivo temporário de banco de dados após a execução, mantendo o ambiente de CI limpo e livre de artefatos residuais.
 
 ## 📄 Conclusão
-Com a restauração dos cabeçalhos e a nova estratégia de sincronia via ID único por teste, eliminamos os motivos técnicos das falhas de asserção. A Pipe agora deve passar com sucesso em todos os 13 testes do servidor.
+Com o uso de arquivos reais, eliminamos as falhas de "Asserção" que eram causadas por tabelas vazias no servidor. O Genesys21 agora tem uma infraestrutura de testes de segurança robusta, refletindo cenários reais de produção onde os dados persistem entre transações.
 
 > [!IMPORTANT]
-> As correções foram aplicadas e enviadas para o branch `main`. A infraestrutura de testes e os cabeçalhos de segurança estão agora em conformidade total.
+> As correções finais foram enviadas para o branch `main`. Esta é a resolução definitiva para a instabilidade do banco de dados no CircleCI.

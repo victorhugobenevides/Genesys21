@@ -70,7 +70,12 @@ class SqliteOrderRepository(
                 val (name, price) = when {
                     product != null -> {
                         val row = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.singleOrNull()
-                            ?: throw Exception("Produto ${product.id} inválido")
+                        if (row == null) {
+                            val count = ProductsTable.selectAll().count()
+                            println("PRODUCT NOT FOUND! DB STORE COUNT: $count")
+                            throw Exception("Produto ${product.id} inválido")
+                        }
+                        println("CHECKING DB FOR PRODUCT ${product.id}: FOUND ${row[ProductsTable.name]} PRICE ${row[ProductsTable.price]}")
                         row[ProductsTable.name] to row[ProductsTable.price]
                     }
                     service != null -> {

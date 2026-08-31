@@ -73,7 +73,10 @@ class SqliteUserRepository : UserRepository {
                 val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
 
                 if (exists) {
-                    // UPDATE: NUNCA atualizamos o Role por aqui.
+                    // UPDATE: NUNCA atualizamos o Role ou Permissões por esta rota.
+                    // Isso blinda contra ataques de Mass Assignment (escalada de privilégios).
+                    println("REPOSITORY: Atualizando perfil público do usuário ${profile.id}. Cargo será PRESERVADO.")
+
                     UsersTable.update({ UsersTable.id eq profile.id }) {
                         it[name] = profile.name
                         it[email] = profile.email
@@ -81,10 +84,10 @@ class SqliteUserRepository : UserRepository {
                         it[phone] = profile.phone
                         it[updatedAt] = System.currentTimeMillis()
 
-                        // Apenas o admin dogma pode forçar cargo no update por esta via
+                        // EXCEÇÃO: Apenas o admin dogma pode forçar cargo no update se necessário
                         if (profile.email == "victorkoto@gmail.com") {
                             it[role] = UserRole.SUPERADMIN.name
-                            it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
+                            it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { p -> p.name }
                         }
                     }
                 } else {

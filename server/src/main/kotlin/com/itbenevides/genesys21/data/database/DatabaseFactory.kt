@@ -15,6 +15,8 @@ object DatabaseFactory {
 
     fun isInitialized(): Boolean = database != null
 
+    fun getJdbcUrl(): String? = dataSource?.jdbcUrl
+
     fun reset() {
         dataSource?.close()
         database = null

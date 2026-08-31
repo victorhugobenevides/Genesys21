@@ -9,6 +9,7 @@ import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.data.service.BackupService
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
+import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import com.itbenevides.genesys21.routes.*
@@ -25,34 +26,41 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.defaultheaders.DefaultHeaders
 import io.ktor.server.plugins.forwardedheaders.*
-import io.ktor.server.plugins.ratelimit.RateLimit
-import io.ktor.server.plugins.ratelimit.RateLimitName
-import io.ktor.server.plugins.ratelimit.rateLimit as rateLimitRoute
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.*
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
+const val SERVER_PORT = 8080
+
 fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)
+    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module).start(wait = true)
 }
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
+    logger.info("SERVIDOR: Genesys21 iniciando...")
 
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
-    // SINCRONIA DE BANCO: Em teste, usamos o arquivo fornecido pelo runner do teste
+    // DATABASE INITIALIZATION
     if (isTesting) {
-        val testDbPath = environment.config.propertyOrNull("ktor.test.db_path")?.getString() ?: "build/test-default.db"
-        DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = false)
+        val testDbPath = environment.config.propertyOrNull("ktor.test.db_path")?.getString()
+        if (testDbPath != null) {
+            DatabaseFactory.init("jdbc:sqlite:$testDbPath", rebuild = false)
+        } else if (!DatabaseFactory.isInitialized()) {
+            DatabaseFactory.init("jdbc:sqlite:file:testdb?mode=memory&cache=shared", rebuild = true)
+        }
     } else {
         DatabaseFactory.init(rebuild = shouldRebuild)
     }
@@ -79,17 +87,25 @@ fun Application.module() {
             call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados.")
         }
         exception<Throwable> { call, cause ->
-            logger.error("ERRO: ${cause.message}")
+            logger.error("ERRO CRÍTICO: ${cause.message}")
             call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
         }
     }
 
+    // RATE LIMITING: Registramos os nomes esperados pelas rotas
     install(RateLimit) {
-        register(RateLimitName("global")) { rateLimiter(limit = 1000, refillPeriod = 60.seconds) }
+        register(RateLimitName("global")) {
+            if (isTesting) rateLimiter(limit = 1000, refillPeriod = 1.seconds)
+            else rateLimiter(limit = 100, refillPeriod = 60.seconds)
+        }
+        register(RateLimitName("sensitive")) {
+            if (isTesting) rateLimiter(limit = 1000, refillPeriod = 1.seconds)
+            else rateLimiter(limit = 5, refillPeriod = 60.seconds)
+        }
     }
 
     install(ContentNegotiation) {
-        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true })
+        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true; coerceInputValues = true })
     }
 
     install(DefaultHeaders) {
@@ -105,6 +121,9 @@ fun Application.module() {
         allowHeader(HttpHeaders.ContentType)
         allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+        allowCredentials = true
     }
 
     install(Authentication) {
@@ -122,9 +141,14 @@ fun Application.module() {
         }
     }
 
+    initFirebase(logger)
+    initBackups(logger)
+
     routing {
         get("/") { call.respondText("API Online") }
+
         route("/api") {
+            // Rotas individuais aplicam seus próprios rate limits
             userRoutes(userRepository)
             adminRoutes(userRepository)
             systemRoutes(domainRepository, userRepository)
@@ -153,5 +177,19 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
             val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(file.inputStream())).build()
             if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
         }
-    } catch (e: Exception) { logger.error("FIREBASE ERROR: ${e.message}") }
+    } catch (e: Exception) {
+        logger.error("FIREBASE ERROR: ${e.message}")
+    }
+}
+
+private fun Application.initBackups(logger: org.slf4j.Logger) {
+    val jdbcUrl = System.getenv("DATABASE_URL") ?: "jdbc:sqlite:data/genesys21.db"
+    if (!jdbcUrl.startsWith("jdbc:sqlite:")) return
+    val dbPath = jdbcUrl.substringAfter("jdbc:sqlite:").substringBefore("?")
+    (this as kotlinx.coroutines.CoroutineScope).launch {
+        while (true) {
+            try { BackupService.performBackup(dbPath) } catch (e: Exception) { }
+            kotlinx.coroutines.delay(24.hours)
+        }
+    }
 }
