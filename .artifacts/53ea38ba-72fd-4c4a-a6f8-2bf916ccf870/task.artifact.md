@@ -1,7 +1,7 @@
-- [/] Reset Seguro e Blindagem SuperAdmin
-    - [ ] Implementar Auto-Reparo de Role em `SqliteUserRepository.kt`
-    - [ ] Atualizar `Seeder.kt` com permissões completas
-    - [ ] Adicionar logs de diagnóstico na `Application.kt`
-- [ ] Validar build local
-- [ ] Commit e Push
-- [ ] Instruir o usuário sobre o trigger de reset (opcional)
+- [/] Restauração de Admin e Fix de Checkout Stripe
+    - [ ] Adicionar rota `/api/users/profile/me` em `UserRoutes.kt`
+    - [ ] Atualizar `KtorUserRepository.kt` para usar a rota privada de perfil
+    - [ ] Refinar fallback de chaves Stripe em `OrderRoutes.kt`
+- [ ] Validar compilação local
+- [ ] Push para main
+- [ ] Criar walkthrough

@@ -17,7 +17,20 @@ class KtorUserRepository(
 ) : UserRepository {
 
     override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
-        val response = client.get("$baseUrl/api/public/users/profile/$id")
+        val currentUserId = authRepository.getCurrentUserId()
+        val token = authRepository.getCurrentUserToken()
+
+        // Se estivermos buscando o perfil do próprio usuário logado, usamos a rota privada
+        // para obter o perfil completo com Role e Permissões.
+        val response = if (currentUserId == id && !token.isNullOrBlank()) {
+            client.get("$baseUrl/api/users/profile/me") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
+        } else {
+            // Caso contrário (visitante ou outro usuário), usamos a rota pública restrita (LGPD)
+            client.get("$baseUrl/api/public/users/profile/$id")
+        }
+
         if (response.status.isSuccess()) {
             Result.success(response.body())
         } else {

@@ -88,11 +88,15 @@ fun Route.orderRoutes(
 
                         // PRIORIDADE: Primeiro tentamos pegar a chave das variáveis de ambiente (System Settings)
                         // Caso não existam, usamos as chaves configuradas na loja do usuário.
+                        // BLOQUEIO: Ignoramos as chaves padrão que indicam configuração incompleta.
                         val systemSecretKey = System.getenv("STRIPE_SECRET_KEY")
                         val systemPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
 
-                        val secretKey = if (!systemSecretKey.isNullOrBlank()) systemSecretKey else store?.stripeSecretKey
-                        val publishableKey = if (!systemPublishableKey.isNullOrBlank()) systemPublishableKey else store?.stripePublicKey
+                        val storeSecretKey = store?.stripeSecretKey?.takeIf { it != "sk_test_genesys_default" }
+                        val storePublishableKey = store?.stripePublicKey?.takeIf { it != "pk_test_genesys_default" }
+
+                        val secretKey = if (!systemSecretKey.isNullOrBlank()) systemSecretKey else storeSecretKey
+                        val publishableKey = if (!systemPublishableKey.isNullOrBlank()) systemPublishableKey else storePublishableKey
 
                         if (!secretKey.isNullOrBlank()) {
                             try {

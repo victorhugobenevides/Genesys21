@@ -30,6 +30,16 @@ fun Route.userRoutes(userRepository: UserRepository) {
     authenticate("firebase") {
         route("/users") {
             rateLimit(RateLimitName("sensitive")) {
+                // ROTA PRIVADA: Retorna o perfil completo (com Role e Permissões) para o próprio usuário
+                get("/profile/me") {
+                    val principal = call.principal<UserIdPrincipal>() ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                    userRepository.getUserProfile(principal.name).onSuccess {
+                        call.respond(it)
+                    }.onFailure {
+                        call.respond(HttpStatusCode.NotFound, "Perfil não encontrado")
+                    }
+                }
+
                 post("/profile") {
                     val principal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
                     val profile = call.receive<UserProfile>()
