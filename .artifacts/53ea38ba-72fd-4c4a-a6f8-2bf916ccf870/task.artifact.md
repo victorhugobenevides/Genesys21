@@ -1,8 +1,7 @@
-- [/] Estabilização Crítica (Final)
-    - [ ] Implementar God Mode no `PageViewModel.kt`
-    - [ ] Remover `anyHost()` da `Application.kt` (CORS Fix)
-    - [ ] Adicionar Logs de Debug da Stripe em `OrderRoutes.kt`
-    - [ ] Reforçar auto-reparo em `SqliteUserRepository.kt`
-- [ ] Validar build local
-- [ ] Push para main
-- [ ] Criar walkthrough final
+- [x] Operação Nuclear Final: Reset e Dogma
+    - [x] Implementar deletação física de arquivo no boot em `Application.kt`
+    - [x] Refinar `SqliteUserRepository.kt` para cargo absoluto por e-mail
+    - [x] Blindar `Seeder.kt` para reconexão de loja padrão
+- [x] Validar build local (SUCCESSFUL)
+- [x] Push para main
+- [ ] Monitorar reinício do servidor (User triggers DB_REBUILD=true)

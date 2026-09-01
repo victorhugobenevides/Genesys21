@@ -54,7 +54,16 @@ fun Application.module() {
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
 
     if (shouldRebuild) {
-        logger.warn("⚠️ MODO DB_REBUILD ATIVO: O banco de dados será deletado e recriado!")
+        logger.warn("☢️ NUCLEAR RESET: Deletando banco de dados para reconstrução total!")
+        val dbFile = File("data/genesys21.db")
+        if (dbFile.exists()) {
+            dbFile.delete()
+            File("data/genesys21.db-shm").delete()
+            File("data/genesys21.db-wal").delete()
+            logger.info("✓ Arquivo data/genesys21.db deletado com sucesso.")
+        } else {
+            logger.info("⚠ Arquivo data/genesys21.db não encontrado para deletar.")
+        }
     }
 
     // DATABASE INITIALIZATION
@@ -102,14 +111,15 @@ fun Application.module() {
     install(RateLimit) {
         register(RateLimitName("global")) {
             if (isTesting) {
-                rateLimiter(limit = 1000000, refillPeriod = 1.seconds)
+                // Em testes, desativamos o limite real para evitar 429
+                rateLimiter(limit = Int.MAX_VALUE, refillPeriod = 1.seconds)
             } else {
                 rateLimiter(limit = 100, refillPeriod = 60.seconds)
             }
         }
         register(RateLimitName("sensitive")) {
             if (isTesting) {
-                rateLimiter(limit = 1000000, refillPeriod = 1.seconds)
+                rateLimiter(limit = Int.MAX_VALUE, refillPeriod = 1.seconds)
             } else {
                 rateLimiter(limit = 5, refillPeriod = 60.seconds)
             }
@@ -155,7 +165,7 @@ fun Application.module() {
     install(Authentication) {
         bearer("firebase") {
             authenticate { credential ->
-                if (isTesting && (credential.token == "dummy-token" || credential.token == "valid-token")) {
+                val principal = if (isTesting && (credential.token == "dummy-token" || credential.token == "valid-token")) {
                     UserIdPrincipal(if (credential.token == "dummy-token") "attacker-id" else "test-user")
                 } else {
                     try {
@@ -163,6 +173,17 @@ fun Application.module() {
                         UserIdPrincipal(decodedToken.uid)
                     } catch (e: Exception) { null }
                 }
+
+                // DETAILED LOGGING FOR LOGIN/AUTHENTICATION
+                if (principal != null) {
+                    launch {
+                        userRepository.getUserProfile(principal.name).onSuccess { profile ->
+                            logger.info("USER [${profile.id}] with email [${profile.email}] authenticated. Role assigned: [${profile.role}]")
+                        }
+                    }
+                }
+
+                principal
             }
         }
     }

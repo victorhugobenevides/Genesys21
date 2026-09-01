@@ -77,7 +77,7 @@ class SecurityHardeningTest {
         assertEquals(
             UserRole.CUSTOMER,
             savedProfile.role,
-            "Security Vulnerability: User escalated role to ${savedProfile.role}! Database: $dbPath"
+            "Security Vulnerability: User escalated role! Expected ${UserRole.CUSTOMER}, but got ${savedProfile.role}. (DB Path: $dbPath)"
         )
     }
 
@@ -138,7 +138,7 @@ class SecurityHardeningTest {
         assertEquals(
             1000.0,
             savedOrder.total,
-            "Security Vulnerability: Server accepted manipulated price of ${savedOrder.total} instead of 1000.0!"
+            "Security Vulnerability: Server accepted manipulated price! Expected 1000.0, but got ${savedOrder.total}. (DB Path: $dbPath)"
         )
     }
 }

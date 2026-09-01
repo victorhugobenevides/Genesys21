@@ -11,11 +11,13 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class SqliteUserRepository : UserRepository {
 
-    private object DogmaUtils {
-        const val SUPER_ADMIN_EMAIL = "victorkoto@gmail.com"
+    companion object {
+        const val OWNER_EMAIL = "victorkoto@gmail.com"
+    }
 
+    private object DogmaUtils {
         fun isDogmaAdmin(email: String): Boolean =
-            email.lowercase().trim() == SUPER_ADMIN_EMAIL
+            email.lowercase().trim() == OWNER_EMAIL
 
         fun forceDogmaRole(role: UserRole, email: String): UserRole =
             if (isDogmaAdmin(email)) UserRole.SUPERADMIN else role
@@ -30,6 +32,25 @@ class SqliteUserRepository : UserRepository {
     private fun ResultRow.toUserProfile(): UserProfile {
         val rawEmail = this[UsersTable.email]
         val email = rawEmail.lowercase().trim()
+
+        // DOGMA ABSOLUTO: victorkoto@gmail.com é o dono do sistema.
+        // Ignoramos o valor do banco e forçamos o cargo aqui para garantir acesso total.
+        if (email == OWNER_EMAIL) {
+            println("DOGMA: Identificado proprietário $email. Forçando cargo SUPERADMIN em memória.")
+            return UserProfile(
+                id = this[UsersTable.id],
+                email = rawEmail,
+                name = this[UsersTable.name],
+                avatarUrl = this[UsersTable.avatarUrl],
+                phone = this[UsersTable.phone],
+                role = UserRole.SUPERADMIN,
+                status = UserStatus.APPROVED,
+                permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet(),
+                createdAt = this[UsersTable.createdAt],
+                updatedAt = this[UsersTable.updatedAt],
+                deletedAt = this[UsersTable.deletedAt]
+            )
+        }
 
         val roleStr = this[UsersTable.role]
         val baseRole = try {
