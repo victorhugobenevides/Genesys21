@@ -185,7 +185,10 @@ jobs:
                 environment:
                   - DATABASE_URL=jdbc:sqlite:data/genesys21.db?journal_mode=WAL
                   - PROD_MODE=true
+                  - DB_REBUILD=${DB_REBUILD:-false}
                   - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+                  - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+                  - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
                 restart: unless-stopped
                 networks:
                   - genesys-network
