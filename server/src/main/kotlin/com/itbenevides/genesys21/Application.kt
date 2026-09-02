@@ -105,6 +105,9 @@ fun Application.module() {
     val stripeKey = System.getenv("STRIPE_SECRET_KEY")
     if (stripeKey.isNullOrBlank()) {
         logger.error("🚨 SERVIDOR: STRIPE_SECRET_KEY NÃO ENCONTRADA NO AMBIENTE!")
+        if (environment.config.propertyOrNull("ktor.deployment.environment")?.getString() == "production") {
+            error("FATAL: STRIPE_SECRET_KEY é obrigatória em produção.")
+        }
     } else {
         logger.info("✅ SERVIDOR: STRIPE_SECRET_KEY carregada com sucesso (${stripeKey.take(7)}...).")
     }

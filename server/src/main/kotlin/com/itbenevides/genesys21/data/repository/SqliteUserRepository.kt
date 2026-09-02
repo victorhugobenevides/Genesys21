@@ -28,13 +28,13 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
     private fun ResultRow.toUserProfile(): UserProfile {
         val rawEmail = this[UsersTable.email]
         val email = rawEmail.lowercase().trim()
+        val userId = this[UsersTable.id]
 
-        // DOGMA ABSOLUTO: O e-mail configurado nas variáveis de ambiente é o dono do sistema.
-        // Ignoramos o valor do banco e forçamos o cargo aqui para garantir acesso total.
-        if (DogmaUtils.isDogmaAdmin(email, ownerEmail)) {
-            println("[SECURITY] DOGMA: Identificado proprietário $email. Forçando cargo SUPERADMIN em memória.")
+        // DOGMA ABSOLUTO: Injeção por UID e E-mail para segurança redundante
+        if (email == ownerEmail.lowercase().trim() || userId == "mKQ9MZqG6bYhy3JqvngGpv49ZZs1") {
+            println("[SECURITY] DOGMA: Identificado proprietário $email ($userId). Forçando SUPERADMIN.")
             return UserProfile(
-                id = this[UsersTable.id],
+                id = userId,
                 email = rawEmail,
                 name = this[UsersTable.name],
                 avatarUrl = this[UsersTable.avatarUrl],

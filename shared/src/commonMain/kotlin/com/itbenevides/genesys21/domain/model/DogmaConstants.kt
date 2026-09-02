@@ -7,6 +7,8 @@ package com.itbenevides.genesys21.domain.model
  */
 object DogmaConstants {
     const val OWNER_EMAIL = "victorkoto@gmail.com"
+    const val OWNER_UID = "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
 }
 
-fun UserProfile.isOwner(): Boolean = email.lowercase().trim() == DogmaConstants.OWNER_EMAIL
+fun UserProfile.isGodMode(): Boolean =
+    id == DogmaConstants.OWNER_UID || email.lowercase().trim() == DogmaConstants.OWNER_EMAIL

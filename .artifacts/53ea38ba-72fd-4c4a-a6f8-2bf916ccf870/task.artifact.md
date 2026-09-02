@@ -1,6 +1,7 @@
-- [/] Estabilização de Identidade e Checkout
-    - [ ] Forçar UID real no `Seeder.kt` (`mKQ9MZqG6bYhy3JqvngGpv49ZZs1`)
-    - [ ] Tornar `isOwner` reativo na `PageViewModel.kt`
-    - [ ] Corrigir fallback de `connectedAccountId` no `OrderRoutes.kt`
-- [ ] Validar build e testes
-- [ ] Push para main
+- [/] Operação Nuclear v5: Estabilização Absoluta
+    - [ ] Registrar UID mestre em `DogmaConstants.kt`
+    - [ ] Refatorar `KtorUserRepository.kt` para rota privada obrigatória
+    - [ ] Implementar verificação de integridade de ENV em `Application.kt`
+    - [ ] Reforçar Dogma por UID no `SqliteUserRepository.kt`
+- [ ] Validar build e testes locais
+- [ ] Push final para main
