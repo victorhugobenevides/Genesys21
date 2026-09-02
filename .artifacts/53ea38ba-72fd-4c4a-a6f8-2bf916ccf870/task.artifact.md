@@ -1,7 +1,6 @@
-- [/] Estabilização Crítica de Produção (V3)
-    - [ ] Corrigir funções ausentes no `firebase-bridge.js` dentro do `up.sh`
-    - [ ] Adicionar logs de diagnóstico de ambiente na `Application.kt`
-    - [ ] Refinar logs de e-mail na `PageViewModel.kt`
-- [ ] Validar build local
-- [ ] Push para main
-- [ ] Monitorar logs da Pipe
+- [/] Sincronização Dinâmica de Admin (Final)
+    - [ ] Remover e-mail hardcoded do `Seeder.kt` (usar env var)
+    - [ ] Remover e-mail hardcoded do `PageViewModel.kt` (confiar na role do server)
+    - [ ] Remover e-mail hardcoded do `AdminMenu.kt`
+- [ ] Validar compilação do servidor
+- [ ] Push para disparar Deploy + Reset

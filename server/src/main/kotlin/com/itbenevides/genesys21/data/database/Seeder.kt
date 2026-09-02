@@ -12,8 +12,8 @@ object Seeder {
 
     fun seedInitialData() {
         transaction {
-            // 1. Determine Admin ID
-            val adminEmail = "victorkoto@gmail.com"
+            // 1. Determine Admin ID from Environment
+            val adminEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
             val existingAdmin = UsersTable.selectAll().where { UsersTable.email eq adminEmail }.firstOrNull()
             val adminId = existingAdmin?.get(UsersTable.id) ?: "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
 

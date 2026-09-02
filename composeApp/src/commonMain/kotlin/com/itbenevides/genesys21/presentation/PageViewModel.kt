@@ -922,23 +922,15 @@ class PageViewModel(
     fun loadUserProfile(userId: String) {
         viewModelScope.launch {
             getUserProfileUseCase(userId).onSuccess { profile ->
-                // DOGMA/GOD-MODE: Se for o e-mail do proprietário, forçamos SUPERADMIN localmente
-                // Isso garante o acesso mesmo que o banco de dados esteja com lag ou inconsistência.
-                val isOwner = profile.email.lowercase().trim() == "victorkoto@gmail.com"
-                val finalProfile = if (isOwner) {
-                    println("VIEWMODEL: God Mode ativado para o proprietário!")
-                    profile.copy(
-                        role = UserRole.SUPERADMIN,
-                        permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-                    )
-                } else profile
+                // Como agora usamos a rota /me que retorna o perfil completo com Role e Permissions,
+                // não precisamos mais forçar o e-mail localmente no front-end.
+                // Confiamos no que o servidor (que possui o Dogma Absoluto) retorna.
+                _userProfile.value = profile
+                loadUserAddresses(userId)
 
                 // Se o perfil existe mas está sem e-mail (caso raro de falha anterior), sincroniza
-                if (finalProfile.email.isBlank()) {
+                if (profile.email.isBlank()) {
                     syncInitialProfile(userId)
-                } else {
-                    _userProfile.value = finalProfile
-                    loadUserAddresses(userId)
                 }
             }.onFailure {
                 // Se o perfil não existe no servidor, cria um registro básico proativamente
