@@ -941,6 +941,7 @@ class PageViewModel(
                     )
                 } else profile
 
+                println("VIEWMODEL: Perfil carregado -> Email: ${finalProfile.email}, Role: ${finalProfile.role}, UID: ${finalProfile.id}")
                 _userProfile.value = finalProfile
                 loadUserAddresses(userId)
 

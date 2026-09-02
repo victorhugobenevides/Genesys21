@@ -86,35 +86,18 @@ fun Route.orderRoutes(
                     if (order.paymentMethod == PaymentMethod.APP) {
                         val store = storeRepository.getStore(order.storeId).getOrNull()
 
-                        // EXCLUSIVO: Se a chave da loja for inválida (null, vazia ou contendo 'default'/'genesys'),
-                        // ou for muito curta (< 20 chars), usamos OBRIGATORIAMENTE a chave do sistema.
-                        val storeSecretKey = store?.stripeSecretKey
-                        val storePublishableKey = store?.stripePublicKey
+                        // PRIORIDADE ABSOLUTA: Se existir variável de ambiente, ignoramos qualquer outra chave.
+                        val envSecretKey = System.getenv("STRIPE_SECRET_KEY")
+                        val envPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
 
-                        val secretKey = if (storeSecretKey.isNullOrBlank() ||
-                            storeSecretKey.contains("default") ||
-                            storeSecretKey.contains("genesys") ||
-                            storeSecretKey.length < 20) {
-                            System.getenv("STRIPE_SECRET_KEY")
-                        } else {
-                            storeSecretKey
-                        }
+                        val secretKey = if (!envSecretKey.isNullOrBlank()) envSecretKey else store?.stripeSecretKey
+                        val publishableKey = if (!envPublishableKey.isNullOrBlank()) envPublishableKey else store?.stripePublicKey
 
-                        val publishableKey = if (storePublishableKey.isNullOrBlank() ||
-                            storePublishableKey.contains("default") ||
-                            storePublishableKey.contains("genesys") ||
-                            storePublishableKey.length < 20) {
-                            System.getenv("STRIPE_PUBLIC_KEY")
-                        } else {
-                            storePublishableKey
-                        }
-
-                        if (!secretKey.isNullOrBlank()) {
+                        if (!secretKey.isNullOrBlank() && !secretKey.contains("default")) {
                             try {
                                 val maskedKey = secretKey.take(7) + "..." + secretKey.takeLast(4)
-                                println("STRIPE DEBUG: Using Secret Key: $maskedKey (Env: ${!System.getenv("STRIPE_SECRET_KEY").isNullOrBlank()})")
+                                println("STRIPE DEBUG: Enviando cobrança com chave: $maskedKey (Env found: ${!envSecretKey.isNullOrBlank()})")
 
-                                // MIGRADO: De CheckoutSession para PaymentIntent (Embedded Checkout)
                                 val clientSecret = stripeService.createPaymentIntent(
                                     order = order.copy(id = generatedId),
                                     secretKey = secretKey,

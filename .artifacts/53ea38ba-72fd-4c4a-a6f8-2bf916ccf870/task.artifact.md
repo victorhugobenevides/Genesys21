@@ -1,7 +1,5 @@
-- [/] Operação Nuclear v5: Estabilização Absoluta
-    - [ ] Registrar UID mestre em `DogmaConstants.kt`
-    - [ ] Refatorar `KtorUserRepository.kt` para rota privada obrigatória
-    - [ ] Implementar verificação de integridade de ENV em `Application.kt`
-    - [ ] Reforçar Dogma por UID no `SqliteUserRepository.kt`
-- [ ] Validar build e testes locais
+- [/] Strike Final: Bypass de Identidade e Fix Stripe
+    - [ ] Implementar bypass na rota `/me` no `UserRoutes.kt`
+    - [ ] Priorizar variáveis de ambiente no `OrderRoutes.kt`
+    - [ ] Adicionar rota de status na `Application.kt`
 - [ ] Push final para main
