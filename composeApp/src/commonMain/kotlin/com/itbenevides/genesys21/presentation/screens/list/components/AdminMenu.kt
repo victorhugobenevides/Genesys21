@@ -43,7 +43,8 @@ data class AdminMenuItem(
         val AuditLogs = AdminMenuItem(13, "Logs de Auditoria", GenesysIcons.List, AdminMenuCategory.SYSTEM, UserRole.SUPERADMIN)
 
         fun getVisibleItems(user: com.itbenevides.genesys21.domain.model.UserProfile?, pendingOrders: Int = 0): List<AdminMenuItem> {
-            val role = user?.role ?: UserRole.CUSTOMER
+            val isOwner = user?.email?.lowercase()?.trim() == "victorkoto@gmail.com"
+            val role = if (isOwner) UserRole.SUPERADMIN else (user?.role ?: UserRole.CUSTOMER)
             val permissions = user?.permissions ?: emptySet()
 
             val all = listOf(

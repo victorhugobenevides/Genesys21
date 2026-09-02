@@ -83,7 +83,11 @@ fun Application.module() {
     val cartRepository = SqliteCartRepository()
     val bookingRepository = SqliteBookingRepository(GoogleCalendarService())
     val orderRepository = SqliteOrderRepository(bookingRepository)
-    val userRepository = SqliteUserRepository()
+
+    val ownerEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
+    logger.info("DOGMA: Owner Email configurado: $ownerEmail")
+    val userRepository = SqliteUserRepository(ownerEmail)
+
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()
     val stripeService = StripeService()

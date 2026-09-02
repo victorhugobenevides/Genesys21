@@ -924,7 +924,9 @@ class PageViewModel(
             getUserProfileUseCase(userId).onSuccess { profile ->
                 // DOGMA/GOD-MODE: Se for o e-mail do proprietário, forçamos SUPERADMIN localmente
                 // Isso garante o acesso mesmo que o banco de dados esteja com lag ou inconsistência.
-                val finalProfile = if (profile.email.lowercase().trim() == "victorkoto@gmail.com") {
+                val isOwner = profile.email.lowercase().trim() == "victorkoto@gmail.com"
+                val finalProfile = if (isOwner) {
+                    println("VIEWMODEL: God Mode ativado para o proprietário!")
                     profile.copy(
                         role = UserRole.SUPERADMIN,
                         permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()

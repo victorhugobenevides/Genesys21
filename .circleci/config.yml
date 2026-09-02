@@ -186,6 +186,7 @@ jobs:
                   - DATABASE_URL=jdbc:sqlite:data/genesys21.db?journal_mode=WAL
                   - PROD_MODE=true
                   - DB_REBUILD=${DB_REBUILD:-false}
+                  - OWNER_EMAIL=${OWNER_EMAIL:-victorkoto@gmail.com}
                   - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
                   - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
                   - STRIPE_PUBLIC_KEY=${STRIPE_PUBLIC_KEY}
