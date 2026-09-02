@@ -202,6 +202,7 @@ fun PageComponentRenderer(
                                         ServiceCard(
                                             service = service,
                                             onClick = { onServiceClick?.invoke(service) },
+                                            showPrice = component.showPrice
                                         )
                                     }
                                 }
@@ -214,6 +215,7 @@ fun PageComponentRenderer(
                             ServiceCard(
                                 service = service,
                                 onClick = { onServiceClick?.invoke(service) },
+                                showPrice = component.showPrice
                             )
                             GenesysSpacer(GenesysTheme.spacing.s)
                         }
@@ -413,6 +415,7 @@ fun PageComponentRenderer(
                 GenesysProductList(
                     products = productsToDisplay,
                     isHorizontal = component.isHorizontal,
+                    showPrice = component.showPrice,
                     isEditMode = isEditMode,
                     onProductClick = onProductClick,
                     onAddToCart = { router.viewModel.addToCart(it) },
@@ -869,6 +872,46 @@ fun PageComponentRenderer(
             is PageComponent.Divider -> {
                 Box(modifier = Modifier.padding(vertical = if (component.usePadding) 16.dp else 0.dp)) {
                     HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.5f))
+                }
+            }
+
+            is PageComponent.BusinessHours -> {
+                GenesysColumn(usePadding = true, modifier = Modifier.fillMaxWidth()) {
+                    GenesysText(
+                        text = component.title,
+                        style = GenesysTextStyle.Title,
+                        fontWeight = GenesysFontWeight.Bold,
+                        color = GenesysTheme.colors.brand
+                    )
+                    GenesysSpacer(GenesysTheme.spacing.m)
+
+                    GenesysCard(modifier = Modifier.fillMaxWidth()) {
+                        GenesysColumn(usePadding = true) {
+                            component.items.forEachIndexed { index, day ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    GenesysText(
+                                        text = day.day,
+                                        style = GenesysTextStyle.Body,
+                                        fontWeight = GenesysFontWeight.Bold,
+                                        color = if (day.isClosed) GenesysTheme.colors.onSurfaceVariant else GenesysTheme.colors.onSurface
+                                    )
+                                    GenesysText(
+                                        text = if (day.isClosed) "Fechado" else day.hours,
+                                        style = GenesysTextStyle.Body,
+                                        color = if (day.isClosed) GenesysTheme.colors.error else GenesysTheme.colors.brand,
+                                        fontWeight = if (day.isClosed) GenesysFontWeight.Normal else GenesysFontWeight.Bold
+                                    )
+                                }
+                                if (index < component.items.size - 1) {
+                                    HorizontalDivider(color = GenesysTheme.colors.outline.copy(alpha = 0.1f))
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

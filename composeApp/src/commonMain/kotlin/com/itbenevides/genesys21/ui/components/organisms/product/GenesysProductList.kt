@@ -30,6 +30,7 @@ fun GenesysProductList(
     products: List<Product>,
     modifier: Modifier = Modifier,
     isHorizontal: Boolean = false,
+    showPrice: Boolean = true, // NOVO: Controle de visibilidade do preço
     isEditMode: Boolean = false,
     onProductClick: ((Product) -> Unit)? = null,
     onAddToCart: ((Product) -> Unit)? = null,
@@ -70,6 +71,7 @@ fun GenesysProductList(
                         ProductCard(
                             product = product,
                             modifier = Modifier.width(horizontalItemWidth),
+                            showPrice = showPrice,
                             onClick = onProductClick,
                             onAddToCart = { onAddToCart?.invoke(product) },
                             onHover = onHover,
@@ -125,6 +127,7 @@ fun GenesysProductList(
                             GenesysWeightBox(1f) {
                                 ProductCard(
                                     product = product,
+                                    showPrice = showPrice,
                                     onClick = onProductClick,
                                     onAddToCart = { onAddToCart?.invoke(product) },
                                     onHover = onHover,

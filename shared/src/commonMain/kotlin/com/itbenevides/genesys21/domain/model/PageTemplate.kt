@@ -26,8 +26,58 @@ object PageTemplateRegistry {
     val templates = listOf(
         premiumStore,
         serviceBooking,
+        beautySalon,
         personalHub,
         emptyTemplate
+    )
+
+    private val beautySalon get() = PageTemplate(
+        id = "beauty_salon",
+        title = "Salão & Estética",
+        description = "Design sofisticado para profissionais de beleza. Galeria de espaço, procedimentos e horários.",
+        category = TemplateCategory.SERVICES,
+        thumbnailUrl = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600",
+        defaultTheme = PageThemeConfig.ELEGANCE,
+        components = listOf(
+            PageComponent.ProfileHeader(
+                imageUrl = "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=300",
+                name = "Espaço Aurora",
+                bio = "Realçando sua beleza natural com sofisticação e cuidado.",
+                imageSize = 140
+            ),
+            PageComponent.SocialLinks(instagram = "#", whatsapp = "https://wa.me/5511999999999", email = "contato@espacoaurora.com"),
+            PageComponent.Header(title = "Procedimentos", fontSize = 24, fontWeight = "BOLD", textAlign = "CENTER"),
+            PageComponent.ProductList(
+                title = "Nossas Especialidades",
+                isHorizontal = true,
+                showPrice = false, // REQUISITO: Sem preços
+                products = listOf(
+                    Product("p1", "store1", "Limpeza de Pele", 0.0, imageUrls = listOf("https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=400")),
+                    Product("p2", "store1", "Drenagem Linfática", 0.0, imageUrls = listOf("https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=400")),
+                    Product("p3", "store1", "Massagem Relaxante", 0.0, imageUrls = listOf("https://images.unsplash.com/photo-1519823551278-64ac92734fb1?q=80&w=400"))
+                )
+            ),
+            PageComponent.Divider(),
+            PageComponent.Header(title = "Nosso Espaço", fontSize = 22, fontWeight = "BOLD"),
+            PageComponent.Grid(
+                columns = 2,
+                items = listOf(
+                    PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=600", isRounded = true, size = 300))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=600", isRounded = true, size = 300)))
+                )
+            ),
+            PageComponent.Divider(),
+            PageComponent.BusinessHours(
+                title = "Horário de Atendimento",
+                items = listOf(
+                    PageComponent.BusinessDay("Segunda a Sexta", "09:00 - 19:00"),
+                    PageComponent.BusinessDay("Sábado", "09:00 - 14:00"),
+                    PageComponent.BusinessDay("Domingo", "", isClosed = true)
+                )
+            ),
+            PageComponent.Spacer(height = 24),
+            PageComponent.Button(text = "Agendar pelo WhatsApp 📱", url = "https://wa.me/5511999999999", isPrimary = true)
+        )
     )
 
     private val premiumStore get() = PageTemplate(

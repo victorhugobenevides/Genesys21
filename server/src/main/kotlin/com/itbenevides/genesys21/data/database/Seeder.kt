@@ -263,6 +263,35 @@ object Seeder {
                 it[updatedAt] = System.currentTimeMillis()
             }
 
+            // 4. Create Aesthetic Page Demo
+            val salonPageId = "estetica-demo"
+            PagesTable.deleteWhere { id eq salonPageId }
+            PageComponentsTable.deleteWhere { pageId eq salonPageId }
+
+            val salonTemplate = PageTemplateRegistry.templates.find { it.id == "beauty_salon" }
+            if (salonTemplate != null) {
+                PagesTable.insert {
+                    it[id] = salonPageId
+                    it[storeId] = defaultStoreId
+                    it[title] = "Espaço Aurora - Estética"
+                    it[theme] = PageThemeConfig.ELEGANCE.name
+                    it[whatsapp] = "5511999999999"
+                    it[createdAt] = System.currentTimeMillis()
+                    it[updatedAt] = System.currentTimeMillis()
+                }
+
+                salonTemplate.components.forEachIndexed { index, component ->
+                    val componentId = java.util.UUID.randomUUID().toString()
+                    PageComponentsTable.insert {
+                        it[id] = componentId
+                        it[pageId] = salonPageId
+                        it[type] = component::class.simpleName ?: "Unknown"
+                        it[order] = index
+                        it[content] = json.encodeToString(component)
+                    }
+                }
+            }
+
             components.forEachIndexed { index, component ->
                 val contentJson = json.encodeToString(component)
                 val componentId = java.util.UUID.randomUUID().toString()

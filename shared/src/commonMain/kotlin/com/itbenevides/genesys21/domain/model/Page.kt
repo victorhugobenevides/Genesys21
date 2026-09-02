@@ -85,6 +85,7 @@ sealed class PageComponent {
         val products: List<Product> = emptyList(),
         val title: String = "Lista de Produtos",
         val isHorizontal: Boolean = false,
+        val showPrice: Boolean = true, // NOVO: Permite ocultar preços (ex: estética)
         override val customLabel: String? = null,
         override val isFilterable: Boolean = true,
         override val destinationUrl: String? = null,
@@ -209,6 +210,7 @@ sealed class PageComponent {
     data class ServiceList(
         val services: List<BookingService> = emptyList(),
         val title: String = "Nossos Serviços",
+        val showPrice: Boolean = true, // NOVO: Permite ocultar preços
         @Transient
         override val customLabel: String? = null,
         @Transient
@@ -380,6 +382,26 @@ sealed class PageComponent {
         override val destinationPageId: String? = null,
         override val destinationUrl: String? = null,
     ) : PageComponent()
+
+    @Serializable
+    @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.BusinessHours")
+    data class BusinessHours(
+        val title: String = "Horário de Funcionamento",
+        val items: List<BusinessDay> = emptyList(),
+        @Transient
+        override val customLabel: String? = null,
+        @Transient
+        override val isFilterable: Boolean = false,
+        override val destinationPageId: String? = null,
+        override val destinationUrl: String? = null,
+    ) : PageComponent()
+
+    @Serializable
+    data class BusinessDay(
+        val day: String,
+        val hours: String,
+        val isClosed: Boolean = false
+    )
 
     companion object
 }

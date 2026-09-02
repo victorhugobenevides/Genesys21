@@ -40,6 +40,7 @@ fun ServiceCard(
     service: BookingService,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showPrice: Boolean = true, // NOVO: Controle de visibilidade do preço
     index: Int = 0,
 ) {
     var isHovered by remember { mutableStateOf(false) }
@@ -105,7 +106,7 @@ fun ServiceCard(
 
                     Spacer(Modifier.height(GenesysTheme.spacing.s))
 
-                    ServiceInfo(service, isGridMode)
+                    ServiceInfo(service, isGridMode, showPrice)
                 }
             } else {
                 // LAYOUT HORIZONTAL (ESTILO LISTA)
@@ -126,7 +127,7 @@ fun ServiceCard(
 
                     Spacer(Modifier.width(GenesysTheme.spacing.m))
 
-                    ServiceInfo(service, isGridMode, Modifier.weight(1f))
+                    ServiceInfo(service, isGridMode, showPrice, Modifier.weight(1f))
                 }
             }
         }
@@ -172,6 +173,7 @@ private fun BoxScope.ServiceBadge(service: BookingService, alignment: Alignment)
 private fun ServiceInfo(
     service: BookingService,
     isGridMode: Boolean,
+    showPrice: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -196,12 +198,14 @@ private fun ServiceInfo(
         }
 
         val priceFormatted = (service.price * 100.0).roundToLong() / 100.0
-        Text(
-            text = "${GenesysStrings.PricePrefix}$priceFormatted",
-            style = if (isGridMode) GenesysTheme.typography.body else GenesysTheme.typography.title,
-            fontWeight = FontWeight.Black,
-            color = GenesysTheme.colors.brand,
-        )
+        if (showPrice) {
+            Text(
+                text = "${GenesysStrings.PricePrefix}$priceFormatted",
+                style = if (isGridMode) GenesysTheme.typography.body else GenesysTheme.typography.title,
+                fontWeight = FontWeight.Black,
+                color = GenesysTheme.colors.brand,
+            )
+        }
 
         if (!isGridMode) {
             GenesysSpacer(GenesysTheme.spacing.s)
