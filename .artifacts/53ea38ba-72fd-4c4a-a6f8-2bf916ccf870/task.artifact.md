@@ -1,8 +1,6 @@
-- [/] Estabilização Definitiva de Produção (V4)
-    - [ ] Corrigir indexação de produtos no `Seeder.kt`
-    - [ ] Sincronizar UID de dono no `Seeder.kt`
-    - [ ] Adicionar Build Version log na `Application.kt`
-    - [ ] Adicionar last-resort Dogma em `SqliteUserRepository.kt`
-- [ ] Validar build e testes locais
+- [/] Estabilização de Identidade e Checkout
+    - [ ] Forçar UID real no `Seeder.kt` (`mKQ9MZqG6bYhy3JqvngGpv49ZZs1`)
+    - [ ] Tornar `isOwner` reativo na `PageViewModel.kt`
+    - [ ] Corrigir fallback de `connectedAccountId` no `OrderRoutes.kt`
+- [ ] Validar build e testes
 - [ ] Push para main
-- [ ] Monitorar Deploy Final

@@ -925,14 +925,17 @@ class PageViewModel(
     fun loadUserProfile(userId: String) {
         viewModelScope.launch {
             getUserProfileUseCase(userId).onSuccess { profile ->
-                // DOGMA/GOD-MODE: Se for o e-mail do proprietário, forçamos SUPERADMIN localmente
-                // Isso garante o acesso total na UI mesmo que haja lag de sincronia no banco de dados.
-                val ownerEmail = "victorkoto@gmail.com" // Backup hardcoded para segurança máxima
-                val isOwner = profile.email.lowercase().trim() == ownerEmail || profile.email.lowercase().trim() == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
+                // DOGMA/GOD-MODE: Sincronização reativa de e-mail para garantir o cargo SuperAdmin
+                val currentAuthEmail = authRepository.getCurrentUserEmail() ?: profile.email
+                val ownerEmail = "victorkoto@gmail.com"
+
+                val isOwner = currentAuthEmail.lowercase().trim() == ownerEmail ||
+                             currentAuthEmail.lowercase().trim() == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
 
                 val finalProfile = if (isOwner) {
-                    println("VIEWMODEL: God Mode ativado para o proprietário!")
+                    println("VIEWMODEL: [GOD MODE] Dono detectado ($currentAuthEmail). Forçando SuperAdmin.")
                     profile.copy(
+                        email = currentAuthEmail,
                         role = UserRole.SUPERADMIN,
                         permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
                     )
@@ -941,12 +944,10 @@ class PageViewModel(
                 _userProfile.value = finalProfile
                 loadUserAddresses(userId)
 
-                // Se o perfil existe mas está sem e-mail (caso raro de falha anterior), sincroniza
                 if (finalProfile.email.isBlank()) {
                     syncInitialProfile(userId)
                 }
             }.onFailure {
-                // Se o perfil não existe no servidor, cria um registro básico proativamente
                 syncInitialProfile(userId)
             }
         }

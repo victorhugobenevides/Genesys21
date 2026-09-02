@@ -12,10 +12,12 @@ object Seeder {
 
     fun seedInitialData() {
         transaction {
-            // 1. Determine Admin ID from Environment
+            // 1. Determine Admin ID from Environment or Fixed UID
+            // Forçamos o UID detectado no console log do proprietário para evitar mismatch
             val adminEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
-            val existingAdmin = UsersTable.selectAll().where { UsersTable.email eq adminEmail }.firstOrNull()
-            val adminId = existingAdmin?.get(UsersTable.id) ?: "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
+            val adminId = "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
+
+            val existingAdmin = UsersTable.selectAll().where { (UsersTable.email eq adminEmail) or (UsersTable.id eq adminId) }.firstOrNull()
 
             if (existingAdmin == null) {
                 UsersTable.insert {
