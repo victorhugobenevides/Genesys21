@@ -256,12 +256,13 @@ class PageViewModel(
         }
     }
 
-    fun addValuedActionToCart(name: String, price: Double) {
+    fun addValuedActionToCart(name: String, price: Double, storeId: String) {
         viewModelScope.launch {
             cartRepository.addToCart(
                 CartItem(
                     customName = name,
                     customPrice = price,
+                    product = Product(id = "valued_action", storeId = storeId, name = name, price = price),
                     quantity = 1
                 )
             )
@@ -428,6 +429,8 @@ class PageViewModel(
                 val inferredStoreId = page?.storeId ?: cart.value.firstOrNull()?.product?.storeId
                     ?: cart.value.firstOrNull()?.service?.storeId
                     ?: ""
+
+                println("VIEWMODEL: Submetendo pedido. StoreId inferido: [$inferredStoreId]")
 
                 val order =
                     Order(

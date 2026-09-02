@@ -217,6 +217,7 @@ fun PageViewerContent(
                 state.page.components.forEach { component ->
                     PageComponentRenderer(
                         component = component,
+                        storeId = state.page.storeId,
                         onProductClick = { onEvent(PageViewerScreenEvent.OnProductClicked(it)) },
                         onServiceClick = { onEvent(PageViewerScreenEvent.OnServiceClicked(it)) },
                         filterQuery = currentFilterQuery,

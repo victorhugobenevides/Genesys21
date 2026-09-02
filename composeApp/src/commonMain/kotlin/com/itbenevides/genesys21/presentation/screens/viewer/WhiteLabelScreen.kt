@@ -281,7 +281,7 @@ fun WhiteLabelScreen(
         }
 
         if (state.showCatalog) {
-            ComponentCatalogUI(state, ::onEvent)
+            ComponentCatalogUI(state, page.storeId, ::onEvent)
         }
     }
 }
@@ -289,6 +289,7 @@ fun WhiteLabelScreen(
 @Composable
 fun ComponentCatalogUI(
     state: WhiteLabelState,
+    storeId: String,
     onEvent: (WhiteLabelEvent) -> Unit,
 ) {
     var selectedItem by remember { mutableStateOf<CatalogItem?>(null) }
@@ -320,6 +321,7 @@ fun ComponentCatalogUI(
                     Box(modifier = Modifier.scale(if (isCompact) 0.8f else 0.9f)) {
                         PageComponentRenderer(
                             component = component,
+                            storeId = storeId,
                             isEditMode = true
                         )
                     }

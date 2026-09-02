@@ -175,6 +175,7 @@ fun WhiteLabelContent(
                                 ComponentWrapperUI(
                                     component = component,
                                     index = index,
+                                    storeId = originalPage.storeId,
                                     isEditing = isEditing,
                                     allCategories = displayCategories,
                                     allProducts = allProducts,
@@ -243,6 +244,7 @@ fun WhiteLabelContent(
 private fun ComponentWrapperUI(
     component: PageComponent,
     index: Int,
+    storeId: String,
     isEditing: Boolean,
     allCategories: List<String>,
     allProducts: List<Product>,
@@ -265,6 +267,7 @@ private fun ComponentWrapperUI(
     ) {
         PageComponentRenderer(
             component = component,
+            storeId = storeId,
             isEditMode = true,
             onEditClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(index)) },
             allAvailableCategories = allCategories,

@@ -50,6 +50,7 @@ fun TextComponentEditor(
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
             component = previewComponent,
+            storeId = "admin",
             isEditMode = false,
         )
 

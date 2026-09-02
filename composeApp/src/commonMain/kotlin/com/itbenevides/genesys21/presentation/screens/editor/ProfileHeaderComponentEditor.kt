@@ -49,6 +49,7 @@ fun ProfileHeaderComponentEditor(
 
         PageComponentRenderer(
             component = previewComponent,
+            storeId = "admin",
             isEditMode = false,
         )
 

@@ -188,13 +188,33 @@ object PageTemplateRegistry {
 
     fun createPageFromTemplate(templateId: String, pageId: String, storeId: String, customTitle: String? = null): Page {
         val template = templates.find { it.id == templateId } ?: emptyTemplate
+
+        // CORREÇÃO: Sincroniza o storeId em todos os componentes que possuem referências a produtos/serviços
+        val updatedComponents = template.components.map { component ->
+            when (component) {
+                is PageComponent.ProductList -> component.copy(
+                    products = component.products.map { it.copy(storeId = storeId) }
+                )
+                is PageComponent.ServiceList -> component.copy(
+                    services = component.services.map { it.copy(storeId = storeId) }
+                )
+                is PageComponent.SingleProduct -> component.copy(
+                    product = component.product.copy(storeId = storeId)
+                )
+                is PageComponent.SingleService -> component.copy(
+                    service = component.service.copy(storeId = storeId)
+                )
+                else -> component
+            }
+        }
+
         return Page(
             id = pageId,
             storeId = storeId,
             title = customTitle ?: template.title,
             theme = template.defaultTheme,
             customTheme = template.customTheme,
-            components = template.components
+            components = updatedComponents
         )
     }
 }

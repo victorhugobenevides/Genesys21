@@ -283,17 +283,35 @@ object Seeder {
 
                 salonTemplate.components.forEachIndexed { index, component ->
                     val componentId = java.util.UUID.randomUUID().toString()
+
+                    // CORREÇÃO: Sincroniza o storeId antes de salvar o conteúdo JSON
+                    val updatedComponent = when (component) {
+                        is PageComponent.ProductList -> component.copy(
+                            products = component.products.map { it.copy(storeId = adminId) }
+                        )
+                        is PageComponent.ServiceList -> component.copy(
+                            services = component.services.map { it.copy(storeId = adminId) }
+                        )
+                        is PageComponent.SingleProduct -> component.copy(
+                            product = component.product.copy(storeId = adminId)
+                        )
+                        is PageComponent.SingleService -> component.copy(
+                            service = component.service.copy(storeId = adminId)
+                        )
+                        else -> component
+                    }
+
                     PageComponentsTable.insert {
                         it[id] = componentId
                         it[pageId] = salonPageId
-                        it[type] = component::class.simpleName ?: "Unknown"
+                        it[type] = updatedComponent::class.simpleName ?: "Unknown"
                         it[order] = index
-                        it[content] = json.encodeToString(component)
+                        it[content] = json.encodeToString(updatedComponent)
                     }
 
                     // IMPORTANTE: Se o componente for uma lista de produtos, precisamos indexar os produtos no banco
-                    if (component is PageComponent.ProductList) {
-                        component.products.forEachIndexed { pIdx, product ->
+                    if (updatedComponent is PageComponent.ProductList) {
+                        updatedComponent.products.forEachIndexed { pIdx, product ->
                             // 1. Inserir Produto Real
                             ProductsTable.deleteWhere { id eq product.id }
                             ProductsTable.insert {

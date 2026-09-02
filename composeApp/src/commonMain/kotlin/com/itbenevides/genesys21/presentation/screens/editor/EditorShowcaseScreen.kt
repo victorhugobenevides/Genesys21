@@ -106,6 +106,7 @@ private fun ComponentShowcaseItem(
                 Spacer(Modifier.height(8.dp))
                 PageComponentRenderer(
                     component = component,
+                    storeId = "admin",
                     isEditMode = false,
                 )
             }

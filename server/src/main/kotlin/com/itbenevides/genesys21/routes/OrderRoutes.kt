@@ -76,7 +76,7 @@ fun Route.orderRoutes(
             try {
                 val order = call.receive<Order>()
                 if (order.storeId.isBlank()) {
-                    call.respond(HttpStatusCode.BadRequest, "Store ID não informado.")
+                    call.respond(HttpStatusCode.BadRequest, "Erro: Store ID não informado no pedido.")
                     return@post
                 }
 

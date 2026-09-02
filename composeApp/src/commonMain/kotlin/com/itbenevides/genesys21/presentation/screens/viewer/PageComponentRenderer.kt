@@ -74,6 +74,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun PageComponentRenderer(
     component: PageComponent,
+    storeId: String = "", // NOVO: Necessário para vincular itens ao lojista correto
     onProductClick: ((Product) -> Unit)? = null,
     onServiceClick: ((BookingService) -> Unit)? = null,
     filterQuery: String = "",
@@ -585,6 +586,7 @@ fun PageComponentRenderer(
                         GenesysWeightBox(1f) {
                             PageComponentRenderer(
                                 component = child,
+                                storeId = storeId,
                                 onProductClick = onProductClick,
                                 onServiceClick = onServiceClick,
                                 filterQuery = filterQuery,
@@ -758,6 +760,7 @@ fun PageComponentRenderer(
                                         gridItem.components.forEach { child ->
                                             PageComponentRenderer(
                                                 component = child,
+                                                storeId = storeId,
                                                 onProductClick = onProductClick,
                                                 onServiceClick = onServiceClick,
                                                 filterQuery = filterQuery,
@@ -919,7 +922,7 @@ fun PageComponentRenderer(
                 ValuedActionComponent(
                     component = component,
                     onActionClick = { name, price ->
-                        router.viewModel.addValuedActionToCart(name, price)
+                        router.viewModel.addValuedActionToCart(name, price, storeId)
                     }
                 )
             }
