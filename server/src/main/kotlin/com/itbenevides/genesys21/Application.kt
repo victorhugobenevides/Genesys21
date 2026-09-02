@@ -96,6 +96,14 @@ fun Application.module() {
     val receiptParserService = ReceiptParserService(client)
     val pageAIGeneratorService = PageAIGeneratorService(client)
 
+    // DIAGNÓSTICO AMBIENTE
+    val stripeKey = System.getenv("STRIPE_SECRET_KEY")
+    if (stripeKey.isNullOrBlank()) {
+        logger.error("🚨 SERVIDOR: STRIPE_SECRET_KEY NÃO ENCONTRADA NO AMBIENTE!")
+    } else {
+        logger.info("✅ SERVIDOR: STRIPE_SECRET_KEY carregada com sucesso (${stripeKey.take(7)}...).")
+    }
+
     install(StatusPages) {
         exception<io.ktor.serialization.JsonConvertException> { call, _ ->
             call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados.")

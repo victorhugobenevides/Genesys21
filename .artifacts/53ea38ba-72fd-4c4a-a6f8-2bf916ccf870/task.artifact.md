@@ -1,7 +1,7 @@
-- [x] Operação Nuclear Final: Reset e Dogma
-    - [x] Implementar deletação física de arquivo no boot em `Application.kt`
-    - [x] Refinar `SqliteUserRepository.kt` para cargo absoluto por e-mail
-    - [x] Blindar `Seeder.kt` para reconexão de loja padrão
-- [x] Validar build local (SUCCESSFUL)
-- [x] Push para main
-- [ ] Monitorar reinício do servidor (User triggers DB_REBUILD=true)
+- [/] Estabilização Crítica de Produção (V3)
+    - [ ] Corrigir funções ausentes no `firebase-bridge.js` dentro do `up.sh`
+    - [ ] Adicionar logs de diagnóstico de ambiente na `Application.kt`
+    - [ ] Refinar logs de e-mail na `PageViewModel.kt`
+- [ ] Validar build local
+- [ ] Push para main
+- [ ] Monitorar logs da Pipe

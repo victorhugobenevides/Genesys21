@@ -85,6 +85,8 @@ window.firebaseSignInGoogle = async () => {
 
 window.firebaseGetToken = async () => auth.currentUser ? await auth.currentUser.getIdToken() : null;
 window.firebaseGetUserId = async () => auth.currentUser ? auth.currentUser.uid : null;
+window.firebaseGetUserEmail = async () => auth.currentUser ? auth.currentUser.email : null;
+window.firebaseGetUserName = async () => auth.currentUser ? auth.currentUser.displayName : null;
 window.firebaseSignOut = async () => await signOut(auth);
 
 window.firebaseOnAuthChanged = (callback) => {
