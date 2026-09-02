@@ -1,6 +1,9 @@
-- [/] Sincronização Dinâmica de Admin (Final)
-    - [ ] Remover e-mail hardcoded do `Seeder.kt` (usar env var)
-    - [ ] Remover e-mail hardcoded do `PageViewModel.kt` (confiar na role do server)
-    - [ ] Remover e-mail hardcoded do `AdminMenu.kt`
-- [ ] Validar compilação do servidor
-- [ ] Push para disparar Deploy + Reset
+- [/] Blindagem Final SuperAdmin
+    - [ ] Adicionar logs de diagnóstico no servidor (`Application.kt`)
+    - [ ] Reforçar God Mode no front-end (`PageViewModel.kt`)
+    - [ ] Implementar Auto-Reparo agressivo no repositório
+- [/] Criação de Vitrine Estética
+    - [ ] Criar novos componentes (`BusinessHours`, `ProcedureList`)
+    - [ ] Registrar novo template "Salão & Estética"
+    - [ ] Adicionar página de demonstração no Seeder
+- [ ] Push e Validação

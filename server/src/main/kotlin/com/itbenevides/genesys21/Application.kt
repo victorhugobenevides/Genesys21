@@ -86,6 +86,7 @@ fun Application.module() {
 
     val ownerEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
     logger.info("DOGMA: Owner Email configurado: $ownerEmail")
+    println("[SECURITY] DOGMA: Owner Email configurado para injeção de cargo: $ownerEmail")
     val userRepository = SqliteUserRepository(ownerEmail)
 
     val addressRepository = SqliteAddressRepository()

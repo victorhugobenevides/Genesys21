@@ -32,7 +32,7 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
         // DOGMA ABSOLUTO: O e-mail configurado nas variáveis de ambiente é o dono do sistema.
         // Ignoramos o valor do banco e forçamos o cargo aqui para garantir acesso total.
         if (DogmaUtils.isDogmaAdmin(email, ownerEmail)) {
-            println("DOGMA: Identificado proprietário $email. Forçando cargo SUPERADMIN em memória.")
+            println("[SECURITY] DOGMA: Identificado proprietário $email. Forçando cargo SUPERADMIN em memória.")
             return UserProfile(
                 id = this[UsersTable.id],
                 email = rawEmail,

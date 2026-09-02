@@ -1,36 +1,42 @@
-# Plano de Implementação - Operação Nuclear Final: Reset e Dogma Inquestionável
+# Plano de Implementação - Nova Vitrine de Estética e Estabilização de Componentes
 
-Este plano aplica o reset total do banco de dados e blinda a identidade administrativa para encerrar definitivamente o problema de acesso e configuração.
+Este plano visa criar uma nova página de vitrine para o tema "Salão de Beleza/Clínica de Estética", atendendo aos requisitos de distribuição em redes sociais, exibição de procedimentos sem preços, galeria do espaço físico e horários de funcionamento.
 
 ## 🎯 Objetivos
-- Realizar o **Wipe Total** do banco de dados SQLite na produção.
-- Garantir que o `victorkoto@gmail.com` seja reconhecido como `SUPERADMIN` por regra de código absoluta (God Mode).
-- Resolver a falha da Stripe forçando a leitura do ambiente.
+- Adicionar suporte para ocultar preços em listas de produtos e serviços.
+- Criar o componente `BusinessHours` para exibição de horários.
+- Adicionar um novo template "Salão & Estética" ao `PageTemplateRegistry`.
+- Criar uma página de demonstração via `Seeder`.
 
 ## 🛠️ Mudanças Propostas
 
+### [shared](file:///Users/victorben/AndroidStudioProjects/genesys21/shared)
+
+#### [MODIFY] [Page.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/model/Page.kt)
+- Adicionar campo `showPrice: Boolean = true` aos componentes `ProductList`, `ProductGrid` e `ServiceList`.
+- Adicionar o componente `BusinessHours` com suporte a lista de dias e horários.
+
+#### [MODIFY] [PageTemplate.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/model/PageTemplate.kt)
+- Adicionar o template `beautySalon` (Salão & Estética) com:
+    - `ProfileHeader` para Bio (Instagram/FB).
+    - `SocialLinks` para contato rápido.
+    - `ProductList` (com `showPrice = false`) para os Procedimentos.
+    - `Grid` com `Image` para a Galeria do Espaço.
+    - `BusinessHours` para o funcionamento.
+    - `Button` de destaque para o WhatsApp.
+
+### [composeApp](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp)
+
+#### [MODIFY] [PageComponentRenderer.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/PageComponentRenderer.kt)
+- Implementar a renderização do novo componente `BusinessHours`.
+- Respeitar a flag `showPrice` na renderização de `ProductList` e `ServiceList`.
+
 ### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-#### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
-- **Nuclear Reset**: Adicionar uma trava de segurança que detecta se o arquivo do banco existe. Se existir e uma nova flag interna estiver ativa, o servidor deletará o arquivo físico no próximo boot para forçar o `Seeder` a rodar do zero.
-- **Log de Identidade**: Adicionar logs detalhados: `"[SECURITY] Owner Check: Email=[email], Match=[true/false]"`.
-
-#### [MODIFY] [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
-- **Dogma Absoluto**: O cargo `SUPERADMIN` será injetado no objeto de retorno **antes** de qualquer outra lógica, baseado estritamente na string do e-mail.
-- **Update Lock**: Proibir qualquer operação de escrita que tente remover o cargo de SuperAdmin do dono.
-
 #### [MODIFY] [Seeder.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/database/Seeder.kt)
-- Reforçar a criação da Loja Padrão vinculada ao seu e-mail.
+- Adicionar a criação de uma página de exemplo "Espaço de Beleza - Demonstração" utilizando o novo template.
 
-## 📅 Plano de Execução
-1.  **Ação de Código**: Push da lógica de Reset e Dogma.
-2.  **Ação do Usuário**: Você precisará reiniciar o servidor uma vez (via painel Oracle ou deploy da Pipe).
-3.  **Resultado**: O banco será deletado e você renascerá como SuperAdmin com todas as permissões.
-
-## User Review Required
-
-> [!CAUTION]
-> **ESTA OPERAÇÃO APAGARÁ TODOS OS DADOS DO SERVIDOR (Páginas, Pedidos, etc).**
-> Isso é necessário para limpar registros corrompidos ou inconsistentes que estão travando o seu acesso.
-
-**Subindo agora as alterações para o Reset.**
+## 📅 Plano de Verificação
+- Validar se os preços estão ocultos na página de estética.
+- Verificar se o componente de horários está legível e elegante.
+- Confirmar se o botão de WhatsApp redireciona corretamente.
