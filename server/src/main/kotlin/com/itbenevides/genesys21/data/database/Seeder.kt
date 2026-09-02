@@ -270,9 +270,10 @@ object Seeder {
 
             val salonTemplate = PageTemplateRegistry.templates.find { it.id == "beauty_salon" }
             if (salonTemplate != null) {
+                println("SEEDER: Criando vitrine de estética para storeId: $adminId")
                 PagesTable.insert {
                     it[id] = salonPageId
-                    it[storeId] = defaultStoreId
+                    it[storeId] = adminId
                     it[title] = "Espaço Aurora - Estética"
                     it[theme] = PageThemeConfig.ELEGANCE.name
                     it[whatsapp] = "5511999999999"
@@ -288,6 +289,37 @@ object Seeder {
                         it[type] = component::class.simpleName ?: "Unknown"
                         it[order] = index
                         it[content] = json.encodeToString(component)
+                    }
+
+                    // IMPORTANTE: Se o componente for uma lista de produtos, precisamos indexar os produtos no banco
+                    if (component is PageComponent.ProductList) {
+                        component.products.forEachIndexed { pIdx, product ->
+                            // 1. Inserir Produto Real
+                            ProductsTable.deleteWhere { id eq product.id }
+                            ProductsTable.insert {
+                                it[id] = product.id
+                                it[storeId] = adminId
+                                it[name] = product.name
+                                it[price] = product.price
+                                it[stock] = 999
+                            }
+                            // 2. Vincular imagem
+                            product.imageUrls.forEach { url ->
+                                ProductImagesTable.insert {
+                                    it[id] = java.util.UUID.randomUUID().toString()
+                                    it[productId] = product.id
+                                    it[imageUrl] = url
+                                    it[order] = 0
+                                }
+                            }
+                            // 3. Vincular ao componente
+                            ComponentProductsTable.insert {
+                                it[id] = java.util.UUID.randomUUID().toString()
+                                it[ComponentProductsTable.componentId] = componentId
+                                it[productId] = product.id
+                                it[order] = pIdx
+                            }
+                        }
                     }
                 }
             }

@@ -1,9 +1,8 @@
-- [/] Blindagem Final SuperAdmin
-    - [ ] Adicionar logs de diagnóstico no servidor (`Application.kt`)
-    - [ ] Reforçar God Mode no front-end (`PageViewModel.kt`)
-    - [ ] Implementar Auto-Reparo agressivo no repositório
-- [/] Criação de Vitrine Estética
-    - [ ] Criar novos componentes (`BusinessHours`, `ProcedureList`)
-    - [ ] Registrar novo template "Salão & Estética"
-    - [ ] Adicionar página de demonstração no Seeder
-- [ ] Push e Validação
+- [/] Estabilização Definitiva de Produção (V4)
+    - [ ] Corrigir indexação de produtos no `Seeder.kt`
+    - [ ] Sincronizar UID de dono no `Seeder.kt`
+    - [ ] Adicionar Build Version log na `Application.kt`
+    - [ ] Adicionar last-resort Dogma em `SqliteUserRepository.kt`
+- [ ] Validar build e testes locais
+- [ ] Push para main
+- [ ] Monitorar Deploy Final
