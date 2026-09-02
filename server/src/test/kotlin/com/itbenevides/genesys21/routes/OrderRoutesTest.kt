@@ -34,7 +34,7 @@ class OrderRoutesTest {
             paymentMethod = PaymentMethod.APP
         )
 
-        val store = Store(id = "s1", ownerId = "u1", name = "Store", stripeSecretKey = "sk_test")
+        val store = Store(id = "s1", ownerId = "u1", name = "Store", stripeSecretKey = "sk_test_valid_key_long_enough")
 
         coEvery { mockOrderRepo.createOrder(any()) } returns Result.success(OrderResponse("o1"))
         coEvery { mockStoreRepo.getStore("s1") } returns Result.success(store)
