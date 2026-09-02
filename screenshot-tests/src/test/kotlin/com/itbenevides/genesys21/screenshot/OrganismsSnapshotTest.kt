@@ -93,6 +93,7 @@ class OrganismsSnapshotTest {
         genesysResponsiveSnapshot(paparazzi) {
             com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer(
                 component = grid,
+                storeId = "store-1",
                 onProductClick = {},
                 onServiceClick = {}
             )

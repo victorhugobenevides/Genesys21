@@ -25,6 +25,7 @@ class WhiteLabelInteractionSnapshotTest {
             // Se o código do catálogo sumir ou quebrar, este teste falhará no CI.
             ComponentCatalogUI(
                 state = state,
+                storeId = "store-1",
                 onEvent = {}
             )
         }

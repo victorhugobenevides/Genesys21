@@ -35,6 +35,7 @@ class GridSnapshotTest {
         genesysResponsiveSnapshot(paparazzi) {
             PageComponentRenderer(
                 component = mainGrid,
+                storeId = "store-1",
                 onProductClick = {},
                 onServiceClick = {}
             )
