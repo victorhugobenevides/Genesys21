@@ -22,6 +22,8 @@ class StripeService(private val clientProvider: (String) -> StripeClient = { Str
 
         val paramsBuilder = SessionCreateParams.builder()
             .setMode(SessionCreateParams.Mode.PAYMENT)
+            .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
+            .addPaymentMethodType(SessionCreateParams.PaymentMethodType.PIX)
             .setSuccessUrl(successUrl)
             .setCancelUrl(cancelUrl)
             .setClientReferenceId(order.id)
