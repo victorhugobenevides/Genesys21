@@ -5,6 +5,9 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
+import com.itbenevides.genesys21.data.database.PagesTable
+import com.itbenevides.genesys21.data.database.UsersTable
+import org.jetbrains.exposed.sql.selectAll
 import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.data.service.BackupService
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
@@ -113,12 +116,15 @@ fun Application.module() {
     }
 
     install(StatusPages) {
-        exception<io.ktor.serialization.JsonConvertException> { call, _ ->
-            call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados.")
+        exception<io.ktor.serialization.JsonConvertException> { call, cause ->
+            logger.error("ERRO DE SERIALIZAÇÃO: ${cause.message}")
+            cause.printStackTrace()
+            call.respond(HttpStatusCode.BadRequest, "Erro no formato dos dados: ${cause.message}")
         }
         exception<Throwable> { call, cause ->
-            logger.error("ERRO CRÍTICO: ${cause.message}")
-            call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro desconhecido")
+            logger.error("ERRO CRÍTICO NO SERVIDOR: ${cause.message}")
+            cause.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, cause.message ?: "Erro interno desconhecido")
         }
     }
 
@@ -210,6 +216,24 @@ fun Application.module() {
     routing {
         get("/") { call.respondText("API Online") }
         get("/api/public/version") { call.respondText("Genesys21 Stable v5.1 - Final Strike") }
+
+        get("/api/public/diagnostic") {
+            val ownerEmailEnv = System.getenv("OWNER_EMAIL")
+            val stripeKeyPresent = !System.getenv("STRIPE_SECRET_KEY").isNullOrBlank()
+
+            val stats = DatabaseFactory.dbQuery {
+                val userCount = UsersTable.selectAll().count()
+                val pageCount = PagesTable.selectAll().count()
+                mapOf("users" to userCount, "pages" to pageCount)
+            }
+
+            call.respond(mapOf(
+                "ownerEmailEnv" to ownerEmailEnv,
+                "stripeKeyPresent" to stripeKeyPresent,
+                "databaseStats" to stats,
+                "version" to "5.1.1-DIAGNOSTIC"
+            ))
+        }
 
         route("/api") {
             // Rotas individuais aplicam seus próprios rate limits

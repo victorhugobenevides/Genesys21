@@ -29,9 +29,7 @@ class SqlitePageRepository : PageRepository {
                 row.toPage(components)
             }
 
-            if (token.isNotBlank()) {
-                println("REPOSITORY: Encontradas ${results.size} páginas para o usuário $token")
-            }
+            println("REPOSITORY: getPages chamado com token: '$token'. Encontradas ${results.size} páginas.")
 
             results
         }
@@ -433,16 +431,23 @@ class SqlitePageRepository : PageRepository {
         return PageComponentsTable.selectAll()
             .where { PageComponentsTable.pageId eq pageId }
             .orderBy(PageComponentsTable.order to SortOrder.ASC)
-            .map { row ->
+            .mapNotNull { row ->
                 val componentId = row[PageComponentsTable.id]
+                val type = row[PageComponentsTable.type]
                 val content = row[PageComponentsTable.content] ?: "{}"
-                val component = json.decodeFromString<PageComponent>(content)
 
-                if (component is PageComponent.ProductList) {
-                    val products = fetchProductsForComponent(componentId)
-                    component.copy(products = products)
-                } else {
-                    component
+                try {
+                    val component = json.decodeFromString<PageComponent>(content)
+
+                    if (component is PageComponent.ProductList) {
+                        val products = fetchProductsForComponent(componentId)
+                        component.copy(products = products)
+                    } else {
+                        component
+                    }
+                } catch (e: Exception) {
+                    println("REPOSITORY ERROR: Falha ao decodificar componente $type ($componentId) na página $pageId: ${e.message}")
+                    null
                 }
             }
     }

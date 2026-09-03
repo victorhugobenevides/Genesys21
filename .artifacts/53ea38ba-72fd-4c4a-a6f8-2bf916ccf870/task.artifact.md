@@ -1,6 +1,6 @@
-- [/] Diagnóstico e Restauração de Vitrines
-    - [ ] Corrigir detecção de UID no `Seeder.kt`
-    - [ ] Adicionar logs de contagem de páginas em `SqlitePageRepository.kt`
-    - [ ] Tornar IDs de produtos de template únicos
-- [ ] Validar compilação do servidor
+- [/] Estabilização Final (God Mode Frontend)
+    - [ ] Forçar visibilidade de abas por e-mail em `AdminMenu.kt`
+    - [ ] Adicionar logs de diagnóstico de cargo na `PageViewModel.kt`
+    - [ ] Bloqueio absoluto de chaves Stripe "default" no servidor
+- [ ] Validar build e testes locais
 - [ ] Push para main

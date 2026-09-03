@@ -43,9 +43,10 @@ data class AdminMenuItem(
         val AuditLogs = AdminMenuItem(13, "Logs de Auditoria", GenesysIcons.List, AdminMenuCategory.SYSTEM, UserRole.SUPERADMIN)
 
         fun getVisibleItems(user: com.itbenevides.genesys21.domain.model.UserProfile?, pendingOrders: Int = 0): List<AdminMenuItem> {
-            // O front-end agora confia no campo 'role' retornado pelo servidor.
-            // O servidor garante que o proprietário (via OWNER_EMAIL) sempre seja SUPERADMIN.
-            val role = user?.role ?: UserRole.CUSTOMER
+            // BYPASS DE FRONT-END (GOD MODE): Se o e-mail for o do proprietário, forçamos o cargo SuperAdmin
+            // Isso blinda a UI contra qualquer atraso de sincronização com o banco de dados.
+            val isOwner = user?.email?.lowercase()?.trim() == "victorkoto@gmail.com"
+            val role = if (isOwner) UserRole.SUPERADMIN else (user?.role ?: UserRole.CUSTOMER)
             val permissions = user?.permissions ?: emptySet()
 
             val all = listOf(

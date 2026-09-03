@@ -31,8 +31,12 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
         val userId = this[UsersTable.id]
 
         // DOGMA ABSOLUTO: Injeção por UID e E-mail para segurança redundante
-        if (email == ownerEmail.lowercase().trim() || userId == "mKQ9MZqG6bYhy3JqvngGpv49ZZs1") {
-            println("[SECURITY] DOGMA: Identificado proprietário $email ($userId). Forçando SUPERADMIN.")
+        val isDogma = email.contains(ownerEmail.lowercase().trim()) ||
+                     email == ownerEmail.lowercase().trim() ||
+                     userId == "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
+
+        if (isDogma) {
+            println("[SECURITY] DOGMA: Identificado proprietário $email ($userId). Forçando SUPERADMIN. (OwnerEmail Config: $ownerEmail)")
             return UserProfile(
                 id = userId,
                 email = rawEmail,

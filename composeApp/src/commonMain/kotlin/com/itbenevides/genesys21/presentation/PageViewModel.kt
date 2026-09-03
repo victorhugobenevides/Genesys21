@@ -929,6 +929,8 @@ class PageViewModel(
                 val currentAuthEmail = authRepository.getCurrentUserEmail() ?: profile.email
                 val ownerEmail = "victorkoto@gmail.com"
 
+                println("VIEWMODEL: Checking God Mode for email: '$currentAuthEmail' against owner: '$ownerEmail'")
+
                 val isOwner = currentAuthEmail.lowercase().trim() == ownerEmail ||
                              currentAuthEmail.lowercase().trim() == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
 
