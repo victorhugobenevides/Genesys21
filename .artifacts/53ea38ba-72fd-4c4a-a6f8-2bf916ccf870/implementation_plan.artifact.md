@@ -1,25 +1,35 @@
-# Plano de Implementação - Strike Final (Correção de Emergência)
+# Plano de Implementação - Diagnóstico e Restauração de Vitrines
 
-Este plano aplica uma correção de nível "bypass" para garantir o acesso SuperAdmin e o funcionamento da Stripe, eliminando dependências de banco de dados para a identidade do proprietário.
+Este plano visa investigar por que as páginas pararam de aparecer (especificamente a nova vitrine de estética) e garantir que o sistema de gerenciamento de vitrines esteja estável após o reset do banco de dados.
 
-## 🔍 Diagnóstico Final
-- A lógica de banco de dados/repositório parece estar sendo ignorada ou sobreposta por alguma inconsistência no servidor.
-- O fallback de chaves da Stripe no banco de dados está interferindo nas variáveis de ambiente.
+## 🔍 Análise de Causa Raiz
+
+### 1. Desaparecimento de Páginas
+- **Causa provável**: O reset do banco de dados (`DB_REBUILD=true`) deletou todas as páginas criadas anteriormente. Isso é o comportamento esperado de um reset total.
+- **Questão**: Por que a vitrine de estética (`estetica-demo`) não apareceu?
+  - Possível falha no `Seeder.kt` ao tentar indexar produtos com IDs genéricos ou falha na transação.
+  - Possível erro de dessincronização entre o `adminId` fixo e o UID real do usuário no Firebase.
+
+### 2. Erro 500 no Carrinho
+- **Causa**: O console indica erro 500 ao tentar acessar `/api/cart`. Isso sugere uma falha de integridade ou um bug na leitura dos itens.
 
 ## 🛠️ Mudanças Propostas
 
 ### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-#### [MODIFY] [UserRoutes.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/routes/UserRoutes.kt)
-- **Bypass de Identidade**: Na rota `/api/users/profile/me`, vou adicionar uma checagem ANTES de chamar o repositório. Se o e-mail verificado no token for `victorkoto@gmail.com`, o servidor retornará um objeto `UserProfile` montado em memória com cargo `SUPERADMIN` e todas as permissões. **Isso é infalível.**
+#### [MODIFY] [Seeder.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/database/Seeder.kt)
+- **Rigor de UID**: Garantir que o seeder busque o usuário pelo e-mail configurado e use o seu ID real para criar as vitrines.
+- **IDs Únicos**: Mudar os IDs dos produtos no template de estética de `p1`, `p2` para `beauty_salon_p1`, etc., para evitar colisões.
+- **Logs de Sucesso**: Adicionar logs explícitos para cada página criada: `"[SEEDER] Página [ID] criada para o dono [UID]"`.
 
-#### [MODIFY] [OrderRoutes.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/routes/OrderRoutes.kt)
-- **Stripe Priority**: Forçar a leitura de `System.getenv("STRIPE_SECRET_KEY")` como primeira opção absoluta, ignorando completamente o que estiver no banco de dados para a loja do dono.
+#### [MODIFY] [SqlitePageRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqlitePageRepository.kt)
+- **Logging de Consulta**: Adicionar log na função `getPages` para imprimir quantas páginas foram encontradas no banco para o UID logado. Isso nos ajudará a saber se o dado existe mas o filtro está bloqueando.
 
 #### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
-- Adicionar rota pública `/api/public/status` que retorna apenas `"Genesys21 Stable v5"`. Isso nos confirmará se o deploy da v5 bateu.
+- **Erro Detalhado**: Melhorar o log de exceções no `StatusPages` para imprimir o stack trace completo no console do servidor (visível via `docker logs`).
 
 ## 📅 Plano de Verificação
-1.  Acessar `https://victorbenevides.dev/api/public/status`. Deve retornar "Genesys21 Stable v5".
-2.  Login no App.
-3.  As abas de Admin **precisam** aparecer agora, pois o bypass no roteamento do Ktor não consulta o banco.
+1.  Realizar o deploy.
+2.  Acessar a administração.
+3.  Verificar se agora aparecem duas vitrines: "Currículo" e "Espaço Aurora".
+4.  Se não aparecerem, os logs do servidor nos dirão o número exato de linhas encontradas na tabela `pages`.

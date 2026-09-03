@@ -12,14 +12,15 @@ object Seeder {
 
     fun seedInitialData() {
         transaction {
-            // 1. Determine Admin ID from Environment or Fixed UID
-            // Forçamos o UID detectado no console log do proprietário para evitar mismatch
+            // 1. Determine Admin ID from Environment
             val adminEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
-            val adminId = "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
+            val existingAdmin = UsersTable.selectAll().where { UsersTable.email eq adminEmail }.firstOrNull()
 
-            val existingAdmin = UsersTable.selectAll().where { (UsersTable.email eq adminEmail) or (UsersTable.id eq adminId) }.firstOrNull()
+            // PRIORIDADE: Usar o UID existente no banco (Firebase). Se não houver, usa o adminId dogma.
+            val adminId = existingAdmin?.get(UsersTable.id) ?: "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
 
             if (existingAdmin == null) {
+                println("SEEDER: Criando usuário admin inicial ($adminEmail) com ID $adminId")
                 UsersTable.insert {
                     it[id] = adminId
                     it[email] = adminEmail
@@ -28,6 +29,7 @@ object Seeder {
                     it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
                 }
             } else {
+                println("SEEDER: Atualizando cargo do admin existente: $adminEmail")
                 UsersTable.update({ UsersTable.id eq adminId }) {
                     it[role] = UserRole.SUPERADMIN.name
                     it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }

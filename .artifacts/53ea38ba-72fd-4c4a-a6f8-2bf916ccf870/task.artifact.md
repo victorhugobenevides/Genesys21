@@ -1,5 +1,6 @@
-- [/] Strike Final: Bypass de Identidade e Fix Stripe
-    - [ ] Implementar bypass na rota `/me` no `UserRoutes.kt`
-    - [ ] Priorizar variáveis de ambiente no `OrderRoutes.kt`
-    - [ ] Adicionar rota de status na `Application.kt`
-- [ ] Push final para main
+- [/] Diagnóstico e Restauração de Vitrines
+    - [ ] Corrigir detecção de UID no `Seeder.kt`
+    - [ ] Adicionar logs de contagem de páginas em `SqlitePageRepository.kt`
+    - [ ] Tornar IDs de produtos de template únicos
+- [ ] Validar compilação do servidor
+- [ ] Push para main

@@ -23,11 +23,17 @@ class SqlitePageRepository : PageRepository {
                         .selectAll().where { (StoresTable.ownerId eq token) and (PagesTable.deletedAt.isNull()) }
                 }
 
-            pagesQuery.map { row ->
+            val results = pagesQuery.map { row ->
                 val pageId = row[PagesTable.id]
                 val components = fetchComponentsForPage(pageId)
                 row.toPage(components)
             }
+
+            if (token.isNotBlank()) {
+                println("REPOSITORY: Encontradas ${results.size} páginas para o usuário $token")
+            }
+
+            results
         }
 
     override suspend fun getPublicPage(id: String): Result<Page> =
