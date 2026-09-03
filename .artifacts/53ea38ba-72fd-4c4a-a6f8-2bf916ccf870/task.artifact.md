@@ -1,6 +1,6 @@
-- [/] Operação de Estabilização Final (V6)
-    - [ ] Tornar decodificação de JSON ultra-resiliente em `SqlitePageRepository.kt`
-    - [ ] Injetar God Mode na UI de `ProfileScreen.kt`
-    - [ ] Adicionar bypass absoluto de Stripe Key no `OrderRoutes.kt`
-- [ ] Validar build e compilação
+- [/] Choque de Deploy v5.3
+    - [ ] Mover rota de versão para o root do Ktor (`Application.kt`)
+    - [ ] Refinar estratégia de Prune na Pipeline (`config.yml`)
+    - [ ] Aumentar timeout de rede no deploy
 - [ ] Push para main
+- [ ] Monitorar Link de Versão

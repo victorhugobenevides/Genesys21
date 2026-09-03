@@ -1,35 +1,25 @@
-# Plano de Implementação - Diagnóstico e Restauração de Vitrines
+# Plano de Implementação - Choque de Deploy v5.3
 
-Este plano visa investigar por que as páginas pararam de aparecer (especificamente a nova vitrine de estética) e garantir que o sistema de gerenciamento de vitrines esteja estável após o reset do banco de dados.
+Este plano visa forçar a atualização do servidor Oracle Cloud, tratando o erro 404 (versão antiga persistente) e garantindo que o novo código de segurança entre no ar.
 
-## 🔍 Análise de Causa Raiz
-
-### 1. Desaparecimento de Páginas
-- **Causa provável**: O reset do banco de dados (`DB_REBUILD=true`) deletou todas as páginas criadas anteriormente. Isso é o comportamento esperado de um reset total.
-- **Questão**: Por que a vitrine de estética (`estetica-demo`) não apareceu?
-  - Possível falha no `Seeder.kt` ao tentar indexar produtos com IDs genéricos ou falha na transação.
-  - Possível erro de dessincronização entre o `adminId` fixo e o UID real do usuário no Firebase.
-
-### 2. Erro 500 no Carrinho
-- **Causa**: O console indica erro 500 ao tentar acessar `/api/cart`. Isso sugere uma falha de integridade ou um bug na leitura dos itens.
+## 🔍 Diagnóstico
+- O servidor remoto está ignorando os comandos de `docker pull`.
+- A rota `/api/public/version` retorna 404 porque o container antigo não possui essa definição.
 
 ## 🛠️ Mudanças Propostas
 
 ### [server](file:///Users/victorben/AndroidStudioProjects/genesys21/server)
 
-#### [MODIFY] [Seeder.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/database/Seeder.kt)
-- **Rigor de UID**: Garantir que o seeder busque o usuário pelo e-mail configurado e use o seu ID real para criar as vitrines.
-- **IDs Únicos**: Mudar os IDs dos produtos no template de estética de `p1`, `p2` para `beauty_salon_p1`, etc., para evitar colisões.
-- **Logs de Sucesso**: Adicionar logs explícitos para cada página criada: `"[SEEDER] Página [ID] criada para o dono [UID]"`.
-
-#### [MODIFY] [SqlitePageRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqlitePageRepository.kt)
-- **Logging de Consulta**: Adicionar log na função `getPages` para imprimir quantas páginas foram encontradas no banco para o UID logado. Isso nos ajudará a saber se o dado existe mas o filtro está bloqueando.
-
 #### [MODIFY] [Application.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/Application.kt)
-- **Erro Detalhado**: Melhorar o log de exceções no `StatusPages` para imprimir o stack trace completo no console do servidor (visível via `docker logs`).
+- Mover a rota de versão para o topo do `routing` para evitar interferência de outros blocos.
+- Adicionar log de "DEPLOY_SUCCESS" no console de boot.
+
+#### [MODIFY] [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
+- Alterar o comando de deploy para remover imagens órfãs e forçar a recriação do container de forma atômica.
+- Aumentar o timeout de conexão SSH para evitar falhas em rede instável.
 
 ## 📅 Plano de Verificação
-1.  Realizar o deploy.
-2.  Acessar a administração.
-3.  Verificar se agora aparecem duas vitrines: "Currículo" e "Espaço Aurora".
-4.  Se não aparecerem, os logs do servidor nos dirão o número exato de linhas encontradas na tabela `pages`.
+1.  Aguardar conclusão do job `deploy` no CircleCI.
+2.  Acessar `https://victorbenevides.dev/api/public/version`.
+3.  **Critério de Aceite**: A página deve exibir "Genesys21 Stable v5.1 - Final Strike".
+4.  Após a confirmação da versão, o SuperAdmin e as Vitrines estarão ativos.

@@ -233,7 +233,7 @@ jobs:
               echo "${GITHUB_TOKEN}" | sudo docker login ghcr.io -u "${GITHUB_USERNAME}" --password-stdin
 
               # LIMPEZA PROFUNDA: Garante que nenhuma imagem antiga sobreviva
-              sudo docker compose down || true
+              sudo docker compose down --remove-orphans || true
               sudo docker system prune -af --volumes || true
 
               sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-server:latest

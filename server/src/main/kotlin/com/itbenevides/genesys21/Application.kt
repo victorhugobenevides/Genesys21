@@ -214,7 +214,8 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online") }
+        get("/") { call.respondText("API Online - Genesys21 v1.0.4") }
+        get("/version") { call.respondText("Genesys21 Stable v5.1 - Final Strike") }
         get("/api/public/version") { call.respondText("Genesys21 Stable v5.1 - Final Strike") }
 
         get("/api/public/diagnostic") {
