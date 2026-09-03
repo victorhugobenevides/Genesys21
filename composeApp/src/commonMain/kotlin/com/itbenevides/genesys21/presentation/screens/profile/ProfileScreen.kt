@@ -89,8 +89,12 @@ fun ProfileScreen(
                     shape = CircleShape,
                     color = GenesysTheme.colors.brandContainer.copy(alpha = 0.5f)
                 ) {
+                    // BYPASS DE UI (GOD MODE): Garante a exibição do cargo SuperAdmin para o dono
+                    val isOwner = profile.email.lowercase().trim() == "victorkoto@gmail.com"
+                    val displayRole = if (isOwner) UserRole.SUPERADMIN.name else profile.role.name
+
                     GenesysText(
-                        text = profile.role.name,
+                        text = displayRole,
                         style = GenesysTextStyle.Label,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         color = GenesysTheme.colors.brand,

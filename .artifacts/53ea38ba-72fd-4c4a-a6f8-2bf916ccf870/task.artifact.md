@@ -1,6 +1,6 @@
-- [/] Estabilização Final (God Mode Frontend)
-    - [ ] Forçar visibilidade de abas por e-mail em `AdminMenu.kt`
-    - [ ] Adicionar logs de diagnóstico de cargo na `PageViewModel.kt`
-    - [ ] Bloqueio absoluto de chaves Stripe "default" no servidor
-- [ ] Validar build e testes locais
+- [/] Operação de Estabilização Final (V6)
+    - [ ] Tornar decodificação de JSON ultra-resiliente em `SqlitePageRepository.kt`
+    - [ ] Injetar God Mode na UI de `ProfileScreen.kt`
+    - [ ] Adicionar bypass absoluto de Stripe Key no `OrderRoutes.kt`
+- [ ] Validar build e compilação
 - [ ] Push para main

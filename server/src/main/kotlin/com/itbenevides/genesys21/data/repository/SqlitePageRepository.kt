@@ -11,7 +11,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class SqlitePageRepository : PageRepository {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        coerceInputValues = true // NOVO: Preenche valores padrão se o campo estiver faltando no banco
+    }
 
     override suspend fun getPages(token: String): List<Page> =
         dbQuery {
