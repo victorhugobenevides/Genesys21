@@ -1,39 +1,27 @@
-# Plano de Implementação - Substituição de Instância Oracle Cloud
+# Plano de Implementação - Paralelismo de Pipeline
 
-Este plano visa realizar o "Hard Reset" da infraestrutura na Oracle Cloud, substituindo a instância atual (que está com cache de imagem e problemas de acesso) por uma nova instância limpa e acessível.
+Este plano visa otimizar o tempo de CI/CD do projeto Genesys21, permitindo que validações lógicas, visuais e o build de produção ocorram simultaneamente.
 
 ## 🎯 Objetivos
-- Terminar a instância antiga que não aceita atualizações.
-- Criar uma nova instância com a chave SSH de resgate já injetada.
-- Obter o novo IP público e preparar a Pipeline para o deploy final.
+- Reduzir o tempo total do workflow de ~20 minutos para ~12 minutos.
+- Manter a segurança de deploy (apenas código testado vai para produção).
 
 ## 🛠️ Mudanças Propostas
 
-### Infraestrutura (Oracle Cloud CLI)
+### Infraestrutura (CircleCI)
 
-#### 1. Terminar Instância Antiga
-- Comando: `oci compute instance terminate --instance-id [OCID]`
-- Isso liberará os recursos (CPU/RAM) da conta Always Free para a nova máquina.
+#### [MODIFY] [.circleci/config.yml](file:///Users/victorben/AndroidStudioProjects/genesys21/.circleci/config.yml)
+- Alterar a seção `workflows` para remover as dependências lineares.
+- **Workflow Antigo**: Testes -> Visual -> Build -> Deploy.
+- **Workflow Novo**:
+    - `test-and-validate`, `visual-verification` e `build-and-push` iniciam juntos.
+    - `deploy` requer que todos os três acima finalizem com sucesso.
 
-#### 2. Criar Nova Instância
-- **Shape**: `VM.Standard.E2.1.Micro` (Always Free)
-- **Imagem**: Ubuntu (mesma da atual)
-- **Rede**: Reutilizar a Subnet e VCN existentes.
-- **SSH**: Injetar `~/.ssh/genesys_rescue_key.pub`.
+## 📅 Plano de Verificação
+1.  Realizar um pequeno push de teste.
+2.  Observar o painel do CircleCI.
+3.  **Critério de Aceite**: Três barras de progresso devem estar rodando ao mesmo tempo.
+4.  O deploy deve aguardar as três ficarem verdes antes de iniciar.
 
-#### 3. Configuração de DNS
-- O IP público vai mudar. Após a criação, precisaremos atualizar o DNS de `victorbenevides.dev` no provedor (GoDaddy/Cloudflare/etc).
-
-## 📅 Plano de Execução
-1.  **Exclusão**: Deletar a instância atual.
-2.  **Criação**: Subir a nova máquina via CLI.
-3.  **Deploy**: Reconfigurar o CircleCI com o novo IP e rodar a Pipeline.
-4.  **Verificação**: Validar o acesso SuperAdmin na nova infraestrutura.
-
-> [!CAUTION]
-> Ao prosseguir, o site ficará fora do ar até que o novo IP seja configurado no DNS e o deploy seja concluído.
-
-## User Review Required
-
-> [!IMPORTANT]
-> Você confirma que tem acesso ao painel de DNS para atualizar o IP de `victorbenevides.dev` assim que a nova máquina subir?
+> [!TIP]
+> Essa mudança é segura porque o `deploy` continuará sendo a última barreira de proteção. Se qualquer teste falhar, o servidor da Oracle não será tocado.

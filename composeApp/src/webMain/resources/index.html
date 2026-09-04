@@ -3,19 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Social Bio</title>
+    <title>Social Bio [v5.3.3-NUCLEAR]</title>
 
     <script>
-        // POLYFILL: crypto.randomUUID (Necessário para contextos não-HTTPS ou navegadores antigos)
-        if (!window.crypto || !window.crypto.randomUUID) {
-            window.crypto = window.crypto || {};
-            window.crypto.randomUUID = function() {
-                return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-                );
-            };
-            console.log("BRIDGE: Polyfill crypto.randomUUID aplicado.");
-        }
+        // ULTIMATE GLOBAL POLYFILL: crypto.randomUUID (Indispensável para contextos não-HTTPS/IP)
+        (function(g) {
+            try {
+                g.crypto = g.crypto || {};
+                if (typeof g.crypto.randomUUID !== 'function') {
+                    g.crypto.randomUUID = function() {
+                        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
+                            var r = (g.crypto.getRandomValues ? g.crypto.getRandomValues(new Uint8Array(1))[0] : Math.random() * 256) & (15 >> (c / 4));
+                            return (c ^ r).toString(16);
+                        });
+                    };
+                    console.log("BRIDGE: Ultimate Polyfill crypto.randomUUID applied to", g);
+                }
+            } catch (e) {
+                console.error("BRIDGE: Failed to apply polyfill:", e);
+            }
+        })(typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof self !== 'undefined' ? self : this);
     </script>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>

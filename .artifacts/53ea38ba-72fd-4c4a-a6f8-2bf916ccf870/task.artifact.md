@@ -1,6 +1,4 @@
-- [/] Choque de Deploy v5.3
-    - [ ] Mover rota de versão para o root do Ktor (`Application.kt`)
-    - [ ] Refinar estratégia de Prune na Pipeline (`config.yml`)
-    - [ ] Aumentar timeout de rede no deploy
-- [ ] Push para main
-- [ ] Monitorar Link de Versão
+- [/] Otimização de Pipeline (Paralelismo)
+    - [x] Reestruturar workflows no `.circleci/config.yml`
+    - [ ] Validar integridade do YAML
+- [ ] Push para main e monitorar execução tripla

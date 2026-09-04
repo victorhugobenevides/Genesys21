@@ -90,11 +90,13 @@ window.firebaseGetUserName = async () => auth.currentUser ? auth.currentUser.dis
 window.firebaseSignOut = async () => await signOut(auth);
 
 window.firebaseOnAuthChanged = (callback) => {
+    console.log("BRIDGE: Registering auth state listener...");
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const token = await user.getIdToken();
+            console.log("BRIDGE: User detected:", user.uid, user.email);
             callback(user.uid);
         } else {
+            console.log("BRIDGE: No user detected (null)");
             callback(null);
         }
     });
