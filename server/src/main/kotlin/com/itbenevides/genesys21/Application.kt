@@ -163,7 +163,7 @@ fun Application.module() {
         // SEGURANÇA: Lista restrita de hosts para evitar duplicidade de Access-Control-Allow-Origin (ex: *, *)
         val allowedHosts = listOf(
             "victorbenevides.dev", "www.victorbenevides.dev", "staging.victorbenevides.dev",
-            "radarani.site", "www.radarani.site", "localhost", "0.0.0.0"
+            "radarani.site", "www.radarani.site", "localhost", "0.0.0.0", "147.15.103.134"
         )
 
         allowedHosts.forEach { host ->
@@ -214,9 +214,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v1.0.4") }
-        get("/version") { call.respondText("Genesys21 Stable v5.1 - Final Strike") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v5.1 - Final Strike") }
+        get("/") { call.respondText("API Online - Genesys21 v1.0.5-FINAL") }
+        get("/version") { call.respondText("Genesys21 Stable v5.3 - New Instance Ready") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v5.3 - New Instance Ready") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
