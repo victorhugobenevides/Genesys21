@@ -222,6 +222,8 @@ fun Application.module() {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
             val stripeKeyPresent = !System.getenv("STRIPE_SECRET_KEY").isNullOrBlank()
 
+            println("[DIAGNOSTIC] Check: Owner=$ownerEmailEnv, Stripe=$stripeKeyPresent")
+
             val stats = DatabaseFactory.dbQuery {
                 val userCount = UsersTable.selectAll().count()
                 val pageCount = PagesTable.selectAll().count()
@@ -232,7 +234,7 @@ fun Application.module() {
                 "ownerEmailEnv" to ownerEmailEnv,
                 "stripeKeyPresent" to stripeKeyPresent,
                 "databaseStats" to stats,
-                "version" to "5.1.1-DIAGNOSTIC"
+                "version" to "5.1.3-DIAGNOSTIC-V3"
             ))
         }
 

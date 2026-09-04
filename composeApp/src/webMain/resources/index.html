@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Social Bio</title>
 
+    <script>
+        // POLYFILL: crypto.randomUUID (Necessário para contextos não-HTTPS ou navegadores antigos)
+        if (!window.crypto || !window.crypto.randomUUID) {
+            window.crypto = window.crypto || {};
+            window.crypto.randomUUID = function() {
+                return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                );
+            };
+            console.log("BRIDGE: Polyfill crypto.randomUUID aplicado.");
+        }
+    </script>
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://js.stripe.com/v3/"></script>
@@ -21,7 +34,7 @@
 </head>
 <body>
     <div id="ComposeTarget"></div>
-    <script src="skiko.js"></script>
+    <!-- skiko.js removido pois é carregado internamente pelo composeApp.js no WasmJs e estava causando 404/SyntaxError -->
     <script src="composeApp.js"></script>
 </body>
 </html>

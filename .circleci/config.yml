@@ -97,7 +97,19 @@ jobs:
           name: Prepare Web Docker Context
           command: |
             mkdir -p build/docker/web/deploy/web
-            cp -r composeApp/build/dist/wasmJs/productionExecutable/* build/docker/web/deploy/web/
+
+            # Localizar diretório de distribuição do Wasm
+            WEB_DIST_DIR=$(find composeApp/build/dist/wasmJs -name "productionExecutable" -o -name "distribution" | head -n 1)
+
+            if [ -n "$WEB_DIST_DIR" ]; then
+              echo "Copiando artefatos de: $WEB_DIST_DIR"
+              # Copia recursivamente para garantir skiko.js e outros subdiretórios (como composeResources)
+              cp -rf "$WEB_DIST_DIR"/* build/docker/web/deploy/web/
+            else
+              echo "ERRO: Diretório de distribuição Wasm não encontrado!"
+              exit 1
+            fi
+
             cp Dockerfile.web build/docker/web/Dockerfile
 
             # --- NGINX CONFIG ---

@@ -86,12 +86,22 @@ fun Route.orderRoutes(
                     if (order.paymentMethod == PaymentMethod.APP) {
                         val store = storeRepository.getStore(order.storeId).getOrNull()
 
-                        // PRIORIDADE ABSOLUTA: Se existir variável de ambiente, ignoramos qualquer outra chave.
+                        // PRIORIDADE ABSOLUTA (SYSTEM FIRST): Se existir variável de ambiente válida, usamos ela.
+                        // Bloqueamos chaves padrão 'default' ou 'genesys'.
                         val envSecretKey = System.getenv("STRIPE_SECRET_KEY")
                         val envPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
 
-                        val secretKey = if (!envSecretKey.isNullOrBlank()) envSecretKey else store?.stripeSecretKey
-                        val publishableKey = if (!envPublishableKey.isNullOrBlank()) envPublishableKey else store?.stripePublicKey
+                        val secretKey = if (!envSecretKey.isNullOrBlank() && !envSecretKey.contains("default")) {
+                            envSecretKey
+                        } else {
+                            store?.stripeSecretKey?.takeIf { !it.contains("default") && it.length > 20 }
+                        }
+
+                        val publishableKey = if (!envPublishableKey.isNullOrBlank() && !envPublishableKey.contains("default")) {
+                            envPublishableKey
+                        } else {
+                            store?.stripePublicKey?.takeIf { !it.contains("default") && it.length > 20 }
+                        }
 
                         if (!secretKey.isNullOrBlank() && !secretKey.contains("default")) {
                             try {
