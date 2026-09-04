@@ -137,6 +137,9 @@ jobs:
                         try_files \$uri \$uri/ /index.html;
                         add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
                         add_header Cross-Origin-Embedder-Policy "unsafe-none" always;
+
+                        # ANTI-CACHE: Força o navegador a buscar o index.html novo sempre
+                        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;
                     }
                     location /api/ {
                         proxy_pass http://genesys-server:8080;
@@ -152,13 +155,18 @@ jobs:
           command: |
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_USERNAME}" --password-stdin
 
+            # Usamos o HASH do commit para evitar conflitos de cache no deploy
+            COMMIT_HASH=$(echo $CIRCLE_SHA1 | cut -c1-7)
+
             # Backend
-            docker build -t "ghcr.io/${GITHUB_USERNAME}/genesys-server:latest" build/docker/backend/
+            docker build -t "ghcr.io/${GITHUB_USERNAME}/genesys-server:latest" -t "ghcr.io/${GITHUB_USERNAME}/genesys-server:$COMMIT_HASH" build/docker/backend/
             docker push "ghcr.io/${GITHUB_USERNAME}/genesys-server:latest"
+            docker push "ghcr.io/${GITHUB_USERNAME}/genesys-server:$COMMIT_HASH"
 
             # Web
-            docker build -t "ghcr.io/${GITHUB_USERNAME}/genesys-web:latest" build/docker/web/
+            docker build -t "ghcr.io/${GITHUB_USERNAME}/genesys-web:latest" -t "ghcr.io/${GITHUB_USERNAME}/genesys-web:$COMMIT_HASH" build/docker/web/
             docker push "ghcr.io/${GITHUB_USERNAME}/genesys-web:latest"
+            docker push "ghcr.io/${GITHUB_USERNAME}/genesys-web:$COMMIT_HASH"
 
   deploy:
     docker:
@@ -180,8 +188,10 @@ jobs:
             python3 -c "import os, base64; key = os.environ['OCI_SSH_KEY'].strip(); path = os.path.expanduser('~/.ssh/oracle_key'); open(path, 'wb').write(base64.b64decode(key) if ' ' not in key else key.encode())"
             chmod 600 $HOME/.ssh/oracle_key
 
+            COMMIT_HASH=$(echo $CIRCLE_SHA1 | cut -c1-7)
+
             # Diagnóstico de rede antes de começar
-            echo "Alvo do Deploy: ${OCI_HOST}"
+            echo "Alvo do Deploy: ${OCI_HOST} (Commit: $COMMIT_HASH)"
             echo "Verificando conectividade com ${OCI_HOST} na porta 22..."
             nc -zvw10 "${OCI_HOST}" 22 || echo "AVISO: Servidor inacessível na porta 22. O deploy provavelmente falhará por Firewall."
 
@@ -189,7 +199,7 @@ jobs:
             cat \<<EOF > docker-compose.yml
             services:
               genesys-server:
-                image: ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
+                image: ghcr.io/${GITHUB_USERNAME}/genesys-server:$COMMIT_HASH
                 container_name: genesys-server
                 volumes:
                   - ./data:/app/data
@@ -207,7 +217,7 @@ jobs:
                   - genesys-network
 
               genesys-web:
-                image: ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
+                image: ghcr.io/${GITHUB_USERNAME}/genesys-web:$COMMIT_HASH
                 container_name: genesys-web
                 ports:
                   - "80:80"
@@ -248,8 +258,9 @@ jobs:
               sudo docker compose down --remove-orphans || true
               sudo docker system prune -af --volumes || true
 
-              sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-server:latest
-              sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-web:latest
+              echo "Baixando imagens do commit $COMMIT_HASH..."
+              sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-server:$COMMIT_HASH
+              sudo docker pull ghcr.io/${GITHUB_USERNAME}/genesys-web:$COMMIT_HASH
               sudo docker compose up -d --force-recreate
 
               # Firewall

@@ -176,4 +176,16 @@ window.stripeConnectMountComponent = (componentName, containerId) => {
     return Promise.resolve();
 };
 
-console.log("BRIDGE: Web Interop Bridge loaded successfully.");
+// POLYFILL: randomUUID (CRITICAL FIX FOR NON-HTTPS/IP ACCESS)
+if (!window.crypto || !window.crypto.randomUUID) {
+    window.crypto = window.crypto || {};
+    window.crypto.randomUUID = function() {
+        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, function(c) {
+            var r = (crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(1))[0] : Math.random() * 256) & (15 >> (c / 4));
+            return (c ^ r).toString(16);
+        });
+    };
+    console.log("BRIDGE: Local Polyfill randomUUID applied in bridge.js.");
+}
+
+console.log("BRIDGE: Web Interop Bridge initializing...");
