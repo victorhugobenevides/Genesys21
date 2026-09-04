@@ -267,17 +267,15 @@ workflows:
   build-test-deploy:
     jobs:
       - test-and-validate
-      - visual-verification:
-          requires:
-            - test-and-validate
+      - visual-verification
       - build-and-push:
-          requires:
-            - visual-verification
           filters:
             branches:
               only: main
       - deploy:
           requires:
+            - test-and-validate
+            - visual-verification
             - build-and-push
           filters:
             branches:
