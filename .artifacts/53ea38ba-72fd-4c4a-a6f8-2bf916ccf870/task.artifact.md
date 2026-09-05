@@ -2,5 +2,6 @@
     - [ ] Atualizar template `beauty_salon` em `PageTemplate.kt`
     - [ ] Adicionar serviços de estética no `Seeder.kt`
     - [ ] Ajustar lógica de sincronização de StoreId no Seeder
+- [x] Fix: Página em branco em sub-rotas (adicionado <base href="/"> no index.html)
 - [ ] Push para main
 - [ ] Validar resultado final em produção

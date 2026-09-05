@@ -1,41 +1,56 @@
-# Plano de Implementação - Dev-AI Agent System (Foco: Desenvolvimento)
+# Plano de Implementação - Correção de UI Admin (Scroll e Mobile Menu)
 
-Este plano visa criar uma infraestrutura de subagentes especializados para acelerar e automatizar o ciclo de desenvolvimento do Genesys21.
+Este plano visa corrigir as falhas de usabilidade no portal administrativo, garantindo que todas as telas sejam roláveis e que o menu de navegação seja otimizado para dispositivos móveis.
 
 ## 🎯 Objetivos
-- Criar um **Coordenador de Agentes** no módulo `shared` para gerenciar tarefas técnicas.
-- Implementar o primeiro subagente: **Component Architect**, focado em gerar código Compose válido e tipos serializáveis.
-- Expor uma interface de "Dev Agent" no servidor Ktor para integração com LLMs externos.
+- Adicionar rolagem vertical em todas as abas do portal administrativo.
+- Otimizar o menu de navegação em telas pequenas (mobile), limitando os itens na barra inferior e utilizando um Drawer para as demais opções.
+- Garantir que os componentes não fiquem amontoados em resoluções menores.
 
 ## 🛠️ Mudanças Propostas
 
-### [shared] Core de Agentes
+### [composeApp] Design System & Layout
 
-#### [NEW] [AgentSystem.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/service/AgentSystem.kt)
-- Define a interface `DevAgent` com métodos como `executeTask` e `getRequiredContext`.
-- Implementa o `AgentCoordinator`, que decide qual subagente deve lidar com uma solicitação de desenvolvimento.
+#### [MODIFY] [GenesysPage.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/templates/pages/GenesysPage.kt)
+- Adicionar suporte a `DrawerState` para abrir o menu lateral programaticamente em mobile.
+- Injetar um botão de menu na `topBar` automaticamente se estiver em modo mobile e houver conteúdo no drawer.
 
-#### [NEW] [ComponentArchitectAgent.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/service/agents/ComponentArchitectAgent.kt)
-- Subagente especializado na biblioteca `PageComponent`.
-- **Habilidade**: Sabe ler o `Page.kt` e gerar o boilerplate necessário para novos componentes, incluindo `@Serializable` e os parâmetros padrão de IA.
+#### [MODIFY] [GenesysTopAppBar.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/ui/components/organisms/navigation/GenesysTopAppBar.kt)
+- Adicionar parâmetro `onMenuClick: (() -> Unit)?` para exibir o ícone de hambúrguer.
 
 ---
 
-### [server] Integração de Ferramentas (DevOps)
+### [composeApp] Admin Tabs (Scroll Fix)
 
-#### [MODIFY] [DevToolRoutes.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/routes/DevToolRoutes.kt)
-- Adicionar rota `POST /api/dev/agents/task`:
-    - Recebe uma tarefa (ex: "Crie um componente de Mapa").
-    - O `AgentCoordinator` delega para o `ComponentArchitectAgent`.
-    - Retorna o código sugerido ou executa a ação se permitido.
+#### [MODIFY] Todas as abas em `presentation/screens/list/tabs/`
+- Adicionar `Modifier.verticalScroll(rememberScrollState())` aos containers principais para garantir que o conteúdo nunca fique inacessível ou amontoado.
+    - `MainDashboardTab.kt`
+    - `PagesTab.kt`
+    - `AgendaTab.kt`
+    - `ServicesTab.kt`
+    - `B2BInsightsTab.kt`
+    - `StoreSettingsTab.kt`
+    - `GlobalUsersTab.kt`
+    - `GlobalDomainsTab.kt`
+    - `AuditLogsTab.kt`
+
+---
+
+### [composeApp] Navegação Inteligente
+
+#### [MODIFY] [PageListScreen.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/PageListScreen.kt)
+- Refatorar a lógica de `navigationSuiteItems`:
+    - No Mobile: Mostrar apenas as 4 abas principais (Dashboard, Pedidos, Vitrines, Agenda) + Botão "Mais" (que abre o Drawer).
+    - No Desktop: Manter comportamento atual (Rail ou Sidebar).
 
 ---
 
 ## 📅 Plano de Verificação
-1.  **Geração de Componente**: Enviar um prompt via API Dev pedindo um novo componente e validar se o código gerado segue exatamente o padrão do projeto (SerialNames, etc).
-2.  **Consistência**: Verificar se o subagente respeita as regras da Skill `genesys-dogma`.
+1.  **Mobile**: Abrir o portal administrativo em um navegador mobile (ou simulador compact). Verificar se a barra inferior tem apenas 5 itens e se o botão "Mais" ou o ícone no TopBar abre o menu completo.
+2.  **Scroll**: Acessar o Dashboard com muitos dados e a lista de usuários global. Validar se a rolagem funciona suavemente.
+3.  **Visual**: Garantir que o rodapé "desenvolvido por..." não sobreponha o conteúdo das abas.
 
-> [!TIP]
-> Com este sistema, o Genesys21 se torna um projeto "IA-Operável". O desenvolvedor (você) poderá dizer à IA: "Delegue para o Agente de Dados a criação de uma tabela de Cupons", e o subagente trará o código Exposed pronto baseado no `/schema`.
+> [!IMPORTANT]
+> A falta de scroll era causada pelo uso de `Column` sem modificadores de rolagem dentro de um container com peso (`weight(1f)`), o que forçava os componentes a tentarem caber em um espaço fixo.
 
-**Podemos iniciar a criação do `AgentSystem` focado em Desenvolvimento?**
+**Posso prosseguir com as correções de UI e Navegação?**
