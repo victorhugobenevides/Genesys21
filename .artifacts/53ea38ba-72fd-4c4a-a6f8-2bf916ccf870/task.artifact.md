@@ -1,4 +1,6 @@
-- [/] Otimização de Pipeline (Paralelismo)
-    - [x] Reestruturar workflows no `.circleci/config.yml`
-    - [ ] Validar integridade do YAML
-- [ ] Push para main e monitorar execução tripla
+- [/] Upgrade da Página de Estética (v6.3)
+    - [ ] Atualizar template `beauty_salon` em `PageTemplate.kt`
+    - [ ] Adicionar serviços de estética no `Seeder.kt`
+    - [ ] Ajustar lógica de sincronização de StoreId no Seeder
+- [ ] Push para main
+- [ ] Validar resultado final em produção

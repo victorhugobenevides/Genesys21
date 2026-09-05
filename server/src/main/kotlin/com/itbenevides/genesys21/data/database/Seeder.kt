@@ -152,6 +152,25 @@ object Seeder {
                 it[isOnline] = true
             }
 
+            // 2.3 Seed Aesthetic Services
+            val esteticaServices = listOf(
+                BookingService("serv_estetica_1", defaultStoreId, "Limpeza de Pele Profunda", "Remoção de impurezas e hidratação intensa.", 150.0, 60),
+                BookingService("serv_estetica_2", defaultStoreId, "Drenagem Linfática", "Redução de inchaço e melhora da circulação.", 120.0, 50),
+                BookingService("serv_estetica_3", defaultStoreId, "Peeling Químico", "Renovação celular e rejuvenescimento.", 250.0, 45)
+            )
+            esteticaServices.forEach { service ->
+                BookingServicesTable.deleteWhere { id eq service.id }
+                BookingServicesTable.insert {
+                    it[id] = service.id
+                    it[storeId] = service.storeId
+                    it[name] = service.name
+                    it[price] = service.price
+                    it[durationMinutes] = service.durationMinutes
+                    it[description] = service.description
+                    it[isEnabled] = true
+                }
+            }
+
             // 3. Create/Update CV Page
             val cvPageId = "victor-hugo-cv"
             PagesTable.deleteWhere { id eq cvPageId }
