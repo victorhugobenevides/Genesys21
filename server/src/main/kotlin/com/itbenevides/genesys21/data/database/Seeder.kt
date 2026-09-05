@@ -171,6 +171,35 @@ object Seeder {
                 }
             }
 
+            // 2.4 Seed Availability for Default Store (Admin)
+            val availabilityId = java.util.UUID.randomUUID().toString()
+            MerchantAvailabilityTable.deleteWhere { storeId eq defaultStoreId }
+            MerchantAvailabilityTable.insert {
+                it[id] = availabilityId
+                it[storeId] = defaultStoreId
+                it[updatedAt] = System.currentTimeMillis()
+            }
+
+            val days = (1..6) // Mon to Sat
+            days.forEach { day ->
+                WeeklyAvailabilityTable.insert {
+                    it[id] = java.util.UUID.randomUUID().toString()
+                    it[WeeklyAvailabilityTable.availabilityId] = availabilityId
+                    it[dayOfWeek] = day
+                    it[startTime] = "09:00"
+                    it[endTime] = "18:00"
+                    it[isClosed] = false
+                }
+            }
+            WeeklyAvailabilityTable.insert {
+                it[id] = java.util.UUID.randomUUID().toString()
+                it[WeeklyAvailabilityTable.availabilityId] = availabilityId
+                it[dayOfWeek] = 7 // Sun
+                it[startTime] = ""
+                it[endTime] = ""
+                it[isClosed] = true
+            }
+
             // 3. Create/Update CV Page
             val cvPageId = "victor-hugo-cv"
             PagesTable.deleteWhere { id eq cvPageId }

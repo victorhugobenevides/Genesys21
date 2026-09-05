@@ -109,6 +109,12 @@ fun PageComponentRenderer(
             } else if (!destUrl.isNullOrBlank()) {
                 if (destUrl == "print") {
                     triggerPrint()
+                } else if (destUrl.startsWith("booking:")) {
+                    val serviceId = destUrl.substringAfter("booking:")
+                    val service = allServices.find { it.id == serviceId }
+                    if (service != null) {
+                        onServiceClick?.invoke(service)
+                    }
                 } else {
                     uriHandler.openUri(destUrl)
                 }

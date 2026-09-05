@@ -45,7 +45,8 @@ object PageTemplateRegistry {
                 imageUrl = "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?q=80&w=1200",
                 buttonText = "Agendar Horário",
                 height = 500,
-                textAlign = "CENTER"
+                textAlign = "CENTER",
+                destinationUrl = "booking:serv_estetica_1"
             ),
             PageComponent.Benefits(
                 title = "Por que escolher o Espaço Aurora?",
