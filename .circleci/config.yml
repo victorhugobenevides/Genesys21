@@ -132,6 +132,18 @@ jobs:
                     listen 80;
                     server_name localhost victorbenevides.dev www.victorbenevides.dev;
                     location / {
+                        return 301 https://\$host\$request_uri;
+                    }
+                }
+
+                server {
+                    listen 443 ssl;
+                    server_name localhost victorbenevides.dev www.victorbenevides.dev;
+
+                    ssl_certificate /etc/letsencrypt/live/victorbenevides.dev/fullchain.pem;
+                    ssl_certificate_key /etc/letsencrypt/live/victorbenevides.dev/privkey.pem;
+
+                    location / {
                         root   /usr/share/nginx/html;
                         index  index.html index.htm;
                         try_files \$uri \$uri/ /index.html;
@@ -145,6 +157,9 @@ jobs:
                         proxy_pass http://genesys-server:8080;
                         proxy_http_version 1.1;
                         proxy_set_header Host \$host;
+                        proxy_set_header X-Real-IP \$remote_addr;
+                        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                        proxy_set_header X-Forwarded-Proto \$scheme;
                     }
                 }
             }
@@ -222,6 +237,8 @@ jobs:
                 ports:
                   - "80:80"
                   - "443:443"
+                volumes:
+                  - /etc/letsencrypt:/etc/letsencrypt:ro
                 restart: unless-stopped
                 networks:
                   - genesys-network
