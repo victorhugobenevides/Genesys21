@@ -92,6 +92,10 @@ jobs:
           command: |
             mkdir -p build/docker/backend/deploy/server
             cp -r server/build/install/server/* build/docker/backend/deploy/server/
+            # NOVO: Incluir o JSON do Firebase Admin no contexto do Docker
+            if [ -f server/firebase-adminsdk.json ]; then
+              cp server/firebase-adminsdk.json build/docker/backend/deploy/server/
+            fi
             cp Dockerfile.server build/docker/backend/Dockerfile
       - run:
           name: Prepare Web Docker Context

@@ -214,9 +214,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v1.0.5-FINAL") }
-        get("/version") { call.respondText("Genesys21 Stable v5.3 - New Instance Ready") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v5.3 - New Instance Ready") }
+        get("/") { call.respondText("API Online - Genesys21 v1.0.6-AUTH-FIX") }
+        get("/version") { call.respondText("Genesys21 Stable v5.3.4 - Auth Fixed") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v5.3.4 - Auth Fixed") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
@@ -266,10 +266,16 @@ private fun Application.initFirebase(logger: org.slf4j.Logger) {
         val file = File("firebase-adminsdk.json")
         if (file.exists()) {
             val options = FirebaseOptions.builder().setCredentials(GoogleCredentials.fromStream(file.inputStream())).build()
-            if (FirebaseApp.getApps().isEmpty()) FirebaseApp.initializeApp(options)
+            if (FirebaseApp.getApps().isEmpty()) {
+                FirebaseApp.initializeApp(options)
+                logger.info("✅ FIREBASE: Admin SDK inicializado com sucesso.")
+            }
+        } else {
+            logger.warn("⚠ FIREBASE: Arquivo firebase-adminsdk.json não encontrado no diretório de execução.")
         }
     } catch (e: Exception) {
-        logger.error("FIREBASE ERROR: ${e.message}")
+        logger.error("🚨 FIREBASE ERROR: ${e.message}")
+        e.printStackTrace()
     }
 }
 
