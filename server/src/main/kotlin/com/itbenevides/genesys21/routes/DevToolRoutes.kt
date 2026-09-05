@@ -1,8 +1,11 @@
 package com.itbenevides.genesys21.routes
 
 import com.itbenevides.genesys21.data.database.*
+import com.itbenevides.genesys21.domain.service.AgentCoordinator
+import com.itbenevides.genesys21.domain.service.AgentTaskRequest
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.selectAll
@@ -13,8 +16,19 @@ import org.jetbrains.exposed.sql.transactions.transaction
  * Ferramentas de desenvolvimento e introspecção para IA.
  * NOTA: Em produção real, estas rotas devem ser protegidas por Header de API Key ou IP.
  */
-fun Route.devToolRoutes() {
+fun Route.devToolRoutes(agentCoordinator: AgentCoordinator) {
     route("/api/dev") {
+
+        // Delegar tarefa técnica para um subagente especializado
+        post("/agents/task") {
+            try {
+                val request = call.receive<AgentTaskRequest>()
+                val response = agentCoordinator.processTask(request)
+                call.respond(response)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to (e.message ?: "Erro ao processar tarefa")))
+            }
+        }
 
         // Retorna o esquema atual do banco para que a IA entenda as tabelas
         get("/schema") {

@@ -104,6 +104,10 @@ fun Application.module() {
     val receiptParserService = ReceiptParserService(client)
     val pageAIGeneratorService = PageAIGeneratorService(client)
 
+    // Agentes de Desenvolvimento
+    val componentAgent = com.itbenevides.genesys21.domain.service.agents.ComponentArchitectAgent()
+    val agentCoordinator = com.itbenevides.genesys21.domain.service.AgentCoordinator(listOf(componentAgent))
+
     // DIAGNÓSTICO AMBIENTE
     val stripeKey = System.getenv("STRIPE_SECRET_KEY")
     if (stripeKey.isNullOrBlank()) {
@@ -257,7 +261,7 @@ fun Application.module() {
             connectRoutes(userRepository, storeRepository)
             receiptRoutes(receiptParserService, receiptRepository, userRepository)
             aiRoutes(pageAIGeneratorService)
-            devToolRoutes()
+            devToolRoutes(agentCoordinator)
         }
     }
 }
