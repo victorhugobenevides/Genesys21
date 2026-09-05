@@ -257,6 +257,7 @@ fun Application.module() {
             connectRoutes(userRepository, storeRepository)
             receiptRoutes(receiptParserService, receiptRepository, userRepository)
             aiRoutes(pageAIGeneratorService)
+            devToolRoutes()
         }
     }
 }
