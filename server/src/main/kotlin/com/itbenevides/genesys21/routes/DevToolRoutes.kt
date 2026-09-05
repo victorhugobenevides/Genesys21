@@ -5,7 +5,8 @@ import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
@@ -58,6 +59,40 @@ fun Route.devToolRoutes() {
                 "jvmVersion" to System.getProperty("java.version"),
                 "os" to System.getProperty("os.name")
             ))
+        }
+
+        // Relatório de Segurança e Superfície de Ataque
+        get("/security/report") {
+            val stripeSk = System.getenv("STRIPE_SECRET_KEY") ?: ""
+            val isStripeTest = stripeSk.contains("test") || stripeSk.isBlank()
+
+            val tables = listOf(
+                UsersTable, StoresTable, ProductsTable, PageComponentsTable,
+                BookingServicesTable, DomainMappingsTable, AuditLogsTable
+            )
+
+            val diagnostic = transaction {
+                val adminEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
+                val adminEntry = UsersTable.selectAll().where { UsersTable.email eq adminEmail }.firstOrNull()
+
+                mapOf(
+                    "dogmaCheck" to mapOf(
+                        "configuredEmail" to adminEmail,
+                        "foundInDb" to (adminEntry != null),
+                        "actualRoleInDb" to (adminEntry?.get(UsersTable.role) ?: "MISSING")
+                    ),
+                    "stripeIntegrity" to mapOf(
+                        "mode" to if (isStripeTest) "TEST/INSECURE" else "LIVE",
+                        "keyPresent" to stripeSk.isNotBlank()
+                    ),
+                    "surfaceArea" to mapOf(
+                        "totalTables" to tables.size,
+                        "rebuildEnabled" to (System.getenv("DB_REBUILD") == "true")
+                    )
+                )
+            }
+
+            call.respond(diagnostic)
         }
     }
 }

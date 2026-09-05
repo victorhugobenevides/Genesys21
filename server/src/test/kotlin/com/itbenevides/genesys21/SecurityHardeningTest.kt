@@ -141,4 +141,35 @@ class SecurityHardeningTest {
             "Security Vulnerability: Server accepted manipulated price! Expected 1000.0, but got ${savedOrder.total}. (DB Path: $dbPath)"
         )
     }
+
+    @Test
+    fun `user should not be able to delete a page they do not own`() = testApplication {
+        val dbPath = createUniqueTestDb()
+        environment {
+            config = MapApplicationConfig(
+                "ktor.testing" to "true",
+                "ktor.test.db_path" to dbPath
+            )
+        }
+        application { module() }
+
+        // Setup: Criar uma página para o lojista legítimo (owner-id)
+        dbQuery {
+            PagesTable.insert {
+                it[id] = "target-page"
+                it[storeId] = "owner-id"
+                it[title] = "Legit Page"
+            }
+        }
+
+        // Ataque: Usuário 'attacker-id' tenta deletar a página de 'owner-id'
+        val response = client.delete("/api/pages/target-page") {
+            header(HttpHeaders.Authorization, "Bearer dummy-token") // Token mapeia para 'attacker-id' no dummy auth
+        }
+
+        // Deve retornar 403 Forbidden ou 404 Not Found (dependendo se queremos esconder a existência)
+        // No Genesys21, usamos Forbidden para indicar falta de permissão.
+        assertTrue(response.status == HttpStatusCode.Forbidden || response.status == HttpStatusCode.NotFound,
+            "Security Vulnerability: User was able to access or delete another user's page (IDOR)! Status: ${response.status}")
+    }
 }
