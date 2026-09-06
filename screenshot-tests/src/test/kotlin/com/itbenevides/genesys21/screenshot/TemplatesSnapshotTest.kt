@@ -21,11 +21,9 @@ class TemplatesSnapshotTest {
     @get:Rule
     val paparazzi = createGenesysPaparazzi()
 
-    @org.junit.Ignore("Ignorado temporariamente para unblock deploy - Baselines precisam ser atualizados após as mudanças no template de estética")
     @Test
     fun testAllTemplatesResponsive() {
-        // Filtramos o template de estética temporariamente enquanto os baselines de imagem são atualizados
-        val templates = PageTemplateRegistry.templates.filter { it.id != "beauty_salon" }
+        val templates = PageTemplateRegistry.templates
 
         templates.forEach { template ->
             val page = PageTemplateRegistry.createPageFromTemplate(template.id, "test-id", "test-store")
