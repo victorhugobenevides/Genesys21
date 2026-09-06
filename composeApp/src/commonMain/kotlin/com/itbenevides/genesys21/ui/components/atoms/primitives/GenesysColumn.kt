@@ -37,10 +37,11 @@ fun GenesysColumn(
     val horizontalPadding = if (isCompact) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
 
     // REPARO DE SCROLL:
-    // Usamos um modificador base que garante que a Column se comporte como um container de scroll.
+    // Usamos um modificador que garante que a Column se comporte como um container de scroll
+    // sem causar loops de medição infinita no Wasm.
     val scrollModifier = if (useScroll) {
         Modifier
-            .fillMaxSize() // Ocupa todo o viewport disponível
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
     } else {
         Modifier.fillMaxWidth()

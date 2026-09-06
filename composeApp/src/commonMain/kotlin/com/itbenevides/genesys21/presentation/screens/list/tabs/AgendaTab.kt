@@ -2,6 +2,8 @@ package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -60,44 +62,48 @@ fun AgendaTab(
         }
     }
 
-    GenesysColumn(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = true,
-        useScroll = true
+        contentPadding = PaddingValues(bottom = 64.dp)
     ) {
-        AdminTabHeader(
-            title = "Gestão de Agenda",
-            subtitle = "Acompanhe e configure seus atendimentos."
-        )
+        item {
+            AdminTabHeader(
+                title = "Gestão de Agenda",
+                subtitle = "Acompanhe e configure seus atendimentos."
+            )
+        }
 
-        // Seletor de Visualização
-        GenesysTabRow(
-            selectedTabIndex = agendaViewMode,
-            tabs = listOf(
-                GenesysTabData("Vista Diária", GenesysIcons.Schedule),
-                GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
-                GenesysTabData("Horários", GenesysIcons.Settings)
-            ),
-            onTabSelected = { agendaViewMode = it }
-        )
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        when (agendaViewMode) {
-            0 -> {
-                DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
-            }
-            1 -> {
-                UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
-            }
-            2 -> {
-                AvailabilityManagementView(
-                    initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-                    onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+        item {
+            GenesysColumn(usePadding = true, useScroll = false) {
+                // Seletor de Visualização
+                GenesysTabRow(
+                    selectedTabIndex = agendaViewMode,
+                    tabs = listOf(
+                        GenesysTabData("Vista Diária", GenesysIcons.Schedule),
+                        GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
+                        GenesysTabData("Horários", GenesysIcons.Settings)
+                    ),
+                    onTabSelected = { agendaViewMode = it }
                 )
+
+                GenesysSpacer(GenesysTheme.spacing.l)
+
+                when (agendaViewMode) {
+                    0 -> {
+                        DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
+                    }
+                    1 -> {
+                        UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
+                    }
+                    2 -> {
+                        AvailabilityManagementView(
+                            initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
+                            onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+                        )
+                    }
+                }
             }
         }
-        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 
     if (selectedAppointmentForEdit != null) {

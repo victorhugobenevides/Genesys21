@@ -3,6 +3,7 @@ package com.itbenevides.genesys21.presentation.screens.list.tabs
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,50 +44,53 @@ fun MainDashboardTab(
         viewModel.loadAnalytics()
     }
 
-    GenesysColumn(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = true,
-        useScroll = true
+        contentPadding = PaddingValues(bottom = 64.dp)
     ) {
-        AdminTabHeader(
-            title = "Painel de Controle",
-            subtitle = "Visão geral da saúde do seu negócio."
-        )
-
-        analytics?.let { data ->
-            // Quick Stats
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                GenesysStatsCard(
-                    label = "Pedidos",
-                    value = data.totalOrders.toString(),
-                    color = GenesysTheme.colors.brand,
-                    modifier = Modifier.weight(1f)
-                )
-                GenesysStatsCard(
-                    label = "Ticket Médio",
-                    value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                    color = GenesysTheme.colors.accent,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            GenesysSpacer(GenesysTheme.spacing.m)
-
-            // Revenue Chart
-            DailyRevenueChart(data.dailyRevenue)
-
-            GenesysSpacer(GenesysTheme.spacing.l)
-
-            // Best Sellers
-            TopProductsCard(data.topProducts)
-
-            GenesysSpacer(GenesysTheme.spacing.l)
-
-            // Booking Summary
-            BookingStatusCard(data.bookingSummary)
+        item {
+            AdminTabHeader(
+                title = "Painel de Controle",
+                subtitle = "Visão geral da saúde do seu negócio."
+            )
         }
 
-        GenesysSpacer(GenesysTheme.spacing.huge)
+        item {
+            GenesysColumn(usePadding = true, useScroll = false) {
+                analytics?.let { data ->
+                    // Quick Stats
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        GenesysStatsCard(
+                            label = "Pedidos",
+                            value = data.totalOrders.toString(),
+                            color = GenesysTheme.colors.brand,
+                            modifier = Modifier.weight(1f)
+                        )
+                        GenesysStatsCard(
+                            label = "Ticket Médio",
+                            value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
+                            color = GenesysTheme.colors.accent,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    GenesysSpacer(GenesysTheme.spacing.m)
+
+                    // Revenue Chart
+                    DailyRevenueChart(data.dailyRevenue)
+
+                    GenesysSpacer(GenesysTheme.spacing.l)
+
+                    // Best Sellers
+                    TopProductsCard(data.topProducts)
+
+                    GenesysSpacer(GenesysTheme.spacing.l)
+
+                    // Booking Summary
+                    BookingStatusCard(data.bookingSummary)
+                }
+            }
+        }
     }
 }
 
