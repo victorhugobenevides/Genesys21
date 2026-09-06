@@ -31,8 +31,9 @@ fun B2BInsightsTab(viewModel: PageViewModel) {
     }
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        usePadding = false
+        modifier = Modifier.fillMaxWidth(),
+        usePadding = false,
+        useScroll = true
     ) {
         AdminTabHeader(
             title = "B2B Insights",

@@ -80,7 +80,11 @@ fun StoreSettingsTab(
         }
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth(),
+        usePadding = true,
+        useScroll = true
+    ) {
         GenesysSpacer(GenesysTheme.spacing.l)
         GenesysText(text = "Configurações da Loja", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysText(text = "Configure os dados de remetente e as opções do checkout.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)

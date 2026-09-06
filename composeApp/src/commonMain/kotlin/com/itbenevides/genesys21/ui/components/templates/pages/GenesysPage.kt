@@ -37,19 +37,7 @@ fun GenesysPage(
 
     val scaffoldContent: @Composable () -> Unit = {
         Scaffold(
-            topBar = {
-                // Injetamos o botão de menu se houver drawer e não estiver expandido
-                if (drawerContent != null && !isExpanded) {
-                    Box {
-                        topBar()
-                        // Overlay invisível ou modificação do topBar original seria ideal,
-                        // mas aqui assumimos que o GenesysTopAppBar tratará o onMenuClick.
-                        // Para garantir que apareça, passamos o controle para o conteúdo.
-                    }
-                } else {
-                    topBar()
-                }
-            },
+            topBar = topBar,
             bottomBar = bottomBar,
             floatingActionButton = floatingActionButton,
             containerColor = GenesysTheme.colors.background,

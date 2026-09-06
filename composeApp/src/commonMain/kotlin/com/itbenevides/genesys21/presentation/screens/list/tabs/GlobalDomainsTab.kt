@@ -34,8 +34,9 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
     }
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        usePadding = false
+        modifier = Modifier.fillMaxWidth(),
+        usePadding = false,
+        useScroll = true
     ) {
         AdminTabHeader(
             title = "Domínios Globais",

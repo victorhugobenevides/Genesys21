@@ -31,8 +31,9 @@ fun ServicesTab(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        usePadding = false
+        modifier = Modifier.fillMaxWidth(),
+        usePadding = false,
+        useScroll = true
     ) {
         AdminTabHeader(
             title = "Gestão de Serviços",

@@ -29,8 +29,9 @@ fun PagesTab(
     val clipboardManager = LocalClipboardManager.current
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
-        usePadding = false
+        modifier = Modifier.fillMaxWidth(),
+        usePadding = false,
+        useScroll = true
     ) {
         AdminTabHeader(
             title = GenesysStrings.ManageVitrines,
