@@ -81,7 +81,7 @@ fun StoreSettingsTab(
     }
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         usePadding = true,
         useScroll = true
     ) {

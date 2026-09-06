@@ -1,6 +1,5 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -194,9 +193,11 @@ fun PageListScreen(
             json?.let { onEvent(PageListEvent.OnImportPageClicked(it)) }
         }
 
-    val pullToRefreshState = rememberPullToRefreshState()
-
-    PullToRefreshBox(
+    PageListContent(
+        state = state,
+        viewModel = viewModel,
+        router = router,
+        isExpanded = isExpanded,
         isRefreshing = isRefreshing,
         onRefresh = {
             scope.launch {
@@ -207,44 +208,26 @@ fun PageListScreen(
                 isRefreshing = false
             }
         },
-        state = pullToRefreshState,
-        indicator = {
-            PullToRefreshDefaults.Indicator(
-                state = pullToRefreshState,
-                isRefreshing = isRefreshing,
-                containerColor = GenesysTheme.colors.brandContainer,
-                color = GenesysTheme.colors.onBrandContainer,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
+        selectedOrderIdForDetail = selectedOrderIdForDetail,
+        onSelectOrderForDetail = { selectedOrderIdForDetail = it },
+        onEvent = onEvent,
+        onViewPage = onViewPage,
+        onEditPage = onEditPage,
+        onImport = { fileHandler() },
+        onExportAll = { onEvent(PageListEvent.OnExportAllClicked) },
+        onContactCustomer = { phone, orderId, name ->
+            val message = "Olá $name, estou entrando em contato sobre o seu pedido #$orderId na Genesys21."
+            uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
         },
-        modifier = Modifier.fillMaxSize()
-    ) {
-        PageListContent(
-            state = state,
-            viewModel = viewModel,
-            router = router,
-            isExpanded = isExpanded,
-            selectedOrderIdForDetail = selectedOrderIdForDetail,
-            onSelectOrderForDetail = { selectedOrderIdForDetail = it },
-            onEvent = onEvent,
-            onViewPage = onViewPage,
-            onEditPage = onEditPage,
-            onImport = { fileHandler() },
-            onExportAll = { onEvent(PageListEvent.OnExportAllClicked) },
-            onContactCustomer = { phone, orderId, name ->
-                val message = "Olá $name, estou entrando em contato sobre o seu pedido #$orderId na Genesys21."
-                uriHandler.openUri("https://wa.me/$phone?text=${message.replace(" ", "%20")}")
-            },
-            onShowcase = onShowcase,
-            onOpenProfile = { router.navigateTo(Route.Profile) },
-            onOpenReceipts = { router.navigateTo(Route.Receipts) },
-            onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
-            onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
-            onDeleteService = { viewModel.deleteBookingService(it) },
-            uriHandler = uriHandler,
-            scope = scope
-        )
-    }
+        onShowcase = onShowcase,
+        onOpenProfile = { router.navigateTo(Route.Profile) },
+        onOpenReceipts = { router.navigateTo(Route.Receipts) },
+        onAddService = { router.navigateTo(Route.ServiceEditor(page = null, service = null)) },
+        onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
+        onDeleteService = { viewModel.deleteBookingService(it) },
+        uriHandler = uriHandler,
+        scope = scope
+    )
 
     if (state.showCreateDialog) {
         val onImportHandler = { fileHandler() }
@@ -273,6 +256,8 @@ private fun PageListContent(
     viewModel: PageViewModel,
     router: Router,
     isExpanded: Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     selectedOrderIdForDetail: String?,
     onSelectOrderForDetail: (String?) -> Unit,
     onEvent: (PageListEvent) -> Unit,
@@ -302,14 +287,12 @@ private fun PageListContent(
         )
     }
 
-    // No Mobile, mostramos apenas 4 itens na barra e o "Mais" que abre o Drawer
     val bottomBarItems = if (!isExpanded && allMenuItems.size > 5) {
         allMenuItems.take(4)
     } else {
         allMenuItems
     }
 
-    // Ajusta aba selecionada se a atual não for permitida
     LaunchedEffect(allMenuItems) {
         if (allMenuItems.none { it.id == state.selectedTab }) {
             allMenuItems.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
@@ -345,7 +328,6 @@ private fun PageListContent(
                 )
             }
 
-            // Se for mobile e tiver mais itens, adicionamos o botão "Mais"
             if (!isExpanded && allMenuItems.size > 5) {
                 item(
                     selected = false,
@@ -377,7 +359,23 @@ private fun PageListContent(
             )
         },
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        val pullToRefreshState = rememberPullToRefreshState()
+
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            state = pullToRefreshState,
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = isRefreshing,
+                    containerColor = GenesysTheme.colors.brandContainer,
+                    color = GenesysTheme.colors.onBrandContainer,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            },
+            modifier = Modifier.fillMaxSize()
+        ) {
             when (state.selectedTab) {
                 0 -> MainDashboardTab(viewModel)
                 9 -> B2BInsightsTab(viewModel)

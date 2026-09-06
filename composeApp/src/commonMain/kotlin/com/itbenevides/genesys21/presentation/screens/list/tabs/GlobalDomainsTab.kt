@@ -35,7 +35,7 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
 
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = false,
+        usePadding = true,
         useScroll = true
     ) {
         AdminTabHeader(
@@ -51,21 +51,20 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
             }
         )
 
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            if (isLoading && mappings.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
-                }
-            } else if (mappings.isEmpty()) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    GenesysText(text = "Nenhum domínio mapeado.", style = GenesysTextStyle.Body)
-                }
-            } else {
-                mappings.forEach { mapping ->
-                    DomainMappingCard(mapping, onDelete = { viewModel.deleteDomainMapping(mapping.id) })
-                }
+        if (isLoading && mappings.isEmpty()) {
+            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = GenesysTheme.colors.brand)
+            }
+        } else if (mappings.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                GenesysText(text = "Nenhum domínio mapeado.", style = GenesysTextStyle.Body)
+            }
+        } else {
+            mappings.forEach { mapping ->
+                DomainMappingCard(mapping, onDelete = { viewModel.deleteDomainMapping(mapping.id) })
             }
         }
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 
     if (showAddDialog) {

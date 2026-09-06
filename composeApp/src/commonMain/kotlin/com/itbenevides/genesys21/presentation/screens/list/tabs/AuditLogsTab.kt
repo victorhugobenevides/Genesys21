@@ -30,7 +30,7 @@ fun AuditLogsTab(viewModel: PageViewModel) {
 
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = false,
+        usePadding = true,
         useScroll = true
     ) {
         AdminTabHeader(
@@ -38,22 +38,21 @@ fun AuditLogsTab(viewModel: PageViewModel) {
             subtitle = "Histórico de ações críticas realizadas no sistema."
         )
 
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            if (isLoading && logs.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
-                }
-            } else if (logs.isEmpty()) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    GenesysText(text = "Nenhum log registrado.", style = GenesysTextStyle.Body)
-                }
-            } else {
-                logs.forEach { log ->
-                    AuditLogCard(log)
-                    GenesysSpacer(GenesysTheme.spacing.s)
-                }
+        if (isLoading && logs.isEmpty()) {
+            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = GenesysTheme.colors.brand)
+            }
+        } else if (logs.isEmpty()) {
+            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                GenesysText(text = "Nenhum log registrado.", style = GenesysTextStyle.Body)
+            }
+        } else {
+            logs.forEach { log ->
+                AuditLogCard(log)
+                GenesysSpacer(GenesysTheme.spacing.s)
             }
         }
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }
 

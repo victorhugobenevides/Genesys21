@@ -32,7 +32,7 @@ fun ServicesTab(
 
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = false,
+        usePadding = true,
         useScroll = true
     ) {
         AdminTabHeader(
@@ -48,48 +48,47 @@ fun ServicesTab(
             }
         )
 
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            if (services.isEmpty()) {
-                GenesysEmptyState(
-                    icon = GenesysIcons.Inventory,
-                    title = "Nenhum serviço cadastrado",
-                    description = "Comece adicionando o primeiro serviço do seu negócio.",
-                    action = {
-                        GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
-                    }
-                )
-            } else {
-                val columns = if (isCompact) 1 else 2
+        if (services.isEmpty()) {
+            GenesysEmptyState(
+                icon = GenesysIcons.Inventory,
+                title = "Nenhum serviço cadastrado",
+                description = "Comece adicionando o primeiro serviço do seu negócio.",
+                action = {
+                    GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
+                }
+            )
+        } else {
+            val columns = if (isCompact) 1 else 2
 
-                Column {
-                    services.chunked(columns).forEach { rowServices ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                        ) {
-                            rowServices.forEach { service ->
-                                Box(modifier = Modifier.weight(1f)) {
-                                    ServiceCard(
-                                        service = service,
-                                        onClick = { onEditService(service) }
+            Column {
+                services.chunked(columns).forEach { rowServices ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
+                    ) {
+                        rowServices.forEach { service ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                ServiceCard(
+                                    service = service,
+                                    onClick = { onEditService(service) }
+                                )
+                                Row(modifier = Modifier.align(Alignment.TopEnd).padding(GenesysTheme.spacing.xs)) {
+                                    GenesysIconButton(
+                                        icon = GenesysIcons.Delete,
+                                        tint = Color.Red.copy(alpha = 0.6f),
+                                        onClick = { onDeleteService(service.id) }
                                     )
-                                    Row(modifier = Modifier.align(Alignment.TopEnd).padding(GenesysTheme.spacing.xs)) {
-                                        GenesysIconButton(
-                                            icon = GenesysIcons.Delete,
-                                            tint = Color.Red.copy(alpha = 0.6f),
-                                            onClick = { onDeleteService(service.id) }
-                                        )
-                                    }
                                 }
                             }
-                            if (rowServices.size < columns) {
-                                Spacer(Modifier.weight(1f))
-                            }
                         }
-                        Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
+                        if (rowServices.size < columns) {
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
+                    Spacer(modifier = Modifier.height(GenesysTheme.spacing.m))
                 }
             }
         }
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }

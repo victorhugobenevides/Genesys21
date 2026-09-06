@@ -62,7 +62,7 @@ fun AgendaTab(
 
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = false,
+        usePadding = true,
         useScroll = true
     ) {
         AdminTabHeader(
@@ -70,35 +70,34 @@ fun AgendaTab(
             subtitle = "Acompanhe e configure seus atendimentos."
         )
 
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            // Seletor de Visualização
-            GenesysTabRow(
-                selectedTabIndex = agendaViewMode,
-                tabs = listOf(
-                    GenesysTabData("Vista Diária", GenesysIcons.Schedule),
-                    GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
-                    GenesysTabData("Horários", GenesysIcons.Settings)
-                ),
-                onTabSelected = { agendaViewMode = it }
-            )
+        // Seletor de Visualização
+        GenesysTabRow(
+            selectedTabIndex = agendaViewMode,
+            tabs = listOf(
+                GenesysTabData("Vista Diária", GenesysIcons.Schedule),
+                GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
+                GenesysTabData("Horários", GenesysIcons.Settings)
+            ),
+            onTabSelected = { agendaViewMode = it }
+        )
 
-            GenesysSpacer(GenesysTheme.spacing.l)
+        GenesysSpacer(GenesysTheme.spacing.l)
 
-            when (agendaViewMode) {
-                0 -> {
-                    DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
-                }
-                1 -> {
-                    UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
-                }
-                2 -> {
-                    AvailabilityManagementView(
-                        initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-                        onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
-                    )
-                }
+        when (agendaViewMode) {
+            0 -> {
+                DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
+            }
+            1 -> {
+                UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
+            }
+            2 -> {
+                AvailabilityManagementView(
+                    initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
+                    onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+                )
             }
         }
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 
     if (selectedAppointmentForEdit != null) {

@@ -30,7 +30,7 @@ fun GlobalUsersTab(viewModel: PageViewModel) {
 
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = false,
+        usePadding = true,
         useScroll = true
     ) {
         AdminTabHeader(
@@ -38,30 +38,29 @@ fun GlobalUsersTab(viewModel: PageViewModel) {
             subtitle = "Gerencie permissões e cargos de todos os usuários do sistema."
         )
 
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            if (isLoading && users.isEmpty()) {
-                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
-                }
-            } else if (users.isEmpty() && !isLoading) {
-                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                    GenesysText(text = "Nenhum usuário encontrado.", style = GenesysTextStyle.Body)
-                }
-            } else {
-                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s)) {
-                    users.forEach { user ->
-                        UserAdminCard(
-                            user = user,
-                            onRoleChange = { newRole -> viewModel.updateUserRole(user.id, newRole) },
-                            onPermissionChange = { permission, enabled ->
-                                val currentPerms = user.permissions.toMutableSet()
-                                if (enabled) currentPerms.add(permission) else currentPerms.remove(permission)
-                                viewModel.updateUserPermissions(user.id, currentPerms)
-                            }
-                        )
-                    }
+        if (isLoading && users.isEmpty()) {
+            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = GenesysTheme.colors.brand)
+            }
+        } else if (users.isEmpty() && !isLoading) {
+            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                GenesysText(text = "Nenhum usuário encontrado.", style = GenesysTextStyle.Body)
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s)) {
+                users.forEach { user ->
+                    UserAdminCard(
+                        user = user,
+                        onRoleChange = { newRole -> viewModel.updateUserRole(user.id, newRole) },
+                        onPermissionChange = { permission, enabled ->
+                            val currentPerms = user.permissions.toMutableSet()
+                            if (enabled) currentPerms.add(permission) else currentPerms.remove(permission)
+                            viewModel.updateUserPermissions(user.id, currentPerms)
+                        }
+                    )
                 }
             }
         }
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }

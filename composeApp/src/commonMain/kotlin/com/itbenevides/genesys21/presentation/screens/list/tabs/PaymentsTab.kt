@@ -56,7 +56,11 @@ fun PaymentsTab(
         }
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), usePadding = true) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxSize(),
+        usePadding = true,
+        useScroll = true
+    ) {
         GenesysSpacer(GenesysTheme.spacing.l)
         GenesysText(text = "Pagamentos e Gateways", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysText(text = "Gerencie como você recebe pelas suas vendas e serviços.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)

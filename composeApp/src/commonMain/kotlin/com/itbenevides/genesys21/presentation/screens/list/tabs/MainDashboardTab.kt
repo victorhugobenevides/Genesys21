@@ -45,7 +45,7 @@ fun MainDashboardTab(
 
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = false,
+        usePadding = true,
         useScroll = true
     ) {
         AdminTabHeader(
@@ -53,46 +53,45 @@ fun MainDashboardTab(
             subtitle = "Visão geral da saúde do seu negócio."
         )
 
-        GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = true) {
-            if (isLoading && analytics == null) {
-                Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GenesysTheme.colors.brand)
+        if (isLoading && analytics == null) {
+            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = GenesysTheme.colors.brand)
+            }
+        } else {
+            analytics?.let { data ->
+                // Quick Stats
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    GenesysStatsCard(
+                        label = "Pedidos",
+                        value = data.totalOrders.toString(),
+                        color = GenesysTheme.colors.brand,
+                        modifier = Modifier.weight(1f)
+                    )
+                    GenesysStatsCard(
+                        label = "Ticket Médio",
+                        value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
+                        color = GenesysTheme.colors.accent,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-            } else {
-                analytics?.let { data ->
-                    // Quick Stats
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GenesysStatsCard(
-                            label = "Pedidos",
-                            value = data.totalOrders.toString(),
-                            color = GenesysTheme.colors.brand,
-                            modifier = Modifier.weight(1f)
-                        )
-                        GenesysStatsCard(
-                            label = "Ticket Médio",
-                            value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                            color = GenesysTheme.colors.accent,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
 
-                    GenesysSpacer(GenesysTheme.spacing.m)
+                GenesysSpacer(GenesysTheme.spacing.m)
 
-                    // Revenue Chart
-                    DailyRevenueChart(data.dailyRevenue)
+                // Revenue Chart
+                DailyRevenueChart(data.dailyRevenue)
 
-                    GenesysSpacer(GenesysTheme.spacing.l)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
-                    // Best Sellers
-                    TopProductsCard(data.topProducts)
+                // Best Sellers
+                TopProductsCard(data.topProducts)
 
-                    GenesysSpacer(GenesysTheme.spacing.l)
+                GenesysSpacer(GenesysTheme.spacing.l)
 
-                    // Booking Summary
-                    BookingStatusCard(data.bookingSummary)
-                }
+                // Booking Summary
+                BookingStatusCard(data.bookingSummary)
             }
         }
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }
 

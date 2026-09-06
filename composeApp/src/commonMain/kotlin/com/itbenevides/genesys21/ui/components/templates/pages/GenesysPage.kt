@@ -37,37 +37,20 @@ fun GenesysPage(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val pageContent: @Composable (PaddingValues) -> Unit = { scaffoldPadding ->
-        Column(
+        // No portal ADM, queremos que o conteúdo ocupe a tela toda e o scroll esteja no componente interno (tab)
+        // O Rodapé agora deve ser parte do conteúdo para não roubar espaço fixo
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPadding)
                 .then(if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier)
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                content()
-            }
-
-            // Assinatura do Rodapé padronizada
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = GenesysTheme.spacing.l)
-                    .clickable { uriHandler.openUri("https://victorbenevides.dev") },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "desenvolvido por victorbenevides.dev",
-                    style = GenesysTheme.typography.label,
-                    color = GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Center,
-                )
-            }
+            content()
         }
     }
 
     CompositionLocalProvider(LocalGenesysDrawerState provides drawerState) {
         if (navigationSuiteItems != null) {
-            // SE tivermos navegação, usamos o NavigationSuiteScaffold como o Scaffold principal
             val layoutType = when (windowSizeClass) {
                 GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
                 GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
@@ -88,7 +71,6 @@ fun GenesysPage(
                 }
             )
         } else {
-            // Caso contrário, Scaffold comum com Drawer se necessário
             if (drawerContent != null && isExpanded) {
                 PermanentNavigationDrawer(
                     drawerContent = {
