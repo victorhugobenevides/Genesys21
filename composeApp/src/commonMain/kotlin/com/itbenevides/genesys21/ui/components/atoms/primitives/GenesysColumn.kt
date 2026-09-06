@@ -22,7 +22,7 @@ fun GenesysColumn(
     horizontalAlignment: GenesysAlignment = GenesysAlignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     maxWidth: Dp? = null,
-    weightValue: Float = 0f,
+    weightValue: Float = 0f, // Deprecated, will be ignored
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val alignment =
@@ -37,9 +37,11 @@ fun GenesysColumn(
 
     val horizontalPadding = if (isCompact) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
 
-    val finalModifier = modifier
-        .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth())
-        .then(if (useScroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+    // BUG FIX: Se useScroll for true, a Column DEVE preencher o tamanho máximo para que o scroll interno funcione.
+    // Caso contrário, ela cresce infinitamente e o container pai (como o Box do Scaffold) a corta.
+    val columnModifier = Modifier
+        .then(if (useScroll) Modifier.fillMaxSize().verticalScroll(rememberScrollState()) else Modifier.fillMaxWidth())
+        .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
         .then(
             if (usePadding) {
                 Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
@@ -49,7 +51,7 @@ fun GenesysColumn(
         )
 
     Column(
-        modifier = finalModifier,
+        modifier = modifier.then(columnModifier),
         horizontalAlignment = alignment,
         verticalArrangement = verticalArrangement,
         content = content,
