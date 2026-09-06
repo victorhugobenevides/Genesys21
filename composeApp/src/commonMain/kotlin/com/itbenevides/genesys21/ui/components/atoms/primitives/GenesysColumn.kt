@@ -13,6 +13,7 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
 /**
  * Container vertical padronizado do Design System.
+ * Otimizado para evitar conflitos de altura infinita no Compose Wasm.
  */
 @Composable
 fun GenesysColumn(
@@ -22,7 +23,7 @@ fun GenesysColumn(
     horizontalAlignment: GenesysAlignment = GenesysAlignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     maxWidth: Dp? = null,
-    weightValue: Float = 0f, // Deprecated
+    weightValue: Float = 0f, // Deprecated: use o modificador externo
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val alignment =
@@ -36,8 +37,9 @@ fun GenesysColumn(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
     val horizontalPadding = if (isCompact) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
 
-    // REPARO DE SCROLL: Se useScroll for true, a Column DEVE preencher o tamanho máximo
-    // e o scroll state deve ser aplicado diretamente nela.
+    // REPARO ESTRUTURAL:
+    // Removido BoxWithConstraints que pode causar loops de medição em listas com scroll.
+    // Aplicamos o scroll diretamente na Column raiz da aba.
     val columnModifier = Modifier
         .then(if (useScroll) Modifier.fillMaxSize().verticalScroll(rememberScrollState()) else Modifier.fillMaxWidth())
         .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)

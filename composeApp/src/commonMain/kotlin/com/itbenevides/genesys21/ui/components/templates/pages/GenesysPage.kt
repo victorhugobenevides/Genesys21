@@ -1,16 +1,11 @@
 package com.itbenevides.genesys21.ui.components.templates.pages
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.navigationsuite.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
@@ -18,7 +13,7 @@ import com.itbenevides.genesys21.ui.util.isTestMode
 
 /**
  * GenesysPage: O container mestre do Design System.
- * Aplica automaticamente os tokens de background e espaçamento global.
+ * Otimizado para ACHATAMENTO de hierarquia, garantindo que o scroll funcione nas abas.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable
@@ -31,24 +26,20 @@ fun GenesysPage(
     usePadding: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val uriHandler = LocalUriHandler.current
     val windowSizeClass = LocalWindowSizeClass.current
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    val pageContent: @Composable (PaddingValues) -> Unit = { scaffoldPadding ->
-        Column(
+    val mainContent: @Composable (PaddingValues) -> Unit = { padding ->
+        // No portal ADM, o padding do Scaffold deve ser aplicado aqui.
+        // O conteúdo (Tabs) deve preencher o resto e gerenciar seu próprio scroll interno.
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(scaffoldPadding)
+                .padding(padding)
                 .then(if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier)
         ) {
-            Box(modifier = Modifier.weight(1f)) {
-                content()
-            }
-
-            // O Rodapé agora é parte do fluxo de conteúdo se não houver rolagem externa
-            // Mas para o portal ADM, as abas já tem seu próprio GenesysSpacer(huge)
+            content()
         }
     }
 
@@ -69,7 +60,7 @@ fun GenesysPage(
                         topBar = topBar,
                         floatingActionButton = floatingActionButton,
                         containerColor = Color.Transparent,
-                        content = { pageContent(it) }
+                        content = { mainContent(it) }
                     )
                 }
             )
@@ -91,7 +82,7 @@ fun GenesysPage(
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
                             containerColor = GenesysTheme.colors.background,
-                            content = { pageContent(it) }
+                            content = { mainContent(it) }
                         )
                     }
                 )
@@ -112,7 +103,7 @@ fun GenesysPage(
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
                             containerColor = GenesysTheme.colors.background,
-                            content = { pageContent(it) }
+                            content = { mainContent(it) }
                         )
                     }
                 )
@@ -122,7 +113,7 @@ fun GenesysPage(
                     bottomBar = bottomBar,
                     floatingActionButton = floatingActionButton,
                     containerColor = GenesysTheme.colors.background,
-                    content = { pageContent(it) }
+                    content = { mainContent(it) }
                 )
             }
         }
