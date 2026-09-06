@@ -9,69 +9,29 @@ import com.itbenevides.genesys21.domain.repository.UserRepository
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
-class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.com") : UserRepository {
-
-    private object DogmaUtils {
-        fun isDogmaAdmin(email: String, ownerEmail: String): Boolean =
-            email.lowercase().trim() == ownerEmail.lowercase().trim()
-
-        fun forceDogmaRole(role: UserRole, email: String, ownerEmail: String): UserRole =
-            if (isDogmaAdmin(email, ownerEmail)) UserRole.SUPERADMIN else role
-
-        fun forceDogmaPermissions(permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>, email: String, role: UserRole, ownerEmail: String): Set<com.itbenevides.genesys21.domain.model.UserPermission> {
-            return if (isDogmaAdmin(email, ownerEmail) || (permissions.isEmpty() && (role == UserRole.MERCHANT || role == UserRole.ADMIN || role == UserRole.SUPERADMIN))) {
-                com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-            } else permissions
-        }
-    }
+class SqliteUserRepository : UserRepository {
 
     private fun ResultRow.toUserProfile(): UserProfile {
         val rawEmail = this[UsersTable.email]
-        val email = rawEmail.lowercase().trim()
         val userId = this[UsersTable.id]
 
-        // DOGMA ABSOLUTO: Injeção por UID e E-mail para segurança redundante
-        val isDogma = email.contains(ownerEmail.lowercase().trim()) ||
-                     email == ownerEmail.lowercase().trim() ||
-                     userId == "mKQ9MZqG6bYhy3JqvngGpv49ZZs1"
-
-        if (isDogma) {
-            println("[SECURITY] DOGMA: Identificado proprietário $email ($userId). Forçando SUPERADMIN. (OwnerEmail Config: $ownerEmail)")
-            return UserProfile(
-                id = userId,
-                email = rawEmail,
-                name = this[UsersTable.name],
-                avatarUrl = this[UsersTable.avatarUrl],
-                phone = this[UsersTable.phone],
-                role = UserRole.SUPERADMIN,
-                status = UserStatus.APPROVED,
-                permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet(),
-                createdAt = this[UsersTable.createdAt],
-                updatedAt = this[UsersTable.updatedAt],
-                deletedAt = this[UsersTable.deletedAt]
-            )
-        }
-
         val roleStr = this[UsersTable.role]
-        val baseRole = try {
+        val role = try {
             UserRole.valueOf(roleStr)
         } catch (e: Exception) {
             UserRole.CUSTOMER
         }
 
-        val role = DogmaUtils.forceDogmaRole(baseRole, email, ownerEmail)
         val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
 
-        val permissionsRaw = this[UsersTable.permissions].split(",")
+        val permissions = this[UsersTable.permissions].split(",")
             .filter { it.isNotBlank() }
             .mapNotNull {
                 runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
             }.toSet()
 
-        val permissions = DogmaUtils.forceDogmaPermissions(permissionsRaw, email, role, ownerEmail)
-
         return UserProfile(
-            id = this[UsersTable.id],
+            id = userId,
             email = rawEmail,
             name = this[UsersTable.name],
             avatarUrl = this[UsersTable.avatarUrl],
@@ -90,23 +50,7 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
             val userRow = UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()
 
             if (userRow != null) {
-                val profile = userRow.toUserProfile()
-
-                // AUTO-REPARO: Se for o admin principal mas o banco estiver desatualizado, corrigimos na hora
-                if (DogmaUtils.isDogmaAdmin(profile.email, ownerEmail) && profile.role != UserRole.SUPERADMIN) {
-                    println("REPOSITORY: Detectado Admin Dogma com cargo incorreto. Reparando...")
-                    UsersTable.update({ UsersTable.id eq id }) {
-                        it[role] = UserRole.SUPERADMIN.name
-                        it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { it.name }
-                    }
-                    // Retorna o perfil já corrigido
-                    Result.success(profile.copy(
-                        role = UserRole.SUPERADMIN,
-                        permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-                    ))
-                } else {
-                    Result.success(profile)
-                }
+                Result.success(userRow.toUserProfile())
             } else {
                 Result.failure(Exception("Usuário não encontrado"))
             }
@@ -124,7 +68,6 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
         return try {
             dbQuery {
                 val exists = UsersTable.selectAll().where { UsersTable.id eq profile.id }.count() > 0
-                val isDogmaAdmin = DogmaUtils.isDogmaAdmin(email, ownerEmail)
 
                 if (exists) {
                     // UPDATE: NUNCA atualizamos o Role ou Permissões por esta rota pública (Mass Assignment).
@@ -136,15 +79,9 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
                         it[avatarUrl] = profile.avatarUrl
                         it[phone] = profile.phone
                         it[updatedAt] = System.currentTimeMillis()
-
-                        // EXCEÇÃO: Apenas o admin dogma pode forçar cargo no update se necessário
-                        if (isDogmaAdmin) {
-                            it[role] = UserRole.SUPERADMIN.name
-                            it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { perm -> perm.name }
-                        }
                     }
                 } else {
-                    // INSERT: Novos usuários sempre CUSTOMER (exceto Dogma)
+                    // INSERT: Novos usuários sempre CUSTOMER
                     println("REPOSITORY: Inserindo novo usuário ${profile.id}. Forçando cargo inicial.")
                     UsersTable.insert {
                         it[id] = profile.id
@@ -154,14 +91,8 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
                         it[phone] = profile.phone
                         it[createdAt] = System.currentTimeMillis()
                         it[updatedAt] = System.currentTimeMillis()
-
-                        if (isDogmaAdmin) {
-                            it[role] = UserRole.SUPERADMIN.name
-                            it[permissions] = com.itbenevides.genesys21.domain.model.UserPermission.entries.joinToString(",") { perm -> perm.name }
-                        } else {
-                            it[role] = UserRole.CUSTOMER.name
-                            it[permissions] = ""
-                        }
+                        it[role] = UserRole.CUSTOMER.name
+                        it[permissions] = ""
                     }
                 }
                 Result.success(Unit)
@@ -181,12 +112,8 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
 
     override suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit> = try {
         dbQuery {
-            val userRow = UsersTable.selectAll().where { UsersTable.id eq userId }.singleOrNull()
-            val userEmail = userRow?.get(UsersTable.email) ?: ""
-            val finalRole = DogmaUtils.forceDogmaRole(role, userEmail, ownerEmail)
-
             UsersTable.update({ UsersTable.id eq userId }) {
-                it[UsersTable.role] = finalRole.name
+                it[UsersTable.role] = role.name
             }
             Result.success(Unit)
         }
@@ -207,13 +134,7 @@ class SqliteUserRepository(private val ownerEmail: String = "victorkoto@gmail.co
 
     override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>): Result<Unit> = try {
         dbQuery {
-            val userRow = UsersTable.selectAll().where { UsersTable.id eq userId }.singleOrNull()
-            val userEmail = userRow?.get(UsersTable.email) ?: ""
-            val userRoleStr = userRow?.get(UsersTable.role) ?: UserRole.CUSTOMER.name
-            val userRole = try { UserRole.valueOf(userRoleStr) } catch(e: Exception) { UserRole.CUSTOMER }
-
-            val finalPermissions = DogmaUtils.forceDogmaPermissions(permissions, userEmail, userRole, ownerEmail)
-            val permsStr = finalPermissions.joinToString(",") { it.name }
+            val permsStr = permissions.joinToString(",") { it.name }
 
             UsersTable.update({ UsersTable.id eq userId }) {
                 it[UsersTable.permissions] = permsStr

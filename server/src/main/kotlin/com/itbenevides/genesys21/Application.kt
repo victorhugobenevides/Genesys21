@@ -87,10 +87,7 @@ fun Application.module() {
     val bookingRepository = SqliteBookingRepository(GoogleCalendarService())
     val orderRepository = SqliteOrderRepository(bookingRepository)
 
-    val ownerEmail = System.getenv("OWNER_EMAIL") ?: "victorkoto@gmail.com"
-    logger.info("DOGMA: Owner Email configurado: $ownerEmail")
-    println("[SECURITY] DOGMA: Owner Email configurado para injeção de cargo: $ownerEmail")
-    val userRepository = SqliteUserRepository(ownerEmail)
+    val userRepository = SqliteUserRepository()
 
     val addressRepository = SqliteAddressRepository()
     val storeRepository = SqliteStoreRepository()

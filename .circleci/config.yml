@@ -63,8 +63,8 @@ jobs:
       - checkout
       - prepare-env
       - run:
-          name: Verify Visual Snapshots (Paparazzi) - [BYPASS ON FAIL]
-          command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon || echo "⚠ Paparazzi tests failed, but bypassing to unblock deploy."
+          name: Verify Visual Snapshots (Paparazzi)
+          command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
 
   build-and-push:
     docker:
