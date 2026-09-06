@@ -31,26 +31,24 @@ fun GenesysColumn(
             GenesysAlignment.End -> Alignment.End
         }
 
-    // Se useScroll for true, forçamos o preenchimento da altura para que o scroll funcione contra o container pai
-    val baseModifier = if (useScroll) modifier.fillMaxHeight() else modifier
+    // Se estivermos em um contexto de peso (dentro de outra Column), aplicamos o peso aqui
+    // Nota: weight só pode ser usado em ColumnScope. Como este é o container externo,
+    // quem chama o GenesysColumn deve aplicar o weight se necessário.
+    val finalBaseModifier = modifier
 
-    BoxWithConstraints(modifier = baseModifier) {
+    BoxWithConstraints(modifier = finalBaseModifier) {
         val horizontalPadding = if (this@BoxWithConstraints.maxWidth < 600.dp) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
 
-        val columnModifier =
-            (if (maxWidth != null) {
-                Modifier.widthIn(max = maxWidth)
-            } else {
-                Modifier.fillMaxWidth()
-            })
-                .then(
-                    if (usePadding) {
-                        Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
-                    } else {
-                        Modifier
-                    },
-                )
-                .then(if (useScroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+        val columnModifier = Modifier
+            .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier.fillMaxWidth())
+            .then(if (useScroll) Modifier.fillMaxHeight().verticalScroll(rememberScrollState()) else Modifier)
+            .then(
+                if (usePadding) {
+                    Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
+                } else {
+                    Modifier
+                }
+            )
 
         Column(
             modifier = columnModifier,

@@ -407,7 +407,7 @@ private fun PageListContent(
                 11 -> GlobalUsersTab(viewModel)
                 12 -> GlobalDomainsTab(viewModel)
                 13 -> AuditLogsTab(viewModel)
-                8 -> ProfileScreen(viewModel, router)
+                8 -> ProfileScreen(viewModel, router, isEmbedded = true)
                 else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Selecione uma opção no menu")
                 }
