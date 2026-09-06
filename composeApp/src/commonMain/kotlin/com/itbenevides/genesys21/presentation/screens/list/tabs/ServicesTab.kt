@@ -31,7 +31,7 @@ fun ServicesTab(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         usePadding = false,
         useScroll = true
     ) {

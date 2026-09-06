@@ -31,7 +31,7 @@ fun B2BInsightsTab(viewModel: PageViewModel) {
     }
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         usePadding = false,
         useScroll = true
     ) {

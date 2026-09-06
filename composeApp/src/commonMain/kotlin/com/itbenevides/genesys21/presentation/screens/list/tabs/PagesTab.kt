@@ -29,7 +29,7 @@ fun PagesTab(
     val clipboardManager = LocalClipboardManager.current
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         usePadding = false,
         useScroll = true
     ) {

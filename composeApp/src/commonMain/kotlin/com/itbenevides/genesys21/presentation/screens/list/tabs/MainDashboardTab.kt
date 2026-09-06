@@ -44,7 +44,7 @@ fun MainDashboardTab(
     }
 
     GenesysColumn(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
         usePadding = false,
         useScroll = true
     ) {
