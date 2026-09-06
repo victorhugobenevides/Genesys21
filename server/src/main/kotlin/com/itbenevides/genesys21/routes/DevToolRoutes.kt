@@ -17,7 +17,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
  * NOTA: Em produção real, estas rotas devem ser protegidas por Header de API Key ou IP.
  */
 fun Route.devToolRoutes(agentCoordinator: AgentCoordinator) {
-    route("/api/dev") {
+    route("/dev") {
 
         // Delegar tarefa técnica para um subagente especializado
         post("/agents/task") {
