@@ -6,6 +6,7 @@ import androidx.compose.material3.adaptive.navigationsuite.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
@@ -57,6 +58,7 @@ fun GenesysPage(
                 containerColor = GenesysTheme.colors.background,
                 content = {
                     Scaffold(
+                        modifier = Modifier.fillMaxSize(),
                         topBar = topBar,
                         floatingActionButton = floatingActionButton,
                         containerColor = Color.Transparent,
@@ -78,6 +80,7 @@ fun GenesysPage(
                     },
                     content = {
                         Scaffold(
+                            modifier = Modifier.fillMaxSize(),
                             topBar = topBar,
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
@@ -99,6 +102,7 @@ fun GenesysPage(
                     },
                     content = {
                         Scaffold(
+                            modifier = Modifier.fillMaxSize(),
                             topBar = topBar,
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
@@ -109,6 +113,7 @@ fun GenesysPage(
                 )
             } else {
                 Scaffold(
+                    modifier = Modifier.fillMaxSize(),
                     topBar = topBar,
                     bottomBar = bottomBar,
                     floatingActionButton = floatingActionButton,

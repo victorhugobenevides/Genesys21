@@ -13,7 +13,6 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 
 /**
  * Container vertical padronizado do Design System.
- * Otimizado para evitar conflitos de altura infinita no Compose Wasm.
  */
 @Composable
 fun GenesysColumn(
@@ -23,7 +22,7 @@ fun GenesysColumn(
     horizontalAlignment: GenesysAlignment = GenesysAlignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     maxWidth: Dp? = null,
-    weightValue: Float = 0f, // Deprecated: use o modificador externo
+    weightValue: Float = 0f, // Deprecated
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val alignment =
@@ -37,22 +36,27 @@ fun GenesysColumn(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
     val horizontalPadding = if (isCompact) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
 
-    // REPARO ESTRUTURAL:
-    // Removido BoxWithConstraints que pode causar loops de medição em listas com scroll.
-    // Aplicamos o scroll diretamente na Column raiz da aba.
-    val columnModifier = Modifier
-        .then(if (useScroll) Modifier.fillMaxSize().verticalScroll(rememberScrollState()) else Modifier.fillMaxWidth())
-        .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
-        .then(
-            if (usePadding) {
-                Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
-            } else {
-                Modifier
-            }
-        )
+    // REPARO DE SCROLL:
+    // Usamos um modificador base que garante que a Column se comporte como um container de scroll.
+    val scrollModifier = if (useScroll) {
+        Modifier
+            .fillMaxSize() // Ocupa todo o viewport disponível
+            .verticalScroll(rememberScrollState())
+    } else {
+        Modifier.fillMaxWidth()
+    }
 
     Column(
-        modifier = modifier.then(columnModifier),
+        modifier = modifier
+            .then(scrollModifier)
+            .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
+            .then(
+                if (usePadding) {
+                    Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
+                } else {
+                    Modifier
+                }
+            ),
         horizontalAlignment = alignment,
         verticalArrangement = verticalArrangement,
         content = content,

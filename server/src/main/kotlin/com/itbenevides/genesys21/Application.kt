@@ -215,9 +215,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v1.0.8-ULTIMATE-SCROLL-FIX") }
-        get("/version") { call.respondText("Genesys21 Stable v5.3.6 - Ultimate Scroll Fixed") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v5.3.6 - Ultimate Scroll Fixed") }
+        get("/") { call.respondText("API Online - Genesys21 v1.0.9-SCROLL-DEEP-CLEAN") }
+        get("/version") { call.respondText("Genesys21 Stable v5.3.8 - Scroll Deep Clean") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v5.3.8 - Scroll Deep Clean") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")

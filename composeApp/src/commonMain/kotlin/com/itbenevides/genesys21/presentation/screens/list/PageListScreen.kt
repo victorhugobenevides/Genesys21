@@ -359,23 +359,7 @@ private fun PageListContent(
             )
         },
     ) {
-        val pullToRefreshState = rememberPullToRefreshState()
-
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
-            state = pullToRefreshState,
-            indicator = {
-                PullToRefreshDefaults.Indicator(
-                    state = pullToRefreshState,
-                    isRefreshing = isRefreshing,
-                    containerColor = GenesysTheme.colors.brandContainer,
-                    color = GenesysTheme.colors.onBrandContainer,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
-            },
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             when (state.selectedTab) {
                 0 -> MainDashboardTab(viewModel)
                 9 -> B2BInsightsTab(viewModel)
