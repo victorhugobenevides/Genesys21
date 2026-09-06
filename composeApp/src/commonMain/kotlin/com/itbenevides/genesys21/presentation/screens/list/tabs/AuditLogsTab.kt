@@ -1,8 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,37 +45,42 @@ fun AuditLogsTab(viewModel: PageViewModel) {
                 GenesysText(text = "Nenhum log registrado.", style = GenesysTextStyle.Body)
             }
         } else {
-            logs.forEach { log ->
-                AuditLogCard(log)
+            logs.forEach { logMap ->
+                AuditLogCard(logMap)
                 GenesysSpacer(GenesysTheme.spacing.s)
             }
         }
+
         GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }
 
 @Composable
 private fun AuditLogCard(log: Map<String, String>) {
-    val timestamp = log["createdAt"]?.toLongOrNull() ?: 0L
-    val date = Instant.fromEpochMilliseconds(timestamp).toLocalDateTime(TimeZone.currentSystemDefault())
-    val dateStr = "${date.dayOfMonth}/${date.monthNumber} ${date.hour}:${date.minute.toString().padStart(2, '0')}"
+    val timestamp = log["timestamp"]?.toLongOrNull() ?: 0L
+    val action = log["action"] ?: "AÇÃO DESCONHECIDA"
+    val entityName = log["entityName"] ?: "Desconhecido"
+    val entityId = log["entityId"] ?: "N/A"
+    val details = log["details"] ?: "Sem detalhes."
+    val userId = log["userId"] ?: "Sistema"
+
+    val dateTime = remember(timestamp) {
+        val instant = Instant.fromEpochMilliseconds(timestamp)
+        instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    }
 
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                GenesysText(text = log["action"] ?: "AÇÃO", fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand)
-                GenesysText(text = dateStr, style = GenesysTextStyle.Label, color = GenesysTheme.colors.outline)
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                GenesysText(text = action, fontWeight = GenesysFontWeight.ExtraBold, color = GenesysTheme.colors.brand)
+                GenesysText(text = "${dateTime.dayOfMonth}/${dateTime.monthNumber} ${dateTime.hour}:${dateTime.minute}", style = GenesysTextStyle.Label)
             }
             GenesysSpacer(GenesysTheme.spacing.xs)
-            GenesysText(text = "Entidade: ${log["entityName"]}", style = GenesysTextStyle.Label)
-            GenesysText(text = "Usuário: ${log["userId"] ?: "Sistema"}", style = GenesysTextStyle.Label)
-
-            log["details"]?.let { details ->
-                if (details.isNotBlank()) {
-                    GenesysSpacer(GenesysTheme.spacing.s)
-                    GenesysText(text = details, style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
-                }
-            }
+            GenesysText(text = "Entidade: $entityName (#$entityId)", style = GenesysTextStyle.Label)
+            GenesysSpacer(GenesysTheme.spacing.xs)
+            GenesysText(text = details, style = GenesysTextStyle.Body)
+            GenesysSpacer(GenesysTheme.spacing.s)
+            GenesysText(text = "Por: $userId", style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
         }
     }
 }

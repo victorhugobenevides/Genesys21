@@ -6,8 +6,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
@@ -61,6 +59,7 @@ fun GlobalUsersTab(viewModel: PageViewModel) {
                 }
             }
         }
+
         GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }

@@ -6,8 +6,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
@@ -64,6 +62,7 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
                 DomainMappingCard(mapping, onDelete = { viewModel.deleteDomainMapping(mapping.id) })
             }
         }
+
         GenesysSpacer(GenesysTheme.spacing.huge)
     }
 
@@ -82,18 +81,18 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
 private fun DomainMappingCard(mapping: DomainMapping, onDelete: () -> Unit) {
     GenesysCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                GenesysText(text = mapping.domain, style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
-                GenesysText(text = "Direciona para: ${mapping.targetPageId}", style = GenesysTextStyle.Label)
+            Column {
+                GenesysText(text = mapping.domain, fontWeight = GenesysFontWeight.Bold)
+                GenesysText(text = "Aponta para: /p/${mapping.targetPageId}", style = GenesysTextStyle.Label)
             }
             GenesysIconButton(
                 icon = GenesysIcons.Delete,
-                onClick = onDelete,
-                tint = GenesysTheme.colors.error
+                tint = GenesysTheme.colors.error,
+                onClick = onDelete
             )
         }
     }
@@ -104,36 +103,24 @@ private fun AddDomainDialog(onDismiss: () -> Unit, onConfirm: (String, String) -
     var domain by remember { mutableStateOf("") }
     var pageId by remember { mutableStateOf("") }
 
-    AlertDialog(
+    com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog(
         onDismissRequest = onDismiss,
-        title = { GenesysText("Mapear Novo Domínio", style = GenesysTextStyle.Title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                GenesysTextField(
-                    value = domain,
-                    onValueChange = { domain = it },
-                    label = "Domínio (ex: loja.com)",
-                    placeholder = "meu-site.com"
-                )
-                GenesysTextField(
-                    value = pageId,
-                    onValueChange = { pageId = it },
-                    label = "ID da Vitrine (UUID)",
-                    placeholder = "ID da página no Genesys21"
-                )
-            }
-        },
+        title = "Mapear Novo Domínio",
         confirmButton = {
             GenesysLoadingButton(
-                text = "Salvar Mapeamento",
-                onClick = { onConfirm(domain, pageId) },
-                enabled = domain.isNotBlank() && pageId.isNotBlank()
+                text = "Mapear",
+                enabled = domain.isNotBlank() && pageId.isNotBlank(),
+                onClick = { onConfirm(domain, pageId) }
             )
         },
         dismissButton = {
             GenesysTextButton(text = "Cancelar", onClick = onDismiss)
-        },
-        containerColor = GenesysTheme.colors.surface,
-        shape = RoundedCornerShape(GenesysTheme.config.cornerRadius)
-    )
+        }
+    ) {
+        GenesysColumn(usePadding = false) {
+            GenesysTextField(value = domain, onValueChange = { domain = it }, label = "Domínio (ex: loja.com)")
+            GenesysSpacer(GenesysTheme.spacing.m)
+            GenesysTextField(value = pageId, onValueChange = { pageId = it }, label = "ID da Vitrine (ex: btc123)")
+        }
+    }
 }

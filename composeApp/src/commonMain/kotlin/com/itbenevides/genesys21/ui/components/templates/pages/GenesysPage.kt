@@ -37,15 +37,18 @@ fun GenesysPage(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val pageContent: @Composable (PaddingValues) -> Unit = { scaffoldPadding ->
-        // No portal ADM, queremos que o conteúdo ocupe a tela toda e o scroll esteja no componente interno (tab)
-        // O Rodapé agora deve ser parte do conteúdo para não roubar espaço fixo
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(scaffoldPadding)
                 .then(if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier)
         ) {
-            content()
+            Box(modifier = Modifier.weight(1f)) {
+                content()
+            }
+
+            // O Rodapé agora é parte do fluxo de conteúdo se não houver rolagem externa
+            // Mas para o portal ADM, as abas já tem seu próprio GenesysSpacer(huge)
         }
     }
 

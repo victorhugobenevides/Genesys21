@@ -85,11 +85,12 @@ fun StoreSettingsTab(
         usePadding = true,
         useScroll = true
     ) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        GenesysText(text = "Configurações da Loja", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-        GenesysText(text = "Configure os dados de remetente e as opções do checkout.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
+        com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
+            title = "Configurações da Loja",
+            subtitle = "Configure os dados de remetente e as opções do checkout."
+        )
 
-        GenesysSpacer(GenesysTheme.spacing.l)
+        GenesysSpacer(GenesysTheme.spacing.m)
 
         GenesysCard {
             GenesysColumn(usePadding = false) {
@@ -184,5 +185,7 @@ fun StoreSettingsTab(
             fillWidth = true,
             isLoading = isLoading
         )
+
+        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }
