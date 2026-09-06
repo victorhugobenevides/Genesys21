@@ -41,6 +41,7 @@ import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.components.templates.pages.LocalGenesysDrawerState
 import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
 import com.itbenevides.genesys21.ui.theme.*
@@ -292,18 +293,26 @@ private fun PageListContent(
     val services by viewModel.services.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
     val chatMessages by viewModel.chatMessages.collectAsState()
+    val drawerState = LocalGenesysDrawerState.current
 
-    val menuItems = remember(userProfile, state.pendingOrdersCount) {
+    val allMenuItems = remember(userProfile, state.pendingOrdersCount) {
         AdminMenuItem.getVisibleItems(
             user = userProfile,
             pendingOrders = state.pendingOrdersCount
         )
     }
 
+    // No Mobile, mostramos apenas 4 itens na barra e o "Mais" que abre o Drawer
+    val bottomBarItems = if (!isExpanded && allMenuItems.size > 5) {
+        allMenuItems.take(4)
+    } else {
+        allMenuItems
+    }
+
     // Ajusta aba selecionada se a atual não for permitida
-    LaunchedEffect(menuItems) {
-        if (menuItems.none { it.id == state.selectedTab }) {
-            menuItems.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
+    LaunchedEffect(allMenuItems) {
+        if (allMenuItems.none { it.id == state.selectedTab }) {
+            allMenuItems.firstOrNull()?.let { onEvent(PageListEvent.OnTabSelected(it.id)) }
         }
     }
 
@@ -318,7 +327,7 @@ private fun PageListContent(
 
     GenesysPage(
         navigationSuiteItems = {
-            menuItems.forEach { item ->
+            bottomBarItems.forEach { item ->
                 item(
                     selected = state.selectedTab == item.id,
                     onClick = { onEvent(PageListEvent.OnTabSelected(item.id)) },
@@ -335,13 +344,26 @@ private fun PageListContent(
                     alwaysShowLabel = isExpanded
                 )
             }
+
+            // Se for mobile e tiver mais itens, adicionamos o botão "Mais"
+            if (!isExpanded && allMenuItems.size > 5) {
+                item(
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState?.open() }
+                    },
+                    icon = { Icon(GenesysIcons.MoreVert, contentDescription = "Mais") },
+                    label = { Text("Mais") }
+                )
+            }
         },
         drawerContent = {
             AdminSidebar(
-                items = menuItems,
+                items = allMenuItems,
                 selectedItemId = state.selectedTab,
                 onItemClick = {
                     onEvent(PageListEvent.OnTabSelected(it.id))
+                    scope.launch { drawerState?.close() }
                 }
             )
         },
@@ -349,6 +371,9 @@ private fun PageListContent(
              GenesysTopAppBar(
                 title = "Genesys Console",
                 onBack = null,
+                onMenuClick = if (!isExpanded) {
+                    { scope.launch { drawerState?.open() } }
+                } else null
             )
         },
     ) {

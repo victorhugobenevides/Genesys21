@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 fun GenesysTopAppBar(
     title: String,
     onBack: (() -> Unit)? = null,
+    onMenuClick: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     containerColor: Color? = null,
     isTranslucent: Boolean = false,
@@ -45,11 +47,20 @@ fun GenesysTopAppBar(
             )
         },
         navigationIcon = {
-            onBack?.let {
-                IconButton(onClick = it) {
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
+                        modifier = Modifier.size(24.dp),
+                        tint = GenesysTheme.colors.onSurface
+                    )
+                }
+            } else if (onMenuClick != null) {
+                IconButton(onClick = onMenuClick) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu",
                         modifier = Modifier.size(24.dp),
                         tint = GenesysTheme.colors.onSurface
                     )

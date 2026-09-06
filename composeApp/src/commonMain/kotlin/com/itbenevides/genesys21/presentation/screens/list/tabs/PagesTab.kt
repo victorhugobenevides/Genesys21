@@ -5,6 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.presentation.screens.list.*
@@ -26,7 +28,10 @@ fun PagesTab(
 ) {
     val clipboardManager = LocalClipboardManager.current
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = GenesysStrings.ManageVitrines,
             subtitle = GenesysStrings.ManageVitrinesSubtitle,

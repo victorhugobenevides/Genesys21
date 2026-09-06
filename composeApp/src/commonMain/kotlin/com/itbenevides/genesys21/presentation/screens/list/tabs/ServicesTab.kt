@@ -5,6 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
@@ -28,7 +30,10 @@ fun ServicesTab(
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = "Gestão de Serviços",
             subtitle = "Configure os tratamentos e preços do seu negócio.",

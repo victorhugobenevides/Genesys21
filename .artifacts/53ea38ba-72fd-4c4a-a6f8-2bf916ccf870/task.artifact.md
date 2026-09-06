@@ -1,7 +1,16 @@
-- [/] Upgrade da Página de Estética (v6.3)
-    - [ ] Atualizar template `beauty_salon` em `PageTemplate.kt`
-    - [ ] Adicionar serviços de estética no `Seeder.kt`
-    - [ ] Ajustar lógica de sincronização de StoreId no Seeder
-- [x] Fix: Página em branco em sub-rotas (adicionado <base href="/"> no index.html)
+- [/] Correção de UI Admin (Scroll e Mobile Menu)
+    - [ ] Adicionar suporte a Menu em `GenesysTopAppBar.kt`
+    - [ ] Implementar Drawer responsivo em `GenesysPage.kt`
+    - [ ] Refatorar navegação mobile em `PageListScreen.kt`
+    - [ ] Adicionar scroll vertical em todas as abas admin:
+        - [ ] MainDashboardTab
+        - [ ] PagesTab
+        - [ ] AgendaTab
+        - [ ] ServicesTab
+        - [ ] B2BInsightsTab
+        - [ ] StoreSettingsTab
+        - [ ] GlobalUsersTab
+        - [ ] GlobalDomainsTab
+        - [ ] AuditLogsTab
+- [ ] Validar em diferentes resoluções (Compact vs Expanded)
 - [ ] Push para main
-- [ ] Validar resultado final em produção

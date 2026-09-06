@@ -1,6 +1,8 @@
 package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +28,10 @@ fun AuditLogsTab(viewModel: PageViewModel) {
         viewModel.loadAuditLogs()
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = "Logs de Auditoria",
             subtitle = "Histórico de ações críticas realizadas no sistema."

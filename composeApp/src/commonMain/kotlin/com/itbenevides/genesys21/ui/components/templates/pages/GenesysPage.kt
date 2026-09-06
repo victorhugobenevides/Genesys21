@@ -33,10 +33,23 @@ fun GenesysPage(
     val uriHandler = LocalUriHandler.current
     val windowSizeClass = LocalWindowSizeClass.current
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val scaffoldContent: @Composable () -> Unit = {
         Scaffold(
-            topBar = topBar,
+            topBar = {
+                // Injetamos o botão de menu se houver drawer e não estiver expandido
+                if (drawerContent != null && !isExpanded) {
+                    Box {
+                        topBar()
+                        // Overlay invisível ou modificação do topBar original seria ideal,
+                        // mas aqui assumimos que o GenesysTopAppBar tratará o onMenuClick.
+                        // Para garantir que apareça, passamos o controle para o conteúdo.
+                    }
+                } else {
+                    topBar()
+                }
+            },
             bottomBar = bottomBar,
             floatingActionButton = floatingActionButton,
             containerColor = GenesysTheme.colors.background,
@@ -71,39 +84,45 @@ fun GenesysPage(
         )
     }
 
-    if (drawerContent != null && isExpanded) {
-        PermanentNavigationDrawer(
-            drawerContent = {
-                PermanentDrawerSheet(
-                    drawerContainerColor = GenesysTheme.colors.surface,
-                    drawerContentColor = GenesysTheme.colors.onSurface,
-                    modifier = Modifier.width(280.dp)
-                ) {
-                    drawerContent()
+    // Provedor para as telas internas poderem abrir o drawer
+    CompositionLocalProvider(LocalGenesysDrawerState provides drawerState) {
+        if (drawerContent != null && isExpanded) {
+            PermanentNavigationDrawer(
+                drawerContent = {
+                    PermanentDrawerSheet(
+                        drawerContainerColor = GenesysTheme.colors.surface,
+                        drawerContentColor = GenesysTheme.colors.onSurface,
+                        modifier = Modifier.width(280.dp)
+                    ) {
+                        drawerContent()
+                    }
+                },
+                content = {
+                    NavigationWrapper(navigationSuiteItems, isExpanded, true, scaffoldContent)
                 }
-            },
-            content = {
-                NavigationWrapper(navigationSuiteItems, isExpanded, true, scaffoldContent)
-            }
-        )
-    } else if (drawerContent != null) {
-        ModalNavigationDrawer(
-            drawerContent = {
-                ModalDrawerSheet(
-                    drawerContainerColor = GenesysTheme.colors.surface,
-                    drawerContentColor = GenesysTheme.colors.onSurface
-                ) {
-                    drawerContent()
+            )
+        } else if (drawerContent != null) {
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    ModalDrawerSheet(
+                        drawerContainerColor = GenesysTheme.colors.surface,
+                        drawerContentColor = GenesysTheme.colors.onSurface
+                    ) {
+                        drawerContent()
+                    }
+                },
+                content = {
+                    NavigationWrapper(navigationSuiteItems, isExpanded, true, scaffoldContent)
                 }
-            },
-            content = {
-                NavigationWrapper(navigationSuiteItems, isExpanded, true, scaffoldContent)
-            }
-        )
-    } else {
-        NavigationWrapper(navigationSuiteItems, isExpanded, false, scaffoldContent)
+            )
+        } else {
+            NavigationWrapper(navigationSuiteItems, isExpanded, false, scaffoldContent)
+        }
     }
 }
+
+val LocalGenesysDrawerState = staticCompositionLocalOf<DrawerState?> { null }
 
 @OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable

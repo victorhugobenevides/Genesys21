@@ -6,6 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
@@ -26,7 +28,10 @@ fun GlobalUsersTab(viewModel: PageViewModel) {
         viewModel.loadAllUsers()
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = "Usuários Global",
             subtitle = "Gerencie permissões e cargos de todos os usuários do sistema."

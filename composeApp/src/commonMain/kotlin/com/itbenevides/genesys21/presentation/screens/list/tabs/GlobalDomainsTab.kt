@@ -6,6 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
@@ -31,7 +33,10 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
         viewModel.loadDomainMappings()
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = "Domínios Globais",
             subtitle = "Gerencie o mapeamento de domínios customizados para as vitrines.",

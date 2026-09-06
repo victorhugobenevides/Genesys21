@@ -60,7 +60,10 @@ fun AgendaTab(
         }
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = "Gestão de Agenda",
             subtitle = "Acompanhe e configure seus atendimentos."

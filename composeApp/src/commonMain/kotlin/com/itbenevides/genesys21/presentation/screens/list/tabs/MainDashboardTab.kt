@@ -43,7 +43,10 @@ fun MainDashboardTab(
         viewModel.loadAnalytics()
     }
 
-    GenesysColumn(modifier = Modifier.fillMaxWidth(), usePadding = false) {
+    GenesysColumn(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        usePadding = false
+    ) {
         AdminTabHeader(
             title = "Painel de Controle",
             subtitle = "Visão geral da saúde do seu negócio."
