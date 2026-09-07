@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,6 +17,8 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.theme.*
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.CurrencyUtils
 import kotlin.math.roundToLong
 
@@ -23,88 +26,66 @@ import kotlin.math.roundToLong
 fun B2BInsightsTab(viewModel: PageViewModel) {
     val b2bData by viewModel.b2bAnalytics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     LaunchedEffect(Unit) {
         viewModel.loadB2BAnalytics()
     }
 
-    GenesysColumn(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = true,
-        useScroll = true
+        contentPadding = PaddingValues(bottom = 64.dp)
     ) {
-        AdminTabHeader(
-            title = "B2B Insights",
-            subtitle = "Visão macro da performance de toda a rede de lojistas."
-        )
-
-        if (isLoading && b2bData == null) {
-            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GenesysTheme.colors.brand)
-            }
-        } else {
-            b2bData?.let { data ->
-                // KPI Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                ) {
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "GMV Global",
-                            value = "R$ ${CurrencyUtils.formatDisplay(data.platformGMV)}",
-                            color = Color(0xFF34C759)
-                        )
-                    }
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "Lojistas Ativos",
-                            value = data.totalMerchants.toString(),
-                            color = GenesysTheme.colors.brand
-                        )
-                    }
-                }
-
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
-                ) {
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "Ticket Médio Rede",
-                            value = "R$ ${CurrencyUtils.formatDisplay(data.globalAverageTicket)}",
-                            color = Color(0xFF5856D6)
-                        )
-                    }
-                    Box(Modifier.weight(1f)) {
-                        GenesysStatsCard(
-                            label = "Conversão Média",
-                            value = "3.2%",
-                            color = Color(0xFFFF9500)
-                        )
-                    }
-                }
-
-                GenesysSpacer(GenesysTheme.spacing.xl)
-
-                // Ranking de Lojistas
-                GenesysText(
-                    text = "Ranking de Performance (Top Lojistas)",
-                    style = GenesysTextStyle.Title,
-                    fontWeight = GenesysFontWeight.Bold
-                )
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                data.topMerchants.forEachIndexed { index, merchant ->
-                    MerchantPerformanceRow(index + 1, merchant)
-                    GenesysSpacer(GenesysTheme.spacing.s)
-                }
-            }
+        item {
+            AdminTabHeader(
+                title = "B2B Insights",
+                subtitle = "Visão macro da performance de toda a rede de lojistas."
+            )
         }
 
-        GenesysSpacer(GenesysTheme.spacing.huge)
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            ) {
+                b2bData?.let { data ->
+                    // KPI Section - Responsive
+                    if (isCompact) {
+                        GenesysStatsCard(label = "GMV Global", value = "R$ ${CurrencyUtils.formatDisplay(data.platformGMV)}", color = Color(0xFF34C759))
+                        GenesysSpacer(GenesysTheme.spacing.m)
+                        GenesysStatsCard(label = "Lojistas Ativos", value = data.totalMerchants.toString(), color = GenesysTheme.colors.brand)
+                        GenesysSpacer(GenesysTheme.spacing.m)
+                        GenesysStatsCard(label = "Ticket Médio Rede", value = "R$ ${CurrencyUtils.formatDisplay(data.globalAverageTicket)}", color = Color(0xFF5856D6))
+                        GenesysSpacer(GenesysTheme.spacing.m)
+                        GenesysStatsCard(label = "Conversão Média", value = "3.2%", color = Color(0xFFFF9500))
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                            Box(Modifier.weight(1f)) { GenesysStatsCard(label = "GMV Global", value = "R$ ${CurrencyUtils.formatDisplay(data.platformGMV)}", color = Color(0xFF34C759)) }
+                            Box(Modifier.weight(1f)) { GenesysStatsCard(label = "Lojistas Ativos", value = data.totalMerchants.toString(), color = GenesysTheme.colors.brand) }
+                        }
+                        GenesysSpacer(GenesysTheme.spacing.m)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                            Box(Modifier.weight(1f)) { GenesysStatsCard(label = "Ticket Médio Rede", value = "R$ ${CurrencyUtils.formatDisplay(data.globalAverageTicket)}", color = Color(0xFF5856D6)) }
+                            Box(Modifier.weight(1f)) { GenesysStatsCard(label = "Conversão Média", value = "3.2%", color = Color(0xFFFF9500)) }
+                        }
+                    }
+
+                    GenesysSpacer(GenesysTheme.spacing.xl)
+
+                    GenesysText(text = "Ranking de Performance (Top Lojistas)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                    GenesysSpacer(GenesysTheme.spacing.m)
+
+                    data.topMerchants.forEachIndexed { index, merchant ->
+                        MerchantPerformanceRow(index + 1, merchant)
+                        GenesysSpacer(GenesysTheme.spacing.s)
+                    }
+                }
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
+            }
+        }
     }
 }
 

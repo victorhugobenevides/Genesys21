@@ -39,6 +39,8 @@ fun MainDashboardTab(
 ) {
     val analytics by viewModel.analytics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     LaunchedEffect(Unit) {
         viewModel.loadAnalytics()
@@ -56,39 +58,53 @@ fun MainDashboardTab(
         }
 
         item {
-            GenesysColumn(usePadding = true, useScroll = false) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            ) {
                 analytics?.let { data ->
-                    // Quick Stats
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // KPI Section - Responsive Grid
+                    if (isCompact) {
                         GenesysStatsCard(
                             label = "Pedidos",
                             value = data.totalOrders.toString(),
-                            color = GenesysTheme.colors.brand,
-                            modifier = Modifier.weight(1f)
+                            color = GenesysTheme.colors.brand
                         )
+                        GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysStatsCard(
                             label = "Ticket Médio",
                             value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                            color = GenesysTheme.colors.accent,
-                            modifier = Modifier.weight(1f)
+                            color = GenesysTheme.colors.accent
                         )
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                            GenesysStatsCard(
+                                label = "Pedidos",
+                                value = data.totalOrders.toString(),
+                                color = GenesysTheme.colors.brand,
+                                modifier = Modifier.weight(1f)
+                            )
+                            GenesysStatsCard(
+                                label = "Ticket Médio",
+                                value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
+                                color = GenesysTheme.colors.accent,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
 
-                    GenesysSpacer(GenesysTheme.spacing.m)
-
-                    // Revenue Chart
+                    GenesysSpacer(GenesysTheme.spacing.l)
                     DailyRevenueChart(data.dailyRevenue)
 
                     GenesysSpacer(GenesysTheme.spacing.l)
-
-                    // Best Sellers
                     TopProductsCard(data.topProducts)
 
                     GenesysSpacer(GenesysTheme.spacing.l)
-
-                    // Booking Summary
                     BookingStatusCard(data.bookingSummary)
                 }
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
     }

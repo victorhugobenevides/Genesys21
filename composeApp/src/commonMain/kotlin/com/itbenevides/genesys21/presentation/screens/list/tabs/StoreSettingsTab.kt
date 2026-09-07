@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +23,8 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.*
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -37,6 +40,8 @@ fun StoreSettingsTab(
 ) {
     val storeId = userProfile?.id ?: "admin"
     var store by remember { mutableStateOf<Store?>(null) }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     var originZip by remember { mutableStateOf("") }
     var originStreet by remember { mutableStateOf("") }
@@ -80,112 +85,115 @@ fun StoreSettingsTab(
         }
     }
 
-    GenesysColumn(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = true,
-        useScroll = true
+        contentPadding = PaddingValues(bottom = 64.dp)
     ) {
-        com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
-            title = "Configurações da Loja",
-            subtitle = "Configure os dados de remetente e as opções do checkout."
-        )
-
-        GenesysSpacer(GenesysTheme.spacing.m)
-
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysTextField(
-                    value = originZip,
-                    onValueChange = { originZip = it },
-                    label = "CEP de Origem",
-                    icon = GenesysIcons.Search
-                )
-                GenesysSpacer(GenesysTheme.spacing.m)
-                GenesysTextField(
-                    value = originStreet,
-                    onValueChange = { originStreet = it },
-                    label = "Rua/Logradouro"
-                )
-                GenesysSpacer(GenesysTheme.spacing.m)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) {
-                        GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número")
-                    }
-                    Box(Modifier.weight(2f)) {
-                        GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro")
-                    }
-                }
-                GenesysSpacer(GenesysTheme.spacing.m)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(2f)) {
-                        GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade")
-                    }
-                    Box(Modifier.weight(1f)) {
-                        GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF")
-                    }
-                }
-            }
+        item {
+            com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
+                title = "Configurações da Loja",
+                subtitle = "Configure os dados de remetente e as opções do checkout."
+            )
         }
 
-        GenesysSpacer(GenesysTheme.spacing.l)
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            ) {
+                GenesysCard {
+                    Column {
+                        GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysTheme.spacing.m)
 
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysTheme.spacing.m)
+                        GenesysTextField(
+                            value = originZip,
+                            onValueChange = { originZip = it },
+                            label = "CEP de Origem",
+                            icon = GenesysIcons.Search
+                        )
+                        GenesysSpacer(GenesysTheme.spacing.m)
+                        GenesysTextField(
+                            value = originStreet,
+                            onValueChange = { originStreet = it },
+                            label = "Rua/Logradouro"
+                        )
+                        GenesysSpacer(GenesysTheme.spacing.m)
 
-                ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { newVal: Boolean ->
-                    allowPayLocal = newVal
+                        Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                            Box(Modifier.weight(1f)) {
+                                GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número")
+                            }
+                            Box(Modifier.weight(2f)) {
+                                GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro")
+                            }
+                        }
+
+                        GenesysSpacer(GenesysTheme.spacing.m)
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                            Box(Modifier.weight(2f)) {
+                                GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade")
+                            }
+                            Box(Modifier.weight(1f)) {
+                                GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF")
+                            }
+                        }
+                    }
                 }
-                ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { newVal: Boolean ->
-                    allowPayApp = newVal
+
+                GenesysSpacer(GenesysTheme.spacing.l)
+
+                GenesysCard {
+                    Column {
+                        GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysTheme.spacing.m)
+
+                        ToggleOptionRow("Permitir Pagar no Local", allowPayLocal) { allowPayLocal = it }
+                        ToggleOptionRow("Permitir Pagar pelo App", allowPayApp) { allowPayApp = it }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = GenesysTheme.spacing.m),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                        )
+
+                        ToggleOptionRow("Permitir Retirada no Local", allowPickup) { allowPickup = it }
+                        ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { allowDelivery = it }
+                    }
                 }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                ToggleOptionRow("Permitir Retirada no Local", allowPickup) { newVal: Boolean ->
-                    allowPickup = newVal
-                }
-                ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { newVal: Boolean ->
-                    allowDelivery = newVal
-                }
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
+
+                GenesysLoadingButton(
+                    text = "Salvar Configurações",
+                    onClick = {
+                        val currentStore = store ?: Store(id = storeId, ownerId = "", name = "Minha Loja")
+                        val updated = currentStore.copy(
+                            originZipCode = originZip,
+                            originStreet = originStreet,
+                            originNumber = originNumber,
+                            originNeighborhood = originNeighborhood,
+                            originCity = originCity,
+                            originState = originState,
+                            allowPayOnLocation = allowPayLocal,
+                            allowPayInApp = allowPayApp,
+                            allowPickup = allowPickup,
+                            allowDelivery = allowDelivery,
+                            stripePublicKey = if (selectedGateway == "STRIPE") stripePublic else null,
+                            stripeSecretKey = if (selectedGateway == "STRIPE") stripeSecret else null,
+                            stripeAccountId = currentStore.stripeAccountId,
+                            asaasApiKey = asaasKey,
+                            paymentGateway = selectedGateway
+                        )
+                        viewModel.saveStore(updated) { }
+                    },
+                    fillWidth = true,
+                    isLoading = isLoading
+                )
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
-
-        GenesysSpacer(GenesysTheme.spacing.huge)
-
-        GenesysLoadingButton(
-            text = "Salvar Configurações",
-            onClick = {
-                val currentStore = store ?: Store(
-                    id = storeId,
-                    ownerId = "",
-                    name = "Minha Loja"
-                )
-                val updated = currentStore.copy(
-                    originZipCode = originZip,
-                    originStreet = originStreet,
-                    originNumber = originNumber,
-                    originNeighborhood = originNeighborhood,
-                    originCity = originCity,
-                    originState = originState,
-                    allowPayOnLocation = allowPayLocal,
-                    allowPayInApp = allowPayApp,
-                    allowPickup = allowPickup,
-                    allowDelivery = allowDelivery,
-                    stripePublicKey = if (selectedGateway == "STRIPE") stripePublic else null,
-                    stripeSecretKey = if (selectedGateway == "STRIPE") stripeSecret else null,
-                    stripeAccountId = currentStore.stripeAccountId,
-                    asaasApiKey = asaasKey,
-                    paymentGateway = selectedGateway
-                )
-                viewModel.saveStore(updated) { }
-            },
-            fillWidth = true,
-            isLoading = isLoading
-        )
-
-        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }

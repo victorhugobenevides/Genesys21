@@ -2,6 +2,7 @@ package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +22,8 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.*
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -33,6 +36,8 @@ fun PaymentsTab(
 ) {
     val storeId = userProfile?.id ?: "admin"
     var store by remember { mutableStateOf<Store?>(null) }
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     var stripePublic by remember { mutableStateOf("") }
     var stripeSecret by remember { mutableStateOf("") }
@@ -54,99 +59,106 @@ fun PaymentsTab(
         }
     }
 
-    GenesysColumn(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = true,
-        useScroll = true
+        contentPadding = PaddingValues(bottom = 64.dp)
     ) {
-        GenesysSpacer(GenesysTheme.spacing.l)
-        GenesysText(text = "Pagamentos e Gateways", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
-        GenesysText(text = "Gerencie como você recebe pelas suas vendas e serviços.", style = GenesysTextStyle.Body, color = GenesysTheme.colors.onSurfaceVariant)
+        item {
+            com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
+                title = "Pagamentos e Gateways",
+                subtitle = "Gerencie como você recebe pelas suas vendas e serviços."
+            )
+        }
 
-        GenesysSpacer(GenesysTheme.spacing.l)
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            ) {
+                GenesysCard {
+                    Column {
+                        GenesysText(
+                            text = "Stripe Connect",
+                            style = GenesysTextStyle.Title,
+                            fontWeight = GenesysFontWeight.Bold
+                        )
+                        GenesysText(
+                            text = "Receba pagamentos diretamente em sua conta bancária via Checkout Seguro.",
+                            style = GenesysTextStyle.Label,
+                            color = GenesysTheme.colors.onSurfaceVariant
+                        )
 
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(
-                    text = "Stripe Connect",
-                    style = GenesysTextStyle.Title,
-                    fontWeight = GenesysFontWeight.Bold
-                )
-                GenesysText(
-                    text = "Receba pagamentos diretamente em sua conta bancária via Checkout Seguro.",
-                    style = GenesysTextStyle.Label,
-                    color = GenesysTheme.colors.onSurfaceVariant
-                )
+                        GenesysSpacer(GenesysTheme.spacing.m)
 
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                if (store?.stripeAccountId.isNullOrBlank()) {
-                    GenesysLoadingButton(
-                        text = "Configurar Conta Stripe",
-                        icon = GenesysIcons.Payments,
-                        onClick = {
-                            val userEmail = userProfile?.email ?: ""
-                            viewModel.connectStripe(storeId, userEmail) { url ->
-                                uriHandler.openUri(url)
+                        if (store?.stripeAccountId.isNullOrBlank()) {
+                            GenesysLoadingButton(
+                                text = "Configurar Conta Stripe",
+                                icon = GenesysIcons.Payments,
+                                onClick = {
+                                    val userEmail = userProfile?.email ?: ""
+                                    viewModel.connectStripe(storeId, userEmail) { url ->
+                                        uriHandler.openUri(url)
+                                    }
+                                },
+                                isLoading = isLoading,
+                                fillWidth = true
+                            )
+                        } else {
+                            StripeConnectedUI(store, viewModel, storeId, isLoading, scope) { secret, component ->
+                                connectSessionSecret = secret
+                                activeConnectComponent = component
                             }
-                        },
-                        isLoading = isLoading,
-                        fillWidth = true
-                    )
-                } else {
-                    StripeConnectedUI(store, viewModel, storeId, isLoading, scope) { secret, component ->
-                        connectSessionSecret = secret
-                        activeConnectComponent = component
+                        }
+
+                        if (connectSessionSecret != null) {
+                            GenesysSpacer(GenesysTheme.spacing.l)
+                            StripeConnectComponent(
+                                componentName = if (store?.stripeAccountId.isNullOrBlank()) "account-onboarding" else activeConnectComponent,
+                                publishableKey = stripePublic.ifBlank { "pk_test_placeholder" },
+                                clientSecret = connectSessionSecret!!,
+                                modifier = Modifier.fillMaxWidth().height(600.dp).background(Color.White, RoundedCornerShape(8.dp))
+                            )
+
+                            GenesysSpacer(GenesysTheme.spacing.s)
+                            GenesysTextButton(
+                                text = "Fechar Gestão Stripe",
+                                onClick = { connectSessionSecret = null },
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
                     }
                 }
 
-                if (connectSessionSecret != null) {
-                    GenesysSpacer(GenesysTheme.spacing.l)
-                    StripeConnectComponent(
-                        componentName = if (store?.stripeAccountId.isNullOrBlank()) "account-onboarding" else activeConnectComponent,
-                        publishableKey = stripePublic.ifBlank { "pk_test_placeholder" },
-                        clientSecret = connectSessionSecret!!,
-                        modifier = Modifier.fillMaxWidth().height(600.dp).background(Color.White, RoundedCornerShape(8.dp))
-                    )
+                GenesysSpacer(GenesysTheme.spacing.l)
 
-                    GenesysSpacer(GenesysTheme.spacing.s)
-                    GenesysTextButton(
-                        text = "Fechar Gestão Stripe",
-                        onClick = { connectSessionSecret = null },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                // Gateway Manual
+                GenesysCard {
+                    Column {
+                        GenesysText(text = "Configuração Manual", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysSpacer(GenesysTheme.spacing.m)
+                        GenesysText(text = "Use apenas se tiver chaves de API próprias.", style = GenesysTextStyle.Label)
+                        GenesysSpacer(GenesysTheme.spacing.m)
+
+                        GenesysTextField(value = asaasKey, onValueChange = { asaasKey = it }, label = "Asaas API Key (Opcional)")
+                        GenesysSpacer(GenesysTheme.spacing.m)
+
+                        GenesysLoadingButton(
+                            text = "Salvar Gateways",
+                            onClick = {
+                                store?.let {
+                                    viewModel.saveStore(it.copy(asaasApiKey = asaasKey)) { }
+                                }
+                            },
+                            isLoading = isLoading,
+                            fillWidth = true
+                        )
+                    }
                 }
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
-
-        GenesysSpacer(GenesysTheme.spacing.l)
-
-        // Gateway Manual (Legacy ou Pro)
-        GenesysCard {
-            GenesysColumn(usePadding = false) {
-                GenesysText(text = "Configuração Manual de Gateway", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysText(text = "Use esta seção apenas se tiver chaves de API próprias.", style = GenesysTextStyle.Label)
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysTextField(value = asaasKey, onValueChange = { asaasKey = it }, label = "Asaas API Key (Opcional)")
-                GenesysSpacer(GenesysTheme.spacing.m)
-
-                GenesysLoadingButton(
-                    text = "Salvar Gateways",
-                    onClick = {
-                        store?.let {
-                            viewModel.saveStore(it.copy(asaasApiKey = asaasKey)) { }
-                        }
-                    },
-                    isLoading = isLoading,
-                    fillWidth = true
-                )
-            }
-        }
-
-        GenesysSpacer(GenesysTheme.spacing.huge)
     }
 }
 

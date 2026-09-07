@@ -32,6 +32,8 @@ import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptySt
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabData
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabRow
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.datetime.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,7 +76,12 @@ fun AgendaTab(
         }
 
         item {
-            GenesysColumn(usePadding = true, useScroll = false) {
+            val isCompact = LocalWindowSizeClass.current == GenesysWindowSizeClass.COMPACT
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            ) {
                 // Seletor de Visualização
                 GenesysTabRow(
                     selectedTabIndex = agendaViewMode,
@@ -89,19 +96,15 @@ fun AgendaTab(
                 GenesysSpacer(GenesysTheme.spacing.l)
 
                 when (agendaViewMode) {
-                    0 -> {
-                        DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
-                    }
-                    1 -> {
-                        UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
-                    }
-                    2 -> {
-                        AvailabilityManagementView(
-                            initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-                            onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
-                        )
-                    }
+                    0 -> DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
+                    1 -> UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
+                    2 -> AvailabilityManagementView(
+                        initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
+                        onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+                    )
                 }
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
     }
@@ -275,7 +278,7 @@ private fun DailyAgendaView(
     onEdit: (Appointment) -> Unit
 ) {
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
-        GenesysColumn(usePadding = true) {
+        Column(modifier = Modifier.padding(GenesysTheme.spacing.m)) {
             GenesysDatePicker(
                 selectedDate = selectedDate,
                 onDateSelected = { onEvent(PageListEvent.OnDateSelected(it)) },
@@ -357,7 +360,7 @@ private fun AvailabilityManagementView(
 ) {
     var availabilityState by remember { mutableStateOf(initialAvailability) }
 
-    GenesysColumn(usePadding = false) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         GenesysText(text = "Defina os dias e intervalos de horário que você atende.", style = GenesysTextStyle.Body)
         GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -457,12 +460,12 @@ private fun AppointmentCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick
     ) {
-        GenesysRow(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            GenesysColumn(usePadding = false, modifier = Modifier.width(60.dp)) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.width(60.dp)) {
                 GenesysText(text = timeStr, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand)
             }
             GenesysSpacer(GenesysTheme.spacing.m)
-            GenesysColumn(modifier = Modifier.weight(1f), usePadding = false) {
+            Column(modifier = Modifier.weight(1f)) {
                 GenesysText(text = appointment.customerName, fontWeight = GenesysFontWeight.Bold)
                 GenesysText(text = "Serviço ID: ${appointment.serviceId}", style = GenesysTextStyle.Label)
 

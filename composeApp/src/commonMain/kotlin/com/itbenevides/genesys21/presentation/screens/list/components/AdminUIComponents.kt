@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
@@ -345,13 +346,51 @@ fun ToggleOptionRow(label: String, checked: Boolean, onCheckedChange: (Boolean) 
 }
 
 @Composable
+fun GenesysAdaptiveGrid(
+    modifier: Modifier = Modifier,
+    spacing: Dp = GenesysTheme.spacing.m,
+    content: @Composable RowScope.() -> Unit
+) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    if (isCompact) {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(spacing)
+        ) {
+            // No mobile, empilhamos os itens. Como o content espera um RowScope,
+            // precisamos de um pequeno truque ou refatorar o content.
+            // Para manter a compatibilidade com o que os Dashboards esperam,
+            // vamos expor uma API que aceite uma lista de composables.
+        }
+    } else {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing),
+            content = content
+        )
+    }
+}
+
+/**
+ * Cabeçalho de aba administrativo modernizado.
+ */
+@Composable
 fun AdminTabHeader(
     title: String,
     subtitle: String,
     action: (@Composable () -> Unit)? = null
 ) {
-    GenesysColumn(usePadding = true, modifier = Modifier.fillMaxWidth()) {
-        GenesysSpacer(GenesysTheme.spacing.l)
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            .padding(top = GenesysTheme.spacing.l, bottom = GenesysTheme.spacing.m)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -360,22 +399,33 @@ fun AdminTabHeader(
             Column(Modifier.weight(1f)) {
                 GenesysText(
                     text = title,
-                    style = GenesysTextStyle.Headline,
-                    fontWeight = GenesysFontWeight.ExtraBold
+                    style = if (isCompact) GenesysTextStyle.Title else GenesysTextStyle.Headline,
+                    fontWeight = GenesysFontWeight.ExtraBold,
+                    color = GenesysTheme.colors.onBackground
                 )
+                GenesysSpacer(GenesysTheme.spacing.xxs)
                 GenesysText(
                     text = subtitle,
-                    style = GenesysTextStyle.Body,
-                    color = GenesysTheme.colors.onSurfaceVariant
+                    style = GenesysTextStyle.Label,
+                    color = GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.8f)
                 )
             }
-            if (action != null) {
+            if (action != null && !isCompact) {
                 Box(Modifier.padding(start = 16.dp)) {
                     action()
                 }
             }
         }
-        GenesysSpacer(GenesysTheme.spacing.l)
+
+        if (action != null && isCompact) {
+            GenesysSpacer(GenesysTheme.spacing.m)
+            Box(Modifier.fillMaxWidth()) {
+                action()
+            }
+        }
+
+        GenesysSpacer(GenesysTheme.spacing.m)
+        GenesysDivider(usePadding = false, color = GenesysTheme.colors.outline.copy(alpha = 0.1f))
     }
 }
 

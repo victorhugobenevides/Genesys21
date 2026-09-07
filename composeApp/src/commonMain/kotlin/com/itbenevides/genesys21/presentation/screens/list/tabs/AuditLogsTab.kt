@@ -1,6 +1,7 @@
 package com.itbenevides.genesys21.presentation.screens.list.tabs
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +14,8 @@ import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.*
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -21,37 +24,48 @@ import kotlinx.datetime.toLocalDateTime
 fun AuditLogsTab(viewModel: PageViewModel) {
     val logs by viewModel.auditLogs.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     LaunchedEffect(Unit) {
         viewModel.loadAuditLogs()
     }
 
-    GenesysColumn(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        usePadding = true,
-        useScroll = true
+        contentPadding = PaddingValues(bottom = 64.dp)
     ) {
-        AdminTabHeader(
-            title = "Logs de Auditoria",
-            subtitle = "Histórico de ações críticas realizadas no sistema."
-        )
-
-        if (isLoading && logs.isEmpty()) {
-            Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = GenesysTheme.colors.brand)
-            }
-        } else if (logs.isEmpty()) {
-            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                GenesysText(text = "Nenhum log registrado.", style = GenesysTextStyle.Body)
-            }
-        } else {
-            logs.forEach { logMap ->
-                AuditLogCard(logMap)
-                GenesysSpacer(GenesysTheme.spacing.s)
-            }
+        item {
+            AdminTabHeader(
+                title = "Logs de Auditoria",
+                subtitle = "Histórico de ações críticas realizadas no sistema."
+            )
         }
 
-        GenesysSpacer(GenesysTheme.spacing.huge)
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+            ) {
+                if (isLoading && logs.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = GenesysTheme.colors.brand)
+                    }
+                } else if (logs.isEmpty()) {
+                    Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                        GenesysText(text = "Nenhum log registrado.", style = GenesysTextStyle.Body)
+                    }
+                } else {
+                    logs.forEach { logMap ->
+                        AuditLogCard(logMap)
+                        GenesysSpacer(GenesysTheme.spacing.s)
+                    }
+                }
+
+                GenesysSpacer(GenesysTheme.spacing.huge)
+            }
+        }
     }
 }
 

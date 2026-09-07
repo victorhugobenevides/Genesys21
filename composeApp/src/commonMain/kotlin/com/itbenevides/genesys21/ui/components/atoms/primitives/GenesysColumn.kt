@@ -22,7 +22,6 @@ fun GenesysColumn(
     horizontalAlignment: GenesysAlignment = GenesysAlignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     maxWidth: Dp? = null,
-    weightValue: Float = 0f, // Deprecated
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val alignment =

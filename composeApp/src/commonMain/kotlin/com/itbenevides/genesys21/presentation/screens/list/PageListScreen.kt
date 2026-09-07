@@ -359,40 +359,40 @@ private fun PageListContent(
             )
         },
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            when (state.selectedTab) {
-                0 -> MainDashboardTab(viewModel)
-                9 -> B2BInsightsTab(viewModel)
-                1 -> PagesTab(state, onEvent, onViewPage, onEditPage)
-                2 -> OrdersTab(
-                    state = state,
-                    viewModel = viewModel,
-                    isExpanded = isExpanded,
-                    selectedOrderIdForDetail = selectedOrderIdForDetail,
-                    onSelectOrderForDetail = onSelectOrderForDetail,
-                    onEvent = onEvent,
-                    onContactCustomer = onContactCustomer,
-                    chatMessages = chatMessages
+        // ELITE REFACTOR: Removido containers redundantes.
+        // O scroll agora é de responsabilidade direta de cada Aba (Tab) usando LazyColumn.
+        when (state.selectedTab) {
+            0 -> MainDashboardTab(viewModel)
+            9 -> B2BInsightsTab(viewModel)
+            1 -> PagesTab(state, onEvent, onViewPage, onEditPage)
+            2 -> OrdersTab(
+                state = state,
+                viewModel = viewModel,
+                isExpanded = isExpanded,
+                selectedOrderIdForDetail = selectedOrderIdForDetail,
+                onSelectOrderForDetail = onSelectOrderForDetail,
+                onEvent = onEvent,
+                onContactCustomer = onContactCustomer,
+                chatMessages = chatMessages
+            )
+            3 -> AgendaTab(state, viewModel, onEvent)
+            4 -> ServicesTab(services, onAddService, onEditService, onDeleteService)
+            5 -> {
+                val receiptViewModel: ReceiptViewModel = koinInject()
+                ReceiptListScreen(
+                    viewModel = receiptViewModel,
+                    isEmbedded = true,
+                    onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
                 )
-                3 -> AgendaTab(state, viewModel, onEvent)
-                4 -> ServicesTab(services, onAddService, onEditService, onDeleteService)
-                5 -> {
-                    val receiptViewModel: ReceiptViewModel = koinInject()
-                    ReceiptListScreen(
-                        viewModel = receiptViewModel,
-                        isEmbedded = true,
-                        onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
-                    )
-                }
-                6 -> PaymentsTab(viewModel, userProfile, uriHandler, scope)
-                10 -> StoreSettingsTab(viewModel, userProfile, uriHandler, scope)
-                11 -> GlobalUsersTab(viewModel)
-                12 -> GlobalDomainsTab(viewModel)
-                13 -> AuditLogsTab(viewModel)
-                8 -> ProfileScreen(viewModel, router, isEmbedded = true)
-                else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Selecione uma opção no menu")
-                }
+            }
+            6 -> PaymentsTab(viewModel, userProfile, uriHandler, scope)
+            10 -> StoreSettingsTab(viewModel, userProfile, uriHandler, scope)
+            11 -> GlobalUsersTab(viewModel)
+            12 -> GlobalDomainsTab(viewModel)
+            13 -> AuditLogsTab(viewModel)
+            8 -> ProfileScreen(viewModel, router, isEmbedded = true)
+            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Selecione uma opção no menu")
             }
         }
     }
