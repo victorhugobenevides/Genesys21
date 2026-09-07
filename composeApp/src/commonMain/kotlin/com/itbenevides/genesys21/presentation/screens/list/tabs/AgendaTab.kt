@@ -54,6 +54,10 @@ fun AgendaTab(
     val today = remember { kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date }
     val selectedDate = state.selectedDate ?: today
 
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+    val horizontalPadding = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l
+
     var selectedAppointmentForEdit by remember { mutableStateOf<Appointment?>(null) }
 
     LaunchedEffect(selectedDate, storeId, agendaViewMode) {
@@ -66,22 +70,17 @@ fun AgendaTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
         item {
             AdminTabHeader(
                 title = "Gestão de Agenda",
-                subtitle = "Acompanhe e configure seus atendimentos."
+                subtitle = "Configure seus atendimentos e horários."
             )
         }
 
         item {
-            val isCompact = LocalWindowSizeClass.current == GenesysWindowSizeClass.COMPACT
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
-            ) {
+            Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
                 // Seletor de Visualização
                 GenesysTabRow(
                     selectedTabIndex = agendaViewMode,
@@ -92,21 +91,97 @@ fun AgendaTab(
                     ),
                     onTabSelected = { agendaViewMode = it }
                 )
-
-                GenesysSpacer(GenesysTheme.spacing.l)
-
-                when (agendaViewMode) {
-                    0 -> DailyAgendaView(selectedDate, appointments, state, onEvent, onEdit = { selectedAppointmentForEdit = it })
-                    1 -> UpcomingAgendaView(upcomingAppointments, state) { selectedAppointmentForEdit = it }
-                    2 -> AvailabilityManagementView(
-                        initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-                        onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
-                    )
-                }
-
-                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
+
+        item { GenesysSpacer(GenesysTheme.spacing.l) }
+
+        // Conteúdo Dinâmico por Item para garantir Scroll Robusto
+        when (agendaViewMode) {
+            0 -> { // Vista Diária
+                item {
+                    Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                        GenesysCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(GenesysTheme.spacing.m)) {
+                                GenesysDatePicker(
+                                    selectedDate = selectedDate,
+                                    onDateSelected = { onEvent(PageListEvent.OnDateSelected(it)) },
+                                )
+                            }
+                        }
+                    }
+                }
+                item { GenesysSpacer(GenesysTheme.spacing.l) }
+                item {
+                    Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                        GenesysText(
+                            text = "Agendamentos para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}",
+                            style = GenesysTextStyle.Label,
+                            fontWeight = GenesysFontWeight.Bold,
+                            color = GenesysTheme.colors.brand
+                        )
+                    }
+                }
+                item { GenesysSpacer(GenesysTheme.spacing.m) }
+
+                if (appointments.isEmpty() && !state.isLoading) {
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                            GenesysEmptyState(
+                                icon = GenesysIcons.Schedule,
+                                title = "Nenhum agendamento",
+                                description = "Não há atendimentos para esta data.",
+                            )
+                        }
+                    }
+                } else {
+                    items(items = appointments.sortedBy { it.startTime }, key = { it.id }) { appointment ->
+                        Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                            AppointmentCard(appointment = appointment, onClick = { selectedAppointmentForEdit = appointment })
+                        }
+                        GenesysSpacer(GenesysTheme.spacing.s)
+                    }
+                }
+            }
+            1 -> { // Todos
+                if (upcomingAppointments.isEmpty() && !state.isLoading) {
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                            GenesysEmptyState(icon = GenesysIcons.List, title = "Agenda vazia", description = "Sem agendamentos futuros.")
+                        }
+                    }
+                } else {
+                    val grouped = upcomingAppointments.groupBy { it.startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date }
+                    grouped.forEach { (date, appts) ->
+                        item {
+                            Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                                GenesysText(text = "${date.dayOfMonth}/${date.monthNumber}/${date.year}", fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.accent)
+                            }
+                        }
+                        item { GenesysSpacer(GenesysTheme.spacing.s) }
+                        items(items = appts, key = { it.id }) { appointment ->
+                            Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                                AppointmentCard(appointment = appointment, onClick = { selectedAppointmentForEdit = appointment })
+                            }
+                            GenesysSpacer(GenesysTheme.spacing.s)
+                        }
+                        item { GenesysSpacer(GenesysTheme.spacing.m) }
+                    }
+                }
+            }
+            2 -> { // Horários (Disponibilidade)
+                item {
+                    Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                        AvailabilityManagementView(
+                            initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
+                            onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+                        )
+                    }
+                }
+            }
+        }
+
+        item { GenesysSpacer(GenesysTheme.spacing.huge) }
     }
 
     if (selectedAppointmentForEdit != null) {
@@ -265,90 +340,6 @@ private fun NoteItem(note: BookingNote) {
         Text(note.content, style = MaterialTheme.typography.bodySmall)
         if (note.isPrivate) {
             Text("🔒 Privada", style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.accent)
-        }
-    }
-}
-
-@Composable
-private fun DailyAgendaView(
-    selectedDate: LocalDate,
-    appointments: List<Appointment>,
-    state: PageListState,
-    onEvent: (PageListEvent) -> Unit,
-    onEdit: (Appointment) -> Unit
-) {
-    GenesysCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(GenesysTheme.spacing.m)) {
-            GenesysDatePicker(
-                selectedDate = selectedDate,
-                onDateSelected = { onEvent(PageListEvent.OnDateSelected(it)) },
-            )
-        }
-    }
-
-    GenesysSpacer(GenesysTheme.spacing.l)
-
-    GenesysText(
-        text = "Agenda para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}/${selectedDate.year}",
-        style = GenesysTextStyle.Label,
-        fontWeight = GenesysFontWeight.Bold,
-        color = GenesysTheme.colors.brand,
-    )
-
-    GenesysSpacer(GenesysTheme.spacing.m)
-
-    if (appointments.isEmpty() && !state.isLoading) {
-        GenesysEmptyState(
-            icon = GenesysIcons.Schedule,
-            title = "Nenhum agendamento",
-            description = "Não há clientes agendados para esta data.",
-        )
-    } else {
-        appointments.sortedBy { it.startTime }.forEach { appointment ->
-            AppointmentCard(
-                appointment = appointment,
-                onClick = { onEdit(appointment) }
-            )
-            GenesysSpacer(GenesysTheme.spacing.s)
-        }
-    }
-}
-
-@Composable
-private fun UpcomingAgendaView(
-    upcomingAppointments: List<Appointment>,
-    state: PageListState,
-    onEdit: (Appointment) -> Unit
-) {
-    if (upcomingAppointments.isEmpty() && !state.isLoading) {
-        GenesysEmptyState(
-            icon = GenesysIcons.List,
-            title = "Agenda vazia",
-            description = "Você não possui agendamentos futuros no momento.",
-        )
-    } else {
-        // Agrupado por data
-        val grouped = upcomingAppointments.groupBy {
-            it.startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        }
-
-        grouped.forEach { (date, appts) ->
-            GenesysText(
-                text = "${date.dayOfMonth} de ${date.month.name} de ${date.year}",
-                style = GenesysTextStyle.Label,
-                fontWeight = GenesysFontWeight.Bold,
-                color = GenesysTheme.colors.accent,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            appts.forEach { appointment ->
-                AppointmentCard(
-                    appointment = appointment,
-                    onClick = { onEdit(appointment) }
-                )
-                GenesysSpacer(GenesysTheme.spacing.s)
-            }
-            GenesysSpacer(GenesysTheme.spacing.m)
         }
     }
 }

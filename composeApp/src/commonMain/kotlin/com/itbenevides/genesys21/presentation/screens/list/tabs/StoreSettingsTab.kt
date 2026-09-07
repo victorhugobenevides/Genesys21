@@ -60,9 +60,6 @@ fun StoreSettingsTab(
     var asaasKey by remember { mutableStateOf("") }
     var selectedGateway by remember { mutableStateOf("STRIPE") }
 
-    var connectSessionSecret by remember { mutableStateOf<String?>(null) }
-    var activeConnectComponent by remember { mutableStateOf("account-onboarding") }
-
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(storeId) {
@@ -85,23 +82,22 @@ fun StoreSettingsTab(
         }
     }
 
+    val horizontalPadding = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
         item {
             com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
                 title = "Configurações da Loja",
-                subtitle = "Configure os dados de remetente e as opções do checkout."
+                subtitle = "Dados de remetente e opções do checkout."
             )
         }
 
+        // Seção: Endereço
         item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
-            ) {
+            Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
                 GenesysCard {
                     Column {
                         GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
@@ -121,30 +117,47 @@ fun StoreSettingsTab(
                         )
                         GenesysSpacer(GenesysTheme.spacing.m)
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
-                            Box(Modifier.weight(1f)) {
-                                GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número")
-                            }
-                            Box(Modifier.weight(2f)) {
-                                GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro")
+                        if (isCompact) {
+                            GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número")
+                            GenesysSpacer(GenesysTheme.spacing.m)
+                            GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro")
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                                Box(Modifier.weight(1f)) {
+                                    GenesysTextField(value = originNumber, onValueChange = { originNumber = it }, label = "Número")
+                                }
+                                Box(Modifier.weight(2f)) {
+                                    GenesysTextField(value = originNeighborhood, onValueChange = { originNeighborhood = it }, label = "Bairro")
+                                }
                             }
                         }
 
                         GenesysSpacer(GenesysTheme.spacing.m)
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
-                            Box(Modifier.weight(2f)) {
-                                GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade")
-                            }
-                            Box(Modifier.weight(1f)) {
-                                GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF")
+                        if (isCompact) {
+                            GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade")
+                            GenesysSpacer(GenesysTheme.spacing.m)
+                            GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF")
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                                Box(Modifier.weight(2f)) {
+                                    GenesysTextField(value = originCity, onValueChange = { originCity = it }, label = "Cidade")
+                                }
+                                Box(Modifier.weight(1f)) {
+                                    GenesysTextField(value = originState, onValueChange = { originState = it }, label = "UF")
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
 
-                GenesysSpacer(GenesysTheme.spacing.l)
+        item { GenesysSpacer(GenesysTheme.spacing.l) }
 
+        // Seção: Pagamento e Entrega
+        item {
+            Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
                 GenesysCard {
                     Column {
                         GenesysText(text = "Opções de Pagamento e Entrega", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
@@ -162,9 +175,14 @@ fun StoreSettingsTab(
                         ToggleOptionRow("Permitir Envio / Entrega", allowDelivery) { allowDelivery = it }
                     }
                 }
+            }
+        }
 
-                GenesysSpacer(GenesysTheme.spacing.huge)
+        item { GenesysSpacer(GenesysTheme.spacing.xl) }
 
+        // Botão de Ação Principal
+        item {
+            Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
                 GenesysLoadingButton(
                     text = "Salvar Configurações",
                     onClick = {
@@ -191,9 +209,9 @@ fun StoreSettingsTab(
                     fillWidth = true,
                     isLoading = isLoading
                 )
-
-                GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
+
+        item { GenesysSpacer(GenesysTheme.spacing.huge) }
     }
 }
