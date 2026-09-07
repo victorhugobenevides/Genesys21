@@ -212,9 +212,8 @@ fun PageViewerContent(
                 maxWidth = GenesysDimens.ViewerMaxWidth,
                 usePadding = true,
                 useScroll = true,
-                weightValue = 1f,
             ) {
-                state.page.components.forEach { component ->
+                for (component in state.page.components) {
                     PageComponentRenderer(
                         component = component,
                         storeId = state.page.storeId,

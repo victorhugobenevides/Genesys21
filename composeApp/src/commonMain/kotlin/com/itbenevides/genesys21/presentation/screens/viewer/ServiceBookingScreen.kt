@@ -93,7 +93,6 @@ fun ServiceBookingScreen(
                 maxWidth = 600.dp,
                 usePadding = true,
                 useScroll = true,
-                weightValue = 1f,
             ) {
                 // Service Info
                 Row(verticalAlignment = Alignment.CenterVertically) {
