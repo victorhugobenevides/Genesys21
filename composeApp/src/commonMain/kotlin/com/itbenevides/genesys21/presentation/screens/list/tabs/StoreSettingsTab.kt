@@ -86,7 +86,7 @@ fun StoreSettingsTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(bottom = 120.dp)
     ) {
         item {
             com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(

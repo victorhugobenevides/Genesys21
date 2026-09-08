@@ -36,7 +36,6 @@ fun GenesysPage(
         // O conteúdo (Tabs) deve preencher o resto e gerenciar seu próprio scroll interno.
         Box(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(padding)
                 .then(if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier)
         ) {
