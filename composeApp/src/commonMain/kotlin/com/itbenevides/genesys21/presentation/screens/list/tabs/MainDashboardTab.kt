@@ -4,7 +4,9 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,6 +34,8 @@ import com.itbenevides.genesys21.util.CurrencyUtils
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+import com.itbenevides.genesys21.ui.components.atoms.animations.shimmer
 
 @Composable
 fun MainDashboardTab(
@@ -63,50 +67,74 @@ fun MainDashboardTab(
                     .fillMaxWidth()
                     .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
             ) {
-                analytics?.let { data ->
-                    // KPI Section - Responsive Grid
-                    if (isCompact) {
-                        GenesysStatsCard(
-                            label = "Pedidos",
-                            value = data.totalOrders.toString(),
-                            color = GenesysTheme.colors.brand
-                        )
-                        GenesysSpacer(GenesysTheme.spacing.m)
-                        GenesysStatsCard(
-                            label = "Ticket Médio",
-                            value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                            color = GenesysTheme.colors.accent
-                        )
-                    } else {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                if (isLoading && analytics == null) {
+                    DashboardSkeleton(isCompact)
+                } else {
+                    analytics?.let { data ->
+                        // KPI Section - Responsive Grid
+                        if (isCompact) {
                             GenesysStatsCard(
                                 label = "Pedidos",
                                 value = data.totalOrders.toString(),
-                                color = GenesysTheme.colors.brand,
-                                modifier = Modifier.weight(1f)
+                                color = GenesysTheme.colors.brand
                             )
+                            GenesysSpacer(GenesysTheme.spacing.m)
                             GenesysStatsCard(
                                 label = "Ticket Médio",
                                 value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                                color = GenesysTheme.colors.accent,
-                                modifier = Modifier.weight(1f)
+                                color = GenesysTheme.colors.accent
                             )
+                        } else {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                                GenesysStatsCard(
+                                    label = "Pedidos",
+                                    value = data.totalOrders.toString(),
+                                    color = GenesysTheme.colors.brand,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                GenesysStatsCard(
+                                    label = "Ticket Médio",
+                                    value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
+                                    color = GenesysTheme.colors.accent,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
+
+                        GenesysSpacer(GenesysTheme.spacing.l)
+                        DailyRevenueChart(data.dailyRevenue)
+
+                        GenesysSpacer(GenesysTheme.spacing.l)
+                        TopProductsCard(data.topProducts)
+
+                        GenesysSpacer(GenesysTheme.spacing.l)
+                        BookingStatusCard(data.bookingSummary)
                     }
-
-                    GenesysSpacer(GenesysTheme.spacing.l)
-                    DailyRevenueChart(data.dailyRevenue)
-
-                    GenesysSpacer(GenesysTheme.spacing.l)
-                    TopProductsCard(data.topProducts)
-
-                    GenesysSpacer(GenesysTheme.spacing.l)
-                    BookingStatusCard(data.bookingSummary)
                 }
 
                 GenesysSpacer(GenesysTheme.spacing.huge)
             }
         }
+    }
+}
+
+@Composable
+private fun DashboardSkeleton(isCompact: Boolean) {
+    Column {
+        if (isCompact) {
+            Box(Modifier.fillMaxWidth().height(100.dp).clip(RoundedCornerShape(16.dp)).shimmer())
+            GenesysSpacer(GenesysTheme.spacing.m)
+            Box(Modifier.fillMaxWidth().height(100.dp).clip(RoundedCornerShape(16.dp)).shimmer())
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
+                Box(Modifier.weight(1f).height(100.dp).clip(RoundedCornerShape(16.dp)).shimmer())
+                Box(Modifier.weight(1f).height(100.dp).clip(RoundedCornerShape(16.dp)).shimmer())
+            }
+        }
+        GenesysSpacer(GenesysTheme.spacing.l)
+        Box(Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(16.dp)).shimmer())
+        GenesysSpacer(GenesysTheme.spacing.l)
+        Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(16.dp)).shimmer())
     }
 }
 
