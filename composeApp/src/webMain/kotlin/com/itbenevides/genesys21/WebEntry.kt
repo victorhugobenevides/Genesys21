@@ -12,28 +12,31 @@ import kotlinx.browser.window
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun startComposeApp() {
-    val debugHeader = document.getElementById("debug-header") as? HTMLElement
-    if (debugHeader != null) {
-        debugHeader.setAttribute("style", "background-color: green; color: white; padding: 10px; text-align: center;")
-        debugHeader.innerHTML = "KOTLIN INICIADO - CONFIGURANDO KOIN..."
+    val statusText = document.getElementById("loading-status")
+    val overlay = document.getElementById("loading-overlay")
+
+    if (statusText != null) {
+        statusText.innerHTML = "Configurando ambiente (Koin)..."
     }
 
     try {
         initKoin(additionalModules = listOf(viewModelModule))
+
+        if (statusText != null) {
+            statusText.innerHTML = "Conectando ao Firebase..."
+        }
         initializeFirebase()
 
         // 1. Tenta pegar o elemento existente
         val existingContainer = document.getElementById("ComposeTarget")
 
-        // 2. Decide qual container usar.
-        // Se o existente for nulo OU for um <canvas> (que não suporta Shadow DOM), criamos um novo.
+        // ... (resto do container logic mantido) ...
         val container =
             if (existingContainer == null || existingContainer.nodeName.lowercase() == "canvas") {
                 (document.createElement("div") as HTMLElement).apply {
                     id = "ComposeTargetDynamic"
                     setAttribute("style", "width: 100%; height: 100%; margin: 0; padding: 0;")
                     document.body?.appendChild(this)
-                    // Se existia um canvas antigo, removemos para evitar conflitos visuais
                     existingContainer?.remove()
                 }
             } else {
@@ -45,14 +48,16 @@ fun startComposeApp() {
             App()
         }
 
+        // Remove o overlay de carregamento quando o Compose estiver pronto
         window.setTimeout({
-            debugHeader?.remove()
+            overlay?.remove()
             null
-        }, 2000)
+        }, 1000)
+
     } catch (e: Exception) {
-        if (debugHeader != null) {
-            debugHeader.setAttribute("style", "background-color: orange; color: white; padding: 10px; text-align: center;")
-            debugHeader.innerHTML = "ERRO KOTLIN: ${e.message}"
+        if (statusText != null) {
+            statusText.setAttribute("style", "color: orange; margin-top: 20px;")
+            statusText.innerHTML = "ERRO NA INICIALIZAÇÃO: ${e.message}"
         }
         e.printStackTrace()
     }

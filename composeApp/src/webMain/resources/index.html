@@ -35,14 +35,62 @@
 
     <link type="text/css" rel="stylesheet" href="styles.css">
     <style>
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #F2F2F7; position: fixed; left: 0; top: 0; touch-action: none; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: -webkit-fill-available;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #F2F2F7;
+            position: fixed;
+            left: 0;
+            top: 0;
+            touch-action: none;
+        }
         #ComposeTarget { width: 100%; height: 100%; }
         canvas { outline: none; width: 100% !important; height: 100% !important; display: block; }
+
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #F2F2F7; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid rgba(0,0,0,0.1);
+            border-left-color: #007AFF; border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360dp); } }
     </style>
+    <script>
+        // CAPABILITY CHECK (CRITICAL FOR iOS)
+        window.addEventListener('load', function() {
+            const overlay = document.getElementById('loading-overlay');
+            const status = document.getElementById('loading-status');
+
+            // Check for Wasm GC support
+            try {
+                if (typeof WebAssembly !== "object" || !WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 95, 1, 120, 0]))) {
+                    throw new Error("Wasm GC não suportado");
+                }
+                status.innerText = "Iniciando motor gráfico...";
+            } catch (e) {
+                overlay.innerHTML = `<div style="padding: 20px; text-align: center;">
+                    <h2 style="color: #FF3B30;">Navegador Incompatível</h2>
+                    <p>O Genesys21 exige suporte a Wasm GC (iOS 17.4+ ou navegadores modernos).</p>
+                    <p style="font-size: 12px; color: #666;">Erro: ${e.message}</p>
+                </div>`;
+            }
+        });
+    </script>
 </head>
 <body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-status" style="margin-top: 20px; color: #8E8E93; font-size: 14px;">Carregando Genesys21...</p>
+    </div>
     <div id="ComposeTarget"></div>
-    <!-- skiko.js removido pois é carregado internamente pelo composeApp.js no WasmJs e estava causando 404/SyntaxError -->
     <script src="composeApp.js"></script>
 </body>
 </html>
