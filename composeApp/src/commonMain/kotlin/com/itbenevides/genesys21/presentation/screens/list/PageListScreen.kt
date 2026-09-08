@@ -287,10 +287,14 @@ private fun PageListContent(
         )
     }
 
-    val bottomBarItems = if (!isExpanded && allMenuItems.size > 5) {
-        allMenuItems.take(4)
-    } else {
-        allMenuItems
+    // UX FIX: Força apenas os itens essenciais na barra inferior no mobile
+    val bottomBarItems = remember(allMenuItems, isExpanded) {
+        if (!isExpanded) {
+            // IDs: 0 (Dashboard), 1 (Vitrines), 2 (Pedidos), 3 (Agenda)
+            allMenuItems.filter { it.id in 0..3 }
+        } else {
+            allMenuItems
+        }
     }
 
     LaunchedEffect(allMenuItems) {
@@ -328,14 +332,14 @@ private fun PageListContent(
                 )
             }
 
-            if (!isExpanded && allMenuItems.size > 5) {
+            if (!isExpanded && allMenuItems.size > bottomBarItems.size) {
                 item(
                     selected = false,
                     onClick = {
                         scope.launch { drawerState?.open() }
                     },
                     icon = { Icon(GenesysIcons.MoreVert, contentDescription = "Mais") },
-                    label = { Text("Mais") }
+                    label = { Text("Menu") }
                 )
             }
         },
@@ -359,8 +363,8 @@ private fun PageListContent(
             )
         },
     ) {
-        // ELITE REFACTOR: Removido containers redundantes.
-        // O scroll agora é de responsabilidade direta de cada Aba (Tab) usando LazyColumn.
+        // REPARO RADICAL: Removido PullToRefreshBox e Box(fillMaxSize)
+        // Cada aba gerencia seu próprio scroll e conteúdo.
         when (state.selectedTab) {
             0 -> MainDashboardTab(viewModel)
             9 -> B2BInsightsTab(viewModel)

@@ -14,7 +14,7 @@ import com.itbenevides.genesys21.ui.util.isTestMode
 
 /**
  * GenesysPage: O container mestre do Design System.
- * Otimizado para ACHATAMENTO de hierarquia, garantindo que o scroll funcione nas abas.
+ * Ultra-achatado para garantir que o scroll funcione nas abas do portal ADM.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable
@@ -31,14 +31,11 @@ fun GenesysPage(
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    val mainContent: @Composable (PaddingValues) -> Unit = { padding ->
-        // No portal ADM, o padding do Scaffold deve ser aplicado aqui.
-        // O conteúdo (Tabs) deve preencher o resto e gerenciar seu próprio scroll interno.
-        Box(
-            modifier = Modifier
-                .padding(padding)
-                .then(if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier)
-        ) {
+    val contentWithPadding: @Composable (PaddingValues) -> Unit = { padding ->
+        // Reparo Crítico: Removido Box que envolvia o conteúdo.
+        // O padding do Scaffold é injetado, mas não forçamos fillMaxSize aqui
+        // para não conflitar com o LazyColumn da Tab.
+        Column(modifier = Modifier.padding(padding)) {
             content()
         }
     }
@@ -57,11 +54,10 @@ fun GenesysPage(
                 containerColor = GenesysTheme.colors.background,
                 content = {
                     Scaffold(
-                        modifier = Modifier.fillMaxSize(),
                         topBar = topBar,
                         floatingActionButton = floatingActionButton,
                         containerColor = Color.Transparent,
-                        content = { mainContent(it) }
+                        content = { contentWithPadding(it) }
                     )
                 }
             )
@@ -79,12 +75,11 @@ fun GenesysPage(
                     },
                     content = {
                         Scaffold(
-                            modifier = Modifier.fillMaxSize(),
                             topBar = topBar,
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
                             containerColor = GenesysTheme.colors.background,
-                            content = { mainContent(it) }
+                            content = { contentWithPadding(it) }
                         )
                     }
                 )
@@ -101,23 +96,21 @@ fun GenesysPage(
                     },
                     content = {
                         Scaffold(
-                            modifier = Modifier.fillMaxSize(),
                             topBar = topBar,
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
                             containerColor = GenesysTheme.colors.background,
-                            content = { mainContent(it) }
+                            content = { contentWithPadding(it) }
                         )
                     }
                 )
             } else {
                 Scaffold(
-                    modifier = Modifier.fillMaxSize(),
                     topBar = topBar,
                     bottomBar = bottomBar,
                     floatingActionButton = floatingActionButton,
                     containerColor = GenesysTheme.colors.background,
-                    content = { mainContent(it) }
+                    content = { contentWithPadding(it) }
                 )
             }
         }
