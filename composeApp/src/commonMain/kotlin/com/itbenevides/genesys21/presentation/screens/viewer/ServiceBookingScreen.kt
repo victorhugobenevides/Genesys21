@@ -90,7 +90,7 @@ fun ServiceBookingScreen(
             usePadding = false,
         ) {
             GenesysColumn(
-                maxWidth = 600.dp,
+                maxWidth = 500.dp,
                 usePadding = true,
                 useScroll = true,
             ) {

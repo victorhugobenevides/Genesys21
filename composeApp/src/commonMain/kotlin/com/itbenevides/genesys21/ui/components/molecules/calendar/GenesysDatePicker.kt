@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysCalendarDay
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import kotlinx.datetime.*
@@ -28,7 +29,12 @@ fun GenesysDatePicker(
     val firstDayOfWeek = currentMonth.dayOfWeek.isoDayNumber // 1 (Mon) to 7 (Sun)
     val paddingDays = firstDayOfWeek - 1
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = 450.dp)
+            .padding(horizontal = GenesysTheme.spacing.m)
+    ) {
         // Month Header
         Row(
             modifier = Modifier.fillMaxWidth(),
