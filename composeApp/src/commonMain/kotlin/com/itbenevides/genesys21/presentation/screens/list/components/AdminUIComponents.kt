@@ -317,7 +317,7 @@ fun PageItemRow(
                         fontWeight = GenesysFontWeight.ExtraBold,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    GenesysText(text = "ID: ${page.id}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    GenesysText(text = "ID: ${page.id}", style = GenesysTextStyle.Label, color = MaterialTheme.colorScheme.onSurfaceVariant, isSelectable = true)
                 }
             }
             GenesysSpacer(GenesysTheme.spacing.m)

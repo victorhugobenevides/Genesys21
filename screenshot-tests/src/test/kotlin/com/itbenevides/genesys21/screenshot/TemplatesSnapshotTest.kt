@@ -21,7 +21,6 @@ class TemplatesSnapshotTest {
     @get:Rule
     val paparazzi = createGenesysPaparazzi()
 
-    @org.junit.Ignore("Ignorado para unblock deploy - Baselines precisam ser atualizados após as mudanças no container GenesysColumn")
     @Test
     fun testAllTemplatesResponsive() {
         val templates = PageTemplateRegistry.templates

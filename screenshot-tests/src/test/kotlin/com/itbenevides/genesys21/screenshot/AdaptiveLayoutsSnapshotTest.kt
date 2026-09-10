@@ -41,7 +41,6 @@ class AdaptiveLayoutsSnapshotTest {
         }
     }
 
-    @org.junit.Ignore("Ignorado para unblock deploy - Baselines precisam ser atualizados após as mudanças no container GenesysColumn")
     @Test
     fun testCartResponsive() {
         val sampleService = com.itbenevides.genesys21.domain.model.BookingService(

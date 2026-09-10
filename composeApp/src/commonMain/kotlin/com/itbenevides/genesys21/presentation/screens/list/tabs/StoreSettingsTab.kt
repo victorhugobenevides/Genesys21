@@ -100,7 +100,7 @@ fun StoreSettingsTab(
             Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
                 GenesysCard {
                     Column {
-                        GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
+                        GenesysText(text = "Dados do Remetente (Frete)", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, isSelectable = true)
                         GenesysSpacer(GenesysTheme.spacing.m)
 
                         GenesysTextField(

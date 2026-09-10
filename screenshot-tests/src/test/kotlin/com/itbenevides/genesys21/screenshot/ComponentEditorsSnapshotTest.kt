@@ -65,7 +65,6 @@ class ComponentEditorsSnapshotTest {
         }
     }
 
-    @org.junit.Ignore("Ignorado para unblock deploy - Baselines precisam ser atualizados após as mudanças no container GenesysColumn")
     @Test
     fun testProductListComponentEditorResponsive() {
         val sampleProducts = listOf(

@@ -239,8 +239,8 @@ private fun EditAppointmentDialog(
         }
     ) {
         GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 600.dp), useScroll = true) {
-            GenesysText(text = "Cliente: ${appointment.customerName}", fontWeight = GenesysFontWeight.Bold)
-            GenesysText(text = "Telefone: ${appointment.customerPhone}", style = GenesysTextStyle.Label)
+            GenesysText(text = "Cliente: ${appointment.customerName}", fontWeight = GenesysFontWeight.Bold, isSelectable = true)
+            GenesysText(text = "Telefone: ${appointment.customerPhone}", style = GenesysTextStyle.Label, isSelectable = true)
 
             GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -456,9 +456,9 @@ private fun AppointmentCard(
                 GenesysText(text = timeStr, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold, color = GenesysTheme.colors.brand)
             }
             GenesysSpacer(GenesysTheme.spacing.m)
-            Column(modifier = Modifier.weight(1f)) {
-                GenesysText(text = appointment.customerName, fontWeight = GenesysFontWeight.Bold)
-                GenesysText(text = "Serviço ID: ${appointment.serviceId}", style = GenesysTextStyle.Label)
+            Column(Modifier.weight(1f)) {
+                GenesysText(text = appointment.customerName, fontWeight = GenesysFontWeight.Bold, isSelectable = true)
+                GenesysText(text = "Serviço ID: ${appointment.serviceId}", style = GenesysTextStyle.Label, isSelectable = true)
 
                 val publicNotesCount = appointment.notes.count { !it.isPrivate }
                 val privateNotesCount = appointment.notes.count { it.isPrivate }

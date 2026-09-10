@@ -1,21 +1,13 @@
-# Tarefa: Refatoração Elite Admin Portal
+# Tarefa: Utilidade Elite & Estabilização CI
 
-## Fase 1: Infraestrutura de UI
-- [ ] Criar `GenesysAdaptiveGrid` em `AdminUIComponents.kt`
-- [ ] Padronizar `AdminTabHeader` para suportar layouts responsivos
-- [ ] Refatorar `GenesysColumn` para remover conflitos de `BoxWithConstraints`
+## Seleção de Texto (Spec 019)
+- [x] Ativar seleção de IDs e Nomes em `AdminUIComponents.kt`
+- [x] Ativar seleção na `AgendaTab.kt`
+- [x] Garantir que chaves e endereços são selecionáveis na `StoreSettingsTab.kt`
 
-## Fase 2: Refatoração de Abas (Migração para LazyScroll)
-- [ ] Refatorar `MainDashboardTab.kt` (Novo layout de KPIs)
-- [ ] Refatorar `OrdersTab.kt` (Remover aninhamento de Master-Detail)
-- [ ] Refatorar `AgendaTab.kt` (Corrigir área de toque e scroll)
-- [ ] Refatorar `ServicesTab.kt` (Grid responsivo de serviços)
-- [ ] Refatorar `StoreSettingsTab.kt` (Espaçamento e fluxo de formulário)
-- [ ] Refatorar `PaymentsTab.kt` (Modernização visual do Stripe Connect)
-- [ ] Refatorar abas globais (`B2BInsights`, `Users`, `Domains`, `Audit`)
-
-## Fase 3: Integração e Polimento
-- [ ] Atualizar `PageListScreen.kt` para remover containers redundantes
-- [ ] Ajustar `GenesysPage.kt` para garantir compatibilidade total com scroll Wasm
-- [ ] Validar acessibilidade e áreas de clique (min 48dp)
-- [ ] Push para `main` e monitorar deploy
+## Estabilização da Pipeline
+- [x] Remover `@Ignore` de `AdaptiveLayoutsSnapshotTest.kt`
+- [x] Remover `@Ignore` de `ComponentEditorsSnapshotTest.kt`
+- [x] Remover `@Ignore` de `DesignSystemSnapshotTest.kt`
+- [x] Remover `@Ignore` de `TemplatesSnapshotTest.kt`
+- [ ] Validar build local e monitorar CircleCI
