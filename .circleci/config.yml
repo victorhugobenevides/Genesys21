@@ -66,6 +66,18 @@ jobs:
           name: Verify Visual Snapshots (Paparazzi)
           command: ./gradlew :screenshot-tests:verifyPaparazziDebug --no-daemon
 
+  validate-migrations:
+    docker:
+      - image: cimg/android:2024.01
+    steps:
+      - checkout
+      - prepare-env
+      - run:
+          name: Validate Database Migrations (Flyway)
+          command: |
+            # Rodar testes do servidor que forçam inicialização do banco e migrações
+            ./gradlew :server:test --no-daemon
+
   build-and-push:
     docker:
       - image: cimg/android:2024.01
@@ -299,14 +311,19 @@ workflows:
   build-test-deploy:
     jobs:
       - test-and-validate
+      - validate-migrations
       - visual-verification
       - build-and-push:
+          requires:
+            - test-and-validate
+            - validate-migrations
           filters:
             branches:
               only: main
       - deploy:
           requires:
             - test-and-validate
+            - validate-migrations
             - visual-verification
             - build-and-push
           filters:
