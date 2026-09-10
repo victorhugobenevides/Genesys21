@@ -32,16 +32,15 @@ fun TextComponentEditor(
 
     val primaryColor = GenesysTheme.colors.brand
 
-    // Cria uma versão temporária do componente para renderizar na pre-visualização real
-    val previewComponent =
-        remember(content, alignment, fontSize, weight) {
-            component.copy(
-                content = content,
-                textAlign = alignment,
-                fontSize = fontSize.toInt(),
-                fontWeight = weight,
-            )
-        }
+    // LIVE PREVIEW: Sincroniza as mudanças locais com o estado pai em tempo real
+    LaunchedEffect(content, alignment, fontSize, weight) {
+        onSave(component.copy(
+            content = content,
+            textAlign = alignment,
+            fontSize = fontSize.toInt(),
+            fontWeight = weight
+        ))
+    }
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
@@ -49,7 +48,12 @@ fun TextComponentEditor(
 
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
-            component = previewComponent,
+            component = component.copy(
+                content = content,
+                textAlign = alignment,
+                fontSize = fontSize.toInt(),
+                fontWeight = weight
+            ),
             storeId = "admin",
             isEditMode = false,
         )
@@ -112,10 +116,10 @@ fun TextComponentEditor(
 
         GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
-            text = GenesysStrings.SaveText,
+            text = "Finalizar Edição",
             fillWidth = true,
             onClick = {
-                onSave(previewComponent)
+                // As mudanças já foram salvas via LaunchedEffect
             },
         )
     }

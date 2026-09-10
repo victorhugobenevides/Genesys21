@@ -116,6 +116,16 @@ fun Application.module() {
         logger.info("✅ SERVIDOR: STRIPE_SECRET_KEY carregada com sucesso (${stripeKey.take(7)}...).")
     }
 
+    install(Compression) {
+        gzip {
+            priority = 1.0
+        }
+        deflate {
+            priority = 10.0
+            minimumSize(1024) // compress only if > 1KB
+        }
+    }
+
     install(StatusPages) {
         exception<io.ktor.serialization.JsonConvertException> { call, cause ->
             logger.error("ERRO DE SERIALIZAÇÃO: ${cause.message}")
@@ -215,9 +225,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v1.3.0-DATA-RESILIENCE") }
-        get("/version") { call.respondText("Genesys21 Stable v5.7.0 - Data Resilience Tier 2 & 3") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v5.7.0 - Data Resilience Tier 2 & 3") }
+        get("/") { call.respondText("API Online - Genesys21 v1.4.0-PERFORMANCE-TURBO") }
+        get("/version") { call.respondText("Genesys21 Stable v5.8.0 - Autocomplete & Live Editor") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v5.8.0 - Autocomplete & Live Editor") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")

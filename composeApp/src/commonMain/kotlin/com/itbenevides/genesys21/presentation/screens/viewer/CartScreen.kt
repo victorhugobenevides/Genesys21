@@ -444,7 +444,15 @@ private fun AddressFormCard(state: CartScreenState, onEvent: (CartScreenEvent) -
 
             GenesysSpacer(GenesysTheme.spacing.m)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.weight(2f)) { GenesysTextField(value = address.city, onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) }, label = "Cidade") }
+                Box(modifier = Modifier.weight(2f)) {
+                    GenesysAutocompleteField(
+                        value = address.city,
+                        onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) },
+                        suggestions = BrazilData.commonCities,
+                        label = "Cidade",
+                        onSuggestionSelected = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) }
+                    )
+                }
                 Box(modifier = Modifier.weight(1.2f)) {
                     GenesysAutocompleteField(
                         value = address.state,

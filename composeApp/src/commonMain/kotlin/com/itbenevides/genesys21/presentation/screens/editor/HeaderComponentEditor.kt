@@ -34,25 +34,30 @@ fun HeaderComponentEditor(
 
     val primaryColor = GenesysTheme.colors.brand
 
-    // Cria uma versão temporária do componente para renderizar na pre-visualização real
-    val previewComponent =
-        remember(title, alignment, fontSize, isUppercase, usePrimaryColor) {
-            component.copy(
-                title = title,
-                textAlign = alignment,
-                fontSize = fontSize.toInt(),
-                isUppercase = isUppercase,
-                usePrimaryColor = usePrimaryColor,
-            )
-        }
+    // LIVE PREVIEW: Sincroniza em tempo real
+    LaunchedEffect(title, alignment, fontSize, isUppercase, usePrimaryColor) {
+        onSave(component.copy(
+            title = title,
+            textAlign = alignment,
+            fontSize = fontSize.toInt(),
+            isUppercase = isUppercase,
+            usePrimaryColor = usePrimaryColor,
+        ))
+    }
 
     GenesysColumn(usePadding = false) {
         GenesysText(text = GenesysStrings.Preview, style = GenesysTextStyle.Label)
         GenesysSpacer(GenesysTheme.spacing.s)
 
-        // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
+        // CORREÇÃO: Usando o renderizador real
         PageComponentRenderer(
-            component = previewComponent,
+            component = component.copy(
+                title = title,
+                textAlign = alignment,
+                fontSize = fontSize.toInt(),
+                isUppercase = isUppercase,
+                usePrimaryColor = usePrimaryColor,
+            ),
             storeId = "admin",
             isEditMode = false,
         )
@@ -110,10 +115,10 @@ fun HeaderComponentEditor(
 
         GenesysSpacer(GenesysTheme.spacing.l)
         GenesysLoadingButton(
-            text = GenesysStrings.UpdateTitle,
+            text = "Finalizar Edição",
             fillWidth = true,
             onClick = {
-                onSave(previewComponent)
+                // Já salvo via Live Preview
             },
         )
     }
