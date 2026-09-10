@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.navigationsuite.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -32,11 +33,20 @@ fun GenesysPage(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val contentWithPadding: @Composable (PaddingValues) -> Unit = { padding ->
-        // Reparo Crítico: Removido Box que envolvia o conteúdo.
-        // O padding do Scaffold é injetado, mas não forçamos fillMaxSize aqui
-        // para não conflitar com o LazyColumn da Tab.
-        Column(modifier = Modifier.padding(padding)) {
-            content()
+        // RESPONSIVIDADE ELITE: Centralizamos o conteúdo em telas grandes (max 1200dp)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 1200.dp)
+            ) {
+                content()
+            }
         }
     }
 

@@ -33,7 +33,13 @@ fun GenesysColumn(
 
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
-    val horizontalPadding = if (isCompact) GenesysDimens.SpacingMedium else GenesysDimens.SpacingLarge
+    val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
+
+    val horizontalPadding = when {
+        isCompact -> GenesysDimens.SpacingMedium
+        isExpanded -> GenesysDimens.SpacingHuge // Mais espaço em telas grandes
+        else -> GenesysDimens.SpacingLarge
+    }
 
     // REPARO DE SCROLL:
     // Usamos um modificador que garante que a Column se comporte como um container de scroll

@@ -100,8 +100,13 @@ fun AgendaTab(
         when (agendaViewMode) {
             0 -> { // Vista Diária
                 item {
-                    Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
-                        GenesysCard(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = horizontalPadding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        GenesysCard(modifier = Modifier.widthIn(max = 600.dp)) {
                             Column(modifier = Modifier.padding(GenesysTheme.spacing.m)) {
                                 GenesysDatePicker(
                                     selectedDate = selectedDate,
