@@ -37,6 +37,20 @@ fun ImageComponentEditor(
         mutableStateOf(internalTitle ?: component.destinationUrl ?: "")
     }
 
+    // LIVE PREVIEW: Sincroniza em tempo real
+    LaunchedEffect(sizeValue, isCircular, isFullWidth, currentLinkValue) {
+        val matchingPage = userPages.find { it.title == currentLinkValue }
+        onSave(
+            component.copy(
+                size = sizeValue.toInt(),
+                isCircular = isCircular,
+                isFullWidth = isFullWidth,
+                destinationUrl = if (matchingPage == null) currentLinkValue else "",
+                destinationPageId = matchingPage?.id,
+            )
+        )
+    }
+
     // Cria uma versão temporária do componente para renderizar na pre-visualização real
     val previewComponent =
         remember(component.url, sizeValue, isCircular, isFullWidth) {

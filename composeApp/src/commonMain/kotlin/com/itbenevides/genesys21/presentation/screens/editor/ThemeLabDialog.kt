@@ -36,6 +36,23 @@ fun ThemeLabDialog(
     var glassIntensity by remember { mutableStateOf(initialConfig?.glassIntensity ?: 0.1f) }
     var typography by remember { mutableStateOf(initialConfig?.typographySet ?: TypographySet.DEFAULT) }
 
+    // LIVE THEME PREVIEW: Sincroniza todas as mudanças com o estado da página em tempo real
+    LaunchedEffect(primary, onPrimary, secondary, background, surface, onSurface, cornerRadius, glassIntensity, typography) {
+        onSave(
+            CustomThemeConfig(
+                primaryColor = primary.ifBlank { null },
+                onPrimaryColor = onPrimary.ifBlank { null },
+                secondaryColor = secondary.ifBlank { null },
+                backgroundColor = background.ifBlank { null },
+                surfaceColor = surface.ifBlank { null },
+                onSurfaceColor = onSurface.ifBlank { null },
+                cornerRadius = cornerRadius.toInt(),
+                glassIntensity = glassIntensity,
+                typographySet = typography,
+            )
+        )
+    }
+
     GenesysBottomSheet(
         onDismiss = onDismiss,
         title = "Theme Lab 🧪",

@@ -51,7 +51,7 @@ fun main() {
 
 fun Application.module() {
     val logger = LoggerFactory.getLogger("Application")
-    logger.info("SERVIDOR: Genesys21 iniciando... Build Version: 1.3.0-DATA-RESILIENCE")
+    logger.info("SERVIDOR: Genesys21 iniciando... Build Version: 1.5.0-LIVE-DESIGN")
 
     val isTesting = environment.config.propertyOrNull("ktor.testing")?.getString() == "true"
     val shouldRebuild = environment.config.propertyOrNull("ktor.db.rebuild")?.getString() == "true" || System.getenv("DB_REBUILD") == "true"
@@ -225,9 +225,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v1.4.0-PERFORMANCE-TURBO") }
-        get("/version") { call.respondText("Genesys21 Stable v5.8.0 - Autocomplete & Live Editor") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v5.8.0 - Autocomplete & Live Editor") }
+        get("/") { call.respondText("API Online - Genesys21 v1.5.0-LIVE-DESIGN") }
+        get("/version") { call.respondText("Genesys21 Stable v5.9.0 - Advanced Customization & Live Editor") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v5.9.0 - Advanced Customization & Live Editor") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")

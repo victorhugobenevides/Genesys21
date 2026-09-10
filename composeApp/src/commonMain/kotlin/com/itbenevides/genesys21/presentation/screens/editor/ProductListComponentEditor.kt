@@ -39,6 +39,11 @@ fun ProductListComponentEditor(
     var isHorizontal by remember { mutableStateOf(component.isHorizontal) }
     var searchQuery by remember { mutableStateOf("") }
 
+    // LIVE PREVIEW: Sincroniza em tempo real
+    LaunchedEffect(customLabel, isHorizontal) {
+        onSaveLabel(customLabel, isHorizontal)
+    }
+
     GenesysColumn(usePadding = false) {
         GenesysText(GenesysStrings.ManageProducts, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
         GenesysSpacer(GenesysTheme.spacing.m)

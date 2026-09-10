@@ -234,13 +234,14 @@ fun AppTheme(
     val radius = customTheme?.cornerRadius ?: 16
     val windowSizeClass = LocalWindowSizeClass.current
 
+    // SHAPE SYSTEM: Escalonamos as bordas do M3 proporcionalmente ao radius base
     val shapes =
         Shapes(
-            extraSmall = RoundedCornerShape(radius.dp / 8),
-            small = RoundedCornerShape(radius.dp / 4),
-            medium = RoundedCornerShape(radius.dp / 2),
-            large = RoundedCornerShape(radius.dp),
-            extraLarge = RoundedCornerShape(radius.dp * 1.5f),
+            extraSmall = RoundedCornerShape((radius / 4).dp),
+            small = RoundedCornerShape((radius / 2).dp),
+            medium = RoundedCornerShape(radius.dp),
+            large = RoundedCornerShape((radius * 1.5f).dp),
+            extraLarge = RoundedCornerShape((radius * 2f).dp),
         )
 
     val typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT)

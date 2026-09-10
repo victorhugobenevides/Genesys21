@@ -17,6 +17,11 @@ fun ButtonComponentEditor(
     var text by remember(component) { mutableStateOf(component.text) }
     var url by remember(component) { mutableStateOf(component.url) }
 
+    // LIVE PREVIEW: Sincroniza em tempo real
+    LaunchedEffect(text, url) {
+        onSave(component.copy(text = text, url = url))
+    }
+
     GenesysColumn(usePadding = false) {
         GenesysTextField(value = text, onValueChange = { text = it }, label = "Texto do Botão", icon = GenesysIcons.Edit)
         GenesysSpacer(GenesysTheme.spacing.m)
