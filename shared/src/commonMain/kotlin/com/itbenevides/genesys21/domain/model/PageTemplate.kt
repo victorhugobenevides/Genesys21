@@ -27,6 +27,9 @@ object PageTemplateRegistry {
         premiumStore,
         techLanding,
         legalProfessional,
+        organicCoffee,
+        infoProduct,
+        creativePortfolio,
         serviceBooking,
         beautySalon,
         personalHub,
@@ -92,6 +95,100 @@ object PageTemplateRegistry {
             ),
             PageComponent.Divider(usePadding = true),
             PageComponent.ProductList(customLabel = "Nossos Planos", isHorizontal = true)
+        )
+    )
+
+    private val organicCoffee get() = PageTemplate(
+        id = "organic_coffee",
+        title = "Café & Gastronomia",
+        description = "Atmosfera acolhedora com tons terrosos e foco em imagens de alta qualidade.",
+        category = TemplateCategory.SALES,
+        thumbnailUrl = "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=600",
+        defaultTheme = PageThemeConfig.NATURE,
+        customTheme = CustomThemeConfig(
+            cornerRadius = 12,
+            primaryColor = "#6F4E37",
+            backgroundColor = "#FDFCF0"
+        ),
+        components = listOf(
+            PageComponent.Hero(
+                title = "Aroma de Grãos Selecionados",
+                subtitle = "Do cultivo direto para a sua xícara. Experimente o frescor do campo.",
+                imageUrl = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1200",
+                buttonText = "Ver Cardápio",
+                height = 450
+            ),
+            PageComponent.Header(title = "Nossas Especialidades", textAlign = "CENTER"),
+            PageComponent.ProductList(customLabel = "Mais Pedidos", isHorizontal = true),
+            PageComponent.BusinessHours(
+                title = "Visite-nos",
+                items = listOf(
+                    PageComponent.BusinessDay("Segunda a Sábado", "08:00 - 20:00"),
+                    PageComponent.BusinessDay("Domingo", "09:00 - 14:00")
+                )
+            )
+        )
+    )
+
+    private val infoProduct get() = PageTemplate(
+        id = "infoproduct",
+        title = "Lançamento Digital",
+        description = "Design otimizado para conversão. Focado em autoridade, depoimentos e chamadas para ação.",
+        category = TemplateCategory.SALES,
+        thumbnailUrl = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600",
+        defaultTheme = PageThemeConfig.VIBRANT,
+        customTheme = CustomThemeConfig(cornerRadius = 20),
+        components = listOf(
+            PageComponent.Hero(
+                title = "Domine o Design Moderno",
+                subtitle = "O curso definitivo para quem quer criar interfaces Elite em tempo recorde.",
+                imageUrl = "https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?q=80&w=1200",
+                buttonText = "Garantir minha vaga",
+                height = 550
+            ),
+            PageComponent.Benefits(
+                title = "O que você vai receber",
+                items = listOf(
+                    PageComponent.BenefitItem("Mentoria Semanal", "Acesso direto aos especialistas.", "Magic"),
+                    PageComponent.BenefitItem("Templates Prontos", "Economize horas de trabalho.", "Inventory"),
+                    PageComponent.BenefitItem("Certificado Pro", "Validado pelo mercado.", "Check")
+                )
+            ),
+            PageComponent.Header(title = "O que dizem os alunos", textAlign = "CENTER"),
+            PageComponent.Testimonial(
+                quote = "Mudou completamente meu fluxo de trabalho. Hoje entrego projetos 3x mais rápido.",
+                author = "Rodrigo Mendes",
+                authorTitle = "Senior UX Designer"
+            ),
+            PageComponent.Button(text = "Quero começar agora!", url = "#", isPrimary = true)
+        )
+    )
+
+    private val creativePortfolio get() = PageTemplate(
+        id = "creative_portfolio",
+        title = "Portfolio Criativo",
+        description = "Visual minimalista e elegante para artistas e designers. Foco absoluto no portfólio visual.",
+        category = TemplateCategory.PERSONAL,
+        thumbnailUrl = "https://images.unsplash.com/photo-1541462608141-ad4d45a0e402?q=80&w=600",
+        defaultTheme = PageThemeConfig.MONO,
+        customTheme = CustomThemeConfig(cornerRadius = 0), // Sharp edges for brutalist look
+        components = listOf(
+            PageComponent.ProfileHeader(
+                imageUrl = "https://ui-avatars.com/api/?name=Creative+Designer\u0026size=300\u0026background=000\u0026color=fff",
+                name = "Studio Criativo",
+                bio = "Design Visual | Direção de Arte | Branding",
+            ),
+            PageComponent.Header(title = "Trabalhos Selecionados", fontSize = 18),
+            PageComponent.Grid(
+                columns = 2,
+                items = listOf(
+                    PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=600", isRounded = false))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://images.unsplash.com/photo-1561070791-2526d30994b5?q=80&w=600", isRounded = false))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600", isRounded = false))),
+                    PageComponent.GridItem(components = listOf(PageComponent.Image(url = "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=600", isRounded = false)))
+                )
+            ),
+            PageComponent.SocialLinks(instagram = "#", email = "hello@studio.com")
         )
     )
 

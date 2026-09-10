@@ -44,6 +44,15 @@ fun GridComponentEditor(
     var showAddMenuIndex by remember { mutableStateOf<Int?>(null) }
     var editingChildInfo by remember { mutableStateOf<Triple<Int, Int, PageComponent>?>(null) }
 
+    // LIVE PREVIEW: Sincroniza em tempo real
+    LaunchedEffect(columns, title, items) {
+        onSave(component.copy(
+            columns = columns.toIntOrNull() ?: 2,
+            title = title.ifBlank { null },
+            items = items
+        ))
+    }
+
     GenesysColumn(usePadding = false) {
         // 1. CONFIGURAÇÕES ESTRUTURAIS
         GenesysCard(

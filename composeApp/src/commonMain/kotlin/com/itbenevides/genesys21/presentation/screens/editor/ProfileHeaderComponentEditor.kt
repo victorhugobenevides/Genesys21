@@ -28,6 +28,17 @@ fun ProfileHeaderComponentEditor(
     var imageSize by remember(component) { mutableStateOf(component.imageSize.toFloat()) }
     var isCircular by remember(component) { mutableStateOf(component.isCircular) }
 
+    // LIVE PREVIEW: Sincroniza em tempo real
+    LaunchedEffect(imageUrl, name, bio, imageSize, isCircular) {
+        onSave(component.copy(
+            imageUrl = imageUrl,
+            name = name,
+            bio = bio,
+            imageSize = imageSize.toInt(),
+            isCircular = isCircular,
+        ))
+    }
+
     LaunchedEffect(component.imageUrl) {
         imageUrl = component.imageUrl
     }
