@@ -1,23 +1,31 @@
-# Walkthrough - Resolução de Estabilidade e Segurança de Testes
+# Walkthrough: Utilidade Elite & Estabilização CI (v5.6.0)
 
-Identifiquei e corrigi a causa raiz das falhas de asserção na Pipeline, eliminando a "bolha" de dados que impedia os testes de segurança de validarem o comportamento real do servidor.
+Nesta versão, focamos em produtividade para o lojista e na integridade da nossa Pipeline de deploy.
 
-## 🛡️ O Que Foi Corrigido
+## Mudanças Principais
 
-### 1. Isolamento Total de Banco de Dados por Teste
-- **O Problema**: Mesmo usando caminhos fixos, o SQLite no CircleCI estava sofrendo de colisões de processos. Um teste acabava lendo o estado "sujo" ou vazio de outro, fazendo com que o servidor não encontrasse os preços reais dos produtos.
-- **A Solução**: Implementei um sistema de **DB Único por Método**. Agora, cada teste unitário gera um arquivo físico com nome aleatório (`security_UUID.db`).
-- **Resultado**: Garantimos 100% de isolamento e sincronia atômica entre o código de setup e o servidor Ktor.
+### 1. Seleção de Texto (Spec 019) 📋
+Ativamos a capacidade de selecionar e copiar textos críticos em todo o Portal Admin. Agora, o lojista pode copiar facilmente:
+- **IDs de Pedidos (UUIDs)** e **Nomes de Clientes** na aba de Pedidos.
+- **IDs de Vitrines** na listagem de páginas.
+- **Dados de Endereço** nas configurações da loja.
+- **Nomes e Telefones** na agenda.
 
-### 2. Recálculo Mandatário e Sem Fallback (Price Manipulation)
-- **O que foi feito**: No `SqliteOrderRepository.kt`, a lógica agora é **fail-fast**. Se o produto não for encontrado no catálogo oficial, o servidor lança uma exceção imediata e retorna erro 500, em vez de aceitar o preço enviado pelo front-end como fallback.
-- **Diferença**: Antes, o sistema tentava ser "resiliente" e acabava sendo vulnerável. Agora, ele é seguro por padrão (*Secure by Default*).
+> [!TIP]
+> Isso elimina a necessidade de digitar IDs complexos manualmente, reduzindo erros de operação.
 
-### 3. Sincronização de RateLimit e Plugins
-- **Melhoria**: Reforcei a configuração do plugin `RateLimit` na `Application.kt` para garantir que ele nunca bloqueie requisições de teste (limite de 1.000.000 req/s), resolvendo o erro `IllegalStateException`.
+### 2. Estabilização da Pipeline (Snapshot Tests) 📸
+Após as grandes mudanças de layout para corrigir o scroll, nossos testes visuais (Paparazzi) ficaram desatualizados.
+- Removemos os `@Ignore` que estavam silenciando os erros.
+- A Pipeline agora está configurada para falhar se houver regressão visual, garantindo que o novo padrão "Elite Admin" seja preservado.
 
-## 📄 Conclusão
-Estas mudanças removem a instabilidade técnica que mascarava a segurança da aplicação. A infraestrutura de testes agora é determinística e reflete fielmente as proteções do sistema contra ataques de manipulação de preços e escalada de privilégios.
+## Como Validar
 
-> [!IMPORTANT]
-> As alterações foram enviadas para o branch `main`. A Pipeline agora possui um ambiente sincronizado e blindado.
+1. **Seleção de Texto**:
+   - Acesse o portal e vá na aba de **Pedidos**.
+   - Tente selecionar o ID de um pedido com o mouse ou toque longo no celular. Você verá que os handles de seleção nativos aparecem agora.
+2. **Deploy Automático**:
+   - Acompanhe o job `visual-verification` na CircleCI. Ele servirá de base para atualizarmos os baselines de imagem.
+
+render_diffs(file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/components/AdminUIComponents.kt)
+render_diffs(file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/tabs/AgendaTab.kt)
