@@ -68,12 +68,17 @@ class SqliteOrderRepository(
 
                 val (name, price) = when {
                     product != null -> {
-                        val row = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.singleOrNull()
-                        if (row == null) {
-                            println("REPOSITORY ERROR: Produto ${product.id} não encontrado no catálogo oficial!")
-                            throw Exception("Produto ${product.id} inválido")
+                        if (product.id == "valued_action") {
+                            // Caso especial: Contribuição voluntária (Preço e Nome vêm do item customizado)
+                            (item.customName ?: "Contribuição") to (item.customPrice ?: 0.0)
+                        } else {
+                            val row = ProductsTable.selectAll().where { ProductsTable.id eq product.id }.singleOrNull()
+                            if (row == null) {
+                                println("REPOSITORY ERROR: Produto ${product.id} não encontrado no catálogo oficial!")
+                                throw Exception("Produto ${product.id} inválido")
+                            }
+                            row[ProductsTable.name] to row[ProductsTable.price]
                         }
-                        row[ProductsTable.name] to row[ProductsTable.price]
                     }
                     service != null -> {
                         val row = BookingServicesTable.selectAll().where { BookingServicesTable.id eq service.id }.singleOrNull()
