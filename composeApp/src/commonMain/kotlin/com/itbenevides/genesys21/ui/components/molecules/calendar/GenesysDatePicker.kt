@@ -32,7 +32,7 @@ fun GenesysDatePicker(
     Column(
         modifier = modifier
             .wrapContentWidth()
-            .widthIn(max = 400.dp)
+            .widthIn(max = 480.dp)
             .padding(horizontal = GenesysTheme.spacing.m),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -111,7 +111,7 @@ fun GenesysDatePicker(
                             )
                         } else {
                             // Espaçador vazio para manter o alinhamento do grid
-                            Spacer(Modifier.size(48.dp))
+                            Spacer(Modifier.size(58.dp))
                         }
                     }
                 }

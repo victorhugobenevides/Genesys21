@@ -7,6 +7,8 @@ import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysTimePicker
+import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
+import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.datetime.*
 
 @Composable
@@ -28,7 +30,54 @@ fun GenesysBookingEngine(
         )
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    val windowSizeClass = LocalWindowSizeClass.current
+    val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
+
+    if (isCompact) {
+        Column(modifier = modifier.fillMaxWidth()) {
+            DateSection(selectedDateState) {
+                selectedDateState = it
+                selectedTime = null
+                onDateSelected(it)
+            }
+            Spacer(Modifier.height(GenesysTheme.spacing.xl))
+            TimeSection(availableSlots, selectedTime) { timeStr ->
+                selectedTime = timeStr
+                val parts = timeStr.split(":")
+                val localTime = LocalTime(parts[0].toInt(), parts[1].toInt())
+                onDateTimeSelected(LocalDateTime(selectedDateState, localTime))
+            }
+        }
+    } else {
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.l)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                DateSection(selectedDateState) {
+                    selectedDateState = it
+                    selectedTime = null
+                    onDateSelected(it)
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                TimeSection(availableSlots, selectedTime) { timeStr ->
+                    selectedTime = timeStr
+                    val parts = timeStr.split(":")
+                    val localTime = LocalTime(parts[0].toInt(), parts[1].toInt())
+                    onDateTimeSelected(LocalDateTime(selectedDateState, localTime))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DateSection(
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit
+) {
+    Column {
         GenesysText(
             text = "Selecione uma Data",
             style = GenesysTextStyle.Label,
@@ -37,33 +86,31 @@ fun GenesysBookingEngine(
         )
         Spacer(Modifier.height(GenesysTheme.spacing.s))
         GenesysDatePicker(
-            selectedDate = selectedDateState,
-            onDateSelected = {
-                selectedDateState = it
-                selectedTime = null // Reset time on date change
-                onDateSelected(it)
-            },
+            selectedDate = selectedDate,
+            onDateSelected = onDateSelected,
         )
+    }
+}
 
-        Spacer(Modifier.height(GenesysTheme.spacing.xl))
-
+@Composable
+private fun TimeSection(
+    availableSlots: List<String>,
+    selectedTime: String?,
+    onTimeSelected: (String) -> Unit
+) {
+    Column {
+        GenesysText(
+            text = "Horários Disponíveis",
+            style = GenesysTextStyle.Label,
+            fontWeight = GenesysFontWeight.Bold,
+            color = GenesysTheme.colors.brand,
+        )
+        Spacer(Modifier.height(GenesysTheme.spacing.s))
         if (availableSlots.isNotEmpty()) {
-            GenesysText(
-                text = "Horários Disponíveis",
-                style = GenesysTextStyle.Label,
-                fontWeight = GenesysFontWeight.Bold,
-                color = GenesysTheme.colors.brand,
-            )
-            Spacer(Modifier.height(GenesysTheme.spacing.s))
             GenesysTimePicker(
                 availableSlots = availableSlots,
                 selectedSlot = selectedTime,
-                onSlotSelected = { timeStr ->
-                    selectedTime = timeStr
-                    val parts = timeStr.split(":")
-                    val localTime = LocalTime(parts[0].toInt(), parts[1].toInt())
-                    onDateTimeSelected(LocalDateTime(selectedDateState, localTime))
-                },
+                onSlotSelected = onTimeSelected,
             )
         } else {
             GenesysText(
