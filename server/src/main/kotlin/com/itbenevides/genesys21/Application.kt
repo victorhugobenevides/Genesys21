@@ -171,15 +171,20 @@ fun Application.module() {
     }
 
     install(CORS) {
-        // SEGURANÇA: Lista restrita de hosts para evitar duplicidade de Access-Control-Allow-Origin (ex: *, *)
+        // SEGURANÇA: Permitimos apenas os domínios oficiais para evitar cabeçalhos duplicados
         val allowedHosts = listOf(
             "victorbenevides.dev", "www.victorbenevides.dev", "staging.victorbenevides.dev",
-            "radarani.site", "www.radarani.site", "localhost", "0.0.0.0", "147.15.103.134"
+            "radarani.site", "www.radarani.site"
         )
 
         allowedHosts.forEach { host ->
-            allowHost(host, schemes = listOf("http", "https"))
+            allowHost(host, schemes = listOf("https"))
         }
+
+        // Fallback para dev local
+        allowHost("localhost:8080", schemes = listOf("http"))
+        allowHost("localhost:8081", schemes = listOf("http"))
+        allowHost("0.0.0.0:8080", schemes = listOf("http"))
 
         allowHeader(HttpHeaders.Authorization)
         allowHeader(HttpHeaders.ContentType)
@@ -225,9 +230,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v2.0.8-STRIPE-VALUED-FIX") }
-        get("/version") { call.respondText("Genesys21 Stable v6.0.8 - Stripe & Valued Action Fixed") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v6.0.8 - Stripe & Valued Action Fixed") }
+        get("/") { call.respondText("API Online - Genesys21 v2.1.0-STRIPE-RECOVERY") }
+        get("/version") { call.respondText("Genesys21 Stable v6.0.9 - Stripe & CORS Fixed") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v6.0.9 - Stripe & CORS Fixed") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
