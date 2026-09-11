@@ -230,9 +230,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v2.1.0-STRIPE-RECOVERY") }
-        get("/version") { call.respondText("Genesys21 Stable v6.0.9 - Stripe & CORS Fixed") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v6.0.9 - Stripe & CORS Fixed") }
+        get("/") { call.respondText("API Online - Genesys21 v3.0.0-ELITE-BOOKING-PRO") }
+        get("/version") { call.respondText("Genesys21 Stable v6.1.0 - Elite Booking Pro") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v6.1.0 - Elite Booking Pro") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
