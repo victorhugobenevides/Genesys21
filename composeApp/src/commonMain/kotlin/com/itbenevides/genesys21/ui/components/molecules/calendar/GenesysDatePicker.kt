@@ -84,13 +84,19 @@ fun GenesysDatePicker(
         val totalCells = daysInMonth + paddingDays
         val rows = (totalCells + 6) / 7
 
-        repeat(rows) { rowIndex ->
-            Row(modifier = Modifier.fillMaxWidth()) {
-                repeat(7) { colIndex ->
-                    val cellIndex = rowIndex * 7 + colIndex
-                    val dayNumber = cellIndex - paddingDays + 1
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            repeat(rows) { rowIndex ->
+                Row(
+                    modifier = Modifier.wrapContentWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    repeat(7) { colIndex ->
+                        val cellIndex = rowIndex * 7 + colIndex
+                        val dayNumber = cellIndex - paddingDays + 1
 
-                    Box(Modifier.weight(1f)) {
                         if (dayNumber in 1..daysInMonth) {
                             val date = LocalDate(currentMonth.year, currentMonth.month, dayNumber)
                             val isEnabled = date >= minDate
@@ -103,6 +109,9 @@ fun GenesysDatePicker(
                                 isEnabled = isEnabled,
                                 onClick = { onDateSelected(date) },
                             )
+                        } else {
+                            // Espaçador vazio para manter o alinhamento do grid
+                            Spacer(Modifier.size(48.dp))
                         }
                     }
                 }

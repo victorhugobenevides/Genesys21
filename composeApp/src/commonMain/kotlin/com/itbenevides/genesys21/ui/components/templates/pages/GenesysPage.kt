@@ -33,7 +33,8 @@ fun GenesysPage(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val contentWithPadding: @Composable (PaddingValues) -> Unit = { padding ->
-        // RESPONSIVIDADE ELITE: Centralizamos o conteúdo em telas grandes (max 1200dp)
+        // REPARO DE VIEWPORT: Forçamos o fillMaxSize para garantir que o scroll nativo (v5.5.0) funcione.
+        // O container de centralização 1200dp garante a estética no Desktop.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -42,7 +43,7 @@ fun GenesysPage(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .widthIn(max = 1200.dp)
             ) {
                 content()

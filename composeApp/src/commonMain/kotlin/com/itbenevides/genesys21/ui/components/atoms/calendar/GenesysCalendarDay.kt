@@ -40,7 +40,7 @@ fun GenesysCalendarDay(
 
     Box(
         modifier = modifier
-            .aspectRatio(1f)
+            .size(48.dp)
             .clip(CircleShape)
             .background(backgroundColor)
             .clickable(enabled = isEnabled, onClick = onClick),
