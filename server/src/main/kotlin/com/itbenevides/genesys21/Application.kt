@@ -171,17 +171,11 @@ fun Application.module() {
     }
 
     install(CORS) {
-        // SEGURANÇA: Permitimos apenas os domínios oficiais para evitar cabeçalhos duplicados
-        val allowedHosts = listOf(
-            "victorbenevides.dev", "www.victorbenevides.dev", "staging.victorbenevides.dev",
-            "radarani.site", "www.radarani.site"
-        )
+        // SEGURANÇA ELITE: Trava de domínio único para eliminar o erro de cabeçalho duplicado (*, *)
+        allowHost("victorbenevides.dev", schemes = listOf("https"))
+        allowHost("www.victorbenevides.dev", schemes = listOf("https"))
 
-        allowedHosts.forEach { host ->
-            allowHost(host, schemes = listOf("https"))
-        }
-
-        // Fallback para dev local
+        // Suporte para desenvolvimento local
         allowHost("localhost:8080", schemes = listOf("http"))
         allowHost("localhost:8081", schemes = listOf("http"))
         allowHost("0.0.0.0:8080", schemes = listOf("http"))
@@ -230,9 +224,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v3.0.0-ELITE-BOOKING-PRO") }
-        get("/version") { call.respondText("Genesys21 Stable v6.1.0 - Elite Booking Pro") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v6.1.0 - Elite Booking Pro") }
+        get("/") { call.respondText("API Online - Genesys21 v2.2.0-STRIPE-RECOVERY-FINAL") }
+        get("/version") { call.respondText("Genesys21 Stable v6.1.1 - Ultimate Checkout Fix") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v6.1.1 - Ultimate Checkout Fix") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
