@@ -119,11 +119,15 @@ class StripeService(private val clientProvider: (String) -> StripeClient = { Str
             .putMetadata("order_id", order.id)
             .putMetadata("store_id", order.storeId)
             .setReceiptEmail(if (order.customerEmail?.contains("@") == true) order.customerEmail else null)
-            .setAutomaticPaymentMethods(
+            // Fix: Explicitly enabling payment method types as fallback for BRL
+            .addPaymentMethodType("card")
+            .addPaymentMethodType("pix")
+            // Note: We keep automatic methods disabled when using explicit types to avoid conflicts
+            /* .setAutomaticPaymentMethods(
                 PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
                     .setEnabled(true)
                     .build()
-            )
+            ) */
 
         val requestOptions = RequestOptions.builder().apply {
             if (!connectedAccountId.isNullOrBlank()) {
