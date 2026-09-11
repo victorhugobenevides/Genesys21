@@ -31,9 +31,10 @@ fun GenesysDatePicker(
 
     Column(
         modifier = modifier
-            .fillMaxWidth()
-            .widthIn(max = 450.dp)
-            .padding(horizontal = GenesysTheme.spacing.m)
+            .wrapContentWidth()
+            .widthIn(max = 400.dp)
+            .padding(horizontal = GenesysTheme.spacing.m),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Month Header
         Row(
