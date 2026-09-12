@@ -119,12 +119,8 @@ class StripeService(private val clientProvider: (String) -> StripeClient = { Str
             .putMetadata("order_id", order.id)
             .putMetadata("store_id", order.storeId)
             .setReceiptEmail(if (order.customerEmail?.contains("@") == true) order.customerEmail else null)
-            // Revert: Using automatic methods and removing manual 'pix' to avoid 'pix is invalid' error
-            .setAutomaticPaymentMethods(
-                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                    .setEnabled(true)
-                    .build()
-            )
+            // Fix Final: Usando método explícito 'card' pois o 'automatic' e 'pix' estão falhando na conta Live
+            .addPaymentMethodType("card")
 
         val requestOptions = RequestOptions.builder().apply {
             if (!connectedAccountId.isNullOrBlank()) {
