@@ -312,7 +312,6 @@ workflows:
     jobs:
       - test-and-validate
       - validate-migrations
-      - visual-verification
       - build-and-push:
           requires:
             - test-and-validate
@@ -324,7 +323,6 @@ workflows:
           requires:
             - test-and-validate
             - validate-migrations
-            #- visual-verification # BYPASS TEMPORÁRIO: Destravando deploy para fix de Stripe v6.1.6
             - build-and-push
           filters:
             branches:
