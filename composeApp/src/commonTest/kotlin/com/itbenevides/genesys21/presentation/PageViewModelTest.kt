@@ -102,9 +102,10 @@ class PageViewModelTest {
                 getChatMessagesUseCase = GetChatMessagesUseCase(fakeChatRepository),
                 sendChatMessageUseCase = SendChatMessageUseCase(fakeChatRepository),
                 getB2BAnalyticsUseCase = GetB2BAnalyticsUseCase(fakeOrderRepository),
-                getAuditLogsUseCase = GetAuditLogsUseCase(fakeOrderRepository)
+                getAuditLogsUseCase = GetAuditLogsUseCase(fakeOrderRepository),
+                aiGeneratorService = com.itbenevides.genesys21.domain.service.PageAIGeneratorService()
             )
-    }
+        }
 
     @AfterTest
     fun tearDown() {
