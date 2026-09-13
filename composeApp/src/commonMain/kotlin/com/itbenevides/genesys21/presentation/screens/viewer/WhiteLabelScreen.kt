@@ -144,6 +144,7 @@ fun WhiteLabelScreen(
             is WhiteLabelEvent.OnShowThemeSelectorChanged -> state = state.copy(showThemeSelector = event.show)
             is WhiteLabelEvent.OnShowPageSettingsChanged -> state = state.copy(showPageSettings = event.show)
             is WhiteLabelEvent.OnShowThemeLabChanged -> state = state.copy(showThemeLab = event.show)
+            is WhiteLabelEvent.OnShowAiRefinementChanged -> state = state.copy(showAiRefinement = event.show)
             is WhiteLabelEvent.OnEditingComponentIndexChanged -> state = state.copy(editingComponentIndex = event.index)
             is WhiteLabelEvent.OnPendingNewComponentChanged -> state = state.copy(pendingNewComponent = event.component)
             is WhiteLabelEvent.OnFilterQueryChanged -> state = state.copy(filterQuery = event.query)
@@ -282,6 +283,20 @@ fun WhiteLabelScreen(
 
         if (state.showCatalog) {
             ComponentCatalogUI(state, page.storeId, ::onEvent)
+        }
+
+        if (state.showAiRefinement) {
+            state.editingComponentIndex?.let { index ->
+                AiRefinementDialog(
+                    component = state.page.components[index],
+                    onRefined = { refined ->
+                        val newList = state.page.components.toMutableList().apply { set(index, refined) }
+                        onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                    },
+                    onDismiss = { onEvent(WhiteLabelEvent.OnShowAiRefinementChanged(false)) },
+                    refineAction = { comp, instr -> viewModel.refineComponent(comp, instr) }
+                )
+            }
         }
     }
 }

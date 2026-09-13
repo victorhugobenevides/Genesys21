@@ -43,6 +43,79 @@ class PageAIGeneratorService(
         throw Exception("Configuração de IA ausente.")
     }
 
+    /**
+     * Refina o conteúdo de um componente específico.
+     */
+    suspend fun refineComponent(
+        component: PageComponent,
+        instruction: String,
+        apiKey: String? = null
+    ): PageComponent {
+        if (!serverUrl.isNullOrBlank() && httpClient != null && apiKey.isNullOrBlank()) {
+            val response = httpClient.post("$serverUrl/api/public/ai/refine-component") {
+                contentType(ContentType.Application.Json)
+                setBody(buildJsonObject {
+                    put("instruction", instruction)
+                    put("component", json.encodeToJsonElement(PageComponent.serializer(), component))
+                }.toString())
+            }
+            if (response.status.isSuccess()) {
+                return json.decodeFromString(PageComponent.serializer(), response.bodyAsText())
+            } else {
+                throw Exception("Erro no servidor de IA: ${response.status}")
+            }
+        }
+
+        if (!apiKey.isNullOrBlank()) {
+            return refineWithGemini(component, instruction, apiKey)
+        }
+
+        throw Exception("Configuração de IA ausente.")
+    }
+
+    private suspend fun refineWithGemini(component: PageComponent, instruction: String, apiKey: String): PageComponent {
+        val client = httpClient ?: HttpClient()
+        val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"
+
+        val systemInstruction = """
+            Você é um Redator Publicitário do Genesys21.
+            Sua missão é REESCREVER os campos de texto do componente JSON fornecido com base na instrução do usuário.
+
+            DIRETRIZES:
+            1. Mantenha a estrutura do JSON idêntica.
+            2. Melhore apenas os campos de texto (títulos, descrições, bio, conteúdo).
+            3. Use uma linguagem persuasiva e profissional.
+            4. Se o usuário pedir algo impossível para o componente, apenas melhore o texto original.
+
+            IMPORTANTE:
+            - Retorne APENAS o JSON do componente refinado.
+            - Não altere IDs ou campos técnicos.
+        """.trimIndent()
+
+        val requestBody = buildJsonObject {
+            putJsonArray("contents") {
+                addJsonObject {
+                    putJsonArray("parts") {
+                        addJsonObject { put("text", "$systemInstruction\n\nINSTRUÇÃO: $instruction\n\nCOMPONENTE ATUAL: ${json.encodeToString(PageComponent.serializer(), component)}") }
+                    }
+                }
+            }
+        }
+
+        val response = client.post(endpoint) {
+            contentType(ContentType.Application.Json)
+            setBody(requestBody.toString())
+        }
+
+        val textContent = json.parseToJsonElement(response.bodyAsText()).jsonObject["candidates"]?.jsonArray?.firstOrNull()
+            ?.jsonObject?.get("content")?.jsonObject
+            ?.get("parts")?.jsonArray?.firstOrNull()
+            ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw Exception("IA retornou vazio")
+
+        val cleanJson = textContent.replace("```json", "").replace("```", "").trim()
+        return json.decodeFromString(PageComponent.serializer(), cleanJson)
+    }
+
     private suspend fun generateWithGemini(userPrompt: String, apiKey: String): Page {
         val client = httpClient ?: HttpClient()
         val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"

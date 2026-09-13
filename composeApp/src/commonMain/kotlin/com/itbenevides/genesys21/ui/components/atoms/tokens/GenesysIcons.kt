@@ -84,4 +84,5 @@ object GenesysIcons {
     val Schedule = Icons.Default.Schedule
     val History = Icons.Default.History
     val MoreVert = Icons.Default.MoreVert
+    val HorizontalRule = Icons.Default.HorizontalRule
 }

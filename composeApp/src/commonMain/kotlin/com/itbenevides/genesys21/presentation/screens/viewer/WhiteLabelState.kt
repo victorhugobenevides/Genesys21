@@ -22,6 +22,7 @@ data class WhiteLabelState(
     val pendingNewComponent: PageComponent? = null,
     val filterQuery: String = "",
     val userPages: List<Page> = emptyList(),
+    val showAiRefinement: Boolean = false,
 )
 
 /**
@@ -46,6 +47,8 @@ sealed class WhiteLabelEvent {
     data class OnShowPageSettingsChanged(val show: Boolean) : WhiteLabelEvent()
 
     data class OnShowThemeLabChanged(val show: Boolean) : WhiteLabelEvent()
+
+    data class OnShowAiRefinementChanged(val show: Boolean) : WhiteLabelEvent()
 
     data class OnEditingComponentIndexChanged(val index: Int?) : WhiteLabelEvent()
 

@@ -74,6 +74,7 @@ class PageViewModel(
     private val sendChatMessageUseCase: SendChatMessageUseCase,
     private val getB2BAnalyticsUseCase: GetB2BAnalyticsUseCase,
     private val getAuditLogsUseCase: GetAuditLogsUseCase,
+    private val aiGeneratorService: com.itbenevides.genesys21.domain.service.PageAIGeneratorService,
 ) : ViewModel() {
     private val _pages = MutableStateFlow<List<Page>>(emptyList())
     val pages: StateFlow<List<Page>> = _pages.asStateFlow()
@@ -1309,5 +1310,9 @@ class PageViewModel(
                 handleError("Erro ao enviar mensagem", it)
             }
         }
+    }
+
+    suspend fun refineComponent(component: PageComponent, instruction: String): PageComponent {
+        return aiGeneratorService.refineComponent(component, instruction)
     }
 }

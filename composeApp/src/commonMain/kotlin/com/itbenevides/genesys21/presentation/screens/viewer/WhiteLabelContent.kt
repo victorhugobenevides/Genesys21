@@ -351,13 +351,17 @@ internal fun ComponentEditorUI(
             usePadding = false
         ) {
             val icon = when (component) {
-                is PageComponent.Header -> GenesysIcons.Description
-                is PageComponent.Text -> GenesysIcons.Edit
-                is PageComponent.Image -> GenesysIcons.Image
-                is PageComponent.Button -> GenesysIcons.Language
+                is PageComponent.Hero -> GenesysIcons.Image
+                is PageComponent.Benefits -> GenesysIcons.Check
+                is PageComponent.Testimonial -> GenesysIcons.Feedback
                 is PageComponent.Grid -> GenesysIcons.GridView
                 is PageComponent.ProductList -> GenesysIcons.Inventory
                 is PageComponent.ServiceList -> GenesysIcons.Schedule
+                is PageComponent.ProfileHeader -> GenesysIcons.Person
+                is PageComponent.SocialLinks -> GenesysIcons.Share
+                is PageComponent.Spacer -> GenesysIcons.ArrowUp
+                is PageComponent.Divider -> GenesysIcons.HorizontalRule
+                is PageComponent.ValuedAction -> GenesysIcons.Favorite
                 else -> GenesysIcons.Magic
             }
             Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(GenesysTheme.spacing.m))
@@ -368,6 +372,19 @@ internal fun ComponentEditorUI(
                 fontWeight = GenesysFontWeight.Bold,
                 modifier = Modifier.weight(1f)
             )
+
+            // MAGIC EDIT BUTTON 🪄
+            val supportsAi = remember(component) {
+                component is PageComponent.Header || component is PageComponent.Text || component is PageComponent.Hero || component is PageComponent.ProfileHeader
+            }
+            if (supportsAi) {
+                GenesysIconButton(
+                    icon = GenesysIcons.Magic,
+                    onClick = { onEvent(WhiteLabelEvent.OnShowAiRefinementChanged(true)) },
+                    tint = GenesysTheme.colors.brand
+                )
+            }
+
             GenesysIconButton(
                 icon = GenesysIcons.Close,
                 onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) }
@@ -460,6 +477,26 @@ internal fun ComponentEditorUI(
                         }
                     )
                 }
+                is PageComponent.SocialLinks -> {
+                    SocialLinksComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.ProfileHeader -> {
+                    ProfileHeaderComponentEditor(
+                        component = component,
+                        isUploading = state.isUploading,
+                        onPickImage = onPickImage,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
                 is PageComponent.Grid -> {
                     GridComponentEditor(
                         component = component,
@@ -470,6 +507,62 @@ internal fun ComponentEditorUI(
                             val newList = state.page.components.toMutableList().apply { set(index, updated) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
                         }
+                    )
+                }
+                is PageComponent.Hero -> {
+                    HeroComponentEditor(
+                        component = component,
+                        isUploading = state.isUploading,
+                        onPickImage = onPickImage,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Benefits -> {
+                    BenefitsComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Testimonial -> {
+                    TestimonialComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.ValuedAction -> {
+                    ValuedActionComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Spacer -> {
+                    SpacerComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
+                    )
+                }
+                is PageComponent.Divider -> {
+                    DividerComponentEditor(
+                        component = component,
+                        onSave = { updated ->
+                            val newList = state.page.components.toMutableList().apply { set(index, updated) }
+                            onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
+                        },
                     )
                 }
                 else -> {

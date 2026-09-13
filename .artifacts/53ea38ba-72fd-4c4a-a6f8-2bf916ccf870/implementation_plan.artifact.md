@@ -1,49 +1,44 @@
-# Resgate Final do Checkout e Deploy v6.1.5 🛡️💳
+# Finalização e Melhoria do Editor White Label (v2.0) 🎨🛠️
 
-Este plano visa garantir que o servidor rode a versão **v6.1.5**, que contém as correções críticas para o Stripe (método de pagamento) e para o erro de CORS.
+Este plano visa completar a especificação do Editor de Páginas, garantindo que todos os componentes do sistema sejam editáveis e integrando inteligência artificial para auxiliar na criação de conteúdo.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Como não temos **GitHub Actions**, o build das imagens Docker deve ser feito manualmente na sua máquina e enviado para o registro do GitHub (`ghcr.io`).
+> Atualmente, diversos componentes (como `ProfileHeader`, `Hero`, `SocialLinks`) aparecem como "não editáveis" na interface. Este plano irá ativar os editores existentes e criar os novos.
 
-## Propostas de Mudança
+## Mudanças Propostas
 
-### 1. Build e Empacotamento (Local)
-Para que as correções de código surtam efeito no servidor `victorbenevides.dev`, precisamos gerar novos artefatos.
+### 1. Atualização da Especificação [.specify/specs/002-page-editor/spec.md]
+- Expandir a lista de componentes suportados para incluir o catálogo moderno completo.
+- Adicionar a seção de **IA Assistida (Magic Edit)**.
 
-#### Passos Necessários:
-1.  **Ligar o Docker Desktop**: Necessário para gerar as imagens.
-2.  **Executar o Script de Build**: Rodar `./up.sh` no terminal do Android Studio.
-3.  **Push das Imagens**: Enviar as novas versões para o GitHub.
+### 2. Integração de Editores Existentes
+#### [MODIFY] [WhiteLabelContent.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/WhiteLabelContent.kt)
+- Adicionar os casos `is PageComponent.ProfileHeader` e `is PageComponent.SocialLinks` no `when` do `ComponentEditorUI`.
 
-### 2. Sincronização de Infraestrutura (Servidor)
-Após o envio das imagens, entrarei no servidor via SSH para:
-- Limpar o cache do Docker.
-- Forçar o download da imagem **v6.1.5**.
-- Validar se o link `/api/public/version` reflete a mudança.
+### 3. Criação de Novos Editores Avançados
+Criar os seguintes arquivos em `composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/editor/`:
+- **[NEW] HeroComponentEditor.kt**: Banner principal com suporte a upload de imagem.
+- **[NEW] BenefitsComponentEditor.kt**: Lista de diferenciais com ícones selecionáveis.
+- **[NEW] TestimonialComponentEditor.kt**: Editor de depoimentos e avaliações.
+- **[NEW] ValuedActionComponentEditor.kt**: Editor de componentes de doação/contribuição.
+- **[NEW] SpacerComponentEditor.kt**: Controle de altura de espaçamentos.
+- **[NEW] DividerComponentEditor.kt**: Controle de estilo de linhas divisórias.
+
+### 4. IA Assistida (Magic Edit) 🪄
+#### [MODIFY] [PageAIGeneratorService.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/service/PageAIGeneratorService.kt)
+- Adicionar método `refineComponentContent(component, prompt)` para gerar textos específicos.
+- Utilizar a chave Gemini fornecida pelo usuário.
+
+#### [NEW] AiRefinementDialog.kt
+- Modal para o usuário descrever o que quer (ex: "Crie uma bio para arquiteto") e ver a sugestão da IA antes de aplicar ao componente.
 
 ## Verification Plan
 
-### Verificação de Versão
-- O link [https://victorbenevides.dev/api/public/version](https://victorbenevides.dev/api/public/version) deve retornar `v6.1.5`.
+### Teste de Interface
+- Selecionar um componente de Perfil e verificar se o painel de edição abre.
+- Selecionar um Banner Hero e verificar se é possível trocar título e imagem.
 
-### Teste de Checkout
-- Tentar realizar um agendamento. O modal do Stripe deve abrir com a opção de Cartão de Crédito ativa.
-
-## Próximos Passos
-Por favor, execute os comandos abaixo no seu terminal (Android Studio):
-
-```bash
-# 1. Build total do projeto
-./up.sh
-
-# 2. Login no GitHub Container Registry (se necessário)
-# echo $GITHUB_TOKEN | docker login ghcr.io -u SEU_USUARIO --password-stdin
-
-# 3. Enviar as imagens para o servidor buscar
-docker push ghcr.io/victorhugobenevides/genesys-server:latest
-docker push ghcr.io/victorhugobenevides/genesys-web:latest
-```
-
-**Assim que terminar o `docker push`, me avise para eu concluir o deploy no servidor!**
+### Teste de IA
+- Clicar no ícone de "Mágica" em um campo de texto e verificar se a sugestão é gerada e aplicada.
