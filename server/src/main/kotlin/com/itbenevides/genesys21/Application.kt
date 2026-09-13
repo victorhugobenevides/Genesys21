@@ -224,9 +224,9 @@ fun Application.module() {
     initBackups(logger)
 
     routing {
-        get("/") { call.respondText("API Online - Genesys21 v4.1.0-CIRCLECI-FIX") }
-        get("/version") { call.respondText("Genesys21 Stable v6.1.6 - CircleCI Stabilized") }
-        get("/api/public/version") { call.respondText("Genesys21 Stable v6.1.6 - CircleCI Stabilized") }
+        get("/") { call.respondText("API Online - Genesys21 v4.2.0-EDITOR-V2") }
+        get("/version") { call.respondText("Genesys21 Stable v6.1.7 - Editor v2.0 + AI") }
+        get("/api/public/version") { call.respondText("Genesys21 Stable v6.1.7 - Editor v2.0 + AI") }
 
         get("/api/public/diagnostic") {
             val ownerEmailEnv = System.getenv("OWNER_EMAIL")
