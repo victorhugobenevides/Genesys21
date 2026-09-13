@@ -34,7 +34,8 @@ val viewModelModule =
                 get(), // 46: GetChatMessages
                 get(), // 47: SendChatMessage
                 get(), // 48: GetB2BAnalytics
-                get()  // 49: GetAuditLogs
+                get(), // 49: GetAuditLogs
+                get()  // 50: PageAIGeneratorService
             )
         }
 
