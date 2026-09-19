@@ -1,44 +1,40 @@
-# Finalização e Melhoria do Editor White Label (v2.0) 🎨🛠️
+# Fix: User Management and SuperAdmin Access 🛡️👥
 
-Este plano visa completar a especificação do Editor de Páginas, garantindo que todos os componentes do sistema sejam editáveis e integrando inteligência artificial para auxiliar na criação de conteúdo.
+This plan fixes the issue where the owner cannot manage users in the "Global Users" section. It aligns the server-side security logic with the client-side "GOD MODE" and enhances the user management UI.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> Atualmente, diversos componentes (como `ProfileHeader`, `Hero`, `SocialLinks`) aparecem como "não editáveis" na interface. Este plano irá ativar os editores existentes e criar os novos.
+> This change introduces a "GOD MODE" on the server side that automatically promotes the owner (defined by email or UID) to `SUPERADMIN` regardless of the database state. This is necessary to prevent accidental lockouts.
 
-## Mudanças Propostas
+## Proposed Changes
 
-### 1. Atualização da Especificação [.specify/specs/002-page-editor/spec.md]
-- Expandir a lista de componentes suportados para incluir o catálogo moderno completo.
-- Adicionar a seção de **IA Assistida (Magic Edit)**.
+### 1. Server-side Security & Repository (Core Fix)
 
-### 2. Integração de Editores Existentes
-#### [MODIFY] [WhiteLabelContent.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/viewer/WhiteLabelContent.kt)
-- Adicionar os casos `is PageComponent.ProfileHeader` e `is PageComponent.SocialLinks` no `when` do `ComponentEditorUI`.
+#### [MODIFY] [SqliteUserRepository.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/server/src/main/kotlin/com/itbenevides/genesys21/data/repository/SqliteUserRepository.kt)
+- Update `ResultRow.toUserProfile()` to implement the "GOD MODE" check.
+- Use `System.getenv("OWNER_EMAIL")` or `DogmaConstants.OWNER_EMAIL` to identify the owner.
+- Force `role = UserRole.SUPERADMIN` and all permissions for the owner.
 
-### 3. Criação de Novos Editores Avançados
-Criar os seguintes arquivos em `composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/editor/`:
-- **[NEW] HeroComponentEditor.kt**: Banner principal com suporte a upload de imagem.
-- **[NEW] BenefitsComponentEditor.kt**: Lista de diferenciais com ícones selecionáveis.
-- **[NEW] TestimonialComponentEditor.kt**: Editor de depoimentos e avaliações.
-- **[NEW] ValuedActionComponentEditor.kt**: Editor de componentes de doação/contribuição.
-- **[NEW] SpacerComponentEditor.kt**: Controle de altura de espaçamentos.
-- **[NEW] DividerComponentEditor.kt**: Controle de estilo de linhas divisórias.
+### 2. UI Enhancements (Management Capabilities)
 
-### 4. IA Assistida (Magic Edit) 🪄
-#### [MODIFY] [PageAIGeneratorService.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/shared/src/commonMain/kotlin/com/itbenevides/genesys21/domain/service/PageAIGeneratorService.kt)
-- Adicionar método `refineComponentContent(component, prompt)` para gerar textos específicos.
-- Utilizar a chave Gemini fornecida pelo usuário.
+#### [MODIFY] [AdminUIComponents.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/components/AdminUIComponents.kt)
+- Update `UserActionsSection` to allow `SUPERADMIN` to promote users to all roles (`ADMIN`, `SUPERADMIN`, etc.).
+- Add a dropdown or a set of buttons to choose from the full `UserRole` enum if the viewer is a `SUPERADMIN`.
 
-#### [NEW] AiRefinementDialog.kt
-- Modal para o usuário descrever o que quer (ex: "Crie uma bio para arquiteto") e ver a sugestão da IA antes de aplicar ao componente.
+### 3. Stability & Feedback
+
+#### [MODIFY] [GlobalUsersTab.kt](file:///Users/victorben/AndroidStudioProjects/genesys21/composeApp/src/commonMain/kotlin/com/itbenevides/genesys21/presentation/screens/list/tabs/GlobalUsersTab.kt)
+- Ensure the current user's role is checked before rendering management actions.
+- Improve error handling for 403 Forbidden responses.
 
 ## Verification Plan
 
-### Teste de Interface
-- Selecionar um componente de Perfil e verificar se o painel de edição abre.
-- Selecionar um Banner Hero e verificar se é possível trocar título e imagem.
+### Automated Tests
+- Run `PageViewModelTest` to ensure role management methods still work.
 
-### Teste de IA
-- Clicar no ícone de "Mágica" em um campo de texto e verificar se a sugestão é gerada e aplicada.
+### Manual Verification
+- Log in as the owner ("victorkoto@gmail.com").
+- Navigate to "Usuários Global".
+- Verify that the list of users is correctly loaded (no 403 error).
+- Verify that you can change a user's role and permissions.

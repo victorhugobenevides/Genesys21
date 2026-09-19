@@ -15,20 +15,30 @@ class SqliteUserRepository : UserRepository {
         val rawEmail = this[UsersTable.email]
         val userId = this[UsersTable.id]
 
-        val roleStr = this[UsersTable.role]
-        val role = try {
-            UserRole.valueOf(roleStr)
-        } catch (e: Exception) {
-            UserRole.CUSTOMER
+        val ownerEmail = System.getenv("OWNER_EMAIL")?.lowercase()?.trim() ?: com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
+        val isOwner = rawEmail.lowercase().trim() == ownerEmail || userId == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_UID
+
+        val role = if (isOwner) {
+            UserRole.SUPERADMIN
+        } else {
+            try {
+                UserRole.valueOf(this[UsersTable.role])
+            } catch (e: Exception) {
+                UserRole.CUSTOMER
+            }
         }
 
         val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
 
-        val permissions = this[UsersTable.permissions].split(",")
-            .filter { it.isNotBlank() }
-            .mapNotNull {
-                runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
-            }.toSet()
+        val permissions = if (isOwner) {
+            com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+        } else {
+            this[UsersTable.permissions].split(",")
+                .filter { it.isNotBlank() }
+                .mapNotNull {
+                    runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
+                }.toSet()
+        }
 
         return UserProfile(
             id = userId,

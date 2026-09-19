@@ -1,22 +1,10 @@
-# Tasks: Finalização e Melhoria do Editor White Label (v2.0) 🎨🛠️
+# Tasks: Fix User Management and SuperAdmin Access 🛡️👥
 
-- [ ] **Fase 1: Documentação e Conexões**
-    - [ ] Atualizar especificação em `.specify/specs/002-page-editor/spec.md`
-    - [ ] Ativar editores de `ProfileHeader` e `SocialLinks` em `WhiteLabelContent.kt`
-
-- [ ] **Fase 2: Novos Editores de Componentes**
-    - [ ] Criar `HeroComponentEditor.kt`
-    - [ ] Criar `BenefitsComponentEditor.kt`
-    - [ ] Criar `TestimonialComponentEditor.kt`
-    - [ ] Criar `ValuedActionComponentEditor.kt`
-    - [ ] Criar `SpacerComponentEditor.kt`
-    - [ ] Criar `DividerComponentEditor.kt`
-
-- [ ] **Fase 3: Inteligência Artificial (Magic Edit)**
-    - [ ] Adicionar `refineComponentContent` em `PageAIGeneratorService.kt`
-    - [ ] Criar `AiRefinementDialog.kt`
-    - [ ] Integrar botão de "Mágica" nos editores de texto (`Header`, `Text`, `Hero`)
-
-- [ ] **Fase 4: Validação Final**
-    - [ ] Testar fluxo completo de edição no Android e Web (Wasm)
-    - [ ] Verificar persistência dos drafts com os novos componentes
+- [x] **Fase 1: Segurança no Servidor (Repository)**
+    - [x] Implementar "GOD MODE" em `SqliteUserRepository.kt` (Proprietário sempre SUPERADMIN)
+- [x] **Fase 2: Interface de Gerenciamento (UI)**
+    - [x] Atualizar `UserAdminCard` em `AdminUIComponents.kt` para suportar todos os cargos
+    - [x] Melhorar feedback visual na troca de cargos
+- [/] **Fase 3: Deploy e Validação**
+    - [x] Incrementar versão para v6.1.9
+    - [ ] Validar acesso às rotas `/api/admin/users`

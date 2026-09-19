@@ -32,6 +32,7 @@ import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysStatusPicker
 import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
+import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
@@ -522,20 +523,59 @@ private fun UserActionsSection(
     onRoleChange: (UserRole) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showRoleDialog by remember { mutableStateOf(false) }
+
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End) {
-        if (user.role == UserRole.CUSTOMER) {
-            GenesysLoadingButton(
-                text = "Tornar Merchant",
-                onClick = { onRoleChange(UserRole.MERCHANT) },
-                fillWidth = modifier != Modifier
-            )
-        } else if (user.role == UserRole.MERCHANT) {
-            GenesysTextButton(
-                text = "Remover Acesso",
-                onClick = { onRoleChange(UserRole.CUSTOMER) },
-                color = GenesysTheme.colors.error,
-                modifier = if (modifier != Modifier) Modifier.fillMaxWidth() else Modifier
-            )
+        GenesysLoadingButton(
+            text = "Alterar Cargo",
+            onClick = { showRoleDialog = true },
+            fillWidth = modifier != Modifier,
+            containerColor = GenesysTheme.colors.brandContainer,
+            contentColor = GenesysTheme.colors.brand
+        )
+    }
+
+    if (showRoleDialog) {
+        GenesysDialog(
+            onDismissRequest = { showRoleDialog = false },
+            title = "Alterar Cargo: ${user.name}",
+            confirmButton = {},
+            dismissButton = {
+                GenesysTextButton(text = "Cancelar", onClick = { showRoleDialog = false })
+            }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                UserRole.entries.forEach { role ->
+                    val isSelected = user.role == role
+                    GenesysCard(
+                        onClick = {
+                            onRoleChange(role)
+                            showRoleDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = if (isSelected) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surface,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, GenesysTheme.colors.brand) else null
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = isSelected, onClick = null)
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(role.name, style = GenesysTheme.typography.body, fontWeight = FontWeight.Bold)
+                                val desc = when(role) {
+                                    UserRole.SUPERADMIN -> "Acesso total ao sistema e gestão de usuários."
+                                    UserRole.ADMIN -> "Pode gerenciar vitrines, pedidos e domínios."
+                                    UserRole.MERCHANT -> "Acesso ao painel de lojista e vendas."
+                                    UserRole.CUSTOMER -> "Apenas cliente (compras e pedidos)."
+                                }
+                                Text(desc, style = GenesysTheme.typography.label, color = GenesysTheme.colors.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
