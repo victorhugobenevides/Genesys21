@@ -117,23 +117,93 @@ let elements;
 
 window.stripeInitialize = (publishableKey) => {
     console.log("BRIDGE: Initializing Stripe with key:", publishableKey.substring(0, 10) + "...");
-    stripe = Stripe(publishableKey);
+    try {
+        stripe = Stripe(publishableKey);
+    } catch (e) {
+        console.error("BRIDGE: Error initializing Stripe:", e);
+    }
 };
 
 window.stripeMountPaymentElement = (clientSecret, appearanceJson, elementId) => {
-    if (!stripe) return Promise.reject("Stripe not initialized");
+    if (!stripe) return Promise.reject("Stripe não inicializado");
 
     console.log("BRIDGE: Mounting Payment Element to:", elementId);
-    const appearance = JSON.parse(appearanceJson);
-    elements = stripe.elements({ clientSecret, appearance });
 
-    const paymentElement = elements.create("payment");
-    paymentElement.mount(`#${elementId}`);
+    // 1. Garantir que o container exista no DOM nativo do navegador
+    let container = document.getElementById(elementId);
+    if (!container) {
+        console.log("BRIDGE: Element", elementId, "not found in DOM. Creating dynamic container...");
+        container = document.createElement("div");
+        container.id = elementId;
+        container.className = "genesys-stripe-payment-container";
+        container.style.width = "100%";
+        container.style.maxWidth = "500px";
+        container.style.minHeight = "280px";
+        container.style.margin = "12px auto";
+        container.style.padding = "16px";
+        container.style.boxSizing = "border-box";
+        container.style.backgroundColor = "#FFFFFF";
+        container.style.borderRadius = "12px";
+        container.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
+        container.style.position = "relative";
+        container.style.zIndex = "1000";
+
+        // Inserir o container em um invólucro de overlay ou no body
+        let wrapper = document.getElementById("stripe-mount-wrapper");
+        if (!wrapper) {
+            wrapper = document.createElement("div");
+            wrapper.id = "stripe-mount-wrapper";
+            wrapper.style.position = "fixed";
+            wrapper.style.top = "100px";
+            wrapper.style.left = "50%";
+            wrapper.style.transform = "translateX(-50%)";
+            wrapper.style.width = "90%";
+            wrapper.style.maxWidth = "520px";
+            wrapper.style.zIndex = "9999";
+            wrapper.style.pointerEvents = "auto";
+            document.body.appendChild(wrapper);
+        }
+        wrapper.innerHTML = "";
+        wrapper.appendChild(container);
+    }
+
+    // 2. Parse seguro do tema/aparência
+    let appearance = { theme: 'stripe' };
+    if (appearanceJson && appearanceJson.trim().length > 0) {
+        try {
+            appearance = JSON.parse(appearanceJson);
+        } catch (e) {
+            console.warn("BRIDGE: Invalid appearanceJson, using default theme", e);
+        }
+    }
+
+    try {
+        elements = stripe.elements({ clientSecret, appearance });
+        const paymentElement = elements.create("payment");
+        paymentElement.mount(`#${elementId}`);
+        console.log("BRIDGE: Payment Element successfully mounted to:", elementId);
+        return Promise.resolve();
+    } catch (e) {
+        console.error("BRIDGE: Error mounting Payment Element:", e);
+        return Promise.reject(e.message || "Erro ao montar formulário de pagamento");
+    }
+};
+
+window.stripeUnmountPaymentElement = (elementId) => {
+    console.log("BRIDGE: Unmounting Payment Element:", elementId);
+    const wrapper = document.getElementById("stripe-mount-wrapper");
+    if (wrapper) {
+        wrapper.innerHTML = "";
+        if (wrapper.parentNode) {
+            wrapper.parentNode.removeChild(wrapper);
+        }
+    }
+    elements = null;
     return Promise.resolve();
 };
 
 window.stripeConfirmPayment = (returnUrl) => {
-    if (!stripe || !elements) return Promise.reject("Stripe not ready");
+    if (!stripe || !elements) return Promise.reject("Stripe não inicializado ou formulário não pronto");
 
     console.log("BRIDGE: Confirming payment with return URL:", returnUrl);
     return stripe.confirmPayment({

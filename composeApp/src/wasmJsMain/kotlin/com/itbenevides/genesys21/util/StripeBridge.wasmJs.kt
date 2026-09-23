@@ -12,6 +12,9 @@ external fun stripeMountPaymentElementSafe(
     elementId: String,
 ): Promise<JsAny?>
 
+@JsFun("(id) => { if (typeof window.stripeUnmountPaymentElement === 'function') return window.stripeUnmountPaymentElement(id); return Promise.reject('JS Not Ready'); }")
+external fun stripeUnmountPaymentElementSafe(elementId: String): Promise<JsAny?>
+
 @JsFun("(url) => { if (typeof window.stripeConfirmPayment === 'function') return window.stripeConfirmPayment(url); return Promise.reject('JS Not Ready'); }")
 external fun stripeConfirmPaymentSafe(returnUrl: String): Promise<JsAny?>
 
@@ -39,6 +42,15 @@ object StripeBridge {
     ): Result<Unit> {
         return try {
             stripeMountPaymentElementSafe(clientSecret, appearanceJson, elementId).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun unmountPaymentElement(elementId: String): Result<Unit> {
+        return try {
+            stripeUnmountPaymentElementSafe(elementId).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
