@@ -3,7 +3,6 @@ package com.itbenevides.genesys21.di
 import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.domain.usecase.*
-import com.itbenevides.genesys21.data.storage.SecureStorage
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
@@ -31,7 +30,7 @@ val dataModule =
                             isLenient = true
                             encodeDefaults = true
                             coerceInputValues = true
-                        }
+                        },
                     )
                 }
             }

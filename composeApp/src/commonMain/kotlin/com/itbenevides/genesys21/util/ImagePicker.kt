@@ -7,7 +7,7 @@ expect fun rememberImagePicker(onResult: (ByteArray?) -> Unit): () -> Unit
 
 data class SelectedFile(
     val bytes: ByteArray,
-    val mimeType: String
+    val mimeType: String,
 )
 
 @Composable

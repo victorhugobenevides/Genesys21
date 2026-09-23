@@ -11,11 +11,12 @@ import kotlinx.serialization.Serializable
 data class PublicUserProfile(
     val id: String,
     val name: String,
-    val avatarUrl: String? = null
+    val avatarUrl: String? = null,
 )
 
-fun UserProfile.toPublic() = PublicUserProfile(
-    id = id,
-    name = name,
-    avatarUrl = avatarUrl
-)
+fun UserProfile.toPublic() =
+    PublicUserProfile(
+        id = id,
+        name = name,
+        avatarUrl = avatarUrl,
+    )

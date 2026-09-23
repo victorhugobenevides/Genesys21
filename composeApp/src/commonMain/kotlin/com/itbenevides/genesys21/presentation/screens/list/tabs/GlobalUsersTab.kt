@@ -33,20 +33,21 @@ fun GlobalUsersTab(viewModel: PageViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             AdminTabHeader(
                 title = "Usuários Global",
-                subtitle = "Gerencie permissões e cargos de todos os usuários do sistema."
+                subtitle = "Gerencie permissões e cargos de todos os usuários do sistema.",
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 if (isLoading && users.isEmpty()) {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
@@ -65,7 +66,7 @@ fun GlobalUsersTab(viewModel: PageViewModel) {
                                 val currentPerms = user.permissions.toMutableSet()
                                 if (enabled) currentPerms.add(permission) else currentPerms.remove(permission)
                                 viewModel.updateUserPermissions(user.id, currentPerms)
-                            }
+                            },
                         )
                         GenesysSpacer(GenesysTheme.spacing.m)
                     }

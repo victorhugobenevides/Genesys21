@@ -13,7 +13,7 @@ data class Address(
     val city: String,
     val state: String,
     val zipCode: String,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
 )
 
 @Serializable
@@ -21,5 +21,5 @@ data class ShippingOption(
     val id: String,
     val name: String,
     val price: Double,
-    val estimatedDays: Int
+    val estimatedDays: Int,
 )

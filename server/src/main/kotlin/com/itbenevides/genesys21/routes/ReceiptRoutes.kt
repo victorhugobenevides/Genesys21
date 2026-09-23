@@ -1,12 +1,12 @@
 package com.itbenevides.genesys21.routes
 
+import com.itbenevides.genesys21.data.repository.SqliteReceiptRepository
+import com.itbenevides.genesys21.data.service.SefazScraperService
 import com.itbenevides.genesys21.domain.model.Receipt
 import com.itbenevides.genesys21.domain.model.UserPermission
 import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
-import com.itbenevides.genesys21.data.repository.SqliteReceiptRepository
-import com.itbenevides.genesys21.data.service.SefazScraperService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -19,13 +19,13 @@ import kotlinx.serialization.Serializable
 data class ParseReceiptRequest(
     val rawText: String = "",
     val imageBase64: String? = null,
-    val mimeType: String? = "image/jpeg"
+    val mimeType: String? = "image/jpeg",
 )
 
 fun Route.receiptRoutes(
     parserService: ReceiptParserService,
     receiptRepository: SqliteReceiptRepository,
-    userRepository: UserRepository
+    userRepository: UserRepository,
 ) {
     val scraperService = SefazScraperService()
 
@@ -52,12 +52,13 @@ fun Route.receiptRoutes(
                     return@post
                 }
 
-                val receipt = parserService.parseReceiptDynamic(
-                    rawText = request.rawText,
-                    imageBase64 = request.imageBase64,
-                    apiKey = apiKey,
-                    mimeType = request.mimeType
-                )
+                val receipt =
+                    parserService.parseReceiptDynamic(
+                        rawText = request.rawText,
+                        imageBase64 = request.imageBase64,
+                        apiKey = apiKey,
+                        mimeType = request.mimeType,
+                    )
                 call.respond(receipt)
             } catch (e: Exception) {
                 val message = e.message ?: ""
@@ -89,11 +90,12 @@ fun Route.receiptRoutes(
                 val principal = call.principal<UserIdPrincipal>()!!
                 val storeId = call.request.queryParameters["storeId"]
 
-                val result = if (!storeId.isNullOrBlank()) {
-                    receiptRepository.getReceiptsByStore(storeId)
-                } else {
-                    receiptRepository.getReceiptsByUser(principal.name)
-                }
+                val result =
+                    if (!storeId.isNullOrBlank()) {
+                        receiptRepository.getReceiptsByStore(storeId)
+                    } else {
+                        receiptRepository.getReceiptsByUser(principal.name)
+                    }
 
                 result.onSuccess {
                     call.respond(it)

@@ -64,11 +64,12 @@ object DatabaseFactory {
     }
 
     private fun runFlyway(ds: javax.sql.DataSource) {
-        val flyway = Flyway.configure()
-            .dataSource(ds)
-            .locations("classpath:db/migration")
-            .baselineOnMigrate(true)
-            .load()
+        val flyway =
+            Flyway.configure()
+                .dataSource(ds)
+                .locations("classpath:db/migration")
+                .baselineOnMigrate(true)
+                .load()
         flyway.migrate()
     }
 
@@ -91,7 +92,10 @@ object DatabaseFactory {
         if (!dataFolder.exists()) dataFolder.mkdirs()
     }
 
-    private fun hikari(jdbcUrl: String, isSqlite: Boolean): HikariDataSource {
+    private fun hikari(
+        jdbcUrl: String,
+        isSqlite: Boolean,
+    ): HikariDataSource {
         val config = HikariConfig()
         if (isSqlite) {
             config.driverClassName = "org.sqlite.JDBC"

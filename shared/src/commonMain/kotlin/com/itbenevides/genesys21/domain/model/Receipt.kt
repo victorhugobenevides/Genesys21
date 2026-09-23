@@ -18,7 +18,7 @@ data class Receipt(
     val items: List<ReceiptItem> = emptyList(),
     val createdAt: Long = 0L,
     val fileBase64: String? = null,
-    val fileMimeType: String? = null
+    val fileMimeType: String? = null,
 )
 
 @Serializable
@@ -26,5 +26,5 @@ data class ReceiptItem(
     val descricao: String,
     val quantidade: Double = 1.0,
     val valorUnitario: Double = 0.0,
-    val valorTotal: Double = 0.0
+    val valorTotal: Double = 0.0,
 )

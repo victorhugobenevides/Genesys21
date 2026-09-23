@@ -4,10 +4,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ChatMessage(
-    val id: String, // UUID
-    val refId: String, // Order ID or Appointment ID
+    /** UUID */
+    val id: String,
+    /** Order ID or Appointment ID */
+    val refId: String,
     val senderNick: String,
     val content: String,
     val isFromMerchant: Boolean = false,
-    val createdAt: Long = 0
+    val createdAt: Long = 0,
 )

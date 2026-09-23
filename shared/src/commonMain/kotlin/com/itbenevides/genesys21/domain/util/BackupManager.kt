@@ -5,12 +5,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 object BackupManager {
-
-    private val json = Json {
-        prettyPrint = true
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            prettyPrint = true
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
     /**
      * Serializa a lista de notas fiscais em uma string JSON formatada.

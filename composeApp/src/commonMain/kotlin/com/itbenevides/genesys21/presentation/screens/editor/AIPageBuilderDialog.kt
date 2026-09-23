@@ -21,17 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
-import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.theme.*
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIPageBuilderDialog(
     onDismiss: () -> Unit,
-    onPageGenerated: (Page) -> Unit
+    onPageGenerated: (Page) -> Unit,
 ) {
     val aiService: PageAIGeneratorService = koinInject()
     val scope = rememberCoroutineScope()
@@ -40,11 +39,12 @@ fun AIPageBuilderDialog(
     var generatedPage by remember { mutableStateOf<Page?>(null) }
 
     val listState = rememberLazyListState()
-    val messages = remember {
-        mutableStateListOf(
-            ChatMessage("Olá! Eu sou o Mestre de Design Genesys. ✨\n\nDescreva que tipo de página você precisa (ex: 'Uma loja de bolos caseiros' ou 'Meu portfólio de engenheiro') e eu montarei tudo para você!", false)
-        )
-    }
+    val messages =
+        remember {
+            mutableStateListOf(
+                ChatMessage("Olá! Eu sou o Mestre de Design Genesys. ✨\n\nDescreva que tipo de página você precisa (ex: 'Uma loja de bolos caseiros' ou 'Meu portfólio de engenheiro') e eu montarei tudo para você!", false),
+            )
+        }
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
@@ -59,7 +59,7 @@ fun AIPageBuilderDialog(
                 modifier = Modifier.fillMaxSize(),
                 shape = RoundedCornerShape(GenesysTheme.spacing.l),
                 color = GenesysTheme.colors.surface,
-                tonalElevation = GenesysTheme.spacing.xxs // 6dp ~ xxs is 4dp
+                tonalElevation = GenesysTheme.spacing.xxs,
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     TopAppBar(
@@ -76,14 +76,14 @@ fun AIPageBuilderDialog(
                         actions = {
                             IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Fechar") }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     )
 
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.weight(1f).padding(horizontal = GenesysTheme.spacing.m),
                         verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.s),
-                        contentPadding = PaddingValues(bottom = GenesysTheme.spacing.m)
+                        contentPadding = PaddingValues(bottom = GenesysTheme.spacing.m),
                     ) {
                         items(messages) { msg ->
                             ChatBubble(msg)
@@ -96,13 +96,13 @@ fun AIPageBuilderDialog(
                     // Ação Final: Confirmar Criação
                     AnimatedVisibility(
                         visible = generatedPage != null,
-                        enter = expandVertically() + fadeIn()
+                        enter = expandVertically() + fadeIn(),
                     ) {
                         Button(
                             onClick = { generatedPage?.let { onPageGenerated(it) } },
                             modifier = Modifier.fillMaxWidth().padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.xs),
                             shape = RoundedCornerShape(GenesysTheme.spacing.s),
-                            colors = ButtonDefaults.buttonColors(containerColor = GenesysTheme.colors.accent)
+                            colors = ButtonDefaults.buttonColors(containerColor = GenesysTheme.colors.accent),
                         ) {
                             Icon(Icons.Default.AutoAwesome, null)
                             Spacer(Modifier.width(GenesysTheme.spacing.xs))
@@ -113,11 +113,11 @@ fun AIPageBuilderDialog(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         tonalElevation = 2.dp,
-                        shadowElevation = 8.dp
+                        shadowElevation = 8.dp,
                     ) {
                         Row(
                             modifier = Modifier.padding(GenesysTheme.spacing.s),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             OutlinedTextField(
                                 value = inputText,
@@ -126,10 +126,11 @@ fun AIPageBuilderDialog(
                                 placeholder = { Text("Descreva sua ideia...") },
                                 shape = RoundedCornerShape(GenesysTheme.spacing.l),
                                 maxLines = 3,
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    unfocusedBorderColor = Color.Transparent,
-                                    focusedBorderColor = GenesysTheme.colors.accent.copy(alpha = 0.5f)
-                                )
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        unfocusedBorderColor = Color.Transparent,
+                                        focusedBorderColor = GenesysTheme.colors.accent.copy(alpha = 0.5f),
+                                    ),
                             )
                             Spacer(Modifier.width(GenesysTheme.spacing.xs))
                             IconButton(
@@ -153,10 +154,11 @@ fun AIPageBuilderDialog(
                                     }
                                 },
                                 enabled = inputText.isNotBlank() && !isGenerating,
-                                modifier = Modifier.background(
-                                    if (inputText.isNotBlank()) GenesysTheme.colors.accent else Color.LightGray,
-                                    CircleShape
-                                )
+                                modifier =
+                                    Modifier.background(
+                                        if (inputText.isNotBlank()) GenesysTheme.colors.accent else Color.LightGray,
+                                        CircleShape,
+                                    ),
                             ) {
                                 Icon(Icons.AutoMirrored.Filled.Send, "Enviar", tint = Color.White)
                             }
@@ -164,7 +166,7 @@ fun AIPageBuilderDialog(
                     }
                 }
             }
-        }
+        },
     )
 }
 
@@ -173,21 +175,23 @@ private fun ChatBubble(message: ChatMessage) {
     val isUser = message.isUser
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
+        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
     ) {
         Surface(
             color = if (isUser) GenesysTheme.colors.brand else GenesysTheme.colors.surfaceVariant,
-            shape = RoundedCornerShape(
-                topStart = GenesysTheme.spacing.m, topEnd = GenesysTheme.spacing.m,
-                bottomStart = if (isUser) GenesysTheme.spacing.m else GenesysTheme.spacing.xxs,
-                bottomEnd = if (isUser) GenesysTheme.spacing.xxs else GenesysTheme.spacing.m
-            )
+            shape =
+                RoundedCornerShape(
+                    topStart = GenesysTheme.spacing.m,
+                    topEnd = GenesysTheme.spacing.m,
+                    bottomStart = if (isUser) GenesysTheme.spacing.m else GenesysTheme.spacing.xxs,
+                    bottomEnd = if (isUser) GenesysTheme.spacing.xxs else GenesysTheme.spacing.m,
+                ),
         ) {
             Text(
                 text = message.text,
                 modifier = Modifier.padding(GenesysTheme.spacing.s),
                 color = if (isUser) Color.White else GenesysTheme.colors.onSurfaceVariant,
-                style = GenesysTheme.typography.body
+                style = GenesysTheme.typography.body,
             )
         }
     }

@@ -1,6 +1,10 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
@@ -9,24 +13,22 @@ import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 
 @Composable
 fun BenefitsComponentEditor(
     component: PageComponent.Benefits,
-    onSave: (PageComponent.Benefits) -> Unit
+    onSave: (PageComponent.Benefits) -> Unit,
 ) {
     var title by remember(component) { mutableStateOf(component.title ?: "") }
     var items by remember(component) { mutableStateOf(component.items) }
 
     LaunchedEffect(title, items) {
-        onSave(component.copy(
-            title = title.ifBlank { null },
-            items = items
-        ))
+        onSave(
+            component.copy(
+                title = title.ifBlank { null },
+                items = items,
+            ),
+        )
     }
 
     GenesysColumn(usePadding = false) {
@@ -66,7 +68,7 @@ fun BenefitsComponentEditor(
             },
             icon = GenesysIcons.Add,
             fillWidth = true,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
         )
     }
 }

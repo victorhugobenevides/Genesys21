@@ -42,7 +42,12 @@ class KtorOrderRepository(
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
-                val errorBody = try { response.bodyAsText() } catch (e: Exception) { "" }
+                val errorBody =
+                    try {
+                        response.bodyAsText()
+                    } catch (e: Exception) {
+                        ""
+                    }
                 Result.failure(Exception("Erro ao criar pedido: ${response.status} - $errorBody"))
             }
         } catch (e: Exception) {
@@ -100,9 +105,10 @@ class KtorOrderRepository(
 
     override suspend fun getAnalytics(token: String): Result<MerchantAnalytics> {
         return try {
-            val response = client.get("$baseUrl/api/admin/analytics/summary") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response =
+                client.get("$baseUrl/api/admin/analytics/summary") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -115,9 +121,10 @@ class KtorOrderRepository(
 
     override suspend fun getB2BAnalytics(token: String): Result<B2BAnalytics> {
         return try {
-            val response = client.get("$baseUrl/api/admin/b2b/summary") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response =
+                client.get("$baseUrl/api/admin/b2b/summary") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {
@@ -130,9 +137,10 @@ class KtorOrderRepository(
 
     override suspend fun getAuditLogs(token: String): Result<List<Map<String, String>>> {
         return try {
-            val response = client.get("$baseUrl/api/admin/audit") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response =
+                client.get("$baseUrl/api/admin/audit") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             if (response.status.isSuccess()) {
                 Result.success(response.body())
             } else {

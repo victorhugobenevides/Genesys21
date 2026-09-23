@@ -1,11 +1,11 @@
 package com.itbenevides.genesys21.data.database
 
 import com.itbenevides.genesys21.domain.model.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 object Seeder {
     private val json = Json { ignoreUnknownKeys = true }
@@ -82,13 +82,14 @@ object Seeder {
             }
 
             // 2.1 Seed Products
-            val productData = listOf(
-                Triple("prod_ebook_career", "Guia Carreira Android 2025", 47.0),
-                Triple("prod_template_kmp", "Template Clean Architecture KMP", 97.0),
-                Triple("prod_course_compose", "Jetpack Compose Masterclass", 297.0),
-                Triple("prod_checklist_pci", "Checklist de Segurança PCI", 27.0),
-                Triple("prod_community_vip", "Comunidade VIP Genesys", 197.0)
-            )
+            val productData =
+                listOf(
+                    Triple("prod_ebook_career", "Guia Carreira Android 2025", 47.0),
+                    Triple("prod_template_kmp", "Template Clean Architecture KMP", 97.0),
+                    Triple("prod_course_compose", "Jetpack Compose Masterclass", 297.0),
+                    Triple("prod_checklist_pci", "Checklist de Segurança PCI", 27.0),
+                    Triple("prod_community_vip", "Comunidade VIP Genesys", 197.0),
+                )
 
             productData.forEach { (pid, pName, pPrice) ->
                 ProductsTable.deleteWhere { id eq pid }
@@ -153,11 +154,12 @@ object Seeder {
             }
 
             // 2.3 Seed Aesthetic Services
-            val esteticaServices = listOf(
-                BookingService("serv_estetica_1", defaultStoreId, "Limpeza de Pele Profunda", "Remoção de impurezas e hidratação intensa.", 150.0, 60),
-                BookingService("serv_estetica_2", defaultStoreId, "Drenagem Linfática", "Redução de inchaço e melhora da circulação.", 120.0, 50),
-                BookingService("serv_estetica_3", defaultStoreId, "Peeling Químico", "Renovação celular e rejuvenescimento.", 250.0, 45)
-            )
+            val esteticaServices =
+                listOf(
+                    BookingService("serv_estetica_1", defaultStoreId, "Limpeza de Pele Profunda", "Remoção de impurezas e hidratação intensa.", 150.0, 60),
+                    BookingService("serv_estetica_2", defaultStoreId, "Drenagem Linfática", "Redução de inchaço e melhora da circulação.", 120.0, 50),
+                    BookingService("serv_estetica_3", defaultStoreId, "Peeling Químico", "Renovação celular e rejuvenescimento.", 250.0, 45),
+                )
             esteticaServices.forEach { service ->
                 BookingServicesTable.deleteWhere { id eq service.id }
                 BookingServicesTable.insert {
@@ -205,105 +207,89 @@ object Seeder {
             PagesTable.deleteWhere { id eq cvPageId }
             PageComponentsTable.deleteWhere { pageId eq cvPageId }
 
-            val components = listOf(
-                PageComponent.ProfileHeader(
-                    imageUrl = "https://ui-avatars.com/api/?name=Victor+Hugo&size=300&background=000&color=fff",
-                    name = "Victor Hugo",
-                    bio = "Engenheiro de Software com foco em ambientes mobile | 14+ Anos de Experiência",
-                    imageSize = 160
-                ),
-
-                PageComponent.SocialLinks(
-                    instagram = "https://www.instagram.com/euvictorben/",
-                    whatsapp = "https://wa.me/5511998104606",
-                    email = "victorkoto@gmail.com"
-                ),
-
-                PageComponent.Divider(),
-
-                PageComponent.Filter(placeholder = "Buscar ferramenta ou tecnologia (ex: Kotlin, PCI)..."),
-
-                PageComponent.Skills(
-                    title = "Tech Stack & Expertise",
-                    tags = listOf(
-                        "Kotlin", "Java", "Swift", "Dart", "SQL",
-                        "Jetpack Compose", "Flutter", "SwiftUI", "KMP", "Ktor",
-                        "Clean Architecture", "MVI", "MVVM", "SOLID",
-                        "PCI Compliance", "Dexguard", "RASP", "Firebase Auth",
-                        "CI/CD", "CircleCI", "Docker", "Exposed ORM", "SQLite",
-                        "Paparazzi", "Unit Testing", "Analytics",
-                        "AI (IA)", "MCP", "Devin", "Copilot", "Android Studio",
-                        "Visual Studio", "Windsurf", "Cascade", "SpecKit", "Antigravity"
-                    )
-                ),
-
-                PageComponent.Divider(),
-
-                PageComponent.Header(title = "Sobre Mim", fontSize = 26, fontWeight = "EXTRA_BOLD"),
-                PageComponent.Text(
-                    content = "Engenheiro de Software focado no ecossistema mobile com longa trajetória em projetos de alta escala. Atuação profunda em arquitetura sustentável (Clean/MVI), segurança cibernética e performance em ambientes de missão crítica.",
-                    fontSize = 17
-                ),
-
-                PageComponent.Divider(),
-
-                PageComponent.Header(title = "Experiência Profissional", fontSize = 26, fontWeight = "EXTRA_BOLD"),
-
-                PageComponent.Header(title = "Sensedia (Getnet) | 2024 - Atual", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(content = "Software Engineer - Payments", fontSize = 14),
-
-                PageComponent.Header(title = "Dafiti Group | 2018 - 2024", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(content = "Software Engineer - Mobile", fontSize = 14),
-
-                PageComponent.Header(title = "It Lean | 2018 - 2019", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(content = "Software Engineer - Android", fontSize = 14),
-
-                PageComponent.Header(title = "MáximaTech | 2015 - 2018", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(content = "Android Developer", fontSize = 14),
-
-                PageComponent.Header(title = "Onnet System | 2012 - 2015", fontSize = 18, usePrimaryColor = true),
-                PageComponent.Text(content = "Android Developer", fontSize = 14),
-
-                PageComponent.Divider(),
-
-                PageComponent.Header(title = "Mentoria & Consultoria", fontSize = 26, fontWeight = "EXTRA_BOLD"),
-                PageComponent.SingleService(
-                    service = com.itbenevides.genesys21.domain.model.BookingService(
-                        id = mentoriaId,
-                        storeId = defaultStoreId,
-                        name = "Mentoria em Engenharia de Software Mobile",
-                        price = 250.0,
-                        durationMinutes = 60,
-                        description = "Mentoria técnica e estratégica."
-                    )
-                ),
-
-                PageComponent.Divider(),
-
-                PageComponent.ValuedAction(
-                    title = "Pague minha cerveja",
-                    description = "Gostou do conteúdo ou do currículo? Contribua com uma breja!",
-                    suggestedValues = listOf(10.0, 20.0, 50.0),
-                    buttonText = "Pagar Cerveja"
-                ),
-
-                PageComponent.Divider(),
-
-                PageComponent.Header(title = "Interação", fontSize = 26, fontWeight = "EXTRA_BOLD"),
-                PageComponent.SingleService(
-                    service = com.itbenevides.genesys21.domain.model.BookingService(
-                        id = fofocaId,
-                        storeId = defaultStoreId,
-                        name = "me conte uma fofoca",
-                        price = 0.0,
-                        durationMinutes = 15,
-                        description = "Vamos bater um papo descontraído."
-                    )
-                ),
-
-                PageComponent.Spacer(height = 40),
-                PageComponent.Button(text = "📥 Baixar CV Completo (PDF)", url = "print", isPrimary = true)
-            )
+            val components =
+                listOf(
+                    PageComponent.ProfileHeader(
+                        imageUrl = "https://ui-avatars.com/api/?name=Victor+Hugo&size=300&background=000&color=fff",
+                        name = "Victor Hugo",
+                        bio = "Engenheiro de Software com foco em ambientes mobile | 14+ Anos de Experiência",
+                        imageSize = 160,
+                    ),
+                    PageComponent.SocialLinks(
+                        instagram = "https://www.instagram.com/euvictorben/",
+                        whatsapp = "https://wa.me/5511998104606",
+                        email = "victorkoto@gmail.com",
+                    ),
+                    PageComponent.Divider(),
+                    PageComponent.Filter(placeholder = "Buscar ferramenta ou tecnologia (ex: Kotlin, PCI)..."),
+                    PageComponent.Skills(
+                        title = "Tech Stack & Expertise",
+                        tags =
+                            listOf(
+                                "Kotlin", "Java", "Swift", "Dart", "SQL",
+                                "Jetpack Compose", "Flutter", "SwiftUI", "KMP", "Ktor",
+                                "Clean Architecture", "MVI", "MVVM", "SOLID",
+                                "PCI Compliance", "Dexguard", "RASP", "Firebase Auth",
+                                "CI/CD", "CircleCI", "Docker", "Exposed ORM", "SQLite",
+                                "Paparazzi", "Unit Testing", "Analytics",
+                                "AI (IA)", "MCP", "Devin", "Copilot", "Android Studio",
+                                "Visual Studio", "Windsurf", "Cascade", "SpecKit", "Antigravity",
+                            ),
+                    ),
+                    PageComponent.Divider(),
+                    PageComponent.Header(title = "Sobre Mim", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                    PageComponent.Text(
+                        content = "Engenheiro de Software focado no ecossistema mobile com longa trajetória em projetos de alta escala. Atuação profunda em arquitetura sustentável (Clean/MVI), segurança cibernética e performance em ambientes de missão crítica.",
+                        fontSize = 17,
+                    ),
+                    PageComponent.Divider(),
+                    PageComponent.Header(title = "Experiência Profissional", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                    PageComponent.Header(title = "Sensedia (Getnet) | 2024 - Atual", fontSize = 18, usePrimaryColor = true),
+                    PageComponent.Text(content = "Software Engineer - Payments", fontSize = 14),
+                    PageComponent.Header(title = "Dafiti Group | 2018 - 2024", fontSize = 18, usePrimaryColor = true),
+                    PageComponent.Text(content = "Software Engineer - Mobile", fontSize = 14),
+                    PageComponent.Header(title = "It Lean | 2018 - 2019", fontSize = 18, usePrimaryColor = true),
+                    PageComponent.Text(content = "Software Engineer - Android", fontSize = 14),
+                    PageComponent.Header(title = "MáximaTech | 2015 - 2018", fontSize = 18, usePrimaryColor = true),
+                    PageComponent.Text(content = "Android Developer", fontSize = 14),
+                    PageComponent.Header(title = "Onnet System | 2012 - 2015", fontSize = 18, usePrimaryColor = true),
+                    PageComponent.Text(content = "Android Developer", fontSize = 14),
+                    PageComponent.Divider(),
+                    PageComponent.Header(title = "Mentoria & Consultoria", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                    PageComponent.SingleService(
+                        service =
+                            com.itbenevides.genesys21.domain.model.BookingService(
+                                id = mentoriaId,
+                                storeId = defaultStoreId,
+                                name = "Mentoria em Engenharia de Software Mobile",
+                                price = 250.0,
+                                durationMinutes = 60,
+                                description = "Mentoria técnica e estratégica.",
+                            ),
+                    ),
+                    PageComponent.Divider(),
+                    PageComponent.ValuedAction(
+                        title = "Pague minha cerveja",
+                        description = "Gostou do conteúdo ou do currículo? Contribua com uma breja!",
+                        suggestedValues = listOf(10.0, 20.0, 50.0),
+                        buttonText = "Pagar Cerveja",
+                    ),
+                    PageComponent.Divider(),
+                    PageComponent.Header(title = "Interação", fontSize = 26, fontWeight = "EXTRA_BOLD"),
+                    PageComponent.SingleService(
+                        service =
+                            com.itbenevides.genesys21.domain.model.BookingService(
+                                id = fofocaId,
+                                storeId = defaultStoreId,
+                                name = "me conte uma fofoca",
+                                price = 0.0,
+                                durationMinutes = 15,
+                                description = "Vamos bater um papo descontraído.",
+                            ),
+                    ),
+                    PageComponent.Spacer(height = 40),
+                    PageComponent.Button(text = "📥 Baixar CV Completo (PDF)", url = "print", isPrimary = true),
+                )
 
             PagesTable.insert {
                 it[id] = cvPageId
@@ -337,21 +323,26 @@ object Seeder {
                     val componentId = java.util.UUID.randomUUID().toString()
 
                     // CORREÇÃO: Sincroniza o storeId antes de salvar o conteúdo JSON
-                    val updatedComponent = when (component) {
-                        is PageComponent.ProductList -> component.copy(
-                            products = component.products.map { it.copy(storeId = adminId) }
-                        )
-                        is PageComponent.ServiceList -> component.copy(
-                            services = component.services.map { it.copy(storeId = adminId) }
-                        )
-                        is PageComponent.SingleProduct -> component.copy(
-                            product = component.product.copy(storeId = adminId)
-                        )
-                        is PageComponent.SingleService -> component.copy(
-                            service = component.service.copy(storeId = adminId)
-                        )
-                        else -> component
-                    }
+                    val updatedComponent =
+                        when (component) {
+                            is PageComponent.ProductList ->
+                                component.copy(
+                                    products = component.products.map { it.copy(storeId = adminId) },
+                                )
+                            is PageComponent.ServiceList ->
+                                component.copy(
+                                    services = component.services.map { it.copy(storeId = adminId) },
+                                )
+                            is PageComponent.SingleProduct ->
+                                component.copy(
+                                    product = component.product.copy(storeId = adminId),
+                                )
+                            is PageComponent.SingleService ->
+                                component.copy(
+                                    service = component.service.copy(storeId = adminId),
+                                )
+                            else -> component
+                        }
 
                     PageComponentsTable.insert {
                         it[id] = componentId

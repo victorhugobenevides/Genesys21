@@ -4,15 +4,14 @@ import com.itbenevides.genesys21.domain.model.*
 import com.stripe.StripeClient
 import com.stripe.model.PaymentIntent
 import com.stripe.model.checkout.Session
-import com.stripe.param.checkout.SessionCreateParams
 import com.stripe.param.PaymentIntentCreateParams
+import com.stripe.param.checkout.SessionCreateParams
 import io.mockk.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class StripeServiceTest {
-
     private lateinit var stripeService: StripeService
     private val mockClient = mockk<StripeClient>(relaxed = true)
 

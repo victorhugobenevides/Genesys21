@@ -41,7 +41,7 @@ fun GenesysCard(
     val scale by animateFloatAsState(
         targetValue = if (isPressed && onClick != null) 0.98f else 1f,
         animationSpec = GenesysMotion.interactiveSpring,
-        label = "CardScale"
+        label = "CardScale",
     )
 
     val finalBorder =
@@ -51,21 +51,22 @@ fun GenesysCard(
         )
 
     Surface(
-        modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        },
+        modifier =
+            modifier.graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
         shape = finalShape,
         color = backgroundColor,
         tonalElevation = if (isPressed) elevation * 2 else elevation,
         onClick = onClick ?: {},
         enabled = onClick != null,
         border = finalBorder,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         Column(
             modifier = if (usePadding) Modifier.padding(GenesysTheme.spacing.m) else Modifier,
-            content = content
+            content = content,
         )
     }
 }

@@ -4,17 +4,16 @@ import com.itbenevides.genesys21.domain.model.Receipt
 import com.itbenevides.genesys21.domain.model.ReceiptItem
 import com.itbenevides.genesys21.domain.util.NfeUrlBuilder
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import kotlinx.datetime.Clock
 
 class SefazScraperService {
-
     fun parseFromUrl(url: String): Receipt? {
         return try {
-            val doc = Jsoup.connect(url)
-                .timeout(10000)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .get()
+            val doc =
+                Jsoup.connect(url)
+                    .timeout(10000)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .get()
 
             // 1. Identificar Emitente (Nome da Loja)
             val emitente = doc.select(".txtTopo, #emitente, .txtTit").firstOrNull()?.text()?.trim() ?: "Nota Fiscal"
@@ -38,12 +37,14 @@ class SefazScraperService {
                 val quantity = row.select(".Rqtd").text().split(":").lastOrNull()?.trim()?.toDoubleOrNull() ?: 1.0
 
                 if (name.isNotEmpty() && price > 0) {
-                    items.add(ReceiptItem(
-                        descricao = name,
-                        quantidade = quantity,
-                        valorUnitario = price / quantity,
-                        valorTotal = price
-                    ))
+                    items.add(
+                        ReceiptItem(
+                            descricao = name,
+                            quantidade = quantity,
+                            valorUnitario = price / quantity,
+                            valorTotal = price,
+                        ),
+                    )
                 }
             }
 
@@ -55,9 +56,10 @@ class SefazScraperService {
                 emitente = emitente,
                 valorTotal = if (total > 0) total else items.sumOf { it.valorTotal },
                 categoria = "Geral",
-                dataEmissao = "10/03/2026", // Idealmente extrair do HTML
+                // Idealmente extrair do HTML
+                dataEmissao = "10/03/2026",
                 items = items,
-                onlineUrl = url
+                onlineUrl = url,
             )
         } catch (e: Exception) {
             println("SCRAPER ERROR: ${e.message}")

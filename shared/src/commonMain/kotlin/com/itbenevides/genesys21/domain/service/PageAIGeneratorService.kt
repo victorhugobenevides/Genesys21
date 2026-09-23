@@ -9,7 +9,7 @@ import kotlinx.serialization.json.*
 
 class PageAIGeneratorService(
     private val httpClient: HttpClient? = null,
-    private val serverUrl: String? = null
+    private val serverUrl: String? = null,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -18,16 +18,19 @@ class PageAIGeneratorService(
      */
     suspend fun generatePage(
         prompt: String,
-        apiKey: String? = null
+        apiKey: String? = null,
     ): Page {
         // No cliente (Wasm/Android), encaminha para o backend para segurança da chave
         if (!serverUrl.isNullOrBlank() && httpClient != null && apiKey.isNullOrBlank()) {
-            val response = httpClient.post("$serverUrl/api/public/ai/generate-page") {
-                contentType(ContentType.Application.Json)
-                setBody(buildJsonObject {
-                    put("prompt", prompt)
-                }.toString())
-            }
+            val response =
+                httpClient.post("$serverUrl/api/public/ai/generate-page") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        buildJsonObject {
+                            put("prompt", prompt)
+                        }.toString(),
+                    )
+                }
             if (response.status.isSuccess()) {
                 return json.decodeFromString<Page>(response.bodyAsText())
             } else {
@@ -49,16 +52,19 @@ class PageAIGeneratorService(
     suspend fun refineComponent(
         component: PageComponent,
         instruction: String,
-        apiKey: String? = null
+        apiKey: String? = null,
     ): PageComponent {
         if (!serverUrl.isNullOrBlank() && httpClient != null && apiKey.isNullOrBlank()) {
-            val response = httpClient.post("$serverUrl/api/public/ai/refine-component") {
-                contentType(ContentType.Application.Json)
-                setBody(buildJsonObject {
-                    put("instruction", instruction)
-                    put("component", json.encodeToJsonElement(PageComponent.serializer(), component))
-                }.toString())
-            }
+            val response =
+                httpClient.post("$serverUrl/api/public/ai/refine-component") {
+                    contentType(ContentType.Application.Json)
+                    setBody(
+                        buildJsonObject {
+                            put("instruction", instruction)
+                            put("component", json.encodeToJsonElement(PageComponent.serializer(), component))
+                        }.toString(),
+                    )
+                }
             if (response.status.isSuccess()) {
                 return json.decodeFromString(PageComponent.serializer(), response.bodyAsText())
             } else {
@@ -73,11 +79,16 @@ class PageAIGeneratorService(
         throw Exception("Configuração de IA ausente.")
     }
 
-    private suspend fun refineWithGemini(component: PageComponent, instruction: String, apiKey: String): PageComponent {
+    private suspend fun refineWithGemini(
+        component: PageComponent,
+        instruction: String,
+        apiKey: String,
+    ): PageComponent {
         val client = httpClient ?: HttpClient()
         val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"
 
-        val systemInstruction = """
+        val systemInstruction =
+            """
             Você é um Redator Publicitário do Genesys21.
             Sua missão é REESCREVER os campos de texto do componente JSON fornecido com base na instrução do usuário.
 
@@ -90,37 +101,44 @@ class PageAIGeneratorService(
             IMPORTANTE:
             - Retorne APENAS o JSON do componente refinado.
             - Não altere IDs ou campos técnicos.
-        """.trimIndent()
+            """.trimIndent()
 
-        val requestBody = buildJsonObject {
-            putJsonArray("contents") {
-                addJsonObject {
-                    putJsonArray("parts") {
-                        addJsonObject { put("text", "$systemInstruction\n\nINSTRUÇÃO: $instruction\n\nCOMPONENTE ATUAL: ${json.encodeToString(PageComponent.serializer(), component)}") }
+        val requestBody =
+            buildJsonObject {
+                putJsonArray("contents") {
+                    addJsonObject {
+                        putJsonArray("parts") {
+                            addJsonObject { put("text", "$systemInstruction\n\nINSTRUÇÃO: $instruction\n\nCOMPONENTE ATUAL: ${json.encodeToString(PageComponent.serializer(), component)}") }
+                        }
                     }
                 }
             }
-        }
 
-        val response = client.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(requestBody.toString())
-        }
+        val response =
+            client.post(endpoint) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody.toString())
+            }
 
-        val textContent = json.parseToJsonElement(response.bodyAsText()).jsonObject["candidates"]?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("content")?.jsonObject
-            ?.get("parts")?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw Exception("IA retornou vazio")
+        val textContent =
+            json.parseToJsonElement(response.bodyAsText()).jsonObject["candidates"]?.jsonArray?.firstOrNull()
+                ?.jsonObject?.get("content")?.jsonObject
+                ?.get("parts")?.jsonArray?.firstOrNull()
+                ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw Exception("IA retornou vazio")
 
         val cleanJson = textContent.replace("```json", "").replace("```", "").trim()
         return json.decodeFromString(PageComponent.serializer(), cleanJson)
     }
 
-    private suspend fun generateWithGemini(userPrompt: String, apiKey: String): Page {
+    private suspend fun generateWithGemini(
+        userPrompt: String,
+        apiKey: String,
+    ): Page {
         val client = httpClient ?: HttpClient()
         val endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$apiKey"
 
-        val systemInstruction = """
+        val systemInstruction =
+            """
             Você é o Mestre de Design do Genesys21. Sua missão é criar a estrutura de uma página (site) perfeita com base na descrição do usuário.
 
             DIRETRIZES DE DESIGN:
@@ -160,31 +178,34 @@ class PageAIGeneratorService(
                 // ... outros componentes
               ]
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val requestBody = buildJsonObject {
-            putJsonArray("contents") {
-                addJsonObject {
-                    putJsonArray("parts") {
-                        addJsonObject { put("text", "$systemInstruction\n\nPROMPT DO USUÁRIO: $userPrompt") }
+        val requestBody =
+            buildJsonObject {
+                putJsonArray("contents") {
+                    addJsonObject {
+                        putJsonArray("parts") {
+                            addJsonObject { put("text", "$systemInstruction\n\nPROMPT DO USUÁRIO: $userPrompt") }
+                        }
                     }
                 }
             }
-        }
 
-        val response = client.post(endpoint) {
-            contentType(ContentType.Application.Json)
-            setBody(requestBody.toString())
-        }
+        val response =
+            client.post(endpoint) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody.toString())
+            }
 
         val responseText = response.bodyAsText()
         if (!response.status.isSuccess()) throw Exception("Gemini Error: $responseText")
 
         val parsedJson = json.parseToJsonElement(responseText).jsonObject
-        val textContent = parsedJson["candidates"]?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("content")?.jsonObject
-            ?.get("parts")?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw Exception("IA retornou vazio")
+        val textContent =
+            parsedJson["candidates"]?.jsonArray?.firstOrNull()
+                ?.jsonObject?.get("content")?.jsonObject
+                ?.get("parts")?.jsonArray?.firstOrNull()
+                ?.jsonObject?.get("text")?.jsonPrimitive?.content ?: throw Exception("IA retornou vazio")
 
         val cleanJson = textContent.replace("```json", "").replace("```", "").trim()
 
@@ -192,18 +213,24 @@ class PageAIGeneratorService(
         val pageObj = json.parseToJsonElement(cleanJson).jsonObject
         val componentsArray = pageObj["components"]?.jsonArray ?: JsonArray(emptyList())
 
-        val finalComponents = componentsArray.map { el ->
-            val obj = el.jsonObject
-            // Aqui poderíamos injetar o SerialName correto se a IA falhar na string longa
-            el
-        }
+        val finalComponents =
+            componentsArray.map { el ->
+                val obj = el.jsonObject
+                // Aqui poderíamos injetar o SerialName correto se a IA falhar na string longa
+                el
+            }
 
         return Page(
             id = "ai-" + com.itbenevides.genesys21.util.GenesysUUID.randomUUID().take(8),
             storeId = "genesys-official-store",
             title = pageObj["title"]?.jsonPrimitive?.content ?: "Minha Nova Página",
-            theme = try { PageThemeConfig.valueOf(pageObj["theme"]?.jsonPrimitive?.content ?: "ELEGANCE") } catch(e: Exception) { PageThemeConfig.ELEGANCE },
-            components = json.decodeFromJsonElement<List<PageComponent>>(JsonArray(finalComponents))
+            theme =
+                try {
+                    PageThemeConfig.valueOf(pageObj["theme"]?.jsonPrimitive?.content ?: "ELEGANCE")
+                } catch (e: Exception) {
+                    PageThemeConfig.ELEGANCE
+                },
+            components = json.decodeFromJsonElement<List<PageComponent>>(JsonArray(finalComponents)),
         )
     }
 }

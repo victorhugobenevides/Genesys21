@@ -1,20 +1,20 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
-import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer
+import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.ui.components.atoms.buttons.*
 import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysCalendarDay
 import com.itbenevides.genesys21.ui.components.atoms.calendar.GenesysTimeChip
@@ -24,11 +24,8 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.*
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
-import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysTimePicker
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -44,16 +41,15 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysConfirm
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.input.GenesysPhotoPicker
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.organisms.payment.StripePaymentElement
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.GenesysBrandPresets
 import com.itbenevides.genesys21.util.toColor
-import com.itbenevides.genesys21.getWebBaseUrl
 import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -106,7 +102,7 @@ fun DesignSystemShowcaseScreen(
                                 DropdownMenu(
                                     expanded = showThemeMenu,
                                     onDismissRequest = { showThemeMenu = false },
-                                    modifier = Modifier.heightIn(max = 400.dp)
+                                    modifier = Modifier.heightIn(max = 400.dp),
                                 ) {
                                     PageThemeConfig.entries.forEach { theme ->
                                         DropdownMenuItem(
@@ -114,7 +110,7 @@ fun DesignSystemShowcaseScreen(
                                             onClick = {
                                                 currentTheme = theme
                                                 showThemeMenu = false
-                                            }
+                                            },
                                         )
                                     }
                                 }
@@ -176,14 +172,14 @@ private fun TemplatesTabShowcase() {
                 GenesysCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val thumb = template.thumbnailUrl
                         if (thumb != null && !isCompact) {
                             GenesysImage(
                                 url = thumb,
                                 size = 80.dp,
-                                modifier = Modifier.clip(MaterialTheme.shapes.medium)
+                                modifier = Modifier.clip(MaterialTheme.shapes.medium),
                             )
                             Spacer(Modifier.width(16.dp))
                         }
@@ -192,9 +188,10 @@ private fun TemplatesTabShowcase() {
                             GenesysText(text = template.description, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
                         }
                         Box(
-                            modifier = Modifier
-                                .background(GenesysTheme.colors.brandContainer, CircleShape)
-                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                            modifier =
+                                Modifier
+                                    .background(GenesysTheme.colors.brandContainer, CircleShape)
+                                    .padding(horizontal = 12.dp, vertical = 4.dp),
                         ) {
                             Text(template.category.name, style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.onBrandContainer)
                         }
@@ -216,17 +213,17 @@ private fun ArchitectureShowcase() {
                 ArchitectureLevel(
                     "Client (Android / Wasm)",
                     "Compose Multiplatform UI with MVI state management, communicating via Ktor Client.",
-                    GenesysIcons.Magic
+                    GenesysIcons.Magic,
                 )
                 ArchitectureLevel(
                     "Server (Kotlin JVM)",
                     "High-performance Ktor backend on Netty. Uses Exposed ORM with SQLite for persistence.",
-                    GenesysIcons.CloudUpload
+                    GenesysIcons.CloudUpload,
                 )
                 ArchitectureLevel(
                     "External (Firebase & Oracle)",
                     "Firebase for native Auth and Analytics. Oracle Cloud for 24/7 high-availability hosting.",
-                    GenesysIcons.Settings
+                    GenesysIcons.Settings,
                 )
             }
         }
@@ -265,17 +262,17 @@ private fun ArchitectureShowcase() {
                 ArchitectureLevel(
                     "CI/CD Pipeline",
                     "CircleCI automated builds for WasmJs and Docker containers.",
-                    GenesysIcons.Check
+                    GenesysIcons.Check,
                 )
                 ArchitectureLevel(
                     "Visual Quality",
                     "Paparazzi-powered regression testing for Phone, Tablet, and Desktop views.",
-                    GenesysIcons.Numbers
+                    GenesysIcons.Numbers,
                 )
                 ArchitectureLevel(
                     "Monitoring",
                     "Firebase Crashlytics and Perf monitoring integrated into the Shared module.",
-                    GenesysIcons.Settings
+                    GenesysIcons.Settings,
                 )
             }
         }
@@ -283,7 +280,12 @@ private fun ArchitectureShowcase() {
 }
 
 @Composable
-private fun StackLayerCard(title: String, description: String, tech: String, modifier: Modifier = Modifier) {
+private fun StackLayerCard(
+    title: String,
+    description: String,
+    tech: String,
+    modifier: Modifier = Modifier,
+) {
     GenesysCard(modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = GenesysTheme.colors.brand)
@@ -292,13 +294,13 @@ private fun StackLayerCard(title: String, description: String, tech: String, mod
             Spacer(Modifier.height(8.dp))
             Surface(
                 color = GenesysTheme.colors.accent.copy(alpha = 0.2f),
-                shape = MaterialTheme.shapes.small
+                shape = MaterialTheme.shapes.small,
             ) {
                 Text(
                     text = tech,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
-                    color = GenesysTheme.colors.accent
+                    color = GenesysTheme.colors.accent,
                 )
             }
         }
@@ -313,15 +315,16 @@ private fun QualityShowcase() {
 
     ShowcaseSection("Test Reports", "Access detailed execution reports for each module.") {
         val baseUrl = getWebBaseUrl()
-        val reports = listOf(
-            "Visual Regression (Paparazzi)" to "$baseUrl/reports/paparazzi/index.html",
-            "App Logic Coverage" to "$baseUrl/reports/coverage/app/index.html",
-            "Shared Logic Coverage" to "$baseUrl/reports/coverage/shared/index.html",
-            "Server Logic Coverage" to "$baseUrl/reports/coverage/server/index.html",
-            "Shared Logic Unit Tests" to "$baseUrl/reports/shared/index.html",
-            "App Logic Unit Tests" to "$baseUrl/reports/app/index.html",
-            "Backend (Server) Tests" to "$baseUrl/reports/server/index.html"
-        )
+        val reports =
+            listOf(
+                "Visual Regression (Paparazzi)" to "$baseUrl/reports/paparazzi/index.html",
+                "App Logic Coverage" to "$baseUrl/reports/coverage/app/index.html",
+                "Shared Logic Coverage" to "$baseUrl/reports/coverage/shared/index.html",
+                "Server Logic Coverage" to "$baseUrl/reports/coverage/server/index.html",
+                "Shared Logic Unit Tests" to "$baseUrl/reports/shared/index.html",
+                "App Logic Unit Tests" to "$baseUrl/reports/app/index.html",
+                "Backend (Server) Tests" to "$baseUrl/reports/server/index.html",
+            )
 
         if (isCompact) {
             reports.forEach { (name, path) ->
@@ -330,7 +333,7 @@ private fun QualityShowcase() {
                     onClick = {
                         // Forçando abertura em nova aba no browser
                         uriHandler.openUri(path)
-                    }
+                    },
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.Description, null, tint = GenesysTheme.colors.brand)
@@ -347,7 +350,7 @@ private fun QualityShowcase() {
                     rowReports.forEach { (name, path) ->
                         GenesysCard(
                             modifier = Modifier.weight(1f),
-                            onClick = { uriHandler.openUri(path) }
+                            onClick = { uriHandler.openUri(path) },
                         ) {
                             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(GenesysIcons.Description, null, tint = GenesysTheme.colors.brand)
@@ -365,13 +368,14 @@ private fun QualityShowcase() {
     }
 
     ShowcaseSection("Snapshot Coverage", "Visual status of key components across resolutions.") {
-        val coverage = listOf(
-            "Phone (393dp)" to "100%",
-            "Tablet (600dp)" to "100%",
-            "Desktop (1200dp)" to "100%",
-            "Dark Mode" to "85%",
-            "Component Editors" to "100%"
-        )
+        val coverage =
+            listOf(
+                "Phone (393dp)" to "100%",
+                "Tablet (600dp)" to "100%",
+                "Desktop (1200dp)" to "100%",
+                "Dark Mode" to "85%",
+                "Component Editors" to "100%",
+            )
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             coverage.take(if (isCompact) 2 else 5).forEach { (label, value) ->
@@ -379,7 +383,7 @@ private fun QualityShowcase() {
                     label = label,
                     value = value,
                     color = if (value == "100%") Color(0xFF4CAF50) else Color(0xFFFF9800),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -397,7 +401,11 @@ private fun QualityShowcase() {
 }
 
 @Composable
-private fun ArchitectureLevel(title: String, description: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+private fun ArchitectureLevel(
+    title: String,
+    description: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
     Row(modifier = Modifier.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(16.dp))
@@ -429,7 +437,7 @@ private fun FoundationShowcase() {
     ShowcaseSection("Colors & Brand", "Brand presets and color atoms.") {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             GenesysBrandPresets.forEach { hex ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -444,11 +452,15 @@ private fun FoundationShowcase() {
     ShowcaseSection("Icons", "Custom GenesysIcons tokens.") {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 12.dp else 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             listOf(
-                GenesysIcons.Magic, GenesysIcons.ShoppingBag, GenesysIcons.Schedule,
-                GenesysIcons.Favorite, GenesysIcons.AdminPanelSettings, GenesysIcons.CloudUpload
+                GenesysIcons.Magic,
+                GenesysIcons.ShoppingBag,
+                GenesysIcons.Schedule,
+                GenesysIcons.Favorite,
+                GenesysIcons.AdminPanelSettings,
+                GenesysIcons.CloudUpload,
             ).forEach { icon ->
                 Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(if (isCompact) 20.dp else 24.dp))
             }
@@ -500,7 +512,7 @@ private fun InputsShowcase() {
             onValueChange = {},
             label = "Category Dropdown",
             options = listOf("Option 1", "Option 2", "Option 3"),
-            icon = GenesysIcons.Category
+            icon = GenesysIcons.Category,
         )
     }
 }
@@ -527,12 +539,13 @@ private fun ActionNavShowcase() {
         Spacer(Modifier.height(16.dp))
         GenesysTabRow(
             selectedTabIndex = 0,
-            tabs = listOf(
-                GenesysTabData("Active Tab", GenesysIcons.Web),
-                GenesysTabData("With Badge", GenesysIcons.List, badgeCount = 3),
-                GenesysTabData("Simple", GenesysIcons.Person)
-            ),
-            onTabSelected = {}
+            tabs =
+                listOf(
+                    GenesysTabData("Active Tab", GenesysIcons.Web),
+                    GenesysTabData("With Badge", GenesysIcons.List, badgeCount = 3),
+                    GenesysTabData("Simple", GenesysIcons.Person),
+                ),
+            onTabSelected = {},
         )
         Spacer(Modifier.height(16.dp))
         GenesysPagerIndicator(count = 5, currentPage = 2)
@@ -548,7 +561,6 @@ private fun DisplayShowcase() {
 
     ShowcaseSection("Cards & Stats", "Information display containers.") {
         if (isCompact) {
-
             GenesysStatsCard(label = "Daily Sales", value = "$1,280", color = Color(0xFF4CAF50), modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(12.dp))
             GenesysStatsCard(label = "Active Orders", value = "12", color = Color(0xFFFF9800), modifier = Modifier.fillMaxWidth())
@@ -569,14 +581,14 @@ private fun DisplayShowcase() {
     ShowcaseSection("Collections", "Grids and Lists of items.") {
         GenesysProductList(
             products = listOf(sampleProduct, sampleProduct.copy(id = "s2", name = "Second Product")),
-            isHorizontal = true
+            isHorizontal = true,
         )
     }
 
     ShowcaseSection("Badges & Visuals", "Status and small markers.") {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(if (isCompact) 8.dp else 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(Modifier.align(Alignment.CenterVertically)) { GenesysBadge(label = "NEW", color = GenesysTheme.colors.brand) }
             Box(Modifier.align(Alignment.CenterVertically)) { GenesysStatusBadge(status = OrderStatus.PENDING) }
@@ -604,7 +616,7 @@ private fun FeedbackShowcase() {
             GenesysDialog(
                 onDismissRequest = { showDialog = false },
                 title = "Showcase Dialog",
-                confirmButton = { Button(onClick = { showDialog = false }) { Text("OK") } }
+                confirmButton = { Button(onClick = { showDialog = false }) { Text("OK") } },
             ) {
                 GenesysText(text = "This is a standard dialog component.", style = GenesysTextStyle.Body)
             }
@@ -616,14 +628,14 @@ private fun FeedbackShowcase() {
                 title = "Are you sure?",
                 text = "This action cannot be undone.",
                 confirmButton = { Button(onClick = { showConfirmDialog = false }) { Text("Yes, Delete") } },
-                dismissButton = { TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") } }
+                dismissButton = { TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") } },
             )
         }
 
         if (showBottomSheet) {
             GenesysBottomSheet(
                 onDismiss = { showBottomSheet = false },
-                title = "Bottom Sheet Title"
+                title = "Bottom Sheet Title",
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     GenesysText(text = "Bottom Sheet Content", style = GenesysTextStyle.Title)
@@ -655,7 +667,7 @@ private fun FeedbackShowcase() {
             icon = GenesysIcons.SearchOff,
             title = "Nothing to show",
             description = "This is how we handle empty states across the app.",
-            action = { GenesysLoadingButton(text = "Retry", onClick = {}) }
+            action = { GenesysLoadingButton(text = "Retry", onClick = {}) },
         )
     }
 }
@@ -678,7 +690,7 @@ private fun BookingShowcase() {
             availableSlots = listOf("09:00", "11:00", "15:00"),
             onDateSelected = {},
             onDateTimeSelected = {},
-            today = LocalDate(2026, 7, 28)
+            today = LocalDate(2026, 7, 28),
         )
         Spacer(Modifier.height(24.dp))
         ServiceCard(service = sampleService, onClick = {})
@@ -694,11 +706,12 @@ private fun PaymentsShowcase() {
                 GenesysSpacer(GenesysTheme.spacing.m)
                 // Placeholder simulando o Stripe Element que herda o tema
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f), MaterialTheme.shapes.medium),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f), MaterialTheme.shapes.medium),
+                    contentAlignment = Alignment.Center,
                 ) {
                     GenesysText(text = "Stripe Element Placeholder", color = GenesysTheme.colors.outline)
                 }
@@ -710,14 +723,15 @@ private fun PaymentsShowcase() {
 
     ShowcaseSection("Valuation & Actions", "Interactive payment blocks for contributions.") {
         ValuedActionComponent(
-            component = PageComponent.ValuedAction(
-                title = "Apoie nosso trabalho",
-                description = "Sua contribuição nos ajuda a manter a plataforma gratuita para pequenos produtores.",
-                buttonText = "Contribuir",
-                suggestedValues = listOf(10.0, 20.0, 50.0),
-                allowCustomValue = true
-            ),
-            onActionClick = { _, _ -> }
+            component =
+                PageComponent.ValuedAction(
+                    title = "Apoie nosso trabalho",
+                    description = "Sua contribuição nos ajuda a manter a plataforma gratuita para pequenos produtores.",
+                    buttonText = "Contribuir",
+                    suggestedValues = listOf(10.0, 20.0, 50.0),
+                    allowCustomValue = true,
+                ),
+            onActionClick = { _, _ -> },
         )
     }
 }

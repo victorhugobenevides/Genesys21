@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class AgentTaskRequest(
     val task: String,
     val agentType: String? = null,
-    val context: Map<String, String> = emptyMap()
+    val context: Map<String, String> = emptyMap(),
 )
 
 @Serializable
@@ -15,7 +15,7 @@ data class AgentTaskResponse(
     val agentName: String,
     val message: String,
     val generatedCode: String? = null,
-    val suggestions: List<String> = emptyList()
+    val suggestions: List<String> = emptyList(),
 )
 
 /**
@@ -26,6 +26,7 @@ interface DevAgent {
     val specialty: String
 
     suspend fun executeTask(request: AgentTaskRequest): AgentTaskResponse
+
     fun canHandle(task: String): Boolean
 }
 
@@ -33,18 +34,18 @@ interface DevAgent {
  * Gerenciador central que coordena a execução de tarefas entre subagentes.
  */
 class AgentCoordinator(private val agents: List<DevAgent>) {
-
     suspend fun processTask(request: AgentTaskRequest): AgentTaskResponse {
-        val agent = if (request.agentType != null) {
-            agents.find { it.specialty.equals(request.agentType, ignoreCase = true) }
-        } else {
-            agents.find { it.canHandle(request.task) }
-        }
+        val agent =
+            if (request.agentType != null) {
+                agents.find { it.specialty.equals(request.agentType, ignoreCase = true) }
+            } else {
+                agents.find { it.canHandle(request.task) }
+            }
 
         return agent?.executeTask(request) ?: AgentTaskResponse(
             status = "error",
             agentName = "Coordinator",
-            message = "Nenhum subagente especializado encontrado para esta tarefa."
+            message = "Nenhum subagente especializado encontrado para esta tarefa.",
         )
     }
 }

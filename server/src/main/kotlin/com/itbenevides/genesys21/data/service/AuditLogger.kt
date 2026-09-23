@@ -9,7 +9,6 @@ import org.jetbrains.exposed.sql.insert
 import java.util.UUID
 
 object AuditLogger {
-
     suspend fun log(
         userId: String?,
         storeId: String?,
@@ -17,15 +16,16 @@ object AuditLogger {
         entityName: String,
         entityId: String,
         details: String? = null,
-        ipAddress: String? = null
+        ipAddress: String? = null,
     ) {
         // LGPD: Anonimiza IP para logs comuns de auditoria
         // Mantemos o IP completo apenas se for uma ação crítica de segurança
-        val effectiveIp = if (action.contains("SECURITY_") || action.contains("AUTH_FAILURE")) {
-            ipAddress
-        } else {
-            PrivacyUtils.anonymizeIp(ipAddress)
-        }
+        val effectiveIp =
+            if (action.contains("SECURITY_") || action.contains("AUTH_FAILURE")) {
+                ipAddress
+            } else {
+                PrivacyUtils.anonymizeIp(ipAddress)
+            }
 
         dbQuery {
             AuditLogsTable.insert {

@@ -10,18 +10,17 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
+import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
-import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
-import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun GlobalDomainsTab(viewModel: PageViewModel) {
@@ -38,7 +37,7 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             AdminTabHeader(
@@ -49,17 +48,18 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
                         text = "Novo Domínio",
                         onClick = { showAddDialog = true },
                         icon = GenesysIcons.Add,
-                        fillWidth = false
+                        fillWidth = false,
                     )
-                }
+                },
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 if (isLoading && mappings.isEmpty()) {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
@@ -87,18 +87,21 @@ fun GlobalDomainsTab(viewModel: PageViewModel) {
             onConfirm = { domain, pageId ->
                 viewModel.saveDomainMapping(domain, pageId)
                 showAddDialog = false
-            }
+            },
         )
     }
 }
 
 @Composable
-private fun DomainMappingCard(mapping: DomainMapping, onDelete: () -> Unit) {
+private fun DomainMappingCard(
+    mapping: DomainMapping,
+    onDelete: () -> Unit,
+) {
     GenesysCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column {
                 GenesysText(text = mapping.domain, fontWeight = GenesysFontWeight.Bold)
@@ -107,14 +110,17 @@ private fun DomainMappingCard(mapping: DomainMapping, onDelete: () -> Unit) {
             GenesysIconButton(
                 icon = GenesysIcons.Delete,
                 tint = GenesysTheme.colors.error,
-                onClick = onDelete
+                onClick = onDelete,
             )
         }
     }
 }
 
 @Composable
-private fun AddDomainDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
+private fun AddDomainDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+) {
     var domain by remember { mutableStateOf("") }
     var pageId by remember { mutableStateOf("") }
 
@@ -125,12 +131,12 @@ private fun AddDomainDialog(onDismiss: () -> Unit, onConfirm: (String, String) -
             GenesysLoadingButton(
                 text = "Mapear",
                 enabled = domain.isNotBlank() && pageId.isNotBlank(),
-                onClick = { onConfirm(domain, pageId) }
+                onClick = { onConfirm(domain, pageId) },
             )
         },
         dismissButton = {
             GenesysTextButton(text = "Cancelar", onClick = onDismiss)
-        }
+        },
     ) {
         GenesysColumn(usePadding = false) {
             GenesysTextField(value = domain, onValueChange = { domain = it }, label = "Domínio (ex: loja.com)")

@@ -19,11 +19,12 @@ fun Route.shippingRoutes(storeRepository: StoreRepository) {
             val originZip = store.originZipCode ?: "00000-000"
 
             // SIMULAÇÃO DE CÁLCULO
-            val options = mutableListOf(
-                ShippingOption("pac", "PAC (Correios)", 22.50, 7),
-                ShippingOption("sedex", "SEDEX (Correios)", 48.90, 2),
-                ShippingOption("transportadora", "Loggi / Jadlog", 18.00, 5)
-            )
+            val options =
+                mutableListOf(
+                    ShippingOption("pac", "PAC (Correios)", 22.50, 7),
+                    ShippingOption("sedex", "SEDEX (Correios)", 48.90, 2),
+                    ShippingOption("transportadora", "Loggi / Jadlog", 18.00, 5),
+                )
 
             // Cálculo dinâmico Uber/99 (Simulado baseado na distância/cidade - no mundo real usaria API Uber Direct)
             if (store.originCity == "São Paulo") {

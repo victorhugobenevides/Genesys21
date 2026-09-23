@@ -1,10 +1,7 @@
 package com.itbenevides.genesys21.ui.components.molecules.booking
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +37,8 @@ fun ServiceCard(
     service: BookingService,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    showPrice: Boolean = true, // NOVO: Controle de visibilidade do preço
+    /** NOVO: Controle de visibilidade do preço */
+    showPrice: Boolean = true,
     index: Int = 0,
 ) {
     var isHovered by remember { mutableStateOf(false) }
@@ -93,12 +91,13 @@ fun ServiceCard(
                 // LAYOUT VERTICAL (ESTILO PRODUTO)
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
-                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
+                                .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center,
                     ) {
                         ServiceImage(service, backendUrl)
                         ServiceBadge(service, Alignment.BottomEnd)
@@ -115,11 +114,12 @@ fun ServiceCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
-                            .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(100.dp)
+                                .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
+                                .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center,
                     ) {
                         ServiceImage(service, backendUrl)
                         ServiceBadge(service, Alignment.BottomEnd)
@@ -135,11 +135,15 @@ fun ServiceCard(
 }
 
 @Composable
-private fun ServiceImage(service: BookingService, backendUrl: String) {
-    val imageUrl = remember(service.imageUrls) {
-        val first = service.imageUrls.firstOrNull() ?: ""
-        if (first.startsWith("/")) "$backendUrl$first" else first
-    }
+private fun ServiceImage(
+    service: BookingService,
+    backendUrl: String,
+) {
+    val imageUrl =
+        remember(service.imageUrls) {
+            val first = service.imageUrls.firstOrNull() ?: ""
+            if (first.startsWith("/")) "$backendUrl$first" else first
+        }
 
     AsyncImage(
         model = imageUrl,
@@ -150,7 +154,10 @@ private fun ServiceImage(service: BookingService, backendUrl: String) {
 }
 
 @Composable
-private fun BoxScope.ServiceBadge(service: BookingService, alignment: Alignment) {
+private fun BoxScope.ServiceBadge(
+    service: BookingService,
+    alignment: Alignment,
+) {
     Surface(
         modifier = Modifier.align(alignment).padding(GenesysTheme.spacing.xs),
         shape = CircleShape,
@@ -163,7 +170,7 @@ private fun BoxScope.ServiceBadge(service: BookingService, alignment: Alignment)
             Text(
                 text = "${service.durationMinutes} min",
                 style = GenesysTheme.typography.label.copy(fontWeight = FontWeight.Bold),
-                color = Color.Black
+                color = Color.Black,
             )
         }
     }
@@ -174,7 +181,7 @@ private fun ServiceInfo(
     service: BookingService,
     isGridMode: Boolean,
     showPrice: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         Text(
@@ -211,7 +218,7 @@ private fun ServiceInfo(
             GenesysSpacer(GenesysTheme.spacing.s)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
             ) {
                 Surface(
                     modifier = Modifier.size(40.dp),

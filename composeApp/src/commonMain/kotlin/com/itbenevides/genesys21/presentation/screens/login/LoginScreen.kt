@@ -10,21 +10,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.components.auth.GoogleSignInButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.AnimatedGradientBackground
@@ -199,8 +195,11 @@ private fun LoginContent(
                         GenesysLoadingButton(
                             text = if (state.isSignUp) "Cadastrar Agora" else GenesysStrings.LoginButton,
                             onClick = {
-                                if (state.isSignUp) onEvent(LoginEvent.OnSignUpClicked)
-                                else onEvent(LoginEvent.OnLoginClicked)
+                                if (state.isSignUp) {
+                                    onEvent(LoginEvent.OnSignUpClicked)
+                                } else {
+                                    onEvent(LoginEvent.OnLoginClicked)
+                                }
                             },
                             isLoading = state.isLoading,
                             enabled = state.canLogin,
@@ -218,12 +217,12 @@ private fun LoginContent(
                                     onSuccess = onLoginSuccess,
                                     onError = { error ->
                                         onEvent(LoginEvent.OnError(error))
-                                    }
+                                    },
                                 )
                             },
                             onError = { error ->
                                 onEvent(LoginEvent.OnError(error))
-                            }
+                            },
                         )
 
                         Spacer(modifier = Modifier.height(GenesysTheme.spacing.l))

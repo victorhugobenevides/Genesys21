@@ -37,13 +37,13 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysPagerIndicator
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysConfirmDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
@@ -241,16 +241,19 @@ private fun ProductImageCarousel(
                     AsyncImage(
                         model = fullUrl,
                         contentDescription = "Foto ${index + 1}",
-                        modifier = Modifier.fillMaxSize().then(
-                            if (sharedTransitionScope != null && animatedContentScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedElement(
-                                        rememberSharedContentState(key = "prod_img_${state.product.id}"),
-                                        animatedVisibilityScope = animatedContentScope
-                                    )
-                                }
-                            } else Modifier
-                        ),
+                        modifier =
+                            Modifier.fillMaxSize().then(
+                                if (sharedTransitionScope != null && animatedContentScope != null) {
+                                    with(sharedTransitionScope) {
+                                        Modifier.sharedElement(
+                                            rememberSharedContentState(key = "prod_img_${state.product.id}"),
+                                            animatedVisibilityScope = animatedContentScope,
+                                        )
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            ),
                         contentScale = ContentScale.Crop,
                     )
                 }

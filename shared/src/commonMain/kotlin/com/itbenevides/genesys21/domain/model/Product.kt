@@ -4,16 +4,19 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Product(
-    val id: String, // UUID
-    val storeId: String, // Store.id
+    /** UUID */
+    val id: String,
+    /** Store.id */
+    val storeId: String,
     val name: String,
     val price: Double,
     val description: String? = null,
     val imageUrls: List<String> = emptyList(),
-    val categoryId: String? = null, // Refactor to String (UUID)
+    /** Refactor to String (UUID) */
+    val categoryId: String? = null,
     val categoryName: String? = null,
     val stock: Int = 0,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
 )

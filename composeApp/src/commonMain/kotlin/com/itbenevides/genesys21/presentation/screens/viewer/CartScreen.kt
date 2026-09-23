@@ -4,17 +4,15 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.di.getBaseUrl
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -26,7 +24,6 @@ import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -35,17 +32,17 @@ import com.itbenevides.genesys21.ui.components.molecules.input.GenesysQuantitySe
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.organisms.payment.StripePaymentElement
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
-import com.itbenevides.genesys21.ui.util.glassmorphic
 import com.itbenevides.genesys21.util.*
+import org.koin.compose.viewmodel.koinViewModel
+import kotlin.math.roundToLong
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.koin.compose.viewmodel.koinViewModel
-import kotlin.math.roundToLong
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,10 +112,11 @@ fun CartScreen(
                         shippingMethod = state.selectedShippingOption?.name,
                     ) { response ->
                         if (response.stripeClientSecret != null) {
-                            state = state.copy(
-                                stripeClientSecret = response.stripeClientSecret,
-                                stripePublishableKey = response.stripePublishableKey
-                            )
+                            state =
+                                state.copy(
+                                    stripeClientSecret = response.stripeClientSecret,
+                                    stripePublishableKey = response.stripePublishableKey,
+                                )
                         } else {
                             onOrderSubmitted(response.orderId)
                         }
@@ -140,23 +138,24 @@ fun CartScreen(
     }
 
     val colorScheme = MaterialTheme.colorScheme
-    val stripeAppearance = remember(appTheme, colorScheme) {
-        StripeThemeMapper.mapToAppearance(appTheme, colorScheme)
-    }
+    val stripeAppearance =
+        remember(appTheme, colorScheme) {
+            StripeThemeMapper.mapToAppearance(appTheme, colorScheme)
+        }
 
     CartContent(
         state = state,
         store = storeConfig,
         backendUrl = backendUrl,
         stripeAppearance = stripeAppearance,
-        onEvent = onEvent
+        onEvent = onEvent,
     )
 
     if (showLoginDialog) {
         com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog(
             onDismissRequest = { showLoginDialog = false },
             title = "Acesse sua conta",
-            confirmButton = {}
+            confirmButton = {},
         ) {
             GenesysColumn(horizontalAlignment = GenesysAlignment.Center) {
                 GenesysText(text = "Para finalizar sua compra com segurança, por favor identifique-se.")
@@ -173,10 +172,10 @@ fun CartScreen(
                                 showLoginDialog = false
                                 onEvent(CartScreenEvent.OnCheckoutClicked)
                             },
-                            onError = { }
+                            onError = { },
                         )
                     },
-                    onError = { }
+                    onError = { },
                 )
                 GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysTextButton(text = "Entrar com e-mail", onClick = { })
@@ -192,7 +191,7 @@ fun CartScreen(
                         showLoginDialog = false
                         onEvent(CartScreenEvent.OnCheckoutClicked)
                     },
-                    fillWidth = true
+                    fillWidth = true,
                 )
             }
         }
@@ -207,7 +206,7 @@ fun CartContent(
     backendUrl: String,
     stripeAppearance: String,
     onEvent: (CartScreenEvent) -> Unit,
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) {
     val windowSizeClass = LocalWindowSizeClass.current
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
@@ -215,11 +214,16 @@ fun CartContent(
     GenesysPage(
         topBar = {
             GenesysTopAppBar(
-                title = if (state.stripeClientSecret != null) "Pagamento Seguro" else when(state.currentStep) {
-                    1 -> GenesysStrings.CartTitle
-                    2 -> "Entrega"
-                    else -> "Revisão"
-                },
+                title =
+                    if (state.stripeClientSecret != null) {
+                        "Pagamento Seguro"
+                    } else {
+                        when (state.currentStep) {
+                            1 -> GenesysStrings.CartTitle
+                            2 -> "Entrega"
+                            else -> "Revisão"
+                        }
+                    },
                 onBack = { onEvent(CartScreenEvent.OnBackClicked) },
             )
         },
@@ -243,7 +247,7 @@ fun CartContent(
                 usePadding = false,
             ) {
                 GenesysWeightBox(1f) {
-                    GenesysColumn(usePadding = true, useScroll = true, maxWidth = if(isExpanded) 800.dp else null) {
+                    GenesysColumn(usePadding = true, useScroll = true, maxWidth = if (isExpanded) 800.dp else null) {
                         if (state.stripeClientSecret == null) {
                             GenesysSpacer(GenesysTheme.spacing.m)
                             CartStepperUI(step = state.currentStep)
@@ -257,7 +261,7 @@ fun CartContent(
                                     publishableKey = state.stripePublishableKey ?: "",
                                     appearanceJson = stripeAppearance,
                                     onPaymentConfirmed = { },
-                                    onPaymentError = { onEvent(CartScreenEvent.OnStripePaymentError(it)) }
+                                    onPaymentError = { onEvent(CartScreenEvent.OnStripePaymentError(it)) },
                                 )
                             }
                             state.currentStep == 1 -> {
@@ -325,32 +329,42 @@ private fun CartFooter(
         }
         GenesysSpacer(GenesysTheme.spacing.l)
 
-        val buttonText = when(state.currentStep) {
-            1 -> "Continuar para Entrega"
-            2 -> "Continuar para Pagamento"
-            else -> if (state.paymentMethod == PaymentMethod.APP) "Pagar Agora" else GenesysStrings.CheckoutButton
-        }
-
-        val isNextEnabled = when(state.currentStep) {
-            1 -> state.cartItems.isNotEmpty()
-            2 -> {
-                val isPickup = state.selectedShippingOption?.id == "pickup"
-                val hasIdentity = state.customerName.isNotBlank() && state.customerPhone.length >= 8
-                val hasShippingOption = state.selectedShippingOption != null
-
-                if (state.needsShipping) {
-                    if (isPickup) hasIdentity && hasShippingOption
-                    else hasIdentity && hasShippingOption && state.shippingAddress != null
-                } else hasIdentity
+        val buttonText =
+            when (state.currentStep) {
+                1 -> "Continuar para Entrega"
+                2 -> "Continuar para Pagamento"
+                else -> if (state.paymentMethod == PaymentMethod.APP) "Pagar Agora" else GenesysStrings.CheckoutButton
             }
-            else -> state.isCheckoutEnabled
-        }
+
+        val isNextEnabled =
+            when (state.currentStep) {
+                1 -> state.cartItems.isNotEmpty()
+                2 -> {
+                    val isPickup = state.selectedShippingOption?.id == "pickup"
+                    val hasIdentity = state.customerName.isNotBlank() && state.customerPhone.length >= 8
+                    val hasShippingOption = state.selectedShippingOption != null
+
+                    if (state.needsShipping) {
+                        if (isPickup) {
+                            hasIdentity && hasShippingOption
+                        } else {
+                            hasIdentity && hasShippingOption && state.shippingAddress != null
+                        }
+                    } else {
+                        hasIdentity
+                    }
+                }
+                else -> state.isCheckoutEnabled
+            }
 
         GenesysLoadingButton(
             text = buttonText,
             onClick = {
-                if (state.currentStep < 3) onEvent(CartScreenEvent.OnStepChanged(state.currentStep + 1))
-                else onEvent(CartScreenEvent.OnCheckoutClicked)
+                if (state.currentStep < 3) {
+                    onEvent(CartScreenEvent.OnStepChanged(state.currentStep + 1))
+                } else {
+                    onEvent(CartScreenEvent.OnCheckoutClicked)
+                }
             },
             fillWidth = true,
             enabled = isNextEnabled,
@@ -364,7 +378,7 @@ private fun CartFooter(
 private fun DeliveryMethodSelector(
     state: CartScreenState,
     store: Store?,
-    onEvent: (CartScreenEvent) -> Unit
+    onEvent: (CartScreenEvent) -> Unit,
 ) {
     val allowPickup = store?.allowPickup ?: true
     val allowDelivery = store?.allowDelivery ?: true
@@ -384,10 +398,10 @@ private fun DeliveryMethodSelector(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
                         color = if (isPickup) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
-                        border = if (isPickup) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null
+                        border = if (isPickup) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(GenesysIcons.ShoppingBag, null, tint = if(isPickup) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
+                            Icon(GenesysIcons.ShoppingBag, null, tint = if (isPickup) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
                             GenesysSpacer(GenesysTheme.spacing.s)
                             GenesysText(text = "Retirar no Local", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
                             GenesysText(text = "Grátis", style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand)
@@ -401,10 +415,10 @@ private fun DeliveryMethodSelector(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(16.dp),
                         color = if (isDelivery) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
-                        border = if (isDelivery) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null
+                        border = if (isDelivery) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(GenesysIcons.Language, null, tint = if(isDelivery) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
+                            Icon(GenesysIcons.Language, null, tint = if (isDelivery) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
                             GenesysSpacer(GenesysTheme.spacing.s)
                             GenesysText(text = "Receber em Casa", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
                             GenesysText(text = "Cálculo via CEP", style = GenesysTextStyle.Label)
@@ -417,7 +431,10 @@ private fun DeliveryMethodSelector(
 }
 
 @Composable
-private fun AddressFormCard(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+private fun AddressFormCard(
+    state: CartScreenState,
+    onEvent: (CartScreenEvent) -> Unit,
+) {
     val address = state.shippingAddress ?: Address(street = "", number = "", neighborhood = "", city = "", state = "", zipCode = "")
 
     GenesysCard {
@@ -450,7 +467,7 @@ private fun AddressFormCard(state: CartScreenState, onEvent: (CartScreenEvent) -
                         onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) },
                         suggestions = BrazilData.commonCities,
                         label = "Cidade",
-                        onSuggestionSelected = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) }
+                        onSuggestionSelected = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(city = it))) },
                     )
                 }
                 Box(modifier = Modifier.weight(1.2f)) {
@@ -459,7 +476,7 @@ private fun AddressFormCard(state: CartScreenState, onEvent: (CartScreenEvent) -
                         onValueChange = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(state = it))) },
                         suggestions = BrazilData.states,
                         label = "UF",
-                        onSuggestionSelected = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(state = it))) }
+                        onSuggestionSelected = { onEvent(CartScreenEvent.OnAddressChanged(address.copy(state = it))) },
                     )
                 }
             }
@@ -468,7 +485,10 @@ private fun AddressFormCard(state: CartScreenState, onEvent: (CartScreenEvent) -
 }
 
 @Composable
-private fun ShippingOptionsCard(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
+private fun ShippingOptionsCard(
+    state: CartScreenState,
+    onEvent: (CartScreenEvent) -> Unit,
+) {
     GenesysCard {
         GenesysColumn(usePadding = false) {
             GenesysText(text = "Opções de Frete", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
@@ -481,7 +501,7 @@ private fun ShippingOptionsCard(state: CartScreenState, onEvent: (CartScreenEven
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = if (isSelected) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f),
-                    border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null
+                    border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null,
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = isSelected, onClick = { onEvent(CartScreenEvent.OnShippingOptionSelected(option)) })
@@ -526,8 +546,11 @@ private fun OrderSummaryCard(state: CartScreenState) {
 }
 
 @Composable
-private fun IdentificationCard(state: CartScreenState, onEvent: (CartScreenEvent) -> Unit) {
-     GenesysCard {
+private fun IdentificationCard(
+    state: CartScreenState,
+    onEvent: (CartScreenEvent) -> Unit,
+) {
+    GenesysCard {
         GenesysColumn(usePadding = false) {
             GenesysText(text = GenesysStrings.Identification, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
             GenesysSpacer(GenesysTheme.spacing.m)
@@ -560,8 +583,12 @@ private fun PaymentMethodCard(
                     GenesysFilterChip(selected = state.paymentMethod == PaymentMethod.APP, onClick = { onEvent(CartScreenEvent.OnPaymentMethodChanged(PaymentMethod.APP)) }, label = "Pagar pelo App", modifier = Modifier.weight(1f))
                 }
             }
-            val infoText = if (state.paymentMethod == PaymentMethod.LOCAL) "Você pagará diretamente no estabelecimento ao ser atendido ou retirar os produtos."
-            else "O pagamento será processado agora via cartão ou Pix dentro do aplicativo."
+            val infoText =
+                if (state.paymentMethod == PaymentMethod.LOCAL) {
+                    "Você pagará diretamente no estabelecimento ao ser atendido ou retirar os produtos."
+                } else {
+                    "O pagamento será processado agora via cartão ou Pix dentro do aplicativo."
+                }
 
             GenesysSpacer(GenesysTheme.spacing.s)
             GenesysText(text = infoText, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
@@ -570,7 +597,10 @@ private fun PaymentMethodCard(
 }
 
 @Composable
-private fun SummaryRow(label: String, value: Double) {
+private fun SummaryRow(
+    label: String,
+    value: Double,
+) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         GenesysText(text = label, style = GenesysTextStyle.Body)
         val formatted = (value * 100.0).roundToLong() / 100.0
@@ -599,18 +629,20 @@ private fun ModernCartItemRow(
     item: CartItem,
     backendUrl: String,
     onEvent: (CartScreenEvent) -> Unit,
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) {
-    val displayImageUrl = remember(item.product?.imageUrls, item.service?.imageUrls) {
-        val first = item.product?.imageUrls?.firstOrNull() ?: item.service?.imageUrls?.firstOrNull() ?: ""
-        if (first.startsWith("/") && !first.startsWith("http")) "$backendUrl$first" else first
-    }
+    val displayImageUrl =
+        remember(item.product?.imageUrls, item.service?.imageUrls) {
+            val first = item.product?.imageUrls?.firstOrNull() ?: item.service?.imageUrls?.firstOrNull() ?: ""
+            if (first.startsWith("/") && !first.startsWith("http")) "$backendUrl$first" else first
+        }
 
     GenesysCard(
         elevation = GenesysDimens.ElevationLow,
-        modifier = Modifier.animateContentSize().semantics(mergeDescendants = true) {
-            contentDescription = if (item.product != null) "Item no carrinho: ${item.name}, Quantidade: ${item.quantity}" else "Serviço no carrinho: ${item.name}"
-        },
+        modifier =
+            Modifier.animateContentSize().semantics(mergeDescendants = true) {
+                contentDescription = if (item.product != null) "Item no carrinho: ${item.name}, Quantidade: ${item.quantity}" else "Serviço no carrinho: ${item.name}"
+            },
     ) {
         GenesysRow(verticalAlignment = Alignment.Top) {
             GenesysImage(url = displayImageUrl, size = 70.dp)

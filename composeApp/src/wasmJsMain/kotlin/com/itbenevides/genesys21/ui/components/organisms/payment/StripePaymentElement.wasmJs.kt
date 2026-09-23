@@ -5,8 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.util.StripeBridge
 import com.itbenevides.genesys21.util.GenesysUUID
+import com.itbenevides.genesys21.util.StripeBridge
 import kotlinx.coroutines.launch
 
 @Composable
@@ -16,7 +16,7 @@ actual fun StripePaymentElement(
     publishableKey: String,
     appearanceJson: String,
     onPaymentConfirmed: () -> Unit,
-    onPaymentError: (String) -> Unit
+    onPaymentError: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val elementId = remember { "stripe-payment-element-${GenesysUUID.randomUUID()}" }
@@ -46,7 +46,7 @@ actual fun StripePaymentElement(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Pagar Agora")
         }

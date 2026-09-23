@@ -23,7 +23,7 @@ fun GenesysBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = GenesysTheme.colors.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
         Column(
             modifier =
@@ -46,7 +46,7 @@ fun GenesysBottomSheet(
                     fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                     modifier = Modifier.weight(1f),
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     actions()

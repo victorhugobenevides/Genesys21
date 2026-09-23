@@ -9,7 +9,7 @@ import com.mmk.kmpauth.google.GoogleButtonUiContainer
 actual fun GoogleSignInButton(
     modifier: Modifier,
     onTokenReceived: (idToken: String, accessToken: String?) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     GoogleButtonUiContainer(
         onGoogleSignInResult = { googleUser ->
@@ -20,12 +20,12 @@ actual fun GoogleSignInButton(
             } else {
                 onError("Login cancelado ou falhou")
             }
-        }
+        },
     ) {
         GenesysLoadingButton(
             text = "Entrar com Google",
             onClick = { this.onClick() },
-            modifier = modifier
+            modifier = modifier,
         )
     }
 }

@@ -43,38 +43,40 @@ fun GenesysLoadingButton(
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.96f else 1f,
         animationSpec = GenesysMotion.interactiveSpring,
-        label = "ButtonScale"
+        label = "ButtonScale",
     )
 
     Button(
         onClick = onClick,
-        modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .semantics {
-                if (isLoading) {
-                    contentDescription = "$text, Carregando..."
+        modifier =
+            (if (fillWidth) modifier.fillMaxWidth() else modifier)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
                 }
-            },
+                .semantics {
+                    if (isLoading) {
+                        contentDescription = "$text, Carregando..."
+                    }
+                },
         enabled = enabled && !isLoading,
         shape = shape ?: RoundedCornerShape(GenesysTheme.config.cornerRadius.dp / 2),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-            disabledContainerColor = GenesysTheme.colors.surfaceVariant,
-            disabledContentColor = GenesysTheme.colors.onSurfaceVariant
-        ),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = containerColor,
+                contentColor = contentColor,
+                disabledContainerColor = GenesysTheme.colors.surfaceVariant,
+                disabledContentColor = GenesysTheme.colors.onSurfaceVariant,
+            ),
         interactionSource = interactionSource,
-        contentPadding = PaddingValues(horizontal = GenesysTheme.spacing.l, vertical = GenesysTheme.spacing.s)
+        contentPadding = PaddingValues(horizontal = GenesysTheme.spacing.l, vertical = GenesysTheme.spacing.s),
     ) {
         AnimatedContent(
             targetState = isLoading,
             label = "LoadingButtonAnimation",
             transitionSpec = {
                 (fadeIn() + scaleIn()).togetherWith(fadeOut() + scaleOut())
-            }
+            },
         ) { loading ->
             if (loading) {
                 CircularProgressIndicator(
@@ -91,7 +93,7 @@ fun GenesysLoadingButton(
                     Text(
                         text = text,
                         style = GenesysTheme.typography.action,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             }

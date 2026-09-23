@@ -7,8 +7,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.util.StripeBridge
-import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import kotlinx.browser.document
 
 /**
  * Componente para renderizar Componentes Incorporados do Stripe Connect no Wasm.
@@ -22,9 +22,9 @@ actual fun StripeConnectComponent(
     componentName: String,
     publishableKey: String,
     clientSecret: String,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
-    val elementId = remember(clientSecret) { "stripe-connect-${componentName}" }
+    val elementId = remember(clientSecret) { "stripe-connect-$componentName" }
 
     // Reserva o espaço no layout do Compose
     Box(modifier = modifier.fillMaxWidth().heightIn(min = 500.dp)) {
@@ -36,15 +36,15 @@ actual fun StripeConnectComponent(
 
         // Inicializa o SDK do Connect via Bridge
         StripeBridge.initializeConnect(publishableKey, clientSecret).onSuccess {
-
             // Garante que o container exista no DOM
             var container = document.getElementById(elementId) as? HTMLElement
             if (container == null) {
-                container = (document.createElement("div") as HTMLElement).apply {
-                    id = elementId
-                    // Estilo para garantir visibilidade e scroll
-                    setAttribute("style", "width: 100%; min-height: 500.dp; padding: 20px; background: white; border-radius: 8px;")
-                }
+                container =
+                    (document.createElement("div") as HTMLElement).apply {
+                        id = elementId
+                        // Estilo para garantir visibilidade e scroll
+                        setAttribute("style", "width: 100%; min-height: 500.dp; padding: 20px; background: white; border-radius: 8px;")
+                    }
 
                 // Anexa ao final do body ou em um local específico
                 // Para Genesys21, vamos anexar ao final para evitar quebrar o canvas principal

@@ -1,7 +1,5 @@
 package com.itbenevides.genesys21.data.database
 
-import com.itbenevides.genesys21.data.database.BaseTable
-
 object ReceiptsTable : BaseTable("receipts") {
     val id = varchar("id", 100)
     val userId = varchar("user_id", 100).references(UsersTable.id)

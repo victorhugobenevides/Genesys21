@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class ReceiptLocalRepository : ReceiptRepository {
-
     private val _receipts = MutableStateFlow<List<Receipt>>(emptyList())
     override val receipts: Flow<List<Receipt>> = _receipts.asStateFlow()
 

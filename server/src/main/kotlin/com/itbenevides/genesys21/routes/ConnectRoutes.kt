@@ -3,10 +3,8 @@ package com.itbenevides.genesys21.routes
 import com.itbenevides.genesys21.domain.repository.StoreRepository
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import com.stripe.StripeClient
-import com.stripe.model.AccountSession
-import com.stripe.model.LoginLink
-import com.stripe.param.AccountSessionCreateParams
 import com.stripe.param.AccountLoginLinkCreateParams
+import com.stripe.param.AccountSessionCreateParams
 import com.stripe.param.v2.core.AccountCreateParams
 import com.stripe.param.v2.core.AccountLinkCreateParams
 import io.ktor.http.*
@@ -31,11 +29,10 @@ data class ConnectLinkResponse(val url: String)
 
 fun Route.connectRoutes(
     userRepository: UserRepository,
-    storeRepository: StoreRepository
+    storeRepository: StoreRepository,
 ) {
     authenticate("firebase") {
         route("/admin/connect") {
-
             // Criar nova conta Connect (Accounts v2) para o lojista
             post("/accounts") {
                 val principal = call.principal<UserIdPrincipal>() ?: return@post call.respond(HttpStatusCode.Unauthorized)
@@ -56,33 +53,34 @@ fun Route.connectRoutes(
 
                     // Utilizando o padrão Accounts v2
                     // identity.country é OBRIGATÓRIO antes de definir configuration.merchant
-                    val params = AccountCreateParams.builder()
-                        .setContactEmail(request.email)
-                        .setDashboard(AccountCreateParams.Dashboard.FULL)
-                        .setIdentity(
-                            AccountCreateParams.Identity.builder()
-                                .setCountry("BR") // Default para Brasil
-                                .build()
-                        )
-                        .setDefaults(
-                            AccountCreateParams.Defaults.builder()
-                                .setResponsibilities(
-                                    AccountCreateParams.Defaults.Responsibilities.builder()
-                                        .setFeesCollector(AccountCreateParams.Defaults.Responsibilities.FeesCollector.STRIPE)
-                                        .setLossesCollector(AccountCreateParams.Defaults.Responsibilities.LossesCollector.STRIPE)
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .setConfiguration(
-                            AccountCreateParams.Configuration.builder()
-                                .setMerchant(
-                                    AccountCreateParams.Configuration.Merchant.builder()
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .build()
+                    val params =
+                        AccountCreateParams.builder()
+                            .setContactEmail(request.email)
+                            .setDashboard(AccountCreateParams.Dashboard.FULL)
+                            .setIdentity(
+                                AccountCreateParams.Identity.builder()
+                                    .setCountry("BR") // Default para Brasil
+                                    .build(),
+                            )
+                            .setDefaults(
+                                AccountCreateParams.Defaults.builder()
+                                    .setResponsibilities(
+                                        AccountCreateParams.Defaults.Responsibilities.builder()
+                                            .setFeesCollector(AccountCreateParams.Defaults.Responsibilities.FeesCollector.STRIPE)
+                                            .setLossesCollector(AccountCreateParams.Defaults.Responsibilities.LossesCollector.STRIPE)
+                                            .build(),
+                                    )
+                                    .build(),
+                            )
+                            .setConfiguration(
+                                AccountCreateParams.Configuration.builder()
+                                    .setMerchant(
+                                        AccountCreateParams.Configuration.Merchant.builder()
+                                            .build(),
+                                    )
+                                    .build(),
+                            )
+                            .build()
 
                     val account = client.v2().core().accounts().create(params)
 
@@ -122,27 +120,29 @@ fun Route.connectRoutes(
                     val baseUrl = "${call.request.origin.scheme}://${call.request.origin.serverHost}"
                     // Se houver porta não padrão que o Nginx está redirecionando, o ForwardedHeaders cuida disso.
                     // No entanto, para Stripe, portas como 8080 em localhost são aceitas.
-                    val finalUrl = if (call.request.origin.serverPort != 80 && call.request.origin.serverPort != 443) {
-                        "$baseUrl:${call.request.origin.serverPort}"
-                    } else {
-                        baseUrl
-                    }
+                    val finalUrl =
+                        if (call.request.origin.serverPort != 80 && call.request.origin.serverPort != 443) {
+                            "$baseUrl:${call.request.origin.serverPort}"
+                        } else {
+                            baseUrl
+                        }
 
-                    val params = AccountLinkCreateParams.builder()
-                        .setAccount(accountId)
-                        .setUseCase(
-                            AccountLinkCreateParams.UseCase.builder()
-                                .setType(AccountLinkCreateParams.UseCase.Type.ACCOUNT_ONBOARDING)
-                                .setAccountOnboarding(
-                                    AccountLinkCreateParams.UseCase.AccountOnboarding.builder()
-                                        .addConfiguration(AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration.MERCHANT)
-                                        .setRefreshUrl("$finalUrl/list")
-                                        .setReturnUrl("$finalUrl/list")
-                                        .build()
-                                )
-                                .build()
-                        )
-                        .build()
+                    val params =
+                        AccountLinkCreateParams.builder()
+                            .setAccount(accountId)
+                            .setUseCase(
+                                AccountLinkCreateParams.UseCase.builder()
+                                    .setType(AccountLinkCreateParams.UseCase.Type.ACCOUNT_ONBOARDING)
+                                    .setAccountOnboarding(
+                                        AccountLinkCreateParams.UseCase.AccountOnboarding.builder()
+                                            .addConfiguration(AccountLinkCreateParams.UseCase.AccountOnboarding.Configuration.MERCHANT)
+                                            .setRefreshUrl("$finalUrl/list")
+                                            .setReturnUrl("$finalUrl/list")
+                                            .build(),
+                                    )
+                                    .build(),
+                            )
+                            .build()
 
                     val accountLink = client.v2().core().accountLinks().create(params)
                     call.respond(ConnectLinkResponse(url = accountLink.url))
@@ -200,19 +200,22 @@ fun Route.connectRoutes(
                     }
                     val client = StripeClient(secretKey)
 
-                    val params = AccountSessionCreateParams.builder()
-                        .setAccount(accountId)
-                        .setComponents(
-                            AccountSessionCreateParams.Components.builder()
-                                .setAccountOnboarding(AccountSessionCreateParams.Components.AccountOnboarding.builder().setEnabled(true).build())
-                                .setPayments(AccountSessionCreateParams.Components.Payments.builder().setEnabled(true).setFeatures(
-                                    AccountSessionCreateParams.Components.Payments.Features.builder().setRefundManagement(true).setDisputeManagement(true).build()
-                                ).build())
-                                .setPayouts(AccountSessionCreateParams.Components.Payouts.builder().setEnabled(true).build())
-                                .setNotificationBanner(AccountSessionCreateParams.Components.NotificationBanner.builder().setEnabled(true).build())
-                                .build()
-                        )
-                        .build()
+                    val params =
+                        AccountSessionCreateParams.builder()
+                            .setAccount(accountId)
+                            .setComponents(
+                                AccountSessionCreateParams.Components.builder()
+                                    .setAccountOnboarding(AccountSessionCreateParams.Components.AccountOnboarding.builder().setEnabled(true).build())
+                                    .setPayments(
+                                        AccountSessionCreateParams.Components.Payments.builder().setEnabled(true).setFeatures(
+                                            AccountSessionCreateParams.Components.Payments.Features.builder().setRefundManagement(true).setDisputeManagement(true).build(),
+                                        ).build(),
+                                    )
+                                    .setPayouts(AccountSessionCreateParams.Components.Payouts.builder().setEnabled(true).build())
+                                    .setNotificationBanner(AccountSessionCreateParams.Components.NotificationBanner.builder().setEnabled(true).build())
+                                    .build(),
+                            )
+                            .build()
 
                     val accountSession = client.v1().accountSessions().create(params)
                     call.respond(AccountSessionResponse(clientSecret = accountSession.clientSecret))

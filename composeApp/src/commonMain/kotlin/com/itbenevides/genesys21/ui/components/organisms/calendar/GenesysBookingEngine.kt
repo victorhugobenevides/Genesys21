@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysTimePicker
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.datetime.*
@@ -51,7 +51,7 @@ fun GenesysBookingEngine(
     } else {
         Row(
             modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.l)
+            horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.l),
         ) {
             Box(modifier = Modifier.weight(1f)) {
                 DateSection(selectedDateState) {
@@ -75,7 +75,7 @@ fun GenesysBookingEngine(
 @Composable
 private fun DateSection(
     selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit
+    onDateSelected: (LocalDate) -> Unit,
 ) {
     Column {
         GenesysText(
@@ -96,7 +96,7 @@ private fun DateSection(
 private fun TimeSection(
     availableSlots: List<String>,
     selectedTime: String?,
-    onTimeSelected: (String) -> Unit
+    onTimeSelected: (String) -> Unit,
 ) {
     Column {
         GenesysText(

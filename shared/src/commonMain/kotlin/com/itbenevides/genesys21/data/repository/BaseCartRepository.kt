@@ -1,9 +1,9 @@
 package com.itbenevides.genesys21.data.repository
 
+import com.itbenevides.genesys21.data.storage.SecureStorage
 import com.itbenevides.genesys21.domain.model.CartItem
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
-import com.itbenevides.genesys21.data.storage.SecureStorage
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -68,9 +68,10 @@ abstract class BaseCartRepository(
         val current = _cartItems.value.toMutableList()
         val itemId = item.product?.id ?: item.service?.id ?: ""
 
-        val existing = current.find {
-            (it.product?.id ?: it.service?.id ?: "") == itemId
-        }
+        val existing =
+            current.find {
+                (it.product?.id ?: it.service?.id ?: "") == itemId
+            }
 
         if (existing != null && item.product != null) {
             val idx = current.indexOf(existing)
@@ -118,9 +119,10 @@ abstract class BaseCartRepository(
             val localItems = _cartItems.value
 
             // 2. Fetch server items for the authenticated user
-            val response = httpClient.get("$baseUrl/api/cart") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
+            val response =
+                httpClient.get("$baseUrl/api/cart") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
 
             if (response.status.isSuccess()) {
                 val serverItems: List<CartItem> = response.body()

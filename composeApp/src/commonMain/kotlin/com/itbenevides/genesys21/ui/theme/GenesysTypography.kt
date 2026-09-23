@@ -46,9 +46,10 @@ data class GenesysTypography(
     val body: TextStyle,
     val bodySmall: TextStyle,
     val label: TextStyle,
-    val action: TextStyle
+    val action: TextStyle,
 )
 
-val LocalGenesysTypography = staticCompositionLocalOf<GenesysTypography> {
-    error("No GenesysTypography provided")
-}
+val LocalGenesysTypography =
+    staticCompositionLocalOf<GenesysTypography> {
+        error("No GenesysTypography provided")
+    }

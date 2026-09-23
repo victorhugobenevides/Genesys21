@@ -8,11 +8,11 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 enum class PageThemeConfig {
-    ELEGANCE,   // Slate & Gold (Luxo)
-    VIBRANT,    // Electric Blue (Tech)
-    NATURE,     // Deep Forest (Bem-estar)
-    MONO,       // Architectural B&W (Moda)
-    MIDNIGHT,   // OLED Black (Moderno)
-    CANDY,      // Pastel Pop (Criativo)
-    DEFAULT     // Fallback para ELEGANCE
+    ELEGANCE, // Slate & Gold (Luxo)
+    VIBRANT, // Electric Blue (Tech)
+    NATURE, // Deep Forest (Bem-estar)
+    MONO, // Architectural B&W (Moda)
+    MIDNIGHT, // OLED Black (Moderno)
+    CANDY, // Pastel Pop (Criativo)
+    DEFAULT, // Fallback para ELEGANCE
 }

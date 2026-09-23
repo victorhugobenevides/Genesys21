@@ -58,36 +58,42 @@ internal fun GenesysTextContent(
     modifier: Modifier = Modifier,
 ) {
     val tokens = GenesysTheme.typography
-    val textStyle = when (style) {
-        GenesysTextStyle.Headline -> tokens.headline
-        GenesysTextStyle.Title -> tokens.title
-        GenesysTextStyle.Body -> tokens.body
-        GenesysTextStyle.Label -> tokens.label
-        GenesysTextStyle.Error -> tokens.bodySmall.copy(color = GenesysTheme.colors.error)
-    }
-
-    val composeFontWeight = when (fontWeight) {
-        GenesysFontWeight.Normal -> FontWeight.Normal
-        GenesysFontWeight.Bold -> FontWeight.Bold
-        GenesysFontWeight.ExtraBold -> FontWeight.ExtraBold
-        null -> textStyle.fontWeight
-    }
-
-    val composeTextAlign = when (textAlign) {
-        GenesysTextAlign.Start -> TextAlign.Start
-        GenesysTextAlign.Center -> TextAlign.Center
-        GenesysTextAlign.End -> TextAlign.End
-        GenesysTextAlign.Justify -> TextAlign.Justify
-        null -> null
-    }
-
-    val finalColor = if (color == Color.Unspecified) {
+    val textStyle =
         when (style) {
-            GenesysTextStyle.Label -> GenesysTheme.colors.onSurfaceVariant
-            GenesysTextStyle.Error -> GenesysTheme.colors.error
-            else -> GenesysTheme.colors.onSurface
+            GenesysTextStyle.Headline -> tokens.headline
+            GenesysTextStyle.Title -> tokens.title
+            GenesysTextStyle.Body -> tokens.body
+            GenesysTextStyle.Label -> tokens.label
+            GenesysTextStyle.Error -> tokens.bodySmall.copy(color = GenesysTheme.colors.error)
         }
-    } else color
+
+    val composeFontWeight =
+        when (fontWeight) {
+            GenesysFontWeight.Normal -> FontWeight.Normal
+            GenesysFontWeight.Bold -> FontWeight.Bold
+            GenesysFontWeight.ExtraBold -> FontWeight.ExtraBold
+            null -> textStyle.fontWeight
+        }
+
+    val composeTextAlign =
+        when (textAlign) {
+            GenesysTextAlign.Start -> TextAlign.Start
+            GenesysTextAlign.Center -> TextAlign.Center
+            GenesysTextAlign.End -> TextAlign.End
+            GenesysTextAlign.Justify -> TextAlign.Justify
+            null -> null
+        }
+
+    val finalColor =
+        if (color == Color.Unspecified) {
+            when (style) {
+                GenesysTextStyle.Label -> GenesysTheme.colors.onSurfaceVariant
+                GenesysTextStyle.Error -> GenesysTheme.colors.error
+                else -> GenesysTheme.colors.onSurface
+            }
+        } else {
+            color
+        }
 
     val content = @Composable {
         Text(

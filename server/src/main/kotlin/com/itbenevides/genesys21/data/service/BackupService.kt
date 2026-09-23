@@ -1,16 +1,14 @@
 package com.itbenevides.genesys21.data.service
 
 import com.google.firebase.cloud.StorageClient
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import org.slf4j.LoggerFactory
 import kotlinx.coroutines.*
 
 object BackupService {

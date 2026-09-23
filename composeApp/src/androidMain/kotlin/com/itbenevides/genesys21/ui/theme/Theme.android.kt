@@ -10,5 +10,7 @@ actual fun getDynamicColorScheme(darkTheme: Boolean): ColorScheme? {
     val context = LocalContext.current
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else null
+    } else {
+        null
+    }
 }

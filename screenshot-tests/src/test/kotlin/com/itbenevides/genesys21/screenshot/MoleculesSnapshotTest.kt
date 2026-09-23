@@ -72,13 +72,13 @@ class MoleculesSnapshotTest {
                 com.itbenevides.genesys21.ui.components.molecules.input.GenesysColorField(
                     value = "#6200EE",
                     onValueChange = {},
-                    label = "Color Field"
+                    label = "Color Field",
                 )
                 com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField(
                     value = "Option 1",
                     onValueChange = {},
                     label = "Dropdown Field",
-                    options = listOf("Option 1", "Option 2", "Option 3")
+                    options = listOf("Option 1", "Option 2", "Option 3"),
                 )
             }
         }

@@ -5,15 +5,19 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class PaymentMethod {
     LOCAL,
-    APP
+    APP,
 }
 
 @Serializable
 data class Order(
-    val id: String, // UUID
-    val storeId: String, // Store.id
-    val customerId: String? = null, // UserProfile.id
-    val sessionId: String? = null, // Temporary session for visitors
+    /** UUID */
+    val id: String,
+    /** Store.id */
+    val storeId: String,
+    /** UserProfile.id */
+    val customerId: String? = null,
+    /** Temporary session for visitors */
+    val sessionId: String? = null,
     val customerName: String? = null,
     val customerEmail: String? = null,
     val customerPhone: String? = null,
@@ -28,7 +32,7 @@ data class Order(
     val theme: PageThemeConfig = PageThemeConfig.ELEGANCE,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
 )
 
 @Serializable

@@ -11,11 +11,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class SqlitePageRepository : PageRepository {
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        coerceInputValues = true // NOVO: Preenche valores padrão se o campo estiver faltando no banco
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true // NOVO: Preenche valores padrão se o campo estiver faltando no banco
+        }
 
     override suspend fun getPages(token: String): List<Page> =
         dbQuery {
@@ -27,11 +28,12 @@ class SqlitePageRepository : PageRepository {
                         .selectAll().where { (StoresTable.ownerId eq token) and (PagesTable.deletedAt.isNull()) }
                 }
 
-            val results = pagesQuery.map { row ->
-                val pageId = row[PagesTable.id]
-                val components = fetchComponentsForPage(pageId)
-                row.toPage(components)
-            }
+            val results =
+                pagesQuery.map { row ->
+                    val pageId = row[PagesTable.id]
+                    val components = fetchComponentsForPage(pageId)
+                    row.toPage(components)
+                }
 
             println("REPOSITORY: getPages chamado com token: '$token'. Encontradas ${results.size} páginas.")
 
@@ -57,22 +59,24 @@ class SqlitePageRepository : PageRepository {
                 val searchDomain = domain.lowercase().removePrefix("www.")
 
                 // 1. Verificar Mapeamento Global (SuperAdmin)
-                val globalMapping = DomainMappingsTable.selectAll()
-                    .where { (DomainMappingsTable.domain eq searchDomain) or (DomainMappingsTable.domain eq "www.$searchDomain") }
-                    .firstOrNull()?.get(DomainMappingsTable.targetPageId)
+                val globalMapping =
+                    DomainMappingsTable.selectAll()
+                        .where { (DomainMappingsTable.domain eq searchDomain) or (DomainMappingsTable.domain eq "www.$searchDomain") }
+                        .firstOrNull()?.get(DomainMappingsTable.targetPageId)
 
-                val targetPageId = globalMapping ?: run {
-                    // 2. Fallback: Verificar vinculado diretamente na página
-                    PagesTable.selectAll().where {
-                        (PagesTable.customDomain.lowerCase() eq searchDomain) or
-                            (PagesTable.customDomain.lowerCase() eq "www.$searchDomain")
-                    }.firstOrNull()?.get(PagesTable.id)
-                }
+                val targetPageId =
+                    globalMapping ?: run {
+                        // 2. Fallback: Verificar vinculado diretamente na página
+                        PagesTable.selectAll().where {
+                            (PagesTable.customDomain.lowerCase() eq searchDomain) or
+                                (PagesTable.customDomain.lowerCase() eq "www.$searchDomain")
+                        }.firstOrNull()?.get(PagesTable.id)
+                    }
 
                 targetPageId?.let { id ->
                     val components = fetchComponentsForPage(id)
                     PagesTable.selectAll().where { PagesTable.id eq id }.singleOrNull()?.let { row ->
-                         Result.success(row.toPage(components))
+                        Result.success(row.toPage(components))
                     } ?: Result.failure(Exception("ID de página mapeado não encontrado"))
                 } ?: Result.failure(Exception("Domínio $domain não vinculado"))
             }
@@ -88,9 +92,10 @@ class SqlitePageRepository : PageRepository {
         try {
             dbQuery {
                 // Validação de Posse (Multi-tenancy)
-                val isOwner = StoresTable.selectAll()
-                    .where { (StoresTable.id eq page.storeId) and (StoresTable.ownerId eq token) }
-                    .count() > 0
+                val isOwner =
+                    StoresTable.selectAll()
+                        .where { (StoresTable.id eq page.storeId) and (StoresTable.ownerId eq token) }
+                        .count() > 0
 
                 if (!isOwner) throw Exception("Acesso negado: Você não é o dono desta loja.")
 
@@ -124,7 +129,7 @@ class SqlitePageRepository : PageRepository {
                         storeId = page.storeId,
                         action = "UPDATE_PAGE",
                         entityName = "Page",
-                        entityId = page.id
+                        entityId = page.id,
                     )
                 } else {
                     PagesTable.insert {
@@ -140,7 +145,7 @@ class SqlitePageRepository : PageRepository {
                         storeId = page.storeId,
                         action = "CREATE_PAGE",
                         entityName = "Page",
-                        entityId = page.id
+                        entityId = page.id,
                     )
                 }
 
@@ -187,9 +192,10 @@ class SqlitePageRepository : PageRepository {
 
                 // SQLite não suporta JOIN diretamente no UPDATE do Exposed de forma simples.
                 // Verificamos a propriedade da página separadamente.
-                val belongsToUser = (PagesTable innerJoin StoresTable)
-                    .selectAll().where { (PagesTable.id eq id) and (StoresTable.ownerId eq token) }
-                    .count() > 0
+                val belongsToUser =
+                    (PagesTable innerJoin StoresTable)
+                        .selectAll().where { (PagesTable.id eq id) and (StoresTable.ownerId eq token) }
+                        .count() > 0
 
                 println("REPOSITORY: Pertence ao usuário? $belongsToUser")
 
@@ -206,9 +212,10 @@ class SqlitePageRepository : PageRepository {
                     }
                 }
 
-                val updated = PagesTable.update({ PagesTable.id eq id }) {
-                    it[deletedAt] = System.currentTimeMillis()
-                }
+                val updated =
+                    PagesTable.update({ PagesTable.id eq id }) {
+                        it[deletedAt] = System.currentTimeMillis()
+                    }
 
                 println("REPOSITORY: Resultado do update: $updated")
 
@@ -219,10 +226,12 @@ class SqlitePageRepository : PageRepository {
                         action = "DELETE",
                         entityName = "Page",
                         entityId = id,
-                        details = "Página excluída pelo usuário"
+                        details = "Página excluída pelo usuário",
                     )
                     Result.success(Unit)
-                } else Result.failure(Exception("Falha ao excluir: página não encontrada"))
+                } else {
+                    Result.failure(Exception("Falha ao excluir: página não encontrada"))
+                }
             }
         } catch (e: Exception) {
             println("REPOSITORY ERROR: Falha ao excluir página - ${e.message}")
@@ -270,7 +279,7 @@ class SqlitePageRepository : PageRepository {
                                 color = row[CategoriesTable.color],
                                 createdAt = row[CategoriesTable.createdAt],
                                 updatedAt = row[CategoriesTable.updatedAt],
-                                deletedAt = row[CategoriesTable.deletedAt]
+                                deletedAt = row[CategoriesTable.deletedAt],
                             )
                         }
                 Result.success(categories)
@@ -286,9 +295,10 @@ class SqlitePageRepository : PageRepository {
         try {
             dbQuery {
                 // Valida se o usuário é o dono da Store antes de salvar a categoria
-                val isOwner = StoresTable.selectAll()
-                    .where { (StoresTable.id eq category.storeId) and (StoresTable.ownerId eq token) }
-                    .count() > 0
+                val isOwner =
+                    StoresTable.selectAll()
+                        .where { (StoresTable.id eq category.storeId) and (StoresTable.ownerId eq token) }
+                        .count() > 0
 
                 if (!isOwner) throw Exception("Acesso negado: Você não é o dono desta loja.")
 
@@ -317,7 +327,7 @@ class SqlitePageRepository : PageRepository {
                     storeId = category.storeId,
                     action = if (exists) "UPDATE_CATEGORY" else "CREATE_CATEGORY",
                     entityName = "Category",
-                    entityId = category.id
+                    entityId = category.id,
                 )
                 Result.success(Unit)
             }
@@ -332,21 +342,24 @@ class SqlitePageRepository : PageRepository {
         try {
             dbQuery {
                 // Busca a storeId da categoria para validar posse
-                val storeId = CategoriesTable.select(CategoriesTable.storeId)
-                    .where { CategoriesTable.id eq id }
-                    .firstOrNull()?.get(CategoriesTable.storeId)
+                val storeId =
+                    CategoriesTable.select(CategoriesTable.storeId)
+                        .where { CategoriesTable.id eq id }
+                        .firstOrNull()?.get(CategoriesTable.storeId)
 
                 if (storeId == null) throw Exception("Categoria não encontrada.")
 
-                val isOwner = StoresTable.selectAll()
-                    .where { (StoresTable.id eq storeId) and (StoresTable.ownerId eq token) }
-                    .count() > 0
+                val isOwner =
+                    StoresTable.selectAll()
+                        .where { (StoresTable.id eq storeId) and (StoresTable.ownerId eq token) }
+                        .count() > 0
 
                 if (!isOwner) throw Exception("Acesso negado: Você não tem permissão para excluir esta categoria.")
 
-                val updated = CategoriesTable.update({ CategoriesTable.id eq id }) {
-                    it[deletedAt] = System.currentTimeMillis()
-                }
+                val updated =
+                    CategoriesTable.update({ CategoriesTable.id eq id }) {
+                        it[deletedAt] = System.currentTimeMillis()
+                    }
                 if (updated > 0) Result.success(Unit) else Result.failure(Exception("Falha ao excluir categoria"))
             }
         } catch (e: Exception) {
@@ -486,7 +499,7 @@ class SqlitePageRepository : PageRepository {
             stock = row[ProductsTable.stock],
             createdAt = row[ProductsTable.createdAt],
             updatedAt = row[ProductsTable.updatedAt],
-            deletedAt = row[ProductsTable.deletedAt]
+            deletedAt = row[ProductsTable.deletedAt],
         )
     }
 
@@ -506,6 +519,6 @@ class SqlitePageRepository : PageRepository {
                 },
             createdAt = this[PagesTable.createdAt],
             updatedAt = this[PagesTable.updatedAt],
-            deletedAt = this[PagesTable.deletedAt]
+            deletedAt = this[PagesTable.deletedAt],
         )
 }

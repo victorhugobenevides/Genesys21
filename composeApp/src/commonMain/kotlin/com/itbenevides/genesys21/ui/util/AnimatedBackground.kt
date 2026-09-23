@@ -3,9 +3,6 @@ package com.itbenevides.genesys21.ui.util
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -27,20 +24,21 @@ fun AnimatedGradientBackground(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "background")
 
-    val phaseState = if (!LocalTestMode.current) {
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 2f * PI.toFloat(),
-            animationSpec =
-                infiniteRepeatable(
-                    animation = tween(10000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart,
-                ),
-            label = "phase",
-        )
-    } else {
-        remember { mutableStateOf(0f) }
-    }
+    val phaseState =
+        if (!LocalTestMode.current) {
+            infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 2f * PI.toFloat(),
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(10000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "phase",
+            )
+        } else {
+            remember { mutableStateOf(0f) }
+        }
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val width = size.width

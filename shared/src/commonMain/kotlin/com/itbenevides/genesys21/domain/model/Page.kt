@@ -85,7 +85,8 @@ sealed class PageComponent {
         val products: List<Product> = emptyList(),
         val title: String = "Lista de Produtos",
         val isHorizontal: Boolean = false,
-        val showPrice: Boolean = true, // NOVO: Permite ocultar preços (ex: estética)
+        /** NOVO: Permite ocultar preços (ex: estética) */
+        val showPrice: Boolean = true,
         override val customLabel: String? = null,
         override val isFilterable: Boolean = true,
         override val destinationUrl: String? = null,
@@ -210,7 +211,8 @@ sealed class PageComponent {
     data class ServiceList(
         val services: List<BookingService> = emptyList(),
         val title: String = "Nossos Serviços",
-        val showPrice: Boolean = true, // NOVO: Permite ocultar preços
+        /** NOVO: Permite ocultar preços */
+        val showPrice: Boolean = true,
         @Transient
         override val customLabel: String? = null,
         @Transient
@@ -266,7 +268,8 @@ sealed class PageComponent {
     data class BenefitItem(
         val title: String,
         val description: String,
-        val iconName: String // "Check", "Magic", "Inventory", etc.
+        /** "Check", "Magic", "Inventory", etc. */
+        val iconName: String,
     )
 
     @Serializable
@@ -301,7 +304,7 @@ sealed class PageComponent {
     @Serializable
     data class GridItem(
         val components: List<PageComponent> = emptyList(),
-        val span: Int = 1
+        val span: Int = 1,
     )
 
     @Serializable
@@ -400,7 +403,7 @@ sealed class PageComponent {
     data class BusinessDay(
         val day: String,
         val hours: String,
-        val isClosed: Boolean = false
+        val isClosed: Boolean = false,
     )
 
     companion object
@@ -418,10 +421,15 @@ data class Page(
     val customTheme: CustomThemeConfig? = null,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
 ) {
     companion object {
-        fun createFromTemplate(templateId: String, pageId: String, storeId: String, title: String): Page {
+        fun createFromTemplate(
+            templateId: String,
+            pageId: String,
+            storeId: String,
+            title: String,
+        ): Page {
             return PageTemplateRegistry.createPageFromTemplate(templateId, pageId, storeId, title)
         }
     }

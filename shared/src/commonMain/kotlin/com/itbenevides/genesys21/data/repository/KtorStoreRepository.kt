@@ -10,100 +10,123 @@ import io.ktor.http.*
 class KtorStoreRepository(
     private val client: HttpClient,
     private val baseUrl: String,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : StoreRepository {
+    private suspend fun getHeaders() =
+        buildMap {
+            authRepository.getCurrentUserToken()?.let {
+                put(HttpHeaders.Authorization, "Bearer $it")
+            }
+        }
 
-    private suspend fun getHeaders() = buildMap {
-        authRepository.getCurrentUserToken()?.let {
-            put(HttpHeaders.Authorization, "Bearer $it")
+    override suspend fun getStore(id: String): Result<Store> =
+        try {
+            val response = client.get("$baseUrl/api/stores/$id")
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Loja não encontrada"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    }
 
-    override suspend fun getStore(id: String): Result<Store> = try {
-        val response = client.get("$baseUrl/api/stores/$id")
-        if (response.status.isSuccess()) {
-            Result.success(response.body())
-        } else {
-            Result.failure(Exception("Loja não encontrada"))
+    override suspend fun saveStore(
+        store: Store,
+        token: String,
+    ): Result<Unit> =
+        try {
+            val response =
+                client.post("$baseUrl/api/stores") {
+                    getHeaders().forEach { (k, v) -> header(k, v) }
+                    contentType(ContentType.Application.Json)
+                    setBody(store)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao salvar loja"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun saveStore(store: Store, token: String): Result<Unit> = try {
-        val response = client.post("$baseUrl/api/stores") {
-            getHeaders().forEach { (k, v) -> header(k, v) }
-            contentType(ContentType.Application.Json)
-            setBody(store)
-        }
-        if (response.status.isSuccess()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Erro ao salvar loja"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
     override suspend fun createConnectAccount(
         storeId: String,
         email: String,
-        token: String
-    ): Result<String> = try {
-        val response = client.post("$baseUrl/api/admin/connect/accounts") {
-            getHeaders().forEach { (k, v) -> header(k, v) }
-            contentType(ContentType.Application.Json)
-            setBody(ConnectAccountRequest(storeId, email))
+        token: String,
+    ): Result<String> =
+        try {
+            val response =
+                client.post("$baseUrl/api/admin/connect/accounts") {
+                    getHeaders().forEach { (k, v) -> header(k, v) }
+                    contentType(ContentType.Application.Json)
+                    setBody(ConnectAccountRequest(storeId, email))
+                }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Erro ao criar conta Stripe"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(response.body())
-        } else {
-            Result.failure(Exception("Erro ao criar conta Stripe"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun getConnectOnboardingLink(storeId: String, token: String): Result<String> = try {
-        val response = client.get("$baseUrl/api/admin/connect/onboarding-link") {
-            getHeaders().forEach { (k, v) -> header(k, v) }
-            url { parameters.append("storeId", storeId) }
+    override suspend fun getConnectOnboardingLink(
+        storeId: String,
+        token: String,
+    ): Result<String> =
+        try {
+            val response =
+                client.get("$baseUrl/api/admin/connect/onboarding-link") {
+                    getHeaders().forEach { (k, v) -> header(k, v) }
+                    url { parameters.append("storeId", storeId) }
+                }
+            if (response.status.isSuccess()) {
+                Result.success(response.body<ConnectLinkResponse>().url)
+            } else {
+                Result.failure(Exception("Erro ao gerar link de onboarding"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(response.body<ConnectLinkResponse>().url)
-        } else {
-            Result.failure(Exception("Erro ao gerar link de onboarding"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun getConnectLoginLink(storeId: String, token: String): Result<String> = try {
-        val response = client.get("$baseUrl/api/admin/connect/login-link") {
-            getHeaders().forEach { (k, v) -> header(k, v) }
-            url { parameters.append("storeId", storeId) }
+    override suspend fun getConnectLoginLink(
+        storeId: String,
+        token: String,
+    ): Result<String> =
+        try {
+            val response =
+                client.get("$baseUrl/api/admin/connect/login-link") {
+                    getHeaders().forEach { (k, v) -> header(k, v) }
+                    url { parameters.append("storeId", storeId) }
+                }
+            if (response.status.isSuccess()) {
+                Result.success(response.body<ConnectLinkResponse>().url)
+            } else {
+                Result.failure(Exception("Erro ao gerar link de dashboard"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(response.body<ConnectLinkResponse>().url)
-        } else {
-            Result.failure(Exception("Erro ao gerar link de dashboard"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun getAccountSession(storeId: String, token: String): Result<String> = try {
-        val response = client.post("$baseUrl/api/admin/connect/sessions") {
-            getHeaders().forEach { (k, v) -> header(k, v) }
-            contentType(ContentType.Application.Json)
-            setBody(AccountSessionRequest(storeId))
+    override suspend fun getAccountSession(
+        storeId: String,
+        token: String,
+    ): Result<String> =
+        try {
+            val response =
+                client.post("$baseUrl/api/admin/connect/sessions") {
+                    getHeaders().forEach { (k, v) -> header(k, v) }
+                    contentType(ContentType.Application.Json)
+                    setBody(AccountSessionRequest(storeId))
+                }
+            if (response.status.isSuccess()) {
+                Result.success(response.body<AccountSessionResponse>().clientSecret)
+            } else {
+                Result.failure(Exception("Erro ao criar sessão Stripe"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(response.body<AccountSessionResponse>().clientSecret)
-        } else {
-            Result.failure(Exception("Erro ao criar sessão Stripe"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 }

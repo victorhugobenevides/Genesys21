@@ -8,10 +8,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
-import com.itbenevides.genesys21.domain.model.PageTemplateRegistry
-import com.itbenevides.genesys21.domain.model.Product
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerContent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreenState
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard

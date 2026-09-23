@@ -1,42 +1,54 @@
 package com.itbenevides.genesys21.data.repository
 
-import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.model.UserRole
+import com.itbenevides.genesys21.domain.repository.AuthRepository
+import kotlin.js.Promise
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlin.js.Promise
 
 // Interop seguro: Se a função não existir no window, retorna um valor padrão em vez de crashar
-@JsFun("""(email, pass) => {
+@JsFun(
+    """(email, pass) => {
     if (typeof window.firebaseSignIn === 'function') {
         return window.firebaseSignIn(email, pass);
     } else {
         console.error('DEBUG: window.firebaseSignIn não encontrado');
         return Promise.reject('JS Not Ready - window.firebaseSignIn missing');
     }
-}""")
-external fun firebaseSignInSafe(email: String, pass: String): Promise<JsString>
+}""",
+)
+external fun firebaseSignInSafe(
+    email: String,
+    pass: String,
+): Promise<JsString>
 
-@JsFun("""(email, pass) => {
+@JsFun(
+    """(email, pass) => {
     if (typeof window.firebaseSignUp === 'function') {
         return window.firebaseSignUp(email, pass);
     } else {
         console.error('DEBUG: window.firebaseSignUp não encontrado');
         return Promise.reject('JS Not Ready - window.firebaseSignUp missing');
     }
-}""")
-external fun firebaseSignUpSafe(email: String, pass: String): Promise<JsString>
+}""",
+)
+external fun firebaseSignUpSafe(
+    email: String,
+    pass: String,
+): Promise<JsString>
 
-@JsFun("""() => {
+@JsFun(
+    """() => {
     if (typeof window.firebaseSignInGoogle === 'function') {
         return window.firebaseSignInGoogle();
     } else {
         console.error('DEBUG: window.firebaseSignInGoogle não encontrado');
         return Promise.reject('JS Not Ready - window.firebaseSignInGoogle missing');
     }
-}""")
+}""",
+)
 external fun firebaseSignInGoogleSafe(): Promise<JsString>
 
 @JsFun("() => (typeof window.firebaseGetToken === 'function') ? window.firebaseGetToken() : Promise.resolve(null)")
@@ -67,16 +79,20 @@ external fun firebaseOnAuthChangedSafe(callback: (JsString?) -> Unit)
 external fun decodeBase64Safe(str: String): String
 
 class WasmAuthRepository : AuthRepository {
-    override val authState: Flow<String?> = callbackFlow {
-        firebaseOnAuthChangedSafe { uid ->
-            trySend(uid?.toString())
+    override val authState: Flow<String?> =
+        callbackFlow {
+            firebaseOnAuthChangedSafe { uid ->
+                trySend(uid?.toString())
+            }
+            awaitClose { }
         }
-        awaitClose { }
-    }
 
     override val userRole: Flow<UserRole?> = MutableStateFlow(null)
 
-    override suspend fun signIn(email: String, password: String): Result<String?> {
+    override suspend fun signIn(
+        email: String,
+        password: String,
+    ): Result<String?> {
         println("DEBUG KOTLIN: Tentando login para $email")
         val promise = firebaseSignInSafe(email, password)
         println("DEBUG KOTLIN: Promise criada")
@@ -90,7 +106,11 @@ class WasmAuthRepository : AuthRepository {
         }
     }
 
-    override suspend fun signIn(idToken: String, accessToken: String?, provider: String): Result<String?> {
+    override suspend fun signIn(
+        idToken: String,
+        accessToken: String?,
+        provider: String,
+    ): Result<String?> {
         return try {
             if (provider == "google") {
                 if (idToken.isNotBlank()) {
@@ -112,7 +132,10 @@ class WasmAuthRepository : AuthRepository {
         }
     }
 
-    override suspend fun signUp(email: String, password: String): Result<String?> {
+    override suspend fun signUp(
+        email: String,
+        password: String,
+    ): Result<String?> {
         return try {
             val token = firebaseSignUpSafe(email, password).await().toString()
             Result.success(token)
@@ -162,7 +185,9 @@ class WasmAuthRepository : AuthRepository {
             val decoded = decodeBase64Safe(payload)
             if (decoded.contains("\"email\":\"")) {
                 decoded.substringAfter("\"email\":\"").substringBefore("\"")
-            } else null
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         }

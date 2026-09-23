@@ -7,5 +7,5 @@ data class OrderResponse(
     val orderId: String,
     val checkoutUrl: String? = null,
     val stripeClientSecret: String? = null,
-    val stripePublishableKey: String? = null
+    val stripePublishableKey: String? = null,
 )

@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,8 +19,8 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable

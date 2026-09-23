@@ -3,7 +3,6 @@ package com.itbenevides.genesys21.util
 import kotlin.math.roundToLong
 
 object CurrencyUtils {
-
     /**
      * Arredonda um preço para exatamente 2 casas decimais.
      */

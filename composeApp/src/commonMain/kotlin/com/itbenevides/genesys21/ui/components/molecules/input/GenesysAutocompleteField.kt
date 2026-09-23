@@ -18,22 +18,23 @@ fun GenesysAutocompleteField(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     autoFilter: Boolean = true,
-    onSuggestionSelected: (String) -> Unit
+    onSuggestionSelected: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val filteredSuggestions = remember(value, suggestions, autoFilter) {
-        if (autoFilter && value.isNotBlank()) {
-            suggestions.filter { SearchUtils.fuzzyMatch(value, it) }
-        } else {
-            suggestions
-        }.take(5)
-    }
+    val filteredSuggestions =
+        remember(value, suggestions, autoFilter) {
+            if (autoFilter && value.isNotBlank()) {
+                suggestions.filter { SearchUtils.fuzzyMatch(value, it) }
+            } else {
+                suggestions
+            }.take(5)
+        }
 
     ExposedDropdownMenuBox(
         expanded = expanded && filteredSuggestions.isNotEmpty(),
         onExpandedChange = { expanded = it },
-        modifier = modifier
+        modifier = modifier,
     ) {
         GenesysTextField(
             value = value,
@@ -46,13 +47,13 @@ fun GenesysAutocompleteField(
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            }
+            },
         )
 
         if (filteredSuggestions.isNotEmpty()) {
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
             ) {
                 filteredSuggestions.forEach { suggestion ->
                     DropdownMenuItem(
@@ -61,7 +62,7 @@ fun GenesysAutocompleteField(
                             onSuggestionSelected(suggestion)
                             expanded = false
                         },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
                     )
                 }
             }

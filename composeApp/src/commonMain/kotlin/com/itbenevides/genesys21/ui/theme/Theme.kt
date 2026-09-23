@@ -37,11 +37,11 @@ private fun ColorScheme.toGenesysColors(isDark: Boolean): GenesysColors {
         surfaceVariant = surfaceVariant,
         onSurfaceVariant = onSurfaceVariant,
         outline = outline,
-        success = Success, // Token fixo para status
+        success = Success,
         error = error,
         onError = onError,
         errorContainer = errorContainer,
-        isDark = isDark
+        isDark = isDark,
     )
 }
 
@@ -56,7 +56,7 @@ private val EleganceColorScheme =
         onSecondary = Color.White,
         secondaryContainer = EleganceGold.copy(alpha = 0.1f),
         onSecondaryContainer = EleganceGold,
-        tertiary = Color(0xFF5856D6), // Indigo accent
+        tertiary = Color(0xFF5856D6),
         onTertiary = Color.White,
         tertiaryContainer = Color(0xFF5856D6).copy(alpha = 0.1f),
         onTertiaryContainer = Color(0xFF5856D6),
@@ -70,7 +70,7 @@ private val EleganceColorScheme =
         error = Error,
         onError = Color.White,
         errorContainer = Error.copy(alpha = 0.1f),
-        onErrorContainer = Error
+        onErrorContainer = Error,
     )
 
 // 2. VIBRANT (Tech Blue)
@@ -80,11 +80,11 @@ private val VibrantColorScheme =
         onPrimary = Color.White,
         primaryContainer = VibrantBlue.copy(alpha = 0.1f),
         onPrimaryContainer = VibrantBlue,
-        secondary = Color(0xFF34C759), // Green accent
+        secondary = Color(0xFF34C759),
         onSecondary = Color.White,
         secondaryContainer = Color(0xFF34C759).copy(alpha = 0.1f),
         onSecondaryContainer = Color(0xFF34C759),
-        tertiary = Color(0xFFFF2D55), // Pink accent
+        tertiary = Color(0xFFFF2D55),
         onTertiary = Color.White,
         background = VibrantBg,
         onBackground = Color(0xFF1C1C1E),
@@ -94,7 +94,7 @@ private val VibrantColorScheme =
         onSurfaceVariant = Color(0xFF555E67),
         outline = VibrantBlue,
         error = Error,
-        onError = Color.White
+        onError = Color.White,
     )
 
 // 3. NATURE (Green & Earth)
@@ -104,7 +104,7 @@ private val NatureColorScheme =
         onPrimary = Color.White,
         primaryContainer = NatureGreen.copy(alpha = 0.12f),
         onPrimaryContainer = NatureGreen,
-        secondary = Color(0xFFDDA15E), // Earthy tone
+        secondary = Color(0xFFDDA15E),
         onSecondary = Color.White,
         secondaryContainer = Color(0xFFDDA15E).copy(alpha = 0.12f),
         onSecondaryContainer = Color(0xFFDDA15E),
@@ -148,11 +148,11 @@ private val MidnightColorScheme =
         onPrimary = Color.White,
         primaryContainer = MidnightRed.copy(alpha = 0.2f),
         onPrimaryContainer = MidnightRed,
-        secondary = Color(0xFF5856D6), // Deep Indigo
+        secondary = Color(0xFF5856D6),
         onSecondary = Color.White,
         secondaryContainer = Color(0xFF5856D6).copy(alpha = 0.2f),
         onSecondaryContainer = Color(0xFF5856D6),
-        tertiary = Color(0xFF0A84FF), // Tech Blue
+        tertiary = Color(0xFF0A84FF),
         onTertiary = Color.White,
         background = MidnightBlack,
         onBackground = Color.White,
@@ -170,11 +170,11 @@ private val CandyColorScheme =
         onPrimary = Color.White,
         primaryContainer = CandyPink.copy(alpha = 0.1f),
         onPrimaryContainer = CandyPink,
-        secondary = Color(0xFFFF9500), // Orange
+        secondary = Color(0xFFFF9500),
         onSecondary = Color.White,
         secondaryContainer = Color(0xFFFF9500).copy(alpha = 0.1f),
         onSecondaryContainer = Color(0xFFFF9500),
-        tertiary = Color(0xFF5AC8FA), // Sky Blue
+        tertiary = Color(0xFF5AC8FA),
         onTertiary = Color.White,
         background = CandyBg,
         onBackground = Color(0xFF2B0116),
@@ -204,9 +204,12 @@ fun AppTheme(
             else -> EleganceColorScheme
         }
 
-    val dynamicColorScheme = if (useDynamicColor) {
-        getDynamicColorScheme(darkTheme = isDark)
-    } else null
+    val dynamicColorScheme =
+        if (useDynamicColor) {
+            getDynamicColorScheme(darkTheme = isDark)
+        } else {
+            null
+        }
 
     val colorScheme =
         if (customTheme != null) {
@@ -245,10 +248,11 @@ fun AppTheme(
         )
 
     val typography = getTypography(customTheme?.typographySet ?: TypographySet.DEFAULT)
-    val genesysTypography = getGenesysTypography(
-        set = customTheme?.typographySet ?: TypographySet.DEFAULT,
-        windowSizeClass = windowSizeClass
-    )
+    val genesysTypography =
+        getGenesysTypography(
+            set = customTheme?.typographySet ?: TypographySet.DEFAULT,
+            windowSizeClass = windowSizeClass,
+        )
     val genesysColors = colorScheme.toGenesysColors(isDark)
 
     CompositionLocalProvider(

@@ -30,11 +30,12 @@ fun GenesysDatePicker(
     val paddingDays = firstDayOfWeek - 1
 
     Column(
-        modifier = modifier
-            .wrapContentWidth()
-            .widthIn(max = 550.dp)
-            .padding(horizontal = GenesysTheme.spacing.m),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            modifier
+                .wrapContentWidth()
+                .widthIn(max = 550.dp)
+                .padding(horizontal = GenesysTheme.spacing.m),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Month Header
         Row(
@@ -44,7 +45,7 @@ fun GenesysDatePicker(
         ) {
             IconButton(
                 onClick = { currentMonth = currentMonth.minus(1, DateTimeUnit.MONTH) },
-                modifier = Modifier.size(GenesysTheme.spacing.xl)
+                modifier = Modifier.size(GenesysTheme.spacing.xl),
             ) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous Month", modifier = Modifier.size(GenesysTheme.spacing.m))
             }
@@ -57,7 +58,7 @@ fun GenesysDatePicker(
 
             IconButton(
                 onClick = { currentMonth = nextMonthDate },
-                modifier = Modifier.size(GenesysTheme.spacing.xl)
+                modifier = Modifier.size(GenesysTheme.spacing.xl),
             ) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next Month", modifier = Modifier.size(GenesysTheme.spacing.m))
             }
@@ -86,12 +87,12 @@ fun GenesysDatePicker(
 
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             repeat(rows) { rowIndex ->
                 Row(
                     modifier = Modifier.wrapContentWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     repeat(7) { colIndex ->
                         val cellIndex = rowIndex * 7 + colIndex

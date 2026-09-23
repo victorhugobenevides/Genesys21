@@ -1,9 +1,9 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
+import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.model.Product
-import com.itbenevides.genesys21.domain.model.BookingService
 
 /**
  * UI State para a tela de Editor Administrativo (WhiteLabel).

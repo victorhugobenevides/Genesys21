@@ -16,31 +16,35 @@ import com.itbenevides.genesys21.ui.theme.GenesysTheme
 fun Modifier.shimmer(
     baseColor: Color? = null,
     highlightColor: Color? = null,
-    durationMillis: Int = 1200
-): Modifier = composed {
-    val transition = rememberInfiniteTransition(label = "shimmer")
+    durationMillis: Int = 1200,
+): Modifier =
+    composed {
+        val transition = rememberInfiniteTransition(label = "shimmer")
 
-    val translateAnim by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmerTranslate"
-    )
+        val translateAnim by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "shimmerTranslate",
+        )
 
-    val shimmerColors = listOf(
-        (baseColor ?: GenesysTheme.colors.surfaceVariant.copy(alpha = 0.4f)),
-        (highlightColor ?: GenesysTheme.colors.surfaceVariant.copy(alpha = 0.1f)),
-        (baseColor ?: GenesysTheme.colors.surfaceVariant.copy(alpha = 0.4f)),
-    )
+        val shimmerColors =
+            listOf(
+                (baseColor ?: GenesysTheme.colors.surfaceVariant.copy(alpha = 0.4f)),
+                (highlightColor ?: GenesysTheme.colors.surfaceVariant.copy(alpha = 0.1f)),
+                (baseColor ?: GenesysTheme.colors.surfaceVariant.copy(alpha = 0.4f)),
+            )
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset.Zero,
-        end = Offset(x = translateAnim, y = translateAnim)
-    )
+        val brush =
+            Brush.linearGradient(
+                colors = shimmerColors,
+                start = Offset.Zero,
+                end = Offset(x = translateAnim, y = translateAnim),
+            )
 
-    background(brush)
-}
+        background(brush)
+    }

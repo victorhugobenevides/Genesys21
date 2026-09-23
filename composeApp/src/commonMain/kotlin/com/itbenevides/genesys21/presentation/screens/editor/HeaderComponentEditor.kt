@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,8 +16,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable
@@ -36,13 +35,15 @@ fun HeaderComponentEditor(
 
     // LIVE PREVIEW: Sincroniza em tempo real
     LaunchedEffect(title, alignment, fontSize, isUppercase, usePrimaryColor) {
-        onSave(component.copy(
-            title = title,
-            textAlign = alignment,
-            fontSize = fontSize.toInt(),
-            isUppercase = isUppercase,
-            usePrimaryColor = usePrimaryColor,
-        ))
+        onSave(
+            component.copy(
+                title = title,
+                textAlign = alignment,
+                fontSize = fontSize.toInt(),
+                isUppercase = isUppercase,
+                usePrimaryColor = usePrimaryColor,
+            ),
+        )
     }
 
     GenesysColumn(usePadding = false) {
@@ -51,13 +52,14 @@ fun HeaderComponentEditor(
 
         // CORREÇÃO: Usando o renderizador real
         PageComponentRenderer(
-            component = component.copy(
-                title = title,
-                textAlign = alignment,
-                fontSize = fontSize.toInt(),
-                isUppercase = isUppercase,
-                usePrimaryColor = usePrimaryColor,
-            ),
+            component =
+                component.copy(
+                    title = title,
+                    textAlign = alignment,
+                    fontSize = fontSize.toInt(),
+                    isUppercase = isUppercase,
+                    usePrimaryColor = usePrimaryColor,
+                ),
             storeId = "admin",
             isEditMode = false,
         )

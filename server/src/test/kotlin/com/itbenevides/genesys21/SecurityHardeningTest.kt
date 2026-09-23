@@ -10,16 +10,14 @@ import io.ktor.http.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import io.mockk.mockk
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
 import java.io.File
 import java.util.UUID
 import kotlin.test.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class SecurityHardeningTest {
-
     @BeforeTest
     fun setup() {
         DatabaseFactory.reset()
@@ -38,138 +36,152 @@ class SecurityHardeningTest {
     }
 
     @Test
-    fun `regular user should not be able to escalate role via saveUserProfile`() = testApplication {
-        val dbPath = createUniqueTestDb()
-        environment {
-            config = MapApplicationConfig(
-                "ktor.testing" to "true",
-                "ktor.test.db_path" to dbPath
-            )
-        }
-
-        application { module() }
-
-        val userRepo = SqliteUserRepository()
-
-        // 1. Criar um usuário comum diretamente no banco
-        val initialProfile = UserProfile(
-            id = "attacker-id",
-            email = "attacker@evil.com",
-            name = "Attacker",
-            role = UserRole.CUSTOMER
-        )
-        userRepo.saveUserProfile(initialProfile).getOrThrow()
-
-        // 2. Ataque: Tentar se promover para SUPERADMIN via POST na API
-        val evilProfile = initialProfile.copy(role = UserRole.SUPERADMIN)
-
-        val response = client.post("/api/users/profile") {
-            header(HttpHeaders.Authorization, "Bearer dummy-token")
-            header(HttpHeaders.ContentType, ContentType.Application.Json)
-            setBody(Json.encodeToString(evilProfile))
-        }
-
-        assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK")
-
-        // 3. Verificação: O cargo deve continuar como CUSTOMER no banco
-        val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
-
-        assertEquals(
-            UserRole.CUSTOMER,
-            savedProfile.role,
-            "Security Vulnerability: User escalated role! Expected ${UserRole.CUSTOMER}, but got ${savedProfile.role}. (DB Path: $dbPath)"
-        )
-    }
-
-    @Test
-    fun `order total should be recalculated on server to prevent price manipulation`() = testApplication {
-        val dbPath = createUniqueTestDb()
-        environment {
-            config = MapApplicationConfig(
-                "ktor.testing" to "true",
-                "ktor.test.db_path" to dbPath
-            )
-        }
-
-        application { module() }
-
-        // Setup: Inserir catálogo oficial
-        dbQuery {
-            StoresTable.insert {
-                it[id] = "s1"
-                it[ownerId] = "u1"
-                it[name] = "Test Store"
+    fun `regular user should not be able to escalate role via saveUserProfile`() =
+        testApplication {
+            val dbPath = createUniqueTestDb()
+            environment {
+                config =
+                    MapApplicationConfig(
+                        "ktor.testing" to "true",
+                        "ktor.test.db_path" to dbPath,
+                    )
             }
-            ProductsTable.insert {
-                it[id] = "real-prod"
-                it[storeId] = "s1"
-                it[name] = "Expensive Product"
-                it[price] = 1000.0
-                it[stock] = 10
-            }
-        }
 
-        val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
+            application { module() }
 
-        // Ataque: Enviar pedido com preço manipulado de R$ 1.00
-        val fakeOrder = Order(
-            id = "evil-order",
-            storeId = "s1",
-            items = listOf(
-                CartItem(
-                    product = Product(id = "real-prod", storeId = "s1", name = "Expensive Product", price = 1.0),
-                    quantity = 1
+            val userRepo = SqliteUserRepository()
+
+            // 1. Criar um usuário comum diretamente no banco
+            val initialProfile =
+                UserProfile(
+                    id = "attacker-id",
+                    email = "attacker@evil.com",
+                    name = "Attacker",
+                    role = UserRole.CUSTOMER,
                 )
-            ),
-            total = 1.0,
-            paymentMethod = PaymentMethod.LOCAL
-        )
+            userRepo.saveUserProfile(initialProfile).getOrThrow()
 
-        val response = client.post("/api/public/orders") {
-            header(HttpHeaders.ContentType, ContentType.Application.Json)
-            setBody(Json.encodeToString(fakeOrder))
-        }
+            // 2. Ataque: Tentar se promover para SUPERADMIN via POST na API
+            val evilProfile = initialProfile.copy(role = UserRole.SUPERADMIN)
 
-        assertEquals(HttpStatusCode.Created, response.status, "Order response body: ${response.bodyAsText()}")
+            val response =
+                client.post("/api/users/profile") {
+                    header(HttpHeaders.Authorization, "Bearer dummy-token")
+                    header(HttpHeaders.ContentType, ContentType.Application.Json)
+                    setBody(Json.encodeToString(evilProfile))
+                }
 
-        // Verificação final no banco
-        val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
+            assertEquals(HttpStatusCode.OK, response.status, "Update profile should return 200 OK")
 
-        assertEquals(
-            1000.0,
-            savedOrder.total,
-            "Security Vulnerability: Server accepted manipulated price! Expected 1000.0, but got ${savedOrder.total}. (DB Path: $dbPath)"
-        )
-    }
+            // 3. Verificação: O cargo deve continuar como CUSTOMER no banco
+            val savedProfile = userRepo.getUserProfile("attacker-id").getOrThrow()
 
-    @Test
-    fun `user should not be able to delete a page they do not own`() = testApplication {
-        val dbPath = createUniqueTestDb()
-        environment {
-            config = MapApplicationConfig(
-                "ktor.testing" to "true",
-                "ktor.test.db_path" to dbPath
+            assertEquals(
+                UserRole.CUSTOMER,
+                savedProfile.role,
+                "Security Vulnerability: User escalated role! Expected ${UserRole.CUSTOMER}, but got ${savedProfile.role}. (DB Path: $dbPath)",
             )
         }
-        application { module() }
 
-        // Setup: Criar uma página para o lojista legítimo (owner-id)
-        dbQuery {
-            PagesTable.insert {
-                it[id] = "target-page"
-                it[storeId] = "owner-id"
-                it[title] = "Legit Page"
+    @Test
+    fun `order total should be recalculated on server to prevent price manipulation`() =
+        testApplication {
+            val dbPath = createUniqueTestDb()
+            environment {
+                config =
+                    MapApplicationConfig(
+                        "ktor.testing" to "true",
+                        "ktor.test.db_path" to dbPath,
+                    )
             }
+
+            application { module() }
+
+            // Setup: Inserir catálogo oficial
+            dbQuery {
+                StoresTable.insert {
+                    it[id] = "s1"
+                    it[ownerId] = "u1"
+                    it[name] = "Test Store"
+                }
+                ProductsTable.insert {
+                    it[id] = "real-prod"
+                    it[storeId] = "s1"
+                    it[name] = "Expensive Product"
+                    it[price] = 1000.0
+                    it[stock] = 10
+                }
+            }
+
+            val orderRepo = SqliteOrderRepository(mockk(relaxed = true))
+
+            // Ataque: Enviar pedido com preço manipulado de R$ 1.00
+            val fakeOrder =
+                Order(
+                    id = "evil-order",
+                    storeId = "s1",
+                    items =
+                        listOf(
+                            CartItem(
+                                product = Product(id = "real-prod", storeId = "s1", name = "Expensive Product", price = 1.0),
+                                quantity = 1,
+                            ),
+                        ),
+                    total = 1.0,
+                    paymentMethod = PaymentMethod.LOCAL,
+                )
+
+            val response =
+                client.post("/api/public/orders") {
+                    header(HttpHeaders.ContentType, ContentType.Application.Json)
+                    setBody(Json.encodeToString(fakeOrder))
+                }
+
+            assertEquals(HttpStatusCode.Created, response.status, "Order response body: ${response.bodyAsText()}")
+
+            // Verificação final no banco
+            val savedOrder = orderRepo.getOrderById("evil-order").getOrThrow()
+
+            assertEquals(
+                1000.0,
+                savedOrder.total,
+                "Security Vulnerability: Server accepted manipulated price! Expected 1000.0, but got ${savedOrder.total}. (DB Path: $dbPath)",
+            )
         }
 
-        // Ataque: Usuário 'attacker-id' tenta deletar a página de 'owner-id'
-        val response = client.delete("/api/pages/target-page") {
-            header(HttpHeaders.Authorization, "Bearer dummy-token") // Token mapeia para 'attacker-id' no dummy auth
-        }
+    @Test
+    fun `user should not be able to delete a page they do not own`() =
+        testApplication {
+            val dbPath = createUniqueTestDb()
+            environment {
+                config =
+                    MapApplicationConfig(
+                        "ktor.testing" to "true",
+                        "ktor.test.db_path" to dbPath,
+                    )
+            }
+            application { module() }
 
-        // Deve retornar 403 Forbidden ou 404 Not Found (dependendo se queremos esconder a existência)
-        // No Genesys21, usamos Forbidden para indicar falta de permissão.
-        assertTrue(response.status == HttpStatusCode.Forbidden || response.status == HttpStatusCode.NotFound,
-            "Security Vulnerability: User was able to access or delete another user's page (IDOR)! Status: ${response.status}")
-    }
+            // Setup: Criar uma página para o lojista legítimo (owner-id)
+            dbQuery {
+                PagesTable.insert {
+                    it[id] = "target-page"
+                    it[storeId] = "owner-id"
+                    it[title] = "Legit Page"
+                }
+            }
+
+            // Ataque: Usuário 'attacker-id' tenta deletar a página de 'owner-id'
+            val response =
+                client.delete("/api/pages/target-page") {
+                    header(HttpHeaders.Authorization, "Bearer dummy-token") // Token mapeia para 'attacker-id' no dummy auth
+                }
+
+            // Deve retornar 403 Forbidden ou 404 Not Found (dependendo se queremos esconder a existência)
+            // No Genesys21, usamos Forbidden para indicar falta de permissão.
+            assertTrue(
+                response.status == HttpStatusCode.Forbidden || response.status == HttpStatusCode.NotFound,
+                "Security Vulnerability: User was able to access or delete another user's page (IDOR)! Status: ${response.status}",
+            )
+        }
 }

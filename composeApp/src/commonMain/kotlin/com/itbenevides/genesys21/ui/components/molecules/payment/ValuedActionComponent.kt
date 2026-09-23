@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.ui.components.molecules.payment
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -9,13 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
-import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysOutlinedTextField
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.CurrencyUtils
 
@@ -24,23 +23,23 @@ import com.itbenevides.genesys21.util.CurrencyUtils
 fun ValuedActionComponent(
     component: PageComponent.ValuedAction,
     onActionClick: (String, Double) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var selectedValue by remember { mutableStateOf<Double?>(if (component.suggestedValues.isNotEmpty()) component.suggestedValues.first() else null) }
     var customValueText by remember { mutableStateOf("") }
     val isCustomSelected = component.allowCustomValue && selectedValue == null
 
     GenesysCard(
-        modifier = modifier.fillMaxWidth().padding(16.dp)
+        modifier = modifier.fillMaxWidth().padding(16.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             GenesysText(
                 text = component.title,
                 style = GenesysTextStyle.Title,
-                fontWeight = GenesysFontWeight.Bold
+                fontWeight = GenesysFontWeight.Bold,
             )
 
             component.description?.let {
@@ -48,7 +47,7 @@ fun ValuedActionComponent(
                 GenesysText(
                     text = it,
                     style = GenesysTextStyle.Body,
-                    color = GenesysTheme.colors.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant,
                 )
             }
 
@@ -58,7 +57,7 @@ fun ValuedActionComponent(
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
-                verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs)
+                verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs),
             ) {
                 for (value in component.suggestedValues) {
                     GenesysFilterChip(
@@ -68,7 +67,7 @@ fun ValuedActionComponent(
                             customValueText = ""
                         },
                         label = "${GenesysStrings.PricePrefix}${CurrencyUtils.formatDisplay(value)}",
-                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs)
+                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs),
                     )
                 }
 
@@ -77,7 +76,7 @@ fun ValuedActionComponent(
                         selected = isCustomSelected,
                         onClick = { selectedValue = null },
                         label = GenesysStrings.CustomValue,
-                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs)
+                        modifier = Modifier.padding(horizontal = GenesysTheme.spacing.xxs),
                     )
                 }
             }
@@ -90,17 +89,18 @@ fun ValuedActionComponent(
                     label = "Valor",
                     keyboardType = KeyboardType.Number,
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
             }
 
             GenesysSpacer(GenesysTheme.spacing.l)
 
-            val finalValue = if (isCustomSelected) {
-                customValueText.toDoubleOrNull() ?: 0.0
-            } else {
-                selectedValue ?: 0.0
-            }
+            val finalValue =
+                if (isCustomSelected) {
+                    customValueText.toDoubleOrNull() ?: 0.0
+                } else {
+                    selectedValue ?: 0.0
+                }
 
             GenesysLoadingButton(
                 text = "${component.buttonText} (${GenesysStrings.PricePrefix}${CurrencyUtils.formatDisplay(finalValue)})",
@@ -110,7 +110,7 @@ fun ValuedActionComponent(
                     }
                 },
                 enabled = finalValue > 0,
-                fillWidth = true
+                fillWidth = true,
             )
         }
     }

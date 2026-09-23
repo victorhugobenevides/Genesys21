@@ -3,10 +3,10 @@ package com.itbenevides.genesys21.data.repository
 import com.itbenevides.genesys21.data.database.*
 import com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery
 import com.itbenevides.genesys21.domain.model.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class SqliteCartRepository {
     private val json = Json { ignoreUnknownKeys = true }
@@ -37,10 +37,15 @@ class SqliteCartRepository {
                         CartItem(
                             product = product,
                             service = service,
-                            appointment = row[CartItemsTable.appointmentData]?.let {
-                                try { json.decodeFromString<Appointment>(it) } catch (e: Exception) { null }
-                            },
-                            quantity = row[CartItemsTable.quantity]
+                            appointment =
+                                row[CartItemsTable.appointmentData]?.let {
+                                    try {
+                                        json.decodeFromString<Appointment>(it)
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                },
+                            quantity = row[CartItemsTable.quantity],
                         )
                     } catch (e: Exception) {
                         println("CART_REPO: Erro ao processar item do carrinho para usuário $userId: ${e.message}")
@@ -56,7 +61,7 @@ class SqliteCartRepository {
                     id = row[ProductsTable.id],
                     storeId = row[ProductsTable.storeId],
                     name = row[ProductsTable.name],
-                    price = row[ProductsTable.price]
+                    price = row[ProductsTable.price],
                 )
             }.singleOrNull()
     }
@@ -69,7 +74,7 @@ class SqliteCartRepository {
                     storeId = row[BookingServicesTable.storeId],
                     name = row[BookingServicesTable.name],
                     price = row[BookingServicesTable.price],
-                    durationMinutes = row[BookingServicesTable.durationMinutes]
+                    durationMinutes = row[BookingServicesTable.durationMinutes],
                 )
             }.singleOrNull()
     }

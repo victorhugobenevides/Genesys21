@@ -14,7 +14,7 @@ actual fun StripeConnectComponent(
     componentName: String,
     publishableKey: String,
     clientSecret: String,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Box(modifier = modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
         Text("Stripe Connect Embedded Components não suportados em iOS nativo ainda.")

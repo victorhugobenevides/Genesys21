@@ -46,7 +46,7 @@ fun GenesysTabRow(
 private fun TabItems(
     tabs: List<GenesysTabData>,
     selectedTabIndex: Int,
-    onTabSelected: (Int) -> Unit
+    onTabSelected: (Int) -> Unit,
 ) {
     tabs.forEachIndexed { index, tab ->
         Tab(

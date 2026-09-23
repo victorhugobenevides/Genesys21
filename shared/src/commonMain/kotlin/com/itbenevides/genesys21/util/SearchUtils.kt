@@ -1,13 +1,15 @@
 package com.itbenevides.genesys21.util
 
 object SearchUtils {
-
     /**
      * Filtro fuzzy leve para sugestões de autocomplete.
      * Retorna verdadeiro se [item] contém todos os caracteres de [query] na mesma ordem,
      * ignorando maiúsculas/minúsculas e acentos.
      */
-    fun fuzzyMatch(query: String, item: String): Boolean {
+    fun fuzzyMatch(
+        query: String,
+        item: String,
+    ): Boolean {
         if (query.isBlank()) return true
         val cleanQuery = normalize(query)
         val cleanItem = normalize(item)

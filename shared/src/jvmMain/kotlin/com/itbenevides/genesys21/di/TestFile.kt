@@ -11,7 +11,7 @@ fun test(
     b: String,
     j: Json,
     a: AuthRepository,
-    s: SecureStorage
+    s: SecureStorage,
 ) {
     InMemoryCartRepository(h, b, j, a, s)
 }

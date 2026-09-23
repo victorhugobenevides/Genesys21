@@ -17,12 +17,12 @@ import com.itbenevides.genesys21.ui.theme.GenesysTheme
 fun GenesysLoadingIndicator(
     modifier: Modifier = Modifier,
     color: Color = GenesysTheme.colors.brand,
-    strokeWidth: Dp = 3.dp
+    strokeWidth: Dp = 3.dp,
 ) {
     CircularProgressIndicator(
         modifier = modifier,
         color = color,
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
 }
 
@@ -32,14 +32,16 @@ fun GenesysLoadingIndicator(
 @Composable
 fun GenesysLoadingOverlay(
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.Black.copy(alpha = 0.5f)
+    backgroundColor: Color = Color.Black.copy(alpha = 0.5f),
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .clickable(enabled = false) { }, // Bloqueia toques no fundo
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(backgroundColor)
+                .clickable(enabled = false) { },
+        // Bloqueia toques no fundo
+        contentAlignment = Alignment.Center,
     ) {
         GenesysLoadingIndicator()
     }

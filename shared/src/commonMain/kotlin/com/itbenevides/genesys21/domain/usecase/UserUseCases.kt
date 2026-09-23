@@ -18,17 +18,29 @@ class GetAllUsersUseCase(private val repository: UserRepository) {
 }
 
 class UpdateUserRoleUseCase(private val repository: UserRepository) {
-    suspend operator fun invoke(token: String, userId: String, role: UserRole) =
+    suspend operator fun invoke(
+        token: String,
+        userId: String,
+        role: UserRole,
+    ) =
         repository.updateUserRole(token, userId, role)
 }
 
 class UpdateUserStatusUseCase(private val repository: UserRepository) {
-    suspend operator fun invoke(token: String, userId: String, status: UserStatus) =
+    suspend operator fun invoke(
+        token: String,
+        userId: String,
+        status: UserStatus,
+    ) =
         repository.updateUserStatus(token, userId, status)
 }
 
 class UpdateUserPermissionsUseCase(private val repository: UserRepository) {
-    suspend operator fun invoke(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>) =
+    suspend operator fun invoke(
+        token: String,
+        userId: String,
+        permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>,
+    ) =
         repository.updateUserPermissions(token, userId, permissions)
 }
 

@@ -18,7 +18,8 @@ data class CartScreenState(
     val availableShippingOptions: List<ShippingOption> = emptyList(),
     val selectedShippingOption: ShippingOption? = null,
     val isLoading: Boolean = false,
-    val currentStep: Int = 1, // 1: Itens, 2: Identificação/Endereço, 3: Pagamento/Revisão
+    /** 1: Itens, 2: Identificação/Endereço, 3: Pagamento/Revisão */
+    val currentStep: Int = 1,
     val isGuestCheckout: Boolean = false,
     val stripeClientSecret: String? = null,
     val stripePublishableKey: String? = null,
@@ -67,5 +68,6 @@ sealed class CartScreenEvent {
     object OnBackClicked : CartScreenEvent()
 
     data class OnStripePaymentConfirmed(val orderId: String) : CartScreenEvent()
+
     data class OnStripePaymentError(val message: String) : CartScreenEvent()
 }

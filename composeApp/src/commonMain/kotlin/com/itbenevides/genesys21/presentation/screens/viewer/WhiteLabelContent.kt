@@ -1,12 +1,9 @@
 package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.animation.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -14,7 +11,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
@@ -96,7 +92,7 @@ fun WhiteLabelContent(
                                         showMenu = false
                                         onEvent(WhiteLabelEvent.OnShowThemeSelectorChanged(true))
                                     },
-                                    leadingIcon = { Icon(GenesysIcons.Palette, null) }
+                                    leadingIcon = { Icon(GenesysIcons.Palette, null) },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Theme Lab", style = GenesysTheme.typography.body) },
@@ -104,7 +100,7 @@ fun WhiteLabelContent(
                                         showMenu = false
                                         onEvent(WhiteLabelEvent.OnShowThemeLabChanged(true))
                                     },
-                                    leadingIcon = { Icon(GenesysIcons.Magic, null) }
+                                    leadingIcon = { Icon(GenesysIcons.Magic, null) },
                                 )
                                 if (state.page != originalPage) {
                                     DropdownMenuItem(
@@ -113,7 +109,7 @@ fun WhiteLabelContent(
                                             showMenu = false
                                             onDiscardClicked()
                                         },
-                                        leadingIcon = { Icon(GenesysIcons.Delete, null, tint = GenesysTheme.colors.error) }
+                                        leadingIcon = { Icon(GenesysIcons.Delete, null, tint = GenesysTheme.colors.error) },
                                     )
                                 }
                             }
@@ -189,16 +185,17 @@ fun WhiteLabelContent(
 
                 if (isExpanded) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .widthIn(min = 350.dp, max = 500.dp)
-                            .padding(vertical = GenesysTheme.spacing.m, horizontal = GenesysTheme.spacing.xs)
+                        modifier =
+                            Modifier
+                                .fillMaxHeight()
+                                .widthIn(min = 350.dp, max = 500.dp)
+                                .padding(vertical = GenesysTheme.spacing.m, horizontal = GenesysTheme.spacing.xs),
                     ) {
                         GenesysCard(
                             modifier = Modifier.fillMaxSize(),
                             elevation = GenesysDimens.ElevationHigh,
                             backgroundColor = GenesysTheme.colors.surface.copy(alpha = 0.95f),
-                            shape = RoundedCornerShape(GenesysTheme.spacing.l)
+                            shape = RoundedCornerShape(GenesysTheme.spacing.l),
                         ) {
                             state.editingComponentIndex?.let { index ->
                                 ComponentEditorUI(
@@ -348,46 +345,48 @@ internal fun ComponentEditorUI(
         GenesysRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.s),
             verticalAlignment = Alignment.CenterVertically,
-            usePadding = false
+            usePadding = false,
         ) {
-            val icon = when (component) {
-                is PageComponent.Hero -> GenesysIcons.Image
-                is PageComponent.Benefits -> GenesysIcons.Check
-                is PageComponent.Testimonial -> GenesysIcons.Feedback
-                is PageComponent.Grid -> GenesysIcons.GridView
-                is PageComponent.ProductList -> GenesysIcons.Inventory
-                is PageComponent.ServiceList -> GenesysIcons.Schedule
-                is PageComponent.ProfileHeader -> GenesysIcons.Person
-                is PageComponent.SocialLinks -> GenesysIcons.Share
-                is PageComponent.Spacer -> GenesysIcons.ArrowUp
-                is PageComponent.Divider -> GenesysIcons.HorizontalRule
-                is PageComponent.ValuedAction -> GenesysIcons.Favorite
-                else -> GenesysIcons.Magic
-            }
+            val icon =
+                when (component) {
+                    is PageComponent.Hero -> GenesysIcons.Image
+                    is PageComponent.Benefits -> GenesysIcons.Check
+                    is PageComponent.Testimonial -> GenesysIcons.Feedback
+                    is PageComponent.Grid -> GenesysIcons.GridView
+                    is PageComponent.ProductList -> GenesysIcons.Inventory
+                    is PageComponent.ServiceList -> GenesysIcons.Schedule
+                    is PageComponent.ProfileHeader -> GenesysIcons.Person
+                    is PageComponent.SocialLinks -> GenesysIcons.Share
+                    is PageComponent.Spacer -> GenesysIcons.ArrowUp
+                    is PageComponent.Divider -> GenesysIcons.HorizontalRule
+                    is PageComponent.ValuedAction -> GenesysIcons.Favorite
+                    else -> GenesysIcons.Magic
+                }
             Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(GenesysTheme.spacing.m))
             GenesysSpacer(GenesysTheme.spacing.m)
             GenesysText(
                 text = "Editar: ${component::class.simpleName ?: "Bloco"}",
                 style = GenesysTextStyle.Label,
                 fontWeight = GenesysFontWeight.Bold,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
 
             // MAGIC EDIT BUTTON 🪄
-            val supportsAi = remember(component) {
-                component is PageComponent.Header || component is PageComponent.Text || component is PageComponent.Hero || component is PageComponent.ProfileHeader
-            }
+            val supportsAi =
+                remember(component) {
+                    component is PageComponent.Header || component is PageComponent.Text || component is PageComponent.Hero || component is PageComponent.ProfileHeader
+                }
             if (supportsAi) {
                 GenesysIconButton(
                     icon = GenesysIcons.Magic,
                     onClick = { onEvent(WhiteLabelEvent.OnShowAiRefinementChanged(true)) },
-                    tint = GenesysTheme.colors.brand
+                    tint = GenesysTheme.colors.brand,
                 )
             }
 
             GenesysIconButton(
                 icon = GenesysIcons.Close,
-                onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) }
+                onClick = { onEvent(WhiteLabelEvent.OnEditingComponentIndexChanged(null)) },
             )
         }
 
@@ -397,7 +396,7 @@ internal fun ComponentEditorUI(
         GenesysColumn(
             usePadding = true,
             useScroll = true,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         ) {
             when (component) {
                 is PageComponent.Header -> {
@@ -474,7 +473,7 @@ internal fun ComponentEditorUI(
                             val updatedComp = component.copy(title = title)
                             val newList = state.page.components.toMutableList().apply { set(index, updatedComp) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        }
+                        },
                     )
                 }
                 is PageComponent.SocialLinks -> {
@@ -506,7 +505,7 @@ internal fun ComponentEditorUI(
                         onSave = { updated ->
                             val newList = state.page.components.toMutableList().apply { set(index, updated) }
                             onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
-                        }
+                        },
                     )
                 }
                 is PageComponent.Hero -> {

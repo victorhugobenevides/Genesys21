@@ -29,7 +29,7 @@ fun PagesTab(
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
         usePadding = true,
-        useScroll = true
+        useScroll = true,
     ) {
         AdminTabHeader(
             title = GenesysStrings.ManageVitrines,
@@ -39,9 +39,9 @@ fun PagesTab(
                     text = "Nova Vitrine",
                     icon = GenesysIcons.Add,
                     onClick = { onEvent(PageListEvent.OnCreatePageClicked) },
-                    fillWidth = false
+                    fillWidth = false,
                 )
-            }
+            },
         )
 
         if (state.pages.isEmpty() && !state.isLoading) {
@@ -53,9 +53,9 @@ fun PagesTab(
                     GenesysLoadingButton(
                         text = "Criar Minha Primeira Página",
                         icon = GenesysIcons.Add,
-                        onClick = { onEvent(PageListEvent.OnCreatePageClicked) }
+                        onClick = { onEvent(PageListEvent.OnCreatePageClicked) },
                     )
-                }
+                },
             )
         } else {
             state.pages.forEach { page ->

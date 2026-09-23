@@ -18,20 +18,19 @@ import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.PageListEvent
 import com.itbenevides.genesys21.presentation.screens.list.PageListState
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.calendar.GenesysDatePicker
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabData
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabRow
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.datetime.*
@@ -70,12 +69,12 @@ fun AgendaTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(bottom = 100.dp),
     ) {
         item {
             AdminTabHeader(
                 title = "Gestão de Agenda",
-                subtitle = "Configure seus atendimentos e horários."
+                subtitle = "Configure seus atendimentos e horários.",
             )
         }
 
@@ -84,12 +83,13 @@ fun AgendaTab(
                 // Seletor de Visualização
                 GenesysTabRow(
                     selectedTabIndex = agendaViewMode,
-                    tabs = listOf(
-                        GenesysTabData("Vista Diária", GenesysIcons.Schedule),
-                        GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
-                        GenesysTabData("Horários", GenesysIcons.Settings)
-                    ),
-                    onTabSelected = { agendaViewMode = it }
+                    tabs =
+                        listOf(
+                            GenesysTabData("Vista Diária", GenesysIcons.Schedule),
+                            GenesysTabData("Todos", GenesysIcons.List, badgeCount = upcomingAppointments.size),
+                            GenesysTabData("Horários", GenesysIcons.Settings),
+                        ),
+                    onTabSelected = { agendaViewMode = it },
                 )
             }
         }
@@ -101,10 +101,11 @@ fun AgendaTab(
             0 -> { // Vista Diária
                 item {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = horizontalPadding),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = horizontalPadding),
+                        contentAlignment = Alignment.Center,
                     ) {
                         GenesysCard(modifier = Modifier.widthIn(max = 600.dp)) {
                             Column(modifier = Modifier.padding(GenesysTheme.spacing.m)) {
@@ -123,7 +124,7 @@ fun AgendaTab(
                             text = "Agendamentos para ${selectedDate.dayOfMonth}/${selectedDate.monthNumber}",
                             style = GenesysTextStyle.Label,
                             fontWeight = GenesysFontWeight.Bold,
-                            color = GenesysTheme.colors.brand
+                            color = GenesysTheme.colors.brand,
                         )
                     }
                 }
@@ -179,7 +180,7 @@ fun AgendaTab(
                     Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
                         AvailabilityManagementView(
                             initialAvailability = availability ?: MerchantAvailability(storeId = storeId),
-                            onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) }
+                            onSave = { viewModel.saveAvailability(it.copy(storeId = storeId)) },
                         )
                     }
                 }
@@ -200,7 +201,7 @@ fun AgendaTab(
             onCancel = {
                 viewModel.updateAppointment(selectedAppointmentForEdit!!.copy(status = BookingStatus.CANCELLED))
                 selectedAppointmentForEdit = null
-            }
+            },
         )
     }
 }
@@ -210,7 +211,7 @@ private fun EditAppointmentDialog(
     appointment: Appointment,
     onDismiss: () -> Unit,
     onSave: (Appointment) -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
 ) {
     var newNoteContent by remember { mutableStateOf("") }
     var isPrivateNote by remember { mutableStateOf(true) }
@@ -225,11 +226,13 @@ private fun EditAppointmentDialog(
                 text = "Salvar Alterações",
                 fillWidth = true,
                 onClick = {
-                    onSave(appointment.copy(
-                        notes = currentNotes,
-                        status = status
-                    ))
-                }
+                    onSave(
+                        appointment.copy(
+                            notes = currentNotes,
+                            status = status,
+                        ),
+                    )
+                },
             )
         },
         dismissButton = {
@@ -238,10 +241,10 @@ private fun EditAppointmentDialog(
                     text = "Cancelar Agendamento",
                     containerColor = GenesysTheme.colors.error,
                     fillWidth = true,
-                    onClick = onCancel
+                    onClick = onCancel,
                 )
             }
-        }
+        },
     ) {
         GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 600.dp), useScroll = true) {
             GenesysText(text = "Cliente: ${appointment.customerName}", fontWeight = GenesysFontWeight.Bold, isSelectable = true)
@@ -253,13 +256,13 @@ private fun EditAppointmentDialog(
             GenesysText(text = "Status Atual", style = GenesysTextStyle.Label, fontWeight = GenesysFontWeight.Bold)
             Row(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 BookingStatus.entries.forEach { s ->
                     FilterChip(
                         selected = status == s,
                         onClick = { status = s },
-                        label = { Text(s.name, style = MaterialTheme.typography.labelSmall) }
+                        label = { Text(s.name, style = MaterialTheme.typography.labelSmall) },
                     )
                 }
             }
@@ -285,17 +288,18 @@ private fun EditAppointmentDialog(
 
             // Add New Note Area
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                    .padding(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .padding(12.dp),
             ) {
                 Column {
                     GenesysTextField(
                         value = newNoteContent,
                         onValueChange = { newNoteContent = it },
                         label = "Nova nota...",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = isPrivateNote, onCheckedChange = { isPrivateNote = it })
@@ -305,16 +309,17 @@ private fun EditAppointmentDialog(
                             text = "Adicionar",
                             enabled = newNoteContent.isNotBlank(),
                             onClick = {
-                                val note = BookingNote(
-                                    id = "", // Server generates
-                                    content = newNoteContent,
-                                    createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-                                    authorName = "Estabelecimento",
-                                    isPrivate = isPrivateNote
-                                )
+                                val note =
+                                    BookingNote(
+                                        id = "",
+                                        content = newNoteContent,
+                                        createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                                        authorName = "Estabelecimento",
+                                        isPrivate = isPrivateNote,
+                                    )
                                 currentNotes = currentNotes + note
                                 newNoteContent = ""
-                            }
+                            },
                         )
                     }
                 }
@@ -329,14 +334,18 @@ private fun NoteItem(note: BookingNote) {
     val dateStr = "${date.hour}:${date.minute.toString().padStart(2, '0')}"
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                if (note.isPrivate) GenesysTheme.colors.accent.copy(alpha = 0.1f)
-                else GenesysTheme.colors.brandContainer.copy(alpha = 0.3f),
-                RoundedCornerShape(8.dp)
-            )
-            .padding(8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    if (note.isPrivate) {
+                        GenesysTheme.colors.accent.copy(alpha = 0.1f)
+                    } else {
+                        GenesysTheme.colors.brandContainer.copy(alpha = 0.3f)
+                    },
+                    RoundedCornerShape(8.dp),
+                )
+                .padding(8.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(note.authorName, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
@@ -352,7 +361,7 @@ private fun NoteItem(note: BookingNote) {
 @Composable
 private fun AvailabilityManagementView(
     initialAvailability: MerchantAvailability,
-    onSave: (MerchantAvailability) -> Unit
+    onSave: (MerchantAvailability) -> Unit,
 ) {
     var availabilityState by remember { mutableStateOf(initialAvailability) }
 
@@ -364,34 +373,36 @@ private fun AvailabilityManagementView(
 
         days.forEachIndexed { index, day ->
             val dayOfWeekNumber = index + 1
-            val dayConfig = availabilityState.weeklyConfig.find { it.dayOfWeek == dayOfWeekNumber }
-                ?: DayConfig(dayOfWeek = dayOfWeekNumber, isClosed = true)
+            val dayConfig =
+                availabilityState.weeklyConfig.find { it.dayOfWeek == dayOfWeekNumber }
+                    ?: DayConfig(dayOfWeek = dayOfWeekNumber, isClosed = true)
 
             GenesysCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(day, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         Switch(
                             checked = !dayConfig.isClosed,
                             onCheckedChange = { isOpen ->
-                                val newConfig = if (isOpen) {
-                                    dayConfig.copy(
-                                        isClosed = false,
-                                        slots = if (dayConfig.slots.isEmpty()) listOf(TimeSlotRange("08:00", "18:00")) else dayConfig.slots
-                                    )
-                                } else {
-                                    dayConfig.copy(isClosed = true)
-                                }
+                                val newConfig =
+                                    if (isOpen) {
+                                        dayConfig.copy(
+                                            isClosed = false,
+                                            slots = if (dayConfig.slots.isEmpty()) listOf(TimeSlotRange("08:00", "18:00")) else dayConfig.slots,
+                                        )
+                                    } else {
+                                        dayConfig.copy(isClosed = true)
+                                    }
 
                                 val newList = availabilityState.weeklyConfig.toMutableList()
                                 newList.removeAll { it.dayOfWeek == dayOfWeekNumber }
                                 newList.add(newConfig)
                                 availabilityState = availabilityState.copy(weeklyConfig = newList.sortedBy { it.dayOfWeek })
-                            }
+                            },
                         )
                     }
 
@@ -411,7 +422,7 @@ private fun AvailabilityManagementView(
                                     },
                                     label = "Início",
                                     modifier = Modifier.weight(1f),
-                                    placeholder = "08:00"
+                                    placeholder = "08:00",
                                 )
                                 GenesysSpacer(GenesysTheme.spacing.s)
                                 GenesysTextField(
@@ -426,7 +437,7 @@ private fun AvailabilityManagementView(
                                     },
                                     label = "Fim",
                                     modifier = Modifier.weight(1f),
-                                    placeholder = "18:00"
+                                    placeholder = "18:00",
                                 )
                             }
                         }
@@ -439,7 +450,7 @@ private fun AvailabilityManagementView(
         GenesysLoadingButton(
             text = "Salvar Alterações de Horário",
             onClick = { onSave(availabilityState) },
-            fillWidth = true
+            fillWidth = true,
         )
     }
 }
@@ -447,14 +458,14 @@ private fun AvailabilityManagementView(
 @Composable
 private fun AppointmentCard(
     appointment: Appointment,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val startTime = appointment.startTime.toLocalDateTime(TimeZone.currentSystemDefault())
     val timeStr = "${startTime.hour.toString().padStart(2, '0')}:${startTime.minute.toString().padStart(2, '0')}"
 
     GenesysCard(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
+        onClick = onClick,
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.width(60.dp)) {
@@ -472,24 +483,26 @@ private fun AppointmentCard(
                     GenesysText(
                         text = "Notas: $publicNotesCount públicas, $privateNotesCount privadas",
                         style = GenesysTextStyle.Label,
-                        color = GenesysTheme.colors.onSurfaceVariant
+                        color = GenesysTheme.colors.onSurfaceVariant,
                     )
                 }
             }
             Surface(
                 shape = CircleShape,
-                color = when (appointment.status) {
-                    BookingStatus.CONFIRMED -> Color(0xFF4CAF50).copy(alpha = 0.1f)
-                    BookingStatus.PENDING -> Color(0xFFFF9800).copy(alpha = 0.1f)
-                    BookingStatus.CANCELLED -> Color(0xFFF44336).copy(alpha = 0.1f)
-                    else -> GenesysTheme.colors.surfaceVariant
-                },
-                contentColor = when (appointment.status) {
-                    BookingStatus.CONFIRMED -> Color(0xFF4CAF50)
-                    BookingStatus.PENDING -> Color(0xFFFF9800)
-                    BookingStatus.CANCELLED -> Color(0xFFF44336)
-                    else -> GenesysTheme.colors.onSurfaceVariant
-                }
+                color =
+                    when (appointment.status) {
+                        BookingStatus.CONFIRMED -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                        BookingStatus.PENDING -> Color(0xFFFF9800).copy(alpha = 0.1f)
+                        BookingStatus.CANCELLED -> Color(0xFFF44336).copy(alpha = 0.1f)
+                        else -> GenesysTheme.colors.surfaceVariant
+                    },
+                contentColor =
+                    when (appointment.status) {
+                        BookingStatus.CONFIRMED -> Color(0xFF4CAF50)
+                        BookingStatus.PENDING -> Color(0xFFFF9800)
+                        BookingStatus.CANCELLED -> Color(0xFFF44336)
+                        else -> GenesysTheme.colors.onSurfaceVariant
+                    },
             ) {
                 Text(appointment.status.name, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall)
             }

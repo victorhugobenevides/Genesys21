@@ -25,14 +25,16 @@ fun HeroComponentEditor(
     var height by remember(component) { mutableStateOf(component.height.toFloat()) }
 
     LaunchedEffect(title, subtitle, imageUrl, buttonText, buttonUrl, height) {
-        onSave(component.copy(
-            title = title,
-            subtitle = subtitle.ifBlank { null },
-            imageUrl = imageUrl,
-            buttonText = buttonText.ifBlank { null },
-            buttonUrl = buttonUrl.ifBlank { null },
-            height = height.toInt()
-        ))
+        onSave(
+            component.copy(
+                title = title,
+                subtitle = subtitle.ifBlank { null },
+                imageUrl = imageUrl,
+                buttonText = buttonText.ifBlank { null },
+                buttonUrl = buttonUrl.ifBlank { null },
+                height = height.toInt(),
+            ),
+        )
     }
 
     GenesysColumn(usePadding = false) {
@@ -56,7 +58,7 @@ fun HeroComponentEditor(
             value = height,
             onValueChange = { height = it },
             label = "Altura do Banner",
-            valueRange = 200f..800f
+            valueRange = 200f..800f,
         )
 
         GenesysSpacer(GenesysTheme.spacing.m)

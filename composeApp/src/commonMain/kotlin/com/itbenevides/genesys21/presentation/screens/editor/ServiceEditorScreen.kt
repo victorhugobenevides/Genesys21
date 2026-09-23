@@ -19,11 +19,10 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.util.rememberImagePicker
 import kotlin.random.Random
 
@@ -38,15 +37,16 @@ fun ServiceEditorScreen(
     var imageUrls by remember { mutableStateOf(service?.imageUrls ?: emptyList()) }
     var isUploading by remember { mutableStateOf(false) }
 
-    val imagePicker = rememberImagePicker { bytes ->
-        bytes?.let {
-            isUploading = true
-            viewModel.uploadImage(it, "service_${Random.nextInt(10000)}.jpg") { url ->
-                imageUrls = imageUrls + url
-                isUploading = false
+    val imagePicker =
+        rememberImagePicker { bytes ->
+            bytes?.let {
+                isUploading = true
+                viewModel.uploadImage(it, "service_${Random.nextInt(10000)}.jpg") { url ->
+                    imageUrls = imageUrls + url
+                    isUploading = false
+                }
             }
         }
-    }
 
     ServiceEditorContent(
         viewModel = viewModel,
@@ -56,7 +56,7 @@ fun ServiceEditorScreen(
         imageUrls = imageUrls,
         onImageUrlsChange = { imageUrls = it },
         isUploading = isUploading,
-        onPickImage = { imagePicker() }
+        onPickImage = { imagePicker() },
     )
 }
 
@@ -90,21 +90,21 @@ fun ServiceEditorContent(
         topBar = {
             GenesysTopAppBar(
                 title = if (service == null) "Cadastrar Serviço" else "Editar Serviço",
-                onBack = onBack
+                onBack = onBack,
             )
-        }
+        },
     ) {
         GenesysColumn(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             usePadding = true,
-            horizontalAlignment = GenesysAlignment.Center
+            horizontalAlignment = GenesysAlignment.Center,
         ) {
             GenesysColumn(maxWidth = 600.dp, usePadding = false) {
                 GenesysTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = "Nome do Serviço",
-                    icon = GenesysIcons.Edit
+                    icon = GenesysIcons.Edit,
                 )
                 GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -114,7 +114,7 @@ fun ServiceEditorContent(
                     label = "Descrição",
                     singleLine = false,
                     minLines = 3,
-                    icon = GenesysIcons.Description
+                    icon = GenesysIcons.Description,
                 )
                 GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -124,7 +124,7 @@ fun ServiceEditorContent(
                             value = price,
                             onValueChange = { price = it },
                             label = "Preço (R$)",
-                            icon = GenesysIcons.Payments
+                            icon = GenesysIcons.Payments,
                         )
                     }
                     GenesysSpacer(GenesysTheme.spacing.m)
@@ -133,7 +133,7 @@ fun ServiceEditorContent(
                             value = duration,
                             onValueChange = { duration = it },
                             label = "Duração (min)",
-                            icon = GenesysIcons.Schedule
+                            icon = GenesysIcons.Schedule,
                         )
                     }
                 }
@@ -143,7 +143,7 @@ fun ServiceEditorContent(
                     value = buffer,
                     onValueChange = { buffer = it },
                     label = "Tempo de Intervalo/Buffer (min)",
-                    icon = GenesysIcons.History
+                    icon = GenesysIcons.History,
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.l)
@@ -155,7 +155,7 @@ fun ServiceEditorContent(
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column {
                         GenesysText(text = "Serviço Online", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
@@ -171,7 +171,7 @@ fun ServiceEditorContent(
                         onValueChange = { meetingLink = it },
                         label = "Link da Reunião (Zoom, Google Meet, etc)",
                         icon = GenesysIcons.Language,
-                        placeholder = "https://meet.google.com/..."
+                        placeholder = "https://meet.google.com/...",
                     )
                 }
 
@@ -180,7 +180,7 @@ fun ServiceEditorContent(
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column {
                         GenesysText(text = "Atendimento a Domicílio", style = GenesysTextStyle.Body, fontWeight = GenesysFontWeight.Bold)
@@ -196,7 +196,7 @@ fun ServiceEditorContent(
                     onValueChange = { maxParticipants = it },
                     label = "Limite de Participantes por sessão",
                     icon = GenesysIcons.People,
-                    placeholder = "1"
+                    placeholder = "1",
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.l)
@@ -210,14 +210,14 @@ fun ServiceEditorContent(
                         com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage(
                             url = url,
                             size = 100.dp,
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp),
                         )
                     }
                     GenesysLoadingButton(
                         text = "Adicionar Foto",
                         onClick = onPickImage,
                         isLoading = isUploading,
-                        icon = GenesysIcons.Add
+                        icon = GenesysIcons.Add,
                     )
                 }
 
@@ -226,25 +226,26 @@ fun ServiceEditorContent(
                 GenesysLoadingButton(
                     text = if (service == null) "Cadastrar Serviço" else "Salvar Alterações",
                     onClick = {
-                        val newService = BookingService(
-                            id = service?.id ?: (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
-                            storeId = viewModel.pages.value.firstOrNull()?.storeId ?: "admin",
-                            name = name,
-                            description = description,
-                            price = price.toDoubleOrNull() ?: 0.0,
-                            durationMinutes = duration.toIntOrNull() ?: 30,
-                            bufferTimeMinutes = buffer.toIntOrNull() ?: 0,
-                            isOnline = isOnline,
-                            isHomeService = isHomeService,
-                            maxParticipants = maxParticipants.toIntOrNull() ?: 1,
-                            meetingLink = if (isOnline) meetingLink else null,
-                            imageUrls = imageUrls
-                        )
+                        val newService =
+                            BookingService(
+                                id = service?.id ?: (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789".random() }.joinToString(""),
+                                storeId = viewModel.pages.value.firstOrNull()?.storeId ?: "admin",
+                                name = name,
+                                description = description,
+                                price = price.toDoubleOrNull() ?: 0.0,
+                                durationMinutes = duration.toIntOrNull() ?: 30,
+                                bufferTimeMinutes = buffer.toIntOrNull() ?: 0,
+                                isOnline = isOnline,
+                                isHomeService = isHomeService,
+                                maxParticipants = maxParticipants.toIntOrNull() ?: 1,
+                                meetingLink = if (isOnline) meetingLink else null,
+                                imageUrls = imageUrls,
+                            )
                         onSave(newService)
                     },
                     isLoading = isLoading,
                     fillWidth = true,
-                    enabled = name.isNotBlank() && price.isNotBlank()
+                    enabled = name.isNotBlank() && price.isNotBlank(),
                 )
             }
         }

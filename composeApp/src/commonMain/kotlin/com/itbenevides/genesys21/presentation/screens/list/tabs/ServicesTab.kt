@@ -32,7 +32,7 @@ fun ServicesTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             AdminTabHeader(
@@ -43,17 +43,18 @@ fun ServicesTab(
                         text = "Novo Serviço",
                         icon = GenesysIcons.Add,
                         onClick = onAddService,
-                        fillWidth = false
+                        fillWidth = false,
                     )
-                }
+                },
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 if (services.isEmpty()) {
                     GenesysEmptyState(
@@ -62,7 +63,7 @@ fun ServicesTab(
                         description = "Comece adicionando o primeiro serviço do seu negócio.",
                         action = {
                             GenesysLoadingButton(text = "Cadastrar Primeiro Serviço", onClick = onAddService)
-                        }
+                        },
                     )
                 } else {
                     val columns = if (isCompact) 1 else 2
@@ -71,19 +72,19 @@ fun ServicesTab(
                         services.chunked(columns).forEach { rowServices ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)
+                                horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m),
                             ) {
                                 rowServices.forEach { service ->
                                     Box(modifier = Modifier.weight(1f)) {
                                         ServiceCard(
                                             service = service,
-                                            onClick = { onEditService(service) }
+                                            onClick = { onEditService(service) },
                                         )
                                         Row(modifier = Modifier.align(Alignment.TopEnd).padding(GenesysTheme.spacing.xs)) {
                                             GenesysIconButton(
                                                 icon = GenesysIcons.Delete,
                                                 tint = Color.Red.copy(alpha = 0.6f),
-                                                onClick = { onDeleteService(service.id) }
+                                                onClick = { onDeleteService(service.id) },
                                             )
                                         }
                                     }

@@ -13,121 +13,147 @@ import io.ktor.http.*
 class KtorUserRepository(
     private val client: HttpClient,
     private val baseUrl: String,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : UserRepository {
+    override suspend fun getUserProfile(id: String): Result<UserProfile> =
+        try {
+            val token = authRepository.getCurrentUserToken()
 
-    override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
-        val token = authRepository.getCurrentUserToken()
+            // NUCLEAR FIX: Se temos um token, tentamos SEMPRE a rota privada.
+            // Isso evita que o App caia na rota pública LGPD que remove o cargo (Role).
+            val response =
+                if (!token.isNullOrBlank()) {
+                    client.get("$baseUrl/api/users/profile/me") {
+                        header(HttpHeaders.Authorization, "Bearer $token")
+                    }
+                } else {
+                    client.get("$baseUrl/api/public/users/profile/$id")
+                }
 
-        // NUCLEAR FIX: Se temos um token, tentamos SEMPRE a rota privada.
-        // Isso evita que o App caia na rota pública LGPD que remove o cargo (Role).
-        val response = if (!token.isNullOrBlank()) {
-            client.get("$baseUrl/api/users/profile/me") {
-                header(HttpHeaders.Authorization, "Bearer $token")
-            }
-        } else {
-            client.get("$baseUrl/api/public/users/profile/$id")
-        }
+            if (response.status.isSuccess()) {
+                val profile = response.body<UserProfile>()
 
-        if (response.status.isSuccess()) {
-            val profile = response.body<UserProfile>()
-
-            // GOD MODE: Verificação secundária no cliente para garantir acesso
-            if (profile.email.lowercase().trim() == "victorkoto@gmail.com" || profile.id == "mKQ9MZqG6bYhy3JqvngGpv49ZZs1") {
-                Result.success(profile.copy(
-                    role = UserRole.SUPERADMIN,
-                    permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-                ))
+                // GOD MODE: Verificação secundária no cliente para garantir acesso
+                if (profile.email.lowercase().trim() == "victorkoto@gmail.com" || profile.id == "mKQ9MZqG6bYhy3JqvngGpv49ZZs1") {
+                    Result.success(
+                        profile.copy(
+                            role = UserRole.SUPERADMIN,
+                            permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet(),
+                        ),
+                    )
+                } else {
+                    Result.success(profile)
+                }
             } else {
-                Result.success(profile)
+                Result.failure(Exception("Perfil não encontrado"))
             }
-        } else {
-            Result.failure(Exception("Perfil não encontrado"))
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> = try {
-        val token = authRepository.getCurrentUserToken() ?: throw Exception("Usuário não autenticado")
-        val response = client.post("$baseUrl/api/users/profile") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            contentType(ContentType.Application.Json)
-            setBody(profile)
+    override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> =
+        try {
+            val token = authRepository.getCurrentUserToken() ?: throw Exception("Usuário não autenticado")
+            val response =
+                client.post("$baseUrl/api/users/profile") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(profile)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao salvar perfil"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Erro ao salvar perfil"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = try {
-        val response = client.get("$baseUrl/api/admin/users") {
-            header(HttpHeaders.Authorization, "Bearer $token")
+    override suspend fun getAllUsers(token: String): Result<List<UserProfile>> =
+        try {
+            val response =
+                client.get("$baseUrl/api/admin/users") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                Result.failure(Exception("Erro ao buscar usuários"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(response.body())
-        } else {
-            Result.failure(Exception("Erro ao buscar usuários"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit> = try {
-        val response = client.put("$baseUrl/api/admin/users/$userId/role") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            parameter("role", role.name)
+    override suspend fun updateUserRole(
+        token: String,
+        userId: String,
+        role: UserRole,
+    ): Result<Unit> =
+        try {
+            val response =
+                client.put("$baseUrl/api/admin/users/$userId/role") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    parameter("role", role.name)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao atualizar cargo"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Erro ao atualizar cargo"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> = try {
-        val response = client.put("$baseUrl/api/admin/users/$userId/status") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            parameter("status", status.name)
+    override suspend fun updateUserStatus(
+        token: String,
+        userId: String,
+        status: UserStatus,
+    ): Result<Unit> =
+        try {
+            val response =
+                client.put("$baseUrl/api/admin/users/$userId/status") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    parameter("status", status.name)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao atualizar status"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Erro ao atualizar status"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>): Result<Unit> = try {
-        val response = client.put("$baseUrl/api/admin/users/$userId/permissions") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            contentType(ContentType.Application.Json)
-            setBody(permissions)
+    override suspend fun updateUserPermissions(
+        token: String,
+        userId: String,
+        permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>,
+    ): Result<Unit> =
+        try {
+            val response =
+                client.put("$baseUrl/api/admin/users/$userId/permissions") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(permissions)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao atualizar permissões"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Erro ao atualizar permissões"))
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun deleteUser(userId: String): Result<Unit> = try {
-        val response = client.delete("$baseUrl/api/admin/users/$userId")
-        if (response.status.isSuccess()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(Exception("Erro ao deletar usuário"))
+    override suspend fun deleteUser(userId: String): Result<Unit> =
+        try {
+            val response = client.delete("$baseUrl/api/admin/users/$userId")
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao deletar usuário"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 }

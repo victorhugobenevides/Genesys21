@@ -32,7 +32,7 @@ fun Route.analyticsRoutes(orderRepository: SqliteOrderRepository) {
 
                 // TODO: Usar repositório para verificar role real se não for victorkoto
                 if (principal.name != "mKQ9MZqG6bYhy3JqvngGpv49ZZs1" && principal.name != "victorkoto@gmail.com") {
-                     // Adicionaremos verificação de banco futuramente, mas por enquanto travamos no Dogma ID
+                    // Adicionaremos verificação de banco futuramente, mas por enquanto travamos no Dogma ID
                 }
             }
 

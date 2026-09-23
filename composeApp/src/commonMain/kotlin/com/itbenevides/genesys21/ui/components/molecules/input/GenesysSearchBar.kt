@@ -23,7 +23,7 @@ fun GenesysSearchBar(
     active: Boolean = false,
     onActiveChange: (Boolean) -> Unit = {},
     onSearch: (String) -> Unit = {},
-    content: @Composable ColumnScope.() -> Unit = {}
+    content: @Composable ColumnScope.() -> Unit = {},
 ) {
     SearchBar(
         query = query,
@@ -40,13 +40,15 @@ fun GenesysSearchBar(
                 }
             }
         },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = if (active) 0.dp else 16.dp),
-        colors = SearchBarDefaults.colors(
-            containerColor = if (active) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            dividerColor = MaterialTheme.colorScheme.outlineVariant
-        ),
-        content = content
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = if (active) 0.dp else 16.dp),
+        colors =
+            SearchBarDefaults.colors(
+                containerColor = if (active) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                dividerColor = MaterialTheme.colorScheme.outlineVariant,
+            ),
+        content = content,
     )
 }

@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.util
 
 object PrivacyUtils {
-
     /**
      * Anonymizes an IP address by masking the last octet (IPv4) or last interface (IPv6).
      * e.g., 192.168.1.100 -> 192.168.1.xxx
@@ -38,13 +37,14 @@ object PrivacyUtils {
 
         var sanitized = text
         // Remove common token/secret patterns
-        val patterns = listOf(
-            "bearer\\s+[\\w\\-\\.]+".toRegex(RegexOption.IGNORE_CASE),
-            "password\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
-            "secret\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
-            "token\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
-            "api_key\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE)
-        )
+        val patterns =
+            listOf(
+                "bearer\\s+[\\w\\-\\.]+".toRegex(RegexOption.IGNORE_CASE),
+                "password\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
+                "secret\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
+                "token\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
+                "api_key\\s*[:=]\\s*[^,\\s]+".toRegex(RegexOption.IGNORE_CASE),
+            )
 
         patterns.forEach { regex ->
             sanitized = sanitized?.replace(regex, "[REDACTED]")
@@ -78,7 +78,10 @@ object PrivacyUtils {
     /**
      * Masks an address to show only the essential: Rua A****, 100
      */
-    fun maskAddress(street: String?, number: String?): String {
+    fun maskAddress(
+        street: String?,
+        number: String?,
+    ): String {
         if (street == null) return "****"
         val firstWord = street.split(" ").firstOrNull() ?: "Rua"
         return "$firstWord ****, $number"

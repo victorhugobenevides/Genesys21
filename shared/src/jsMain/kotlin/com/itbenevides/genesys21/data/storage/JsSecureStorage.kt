@@ -1,7 +1,10 @@
 package com.itbenevides.genesys21.data.storage
 
 class JsSecureStorage : SecureStorage {
-    override suspend fun save(key: String, value: String) {
+    override suspend fun save(
+        key: String,
+        value: String,
+    ) {
         // Mock
     }
 

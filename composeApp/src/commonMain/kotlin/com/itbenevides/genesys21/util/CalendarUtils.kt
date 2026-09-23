@@ -5,7 +5,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 object CalendarUtils {
-
     /**
      * Gera um link para adicionar um evento ao Google Calendar.
      */
@@ -14,7 +13,7 @@ object CalendarUtils {
         description: String,
         startTime: Instant,
         endTime: Instant,
-        location: String? = null
+        location: String? = null,
     ): String {
         val st = startTime.toLocalDateTime(TimeZone.UTC)
         val et = endTime.toLocalDateTime(TimeZone.UTC)
@@ -36,7 +35,7 @@ object CalendarUtils {
 
     private fun formatDateTimeForStripe(dt: kotlinx.datetime.LocalDateTime): String {
         return "${dt.year}${dt.monthNumber.toString().padStart(2, '0')}${dt.dayOfMonth.toString().padStart(2, '0')}T" +
-               "${dt.hour.toString().padStart(2, '0')}${dt.minute.toString().padStart(2, '0')}${dt.second.toString().padStart(2, '0')}Z"
+            "${dt.hour.toString().padStart(2, '0')}${dt.minute.toString().padStart(2, '0')}${dt.second.toString().padStart(2, '0')}Z"
     }
 
     private fun String.encodeUrl(): String {

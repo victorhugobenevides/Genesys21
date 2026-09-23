@@ -29,7 +29,7 @@ import com.itbenevides.genesys21.ui.theme.*
 fun ProfileScreen(
     viewModel: PageViewModel,
     router: Router,
-    isEmbedded: Boolean = false
+    isEmbedded: Boolean = false,
 ) {
     val userProfile by viewModel.userProfile.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
@@ -53,7 +53,7 @@ fun ProfileScreen(
             router = router,
             onEditClick = { showEditDialog = true },
             onAddAddressClick = { showAddAddressDialog = true },
-            onDeleteConfirmClick = { showDeleteConfirmDialog = true }
+            onDeleteConfirmClick = { showDeleteConfirmDialog = true },
         )
     }
 
@@ -65,9 +65,9 @@ fun ProfileScreen(
             topBar = {
                 GenesysTopAppBar(
                     title = "Meu Perfil",
-                    onBack = { router.goBack() }
+                    onBack = { router.goBack() },
                 )
-            }
+            },
         ) {
             content()
         }
@@ -80,7 +80,7 @@ fun ProfileScreen(
             onSave = { updated ->
                 viewModel.saveUserProfile(updated)
                 showEditDialog = false
-            }
+            },
         )
     }
 
@@ -90,7 +90,7 @@ fun ProfileScreen(
             onSave = { address ->
                 viewModel.saveAddress(address)
                 showAddAddressDialog = false
-            }
+            },
         )
     }
 
@@ -107,12 +107,12 @@ fun ProfileScreen(
                         viewModel.deleteAccount {
                             showDeleteConfirmDialog = false
                         }
-                    }
+                    },
                 )
             },
             dismissButton = {
                 GenesysTextButton(text = "Cancelar", onClick = { showDeleteConfirmDialog = false })
-            }
+            },
         )
     }
 }
@@ -125,13 +125,13 @@ fun ProfileContent(
     router: Router,
     onEditClick: () -> Unit,
     onAddAddressClick: () -> Unit,
-    onDeleteConfirmClick: () -> Unit
+    onDeleteConfirmClick: () -> Unit,
 ) {
     GenesysColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = GenesysAlignment.Center,
         usePadding = true,
-        useScroll = true
+        useScroll = true,
     ) {
         profile?.let { p ->
             val displayAvatarUrl = p.avatarUrl ?: "https://ui-avatars.com/api/?name=${p.name.replace(" ", "+")}&size=300&background=000&color=fff"
@@ -139,7 +139,7 @@ fun ProfileContent(
             com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage(
                 url = displayAvatarUrl,
                 size = 120.dp,
-                isCircular = true
+                isCircular = true,
             )
 
             GenesysSpacer(GenesysTheme.spacing.l)
@@ -147,20 +147,20 @@ fun ProfileContent(
             GenesysText(
                 text = p.name,
                 style = GenesysTextStyle.Headline,
-                fontWeight = GenesysFontWeight.ExtraBold
+                fontWeight = GenesysFontWeight.ExtraBold,
             )
 
             GenesysText(
                 text = p.email,
                 style = GenesysTextStyle.Body,
-                color = GenesysTheme.colors.onSurfaceVariant
+                color = GenesysTheme.colors.onSurfaceVariant,
             )
 
             GenesysSpacer(GenesysTheme.spacing.m)
 
             Surface(
                 shape = CircleShape,
-                color = GenesysTheme.colors.brandContainer.copy(alpha = 0.5f)
+                color = GenesysTheme.colors.brandContainer.copy(alpha = 0.5f),
             ) {
                 val isOwner = p.email.lowercase().trim() == "victorkoto@gmail.com"
                 val displayRole = if (isOwner) UserRole.SUPERADMIN.name else p.role.name
@@ -170,7 +170,7 @@ fun ProfileContent(
                     style = GenesysTextStyle.Label,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     color = GenesysTheme.colors.brand,
-                    fontWeight = GenesysFontWeight.Bold
+                    fontWeight = GenesysFontWeight.Bold,
                 )
             }
 
@@ -189,14 +189,14 @@ fun ProfileContent(
                             } else {
                                 router.navigateTo(Route.Cart(null))
                             }
-                        }
+                        },
                     )
                 }
                 GenesysWeightBox(1f) {
                     ActionCard(
                         icon = GenesysIcons.History,
                         title = "Pedidos",
-                        onClick = { router.navigateTo(Route.CustomerOrderHistory(null)) }
+                        onClick = { router.navigateTo(Route.CustomerOrderHistory(null)) },
                     )
                 }
             }
@@ -209,7 +209,7 @@ fun ProfileContent(
                         ProfileMenuItem(
                             icon = GenesysIcons.Dashboard,
                             title = "Painel Administrativo",
-                            onClick = { router.navigateTo(Route.PageList) }
+                            onClick = { router.navigateTo(Route.PageList) },
                         )
                         GenesysDivider()
                     }
@@ -217,7 +217,7 @@ fun ProfileContent(
                     ProfileMenuItem(
                         icon = GenesysIcons.Person,
                         title = "Editar Meus Dados",
-                        onClick = onEditClick
+                        onClick = onEditClick,
                     )
                 }
             }
@@ -228,16 +228,16 @@ fun ProfileContent(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 GenesysText(
                     text = "Meus Endereços",
                     style = GenesysTextStyle.Title,
-                    fontWeight = GenesysFontWeight.Bold
+                    fontWeight = GenesysFontWeight.Bold,
                 )
                 GenesysIconButton(
                     icon = GenesysIcons.Add,
-                    onClick = onAddAddressClick
+                    onClick = onAddAddressClick,
                 )
             }
 
@@ -247,7 +247,7 @@ fun ProfileContent(
                 GenesysText(
                     text = "Nenhum endereço cadastrado.",
                     style = GenesysTextStyle.Label,
-                    color = GenesysTheme.colors.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant,
                 )
             } else {
                 addresses.forEach { address ->
@@ -261,7 +261,7 @@ fun ProfileContent(
                             GenesysIconButton(
                                 icon = GenesysIcons.Delete,
                                 tint = GenesysTheme.colors.error.copy(alpha = 0.6f),
-                                onClick = { viewModel.deleteAddress(address.id) }
+                                onClick = { viewModel.deleteAddress(address.id) },
                             )
                         }
                     }
@@ -275,7 +275,7 @@ fun ProfileContent(
                 text = "Privacidade & Dados",
                 style = GenesysTextStyle.Title,
                 fontWeight = GenesysFontWeight.Bold,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -285,7 +285,7 @@ fun ProfileContent(
                         icon = GenesysIcons.Delete,
                         title = "Excluir minha conta permanentemente",
                         titleColor = GenesysTheme.colors.error,
-                        onClick = onDeleteConfirmClick
+                        onClick = onDeleteConfirmClick,
                     )
                 }
             }
@@ -300,7 +300,7 @@ fun ProfileContent(
                 },
                 containerColor = GenesysTheme.colors.error.copy(alpha = 0.1f),
                 shape = CircleShape,
-                fillWidth = true
+                fillWidth = true,
             )
         } ?: run {
             GenesysText(text = "Carregando perfil...")
@@ -313,7 +313,7 @@ fun ProfileContent(
 private fun EditProfileDialog(
     profile: UserProfile,
     onDismiss: () -> Unit,
-    onSave: (UserProfile) -> Unit
+    onSave: (UserProfile) -> Unit,
 ) {
     var name by remember { mutableStateOf(profile.name) }
     var phone by remember { mutableStateOf(profile.phone ?: "") }
@@ -325,33 +325,33 @@ private fun EditProfileDialog(
         confirmButton = {
             GenesysLoadingButton(
                 text = "Salvar",
-                onClick = { onSave(profile.copy(name = name, phone = phone, avatarUrl = avatarUrl.ifBlank { null })) }
+                onClick = { onSave(profile.copy(name = name, phone = phone, avatarUrl = avatarUrl.ifBlank { null })) },
             )
         },
         dismissButton = {
             GenesysTextButton(text = "Cancelar", onClick = onDismiss)
-        }
+        },
     ) {
         GenesysColumn(usePadding = false) {
             GenesysTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = "Nome Completo",
-                icon = GenesysIcons.Person
+                icon = GenesysIcons.Person,
             )
             GenesysSpacer(GenesysTheme.spacing.m)
             GenesysTextField(
                 value = phone,
                 onValueChange = { phone = it },
                 label = "Telefone/WhatsApp",
-                icon = GenesysIcons.Chat
+                icon = GenesysIcons.Chat,
             )
             GenesysSpacer(GenesysTheme.spacing.m)
             GenesysTextField(
                 value = avatarUrl,
                 onValueChange = { avatarUrl = it },
                 label = "URL do Avatar",
-                icon = GenesysIcons.Web
+                icon = GenesysIcons.Web,
             )
         }
     }
@@ -360,7 +360,7 @@ private fun EditProfileDialog(
 @Composable
 private fun AddAddressDialog(
     onDismiss: () -> Unit,
-    onSave: (Address) -> Unit
+    onSave: (Address) -> Unit,
 ) {
     var street by remember { mutableStateOf("") }
     var number by remember { mutableStateOf("") }
@@ -379,22 +379,22 @@ private fun AddAddressDialog(
                 onClick = {
                     onSave(
                         Address(
-                            id = "", // Server generates
-                            userId = "", // ViewModel fills
+                            id = "",
+                            userId = "",
                             street = street,
                             number = number,
                             neighborhood = neighborhood,
                             city = city,
                             state = state,
-                            zipCode = zipCode
-                        )
+                            zipCode = zipCode,
+                        ),
                     )
-                }
+                },
             )
         },
         dismissButton = {
             GenesysTextButton(text = "Cancelar", onClick = onDismiss)
-        }
+        },
     ) {
         GenesysColumn(usePadding = false) {
             GenesysTextField(value = zipCode, onValueChange = { zipCode = it }, label = "CEP", icon = GenesysIcons.Search)
@@ -418,27 +418,27 @@ private fun AddAddressDialog(
 private fun ActionCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     GenesysCard(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = GenesysTheme.colors.brand,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
             GenesysSpacer(GenesysTheme.spacing.s)
             GenesysText(
                 text = title,
                 style = GenesysTextStyle.Label,
-                fontWeight = GenesysFontWeight.Bold
+                fontWeight = GenesysFontWeight.Bold,
             )
         }
     }
@@ -449,16 +449,16 @@ private fun ProfileMenuItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     titleColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        color = androidx.compose.ui.graphics.Color.Transparent
+        color = androidx.compose.ui.graphics.Color.Transparent,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = if (titleColor != androidx.compose.ui.graphics.Color.Unspecified) titleColor else GenesysTheme.colors.brand)
             GenesysSpacer(GenesysTheme.spacing.m)

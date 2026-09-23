@@ -15,10 +15,11 @@ class WhiteLabelInteractionSnapshotTest {
     @Test
     fun testComponentCatalogResponsive() {
         val samplePage = Page(id = "test", storeId = "store-1", title = "Editor Test")
-        val state = WhiteLabelState(
-            page = samplePage,
-            showCatalog = true
-        )
+        val state =
+            WhiteLabelState(
+                page = samplePage,
+                showCatalog = true,
+            )
 
         genesysResponsiveSnapshot(paparazzi) {
             // Testamos o componente do catálogo diretamente.
@@ -26,7 +27,7 @@ class WhiteLabelInteractionSnapshotTest {
             ComponentCatalogUI(
                 state = state,
                 storeId = "store-1",
-                onEvent = {}
+                onEvent = {},
             )
         }
     }

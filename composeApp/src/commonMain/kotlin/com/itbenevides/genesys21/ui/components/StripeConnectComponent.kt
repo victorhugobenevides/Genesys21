@@ -8,5 +8,5 @@ expect fun StripeConnectComponent(
     componentName: String,
     publishableKey: String,
     clientSecret: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )

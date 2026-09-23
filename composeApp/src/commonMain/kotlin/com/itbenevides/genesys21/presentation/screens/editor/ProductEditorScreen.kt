@@ -21,15 +21,14 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysAutocompleteField
-import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.molecules.layout.GenesysSectionHeader
 import com.itbenevides.genesys21.ui.components.organisms.input.GenesysPhotoPicker
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
@@ -74,7 +73,7 @@ fun ProductEditorScreen(
         onBack = onBack,
         state = state,
         onStateChange = { state = it },
-        onPickImage = { imagePicker() }
+        onPickImage = { imagePicker() },
     )
 }
 
@@ -273,7 +272,7 @@ private fun DataFormSection(
                 suggestions = productSuggestions,
                 label = GenesysStrings.ProductName,
                 icon = GenesysIcons.Inventory,
-                onSuggestionSelected = { onEvent(ProductEditorEvent.OnNameChanged(it)) }
+                onSuggestionSelected = { onEvent(ProductEditorEvent.OnNameChanged(it)) },
             )
 
             GenesysSpacer(GenesysTheme.spacing.m)
@@ -312,7 +311,7 @@ private fun DataFormSection(
                         icon = GenesysIcons.Category,
                         onSuggestionSelected = { name ->
                             onEvent(ProductEditorEvent.OnCategoryChanged(null, name))
-                        }
+                        },
                     )
                 }
                 GenesysSpacer(GenesysTheme.spacing.s)

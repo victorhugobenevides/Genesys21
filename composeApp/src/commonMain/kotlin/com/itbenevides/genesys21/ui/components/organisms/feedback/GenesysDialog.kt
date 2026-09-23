@@ -38,7 +38,7 @@ fun GenesysDialog(
                 // Botões na parte inferior para mobile
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs)
+                    horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs),
                 ) {
                     if (dismissButton != null) {
                         Box(modifier = Modifier.weight(1f)) {
@@ -59,7 +59,7 @@ fun GenesysDialog(
             confirmButton = confirmButton,
             dismissButton = dismissButton,
             shape = RoundedCornerShape(GenesysDimens.CornerRadiusHuge),
-            modifier = Modifier.widthIn(max = 600.dp) // Limita a largura no Desktop
+            modifier = Modifier.widthIn(max = 600.dp),
         )
     }
 }

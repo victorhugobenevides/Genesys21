@@ -10,5 +10,5 @@ expect fun StripePaymentElement(
     publishableKey: String,
     appearanceJson: String,
     onPaymentConfirmed: () -> Unit,
-    onPaymentError: (String) -> Unit
+    onPaymentError: (String) -> Unit,
 )

@@ -5,7 +5,10 @@ import java.util.prefs.Preferences
 class JvmSecureStorage : SecureStorage {
     private val prefs = Preferences.userRoot().node("genesys21")
 
-    override suspend fun save(key: String, value: String) {
+    override suspend fun save(
+        key: String,
+        value: String,
+    ) {
         prefs.put(key, value)
     }
 

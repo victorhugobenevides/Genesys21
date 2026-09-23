@@ -70,7 +70,7 @@ fun Route.userRoutes(userRepository: UserRepository) {
                         action = "DELETE_ACCOUNT_REQUEST",
                         entityName = "User",
                         entityId = userId,
-                        details = "Usuário solicitou exclusão de conta"
+                        details = "Usuário solicitou exclusão de conta",
                     )
 
                     // 2. Executa a exclusão e anonimização

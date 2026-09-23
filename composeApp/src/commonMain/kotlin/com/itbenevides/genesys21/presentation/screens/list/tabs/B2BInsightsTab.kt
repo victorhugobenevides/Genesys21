@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
-import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
@@ -20,7 +19,6 @@ import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.CurrencyUtils
-import kotlin.math.roundToLong
 
 @Composable
 fun B2BInsightsTab(viewModel: PageViewModel) {
@@ -35,20 +33,21 @@ fun B2BInsightsTab(viewModel: PageViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             AdminTabHeader(
                 title = "B2B Insights",
-                subtitle = "Visão macro da performance de toda a rede de lojistas."
+                subtitle = "Visão macro da performance de toda a rede de lojistas.",
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 b2bData?.let { data ->
                     // KPI Section - Responsive
@@ -90,15 +89,18 @@ fun B2BInsightsTab(viewModel: PageViewModel) {
 }
 
 @Composable
-private fun MerchantPerformanceRow(rank: Int, performance: com.itbenevides.genesys21.domain.model.MerchantPerformance) {
+private fun MerchantPerformanceRow(
+    rank: Int,
+    performance: com.itbenevides.genesys21.domain.model.MerchantPerformance,
+) {
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier.size(32.dp).background(GenesysTheme.colors.brandContainer, androidx.compose.foundation.shape.CircleShape),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 GenesysText(text = rank.toString(), style = GenesysTextStyle.Label, color = GenesysTheme.colors.brand, fontWeight = GenesysFontWeight.Bold)
             }
@@ -110,7 +112,7 @@ private fun MerchantPerformanceRow(rank: Int, performance: com.itbenevides.genes
             GenesysText(
                 text = "R$ ${CurrencyUtils.formatDisplay(performance.totalRevenue)}",
                 fontWeight = GenesysFontWeight.ExtraBold,
-                color = GenesysTheme.colors.brand
+                color = GenesysTheme.colors.brand,
             )
         }
     }

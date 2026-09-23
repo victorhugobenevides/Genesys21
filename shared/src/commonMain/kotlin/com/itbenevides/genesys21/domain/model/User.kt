@@ -7,19 +7,20 @@ enum class UserRole {
     SUPERADMIN,
     ADMIN,
     MERCHANT,
-    CUSTOMER
+    CUSTOMER,
 }
 
 @Serializable
 enum class UserStatus {
     PENDING,
     APPROVED,
-    BLOCKED
+    BLOCKED,
 }
 
 @Serializable
 data class UserProfile(
-    val id: String, // Firebase UID
+    /** Firebase UID */
+    val id: String,
     val email: String,
     val name: String,
     val avatarUrl: String? = null,
@@ -29,5 +30,5 @@ data class UserProfile(
     val permissions: Set<UserPermission> = emptySet(),
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
 )

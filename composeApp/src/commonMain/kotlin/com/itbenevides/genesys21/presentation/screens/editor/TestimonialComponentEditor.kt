@@ -12,7 +12,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysTheme
 @Composable
 fun TestimonialComponentEditor(
     component: PageComponent.Testimonial,
-    onSave: (PageComponent.Testimonial) -> Unit
+    onSave: (PageComponent.Testimonial) -> Unit,
 ) {
     var quote by remember(component) { mutableStateOf(component.quote) }
     var author by remember(component) { mutableStateOf(component.author) }
@@ -20,12 +20,14 @@ fun TestimonialComponentEditor(
     var rating by remember(component) { mutableStateOf(component.rating.toFloat()) }
 
     LaunchedEffect(quote, author, authorTitle, rating) {
-        onSave(component.copy(
-            quote = quote,
-            author = author,
-            authorTitle = authorTitle.ifBlank { null },
-            rating = rating.toInt()
-        ))
+        onSave(
+            component.copy(
+                quote = quote,
+                author = author,
+                authorTitle = authorTitle.ifBlank { null },
+                rating = rating.toInt(),
+            ),
+        )
     }
 
     GenesysColumn(usePadding = false) {
@@ -35,7 +37,7 @@ fun TestimonialComponentEditor(
             label = "Depoimento",
             icon = GenesysIcons.Feedback,
             singleLine = false,
-            minLines = 3
+            minLines = 3,
         )
 
         GenesysSpacer(GenesysTheme.spacing.m)
@@ -51,7 +53,7 @@ fun TestimonialComponentEditor(
             onValueChange = { rating = it },
             label = "Avaliação (Estrelas)",
             valueRange = 1f..5f,
-            steps = 4
+            steps = 4,
         )
     }
 }

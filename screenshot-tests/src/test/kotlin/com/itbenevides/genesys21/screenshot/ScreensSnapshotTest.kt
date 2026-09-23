@@ -1,8 +1,11 @@
 package com.itbenevides.genesys21.screenshot
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import com.itbenevides.genesys21.domain.model.BookingService
 import com.itbenevides.genesys21.domain.model.Page
 import com.itbenevides.genesys21.domain.model.Product
+import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorContent
 import com.itbenevides.genesys21.presentation.screens.editor.PageEditorState
 import com.itbenevides.genesys21.presentation.screens.editor.ProductEditorContent
@@ -14,14 +17,9 @@ import com.itbenevides.genesys21.presentation.screens.login.LoginScreen
 import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.CustomerOrderHistoryScreen
 import com.itbenevides.genesys21.presentation.screens.viewer.OrderTrackingScreen
-import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
 import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshotFull
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.material3.Text
-import io.mockk.mockk
 import org.junit.Rule
 import org.junit.Test
 import org.koin.compose.koinInject
@@ -31,22 +29,24 @@ class ScreensSnapshotTest {
     val paparazzi = createGenesysPaparazzi()
 
     private val samplePage = Page(id = "p1", storeId = "s1", title = "Minha Vitrine")
-    private val sampleProduct = Product(
-        id = "prod1",
-        storeId = "s1",
-        name = "Produto de Teste",
-        price = 99.90,
-        imageUrls = listOf("https://picsum.photos/400/400"),
-        description = "Descrição detalhada do produto de teste.",
-        stock = 10
-    )
-    private val sampleService = BookingService(
-        id = "serv1",
-        storeId = "s1",
-        name = "Serviço de Teste",
-        price = 150.0,
-        durationMinutes = 60
-    )
+    private val sampleProduct =
+        Product(
+            id = "prod1",
+            storeId = "s1",
+            name = "Produto de Teste",
+            price = 99.90,
+            imageUrls = listOf("https://picsum.photos/400/400"),
+            description = "Descrição detalhada do produto de teste.",
+            stock = 10,
+        )
+    private val sampleService =
+        BookingService(
+            id = "serv1",
+            storeId = "s1",
+            name = "Serviço de Teste",
+            price = 150.0,
+            durationMinutes = 60,
+        )
 
     @Test
     fun testLoginScreenResponsive() {
@@ -62,7 +62,7 @@ class ScreensSnapshotTest {
             null,
             "admin-1",
             "SUPERADMIN",
-            "MANAGE_VITRINES,MANAGE_ORDERS,MANAGE_AGENDA,MANAGE_SERVICES,MANAGE_STORE,MANAGE_RECEIPTS,ACCESS_ADMIN_PANEL"
+            "MANAGE_VITRINES,MANAGE_ORDERS,MANAGE_AGENDA,MANAGE_SERVICES,MANAGE_STORE,MANAGE_RECEIPTS,ACCESS_ADMIN_PANEL",
         ) {
             PageListScreen(
                 viewModel = koinInject(),
@@ -70,7 +70,7 @@ class ScreensSnapshotTest {
                 onEditPage = {},
                 onViewPage = {},
                 onLogout = {},
-                onShowcase = {}
+                onShowcase = {},
             )
         }
     }
@@ -96,7 +96,7 @@ class ScreensSnapshotTest {
                 onBack = {},
                 state = state.value,
                 onStateChange = { state.value = it },
-                onPickImage = {}
+                onPickImage = {},
             )
         }
     }
@@ -106,7 +106,7 @@ class ScreensSnapshotTest {
         genesysResponsiveSnapshot(paparazzi) {
             PageEditorContent(
                 state = PageEditorState(id = "p1", title = "Minha Loja", isEditing = true),
-                onEvent = {}
+                onEvent = {},
             )
         }
     }
@@ -123,7 +123,7 @@ class ScreensSnapshotTest {
                 imageUrls = sampleService.imageUrls,
                 onImageUrlsChange = {},
                 isUploading = false,
-                onPickImage = {}
+                onPickImage = {},
             )
         }
     }
@@ -136,7 +136,7 @@ class ScreensSnapshotTest {
                 selectedIds = emptyList(),
                 onConfirm = {},
                 onBack = {},
-                onAddNewService = {}
+                onAddNewService = {},
             )
         }
     }
@@ -161,7 +161,7 @@ class ScreensSnapshotTest {
             com.itbenevides.genesys21.presentation.screens.editor.TemplateCatalogScreen(
                 viewModel = koinInject(),
                 onBack = {},
-                onTemplateSelected = {}
+                onTemplateSelected = {},
             )
         }
     }

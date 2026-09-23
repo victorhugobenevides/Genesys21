@@ -35,34 +35,37 @@ fun GenesysColumn(
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
     val isExpanded = windowSizeClass == GenesysWindowSizeClass.EXPANDED
 
-    val horizontalPadding = when {
-        isCompact -> GenesysDimens.SpacingMedium
-        isExpanded -> GenesysDimens.SpacingHuge // Mais espaço em telas grandes
-        else -> GenesysDimens.SpacingLarge
-    }
+    val horizontalPadding =
+        when {
+            isCompact -> GenesysDimens.SpacingMedium
+            isExpanded -> GenesysDimens.SpacingHuge // Mais espaço em telas grandes
+            else -> GenesysDimens.SpacingLarge
+        }
 
     // REPARO DE SCROLL:
     // Usamos um modificador que garante que a Column se comporte como um container de scroll
     // sem causar loops de medição infinita no Wasm.
-    val scrollModifier = if (useScroll) {
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    } else {
-        Modifier.fillMaxWidth()
-    }
+    val scrollModifier =
+        if (useScroll) {
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        } else {
+            Modifier.fillMaxWidth()
+        }
 
     Column(
-        modifier = modifier
-            .then(scrollModifier)
-            .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
-            .then(
-                if (usePadding) {
-                    Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
-                } else {
-                    Modifier
-                }
-            ),
+        modifier =
+            modifier
+                .then(scrollModifier)
+                .then(if (maxWidth != null) Modifier.widthIn(max = maxWidth) else Modifier)
+                .then(
+                    if (usePadding) {
+                        Modifier.padding(horizontal = horizontalPadding, vertical = GenesysDimens.SpacingLarge)
+                    } else {
+                        Modifier
+                    },
+                ),
         horizontalAlignment = alignment,
         verticalArrangement = verticalArrangement,
         content = content,

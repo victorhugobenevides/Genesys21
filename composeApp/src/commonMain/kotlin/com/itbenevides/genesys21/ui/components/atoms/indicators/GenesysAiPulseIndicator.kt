@@ -17,35 +17,38 @@ import com.itbenevides.genesys21.ui.theme.GenesysTheme
  */
 @Composable
 fun GenesysAiPulseIndicator(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val transition = rememberInfiniteTransition(label = "AiPulse")
 
     val dotCount = 3
-    val dots = List(dotCount) { index ->
-        transition.animateFloat(
-            initialValue = 0.4f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(600, easing = LinearOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-                initialStartOffset = StartOffset(index * 150)
-            ),
-            label = "DotScale_$index"
-        )
-    }
+    val dots =
+        List(dotCount) { index ->
+            transition.animateFloat(
+                initialValue = 0.4f,
+                targetValue = 1f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(600, easing = LinearOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse,
+                        initialStartOffset = StartOffset(index * 150),
+                    ),
+                label = "DotScale_$index",
+            )
+        }
 
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xxs),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         dots.forEach { scale ->
             Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .scale(scale.value)
-                    .background(GenesysTheme.colors.accent, CircleShape)
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .scale(scale.value)
+                        .background(GenesysTheme.colors.accent, CircleShape),
             )
         }
     }

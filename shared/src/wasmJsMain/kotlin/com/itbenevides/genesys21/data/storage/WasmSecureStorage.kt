@@ -4,7 +4,10 @@ package com.itbenevides.genesys21.data.storage
 private external fun jsGetItem(key: String): String?
 
 @JsFun("(key, value) => window.localStorage.setItem(key, value)")
-private external fun jsSetItem(key: String, value: String)
+private external fun jsSetItem(
+    key: String,
+    value: String,
+)
 
 @JsFun("(key) => window.localStorage.removeItem(key)")
 private external fun jsRemoveItem(key: String)
@@ -13,7 +16,10 @@ private external fun jsRemoveItem(key: String)
 private external fun jsClear()
 
 class WasmSecureStorage : SecureStorage {
-    override suspend fun save(key: String, value: String) {
+    override suspend fun save(
+        key: String,
+        value: String,
+    ) {
         jsSetItem(key, value)
     }
 

@@ -4,12 +4,12 @@ import com.itbenevides.genesys21.domain.model.UserRole
 import com.itbenevides.genesys21.domain.model.UserStatus
 import com.itbenevides.genesys21.domain.repository.UserRepository
 import io.ktor.http.*
-import org.jetbrains.exposed.sql.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.jetbrains.exposed.sql.*
 
 fun Route.adminRoutes(userRepository: UserRepository) {
     authenticate("firebase") {
@@ -89,22 +89,23 @@ fun Route.adminRoutes(userRepository: UserRepository) {
             get("/audit") {
                 // Buscamos os últimos 100 logs de auditoria do banco
                 try {
-                    val logs = com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery {
-                        com.itbenevides.genesys21.data.database.AuditLogsTable
-                            .selectAll()
-                            .orderBy(com.itbenevides.genesys21.data.database.AuditLogsTable.createdAt to SortOrder.DESC)
-                            .limit(100)
-                            .map { row ->
-                                mapOf(
-                                    "id" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.id],
-                                    "userId" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.userId],
-                                    "action" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.action],
-                                    "entityName" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.entityName],
-                                    "details" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.details],
-                                    "createdAt" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.createdAt]
-                                )
-                            }
-                    }
+                    val logs =
+                        com.itbenevides.genesys21.data.database.DatabaseFactory.dbQuery {
+                            com.itbenevides.genesys21.data.database.AuditLogsTable
+                                .selectAll()
+                                .orderBy(com.itbenevides.genesys21.data.database.AuditLogsTable.createdAt to SortOrder.DESC)
+                                .limit(100)
+                                .map { row ->
+                                    mapOf(
+                                        "id" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.id],
+                                        "userId" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.userId],
+                                        "action" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.action],
+                                        "entityName" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.entityName],
+                                        "details" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.details],
+                                        "createdAt" to row[com.itbenevides.genesys21.data.database.AuditLogsTable.createdAt],
+                                    )
+                                }
+                        }
                     call.respond(logs)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, e.message ?: "Erro ao buscar logs")

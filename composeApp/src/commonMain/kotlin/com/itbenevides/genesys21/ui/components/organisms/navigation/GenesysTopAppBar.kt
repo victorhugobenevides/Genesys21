@@ -25,16 +25,17 @@ fun GenesysTopAppBar(
     actions: @Composable RowScope.() -> Unit = {},
     containerColor: Color? = null,
     isTranslucent: Boolean = false,
-    scrollBehavior: TopAppBarScrollBehavior? = null
+    scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
-    val finalContainerColor = when {
-        isTranslucent -> GenesysTheme.colors.background.copy(alpha = 0.8f)
-        containerColor != null -> containerColor
-        else -> GenesysTheme.colors.surface
-    }
+    val finalContainerColor =
+        when {
+            isTranslucent -> GenesysTheme.colors.background.copy(alpha = 0.8f)
+            containerColor != null -> containerColor
+            else -> GenesysTheme.colors.surface
+        }
 
     CenterAlignedTopAppBar(
         title = {
@@ -43,7 +44,7 @@ fun GenesysTopAppBar(
                 style = if (isCompact) GenesysTheme.typography.title else GenesysTheme.typography.headline,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         },
         navigationIcon = {
@@ -53,7 +54,7 @@ fun GenesysTopAppBar(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar",
                         modifier = Modifier.size(24.dp),
-                        tint = GenesysTheme.colors.onSurface
+                        tint = GenesysTheme.colors.onSurface,
                     )
                 }
             } else if (onMenuClick != null) {
@@ -62,19 +63,20 @@ fun GenesysTopAppBar(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Menu",
                         modifier = Modifier.size(24.dp),
-                        tint = GenesysTheme.colors.onSurface
+                        tint = GenesysTheme.colors.onSurface,
                     )
                 }
             }
         },
         actions = actions,
         scrollBehavior = scrollBehavior,
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = finalContainerColor,
-            scrolledContainerColor = GenesysTheme.colors.backgroundSecondary,
-            titleContentColor = GenesysTheme.colors.onSurface,
-            actionIconContentColor = GenesysTheme.colors.onSurface,
-            navigationIconContentColor = GenesysTheme.colors.onSurface
-        ),
+        colors =
+            TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = finalContainerColor,
+                scrolledContainerColor = GenesysTheme.colors.backgroundSecondary,
+                titleContentColor = GenesysTheme.colors.onSurface,
+                actionIconContentColor = GenesysTheme.colors.onSurface,
+                navigationIconContentColor = GenesysTheme.colors.onSurface,
+            ),
     )
 }

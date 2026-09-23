@@ -13,10 +13,10 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.ChatMessage
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
-import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
-import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
+import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
+import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun OrderChatComponent(
@@ -24,7 +24,7 @@ fun OrderChatComponent(
     currentNick: String,
     isMerchantView: Boolean,
     onSendMessage: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var newMessage by remember { mutableStateOf("") }
 
@@ -33,12 +33,13 @@ fun OrderChatComponent(
         GenesysSpacer(GenesysTheme.spacing.m)
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 400.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f))
-                .padding(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(GenesysTheme.colors.surfaceVariant.copy(alpha = 0.3f))
+                    .padding(16.dp),
         ) {
             if (messages.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -48,7 +49,7 @@ fun OrderChatComponent(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    reverseLayout = true
+                    reverseLayout = true,
                 ) {
                     items(messages.reversed()) { message ->
                         val isMe = (isMerchantView && message.isFromMerchant) || (!isMerchantView && !message.isFromMerchant)
@@ -63,14 +64,14 @@ fun OrderChatComponent(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(Modifier.weight(1f)) {
                 GenesysTextField(
                     value = newMessage,
                     onValueChange = { newMessage = it },
                     placeholder = "Digite sua mensagem...",
-                    singleLine = true
+                    singleLine = true,
                 )
             }
             GenesysLoadingButton(
@@ -82,30 +83,34 @@ fun OrderChatComponent(
                         newMessage = ""
                     }
                 },
-                enabled = newMessage.isNotBlank()
+                enabled = newMessage.isNotBlank(),
             )
         }
     }
 }
 
 @Composable
-private fun ChatBubble(message: ChatMessage, isMe: Boolean) {
+private fun ChatBubble(
+    message: ChatMessage,
+    isMe: Boolean,
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
+        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start,
     ) {
         Box(
-            modifier = Modifier
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (isMe) 16.dp else 0.dp,
-                        bottomEnd = if (isMe) 0.dp else 16.dp
+            modifier =
+                Modifier
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 16.dp,
+                            topEnd = 16.dp,
+                            bottomStart = if (isMe) 16.dp else 0.dp,
+                            bottomEnd = if (isMe) 0.dp else 16.dp,
+                        ),
                     )
-                )
-                .background(if (isMe) GenesysTheme.colors.brand else GenesysTheme.colors.surface)
-                .padding(12.dp)
+                    .background(if (isMe) GenesysTheme.colors.brand else GenesysTheme.colors.surface)
+                    .padding(12.dp),
         ) {
             Column {
                 if (!isMe) {
@@ -113,12 +118,12 @@ private fun ChatBubble(message: ChatMessage, isMe: Boolean) {
                         text = message.senderNick,
                         style = GenesysTextStyle.Label,
                         fontWeight = GenesysFontWeight.Bold,
-                        color = GenesysTheme.colors.brand
+                        color = GenesysTheme.colors.brand,
                     )
                 }
                 GenesysText(
                     text = message.content,
-                    color = if (isMe) GenesysTheme.colors.onBrand else GenesysTheme.colors.onSurface
+                    color = if (isMe) GenesysTheme.colors.onBrand else GenesysTheme.colors.onSurface,
                 )
             }
         }

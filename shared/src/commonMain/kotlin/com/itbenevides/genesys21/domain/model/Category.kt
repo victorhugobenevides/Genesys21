@@ -4,13 +4,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Category(
-    val id: String, // UUID
-    val storeId: String, // Store.id
+    /** UUID */
+    val id: String,
+    /** Store.id */
+    val storeId: String,
     val name: String,
-    val parentId: String? = null, // Multi-level support
+    /** Multi-level support */
+    val parentId: String? = null,
     val icon: String? = null,
     val color: String? = null,
     val createdAt: Long = 0,
     val updatedAt: Long = 0,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
 )

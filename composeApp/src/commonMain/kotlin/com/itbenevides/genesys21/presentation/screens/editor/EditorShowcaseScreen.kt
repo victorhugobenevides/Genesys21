@@ -5,7 +5,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -17,7 +16,6 @@ import com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRender
 import com.itbenevides.genesys21.presentation.screens.viewer.WhiteLabelState
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)

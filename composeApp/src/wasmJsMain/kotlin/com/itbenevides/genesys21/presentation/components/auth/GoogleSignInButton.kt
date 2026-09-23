@@ -1,16 +1,16 @@
 package com.itbenevides.genesys21.presentation.components.auth
 
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.heightIn
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
-import kotlinx.coroutines.launch
 import kotlin.js.Promise
+import kotlinx.coroutines.launch
 
 @JsFun("() => { if (typeof window.firebaseSignInGoogle === 'function') { return window.firebaseSignInGoogle(); } else { return Promise.reject('Firebase JS functions not found in window object'); } }")
 external fun firebaseSignInGoogleSafe(): Promise<JsString>
@@ -42,13 +42,13 @@ private fun <T> kotlin.coroutines.Continuation<T>.intercepted(): kotlin.coroutin
 actual fun GoogleSignInButton(
     modifier: Modifier,
     onTokenReceived: (idToken: String, accessToken: String?) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
 
     GenesysLoadingButton(
         text = "Entrar com Google",
-        icon = androidx.compose.material.icons.Icons.Default.Language, // Placeholder visual
+        icon = androidx.compose.material.icons.Icons.Default.Language,
         onClick = {
             scope.launch {
                 try {
@@ -61,6 +61,6 @@ actual fun GoogleSignInButton(
             }
         },
         modifier = modifier.heightIn(min = 48.dp),
-        containerColor = MaterialTheme.colorScheme.secondaryContainer
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
     )
 }

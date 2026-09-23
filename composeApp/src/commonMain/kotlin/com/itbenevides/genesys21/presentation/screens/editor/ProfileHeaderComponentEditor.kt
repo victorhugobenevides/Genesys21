@@ -12,8 +12,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun ProfileHeaderComponentEditor(
@@ -30,13 +30,15 @@ fun ProfileHeaderComponentEditor(
 
     // LIVE PREVIEW: Sincroniza em tempo real
     LaunchedEffect(imageUrl, name, bio, imageSize, isCircular) {
-        onSave(component.copy(
-            imageUrl = imageUrl,
-            name = name,
-            bio = bio,
-            imageSize = imageSize.toInt(),
-            isCircular = isCircular,
-        ))
+        onSave(
+            component.copy(
+                imageUrl = imageUrl,
+                name = name,
+                bio = bio,
+                imageSize = imageSize.toInt(),
+                isCircular = isCircular,
+            ),
+        )
     }
 
     LaunchedEffect(component.imageUrl) {

@@ -10,5 +10,5 @@ enum class UserPermission {
     MANAGE_SERVICES,
     MANAGE_STORE,
     MANAGE_RECEIPTS,
-    ACCESS_ADMIN_PANEL
+    ACCESS_ADMIN_PANEL,
 }

@@ -3,8 +3,8 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.BrandingEffects
 import com.itbenevides.genesys21.domain.model.Page
@@ -12,7 +12,6 @@ import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
@@ -87,7 +86,7 @@ fun PageViewerScreen(
             allProducts = allProducts,
             allServices = allServices,
             allCategories = allCategories,
-            onEvent = onEvent
+            onEvent = onEvent,
         )
     }
 }
@@ -106,22 +105,23 @@ fun PageViewerContent(
 ) {
     GenesysPage(
         topBar = {
-             GenesysTopAppBar(
+            GenesysTopAppBar(
                 title = if (isCompact) state.page.title.take(15).let { if (it.length < state.page.title.length) "$it..." else it } else state.page.title,
                 onBack = { onEvent(PageViewerScreenEvent.OnBackClicked) },
                 actions = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     ) {
                         // COMPARTILHAR
                         FilledTonalIconButton(
                             onClick = { onEvent(PageViewerScreenEvent.OnShareClicked) },
                             modifier = Modifier.size(40.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
+                            colors =
+                                IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                ),
                         ) {
                             Icon(GenesysIcons.Share, null, modifier = Modifier.size(20.dp))
                         }
@@ -130,9 +130,10 @@ fun PageViewerContent(
                         FilledTonalIconButton(
                             onClick = { onEvent(PageViewerScreenEvent.OnOpenHistoryClicked) },
                             modifier = Modifier.size(40.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
+                            colors =
+                                IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                ),
                         ) {
                             Icon(GenesysIcons.History, null, modifier = Modifier.size(20.dp))
                         }
@@ -141,9 +142,10 @@ fun PageViewerContent(
                         FilledTonalIconButton(
                             onClick = { onEvent(PageViewerScreenEvent.OnOpenProfileClicked) },
                             modifier = Modifier.size(40.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
+                            colors =
+                                IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                ),
                         ) {
                             Icon(GenesysIcons.Person, null, modifier = Modifier.size(20.dp))
                         }
@@ -155,22 +157,24 @@ fun PageViewerContent(
                                     Badge(
                                         containerColor = MaterialTheme.colorScheme.primary,
                                         contentColor = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
+                                        modifier = Modifier.offset(x = (-4).dp, y = 4.dp),
                                     ) { Text(cartCount.toString()) }
                                 }
-                            }
+                            },
                         ) {
                             Button(
                                 onClick = { onEvent(PageViewerScreenEvent.OnOpenCartClicked) },
                                 shape = androidx.compose.foundation.shape.CircleShape,
-                                contentPadding = PaddingValues(
-                                    horizontal = if (isCompact && cartCount == 0) 12.dp else 16.dp,
-                                    vertical = 8.dp
-                                ),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                modifier = Modifier.height(40.dp)
+                                contentPadding =
+                                    PaddingValues(
+                                        horizontal = if (isCompact && cartCount == 0) 12.dp else 16.dp,
+                                        vertical = 8.dp,
+                                    ),
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                    ),
+                                modifier = Modifier.height(40.dp),
                             ) {
                                 Icon(GenesysIcons.ShoppingCart, null, modifier = Modifier.size(20.dp))
                                 if (!isCompact || cartCount > 0) {
@@ -193,15 +197,15 @@ fun PageViewerContent(
                         BadgedBox(
                             badge = {
                                 Badge { Text(cartCount.toString()) }
-                            }
+                            },
                         ) {
                             Icon(GenesysIcons.ShoppingCart, "Ver Carrinho")
                         }
                     },
-                    text = { Text("Ver Carrinho") }
+                    text = { Text("Ver Carrinho") },
                 )
             }
-        }
+        },
     ) {
         GenesysColumn(
             modifier = Modifier.fillMaxSize(),
@@ -223,7 +227,7 @@ fun PageViewerContent(
                         onFilterQueryChange = { onEvent(PageViewerScreenEvent.OnFilterQueryChanged(it)) },
                         allProducts = allProducts,
                         allServices = allServices,
-                        allAvailableCategories = allCategories
+                        allAvailableCategories = allCategories,
                     )
                 }
                 GenesysSpacer(GenesysTheme.spacing.huge)

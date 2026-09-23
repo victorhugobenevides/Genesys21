@@ -10,7 +10,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class SqliteUserRepository : UserRepository {
-
     private fun ResultRow.toUserProfile(): UserProfile {
         val rawEmail = this[UsersTable.email]
         val userId = this[UsersTable.id]
@@ -18,27 +17,34 @@ class SqliteUserRepository : UserRepository {
         val ownerEmail = System.getenv("OWNER_EMAIL")?.lowercase()?.trim() ?: com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
         val isOwner = rawEmail.lowercase().trim() == ownerEmail || userId == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_UID
 
-        val role = if (isOwner) {
-            UserRole.SUPERADMIN
-        } else {
-            try {
-                UserRole.valueOf(this[UsersTable.role])
-            } catch (e: Exception) {
-                UserRole.CUSTOMER
+        val role =
+            if (isOwner) {
+                UserRole.SUPERADMIN
+            } else {
+                try {
+                    UserRole.valueOf(this[UsersTable.role])
+                } catch (e: Exception) {
+                    UserRole.CUSTOMER
+                }
             }
-        }
 
-        val status = try { UserStatus.valueOf(this[UsersTable.status]) } catch (e: Exception) { UserStatus.APPROVED }
+        val status =
+            try {
+                UserStatus.valueOf(this[UsersTable.status])
+            } catch (e: Exception) {
+                UserStatus.APPROVED
+            }
 
-        val permissions = if (isOwner) {
-            com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-        } else {
-            this[UsersTable.permissions].split(",")
-                .filter { it.isNotBlank() }
-                .mapNotNull {
-                    runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
-                }.toSet()
-        }
+        val permissions =
+            if (isOwner) {
+                com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
+            } else {
+                this[UsersTable.permissions].split(",")
+                    .filter { it.isNotBlank() }
+                    .mapNotNull {
+                        runCatching { com.itbenevides.genesys21.domain.model.UserPermission.valueOf(it) }.getOrNull()
+                    }.toSet()
+            }
 
         return UserProfile(
             id = userId,
@@ -51,23 +57,24 @@ class SqliteUserRepository : UserRepository {
             permissions = permissions,
             createdAt = this[UsersTable.createdAt],
             updatedAt = this[UsersTable.updatedAt],
-            deletedAt = this[UsersTable.deletedAt]
+            deletedAt = this[UsersTable.deletedAt],
         )
     }
 
-    override suspend fun getUserProfile(id: String): Result<UserProfile> = try {
-        dbQuery {
-            val userRow = UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()
+    override suspend fun getUserProfile(id: String): Result<UserProfile> =
+        try {
+            dbQuery {
+                val userRow = UsersTable.selectAll().where { UsersTable.id eq id }.singleOrNull()
 
-            if (userRow != null) {
-                Result.success(userRow.toUserProfile())
-            } else {
-                Result.failure(Exception("Usuário não encontrado"))
+                if (userRow != null) {
+                    Result.success(userRow.toUserProfile())
+                } else {
+                    Result.failure(Exception("Usuário não encontrado"))
+                }
             }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
     override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> {
         val email = profile.email.lowercase().trim()
@@ -112,55 +119,72 @@ class SqliteUserRepository : UserRepository {
         }
     }
 
-    override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = try {
-        dbQuery {
-            Result.success(UsersTable.selectAll().map { it.toUserProfile() })
-        }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit> = try {
-        dbQuery {
-            UsersTable.update({ UsersTable.id eq userId }) {
-                it[UsersTable.role] = role.name
+    override suspend fun getAllUsers(token: String): Result<List<UserProfile>> =
+        try {
+            dbQuery {
+                Result.success(UsersTable.selectAll().map { it.toUserProfile() })
             }
-            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> = try {
-        dbQuery {
-            UsersTable.update({ UsersTable.id eq userId }) {
-                it[UsersTable.status] = status.name
+    override suspend fun updateUserRole(
+        token: String,
+        userId: String,
+        role: UserRole,
+    ): Result<Unit> =
+        try {
+            dbQuery {
+                UsersTable.update({ UsersTable.id eq userId }) {
+                    it[UsersTable.role] = role.name
+                }
+                Result.success(Unit)
             }
-            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>): Result<Unit> = try {
-        dbQuery {
-            val permsStr = permissions.joinToString(",") { it.name }
-
-            UsersTable.update({ UsersTable.id eq userId }) {
-                it[UsersTable.permissions] = permsStr
+    override suspend fun updateUserStatus(
+        token: String,
+        userId: String,
+        status: UserStatus,
+    ): Result<Unit> =
+        try {
+            dbQuery {
+                UsersTable.update({ UsersTable.id eq userId }) {
+                    it[UsersTable.status] = status.name
+                }
+                Result.success(Unit)
             }
-            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
 
-    override suspend fun deleteUser(userId: String): Result<Unit> = try {
-        dbQuery {
-            UsersTable.deleteWhere { id eq userId }
-            Result.success(Unit)
+    override suspend fun updateUserPermissions(
+        token: String,
+        userId: String,
+        permissions: Set<com.itbenevides.genesys21.domain.model.UserPermission>,
+    ): Result<Unit> =
+        try {
+            dbQuery {
+                val permsStr = permissions.joinToString(",") { it.name }
+
+                UsersTable.update({ UsersTable.id eq userId }) {
+                    it[UsersTable.permissions] = permsStr
+                }
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+
+    override suspend fun deleteUser(userId: String): Result<Unit> =
+        try {
+            dbQuery {
+                UsersTable.deleteWhere { id eq userId }
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 }

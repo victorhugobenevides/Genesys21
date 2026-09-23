@@ -14,11 +14,11 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysColorField
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysDropdownField
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysBottomSheet
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun ThemeLabDialog(
@@ -49,7 +49,7 @@ fun ThemeLabDialog(
                 cornerRadius = cornerRadius.toInt(),
                 glassIntensity = glassIntensity,
                 typographySet = typography,
-            )
+            ),
         )
     }
 

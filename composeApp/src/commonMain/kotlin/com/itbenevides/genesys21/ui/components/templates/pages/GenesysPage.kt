@@ -36,15 +36,17 @@ fun GenesysPage(
         // REPARO DE VIEWPORT: Forçamos o fillMaxSize para garantir que o scroll nativo (v5.5.0) funcione.
         // O container de centralização 1200dp garante a estética no Desktop.
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentAlignment = Alignment.TopCenter
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            contentAlignment = Alignment.TopCenter,
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .widthIn(max = 1200.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .widthIn(max = 1200.dp),
             ) {
                 content()
             }
@@ -53,11 +55,12 @@ fun GenesysPage(
 
     CompositionLocalProvider(LocalGenesysDrawerState provides drawerState) {
         if (navigationSuiteItems != null) {
-            val layoutType = when (windowSizeClass) {
-                GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
-                GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
-                GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
-            }
+            val layoutType =
+                when (windowSizeClass) {
+                    GenesysWindowSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
+                    GenesysWindowSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
+                    GenesysWindowSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
+                }
 
             NavigationSuiteScaffold(
                 navigationSuiteItems = navigationSuiteItems,
@@ -68,9 +71,9 @@ fun GenesysPage(
                         topBar = topBar,
                         floatingActionButton = floatingActionButton,
                         containerColor = Color.Transparent,
-                        content = { contentWithPadding(it) }
+                        content = { contentWithPadding(it) },
                     )
-                }
+                },
             )
         } else {
             if (drawerContent != null && isExpanded) {
@@ -79,7 +82,7 @@ fun GenesysPage(
                         PermanentDrawerSheet(
                             drawerContainerColor = GenesysTheme.colors.surface,
                             drawerContentColor = GenesysTheme.colors.onSurface,
-                            modifier = Modifier.width(280.dp)
+                            modifier = Modifier.width(280.dp),
                         ) {
                             drawerContent()
                         }
@@ -90,9 +93,9 @@ fun GenesysPage(
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
                             containerColor = GenesysTheme.colors.background,
-                            content = { contentWithPadding(it) }
+                            content = { contentWithPadding(it) },
                         )
-                    }
+                    },
                 )
             } else if (drawerContent != null) {
                 ModalNavigationDrawer(
@@ -100,7 +103,7 @@ fun GenesysPage(
                     drawerContent = {
                         ModalDrawerSheet(
                             drawerContainerColor = GenesysTheme.colors.surface,
-                            drawerContentColor = GenesysTheme.colors.onSurface
+                            drawerContentColor = GenesysTheme.colors.onSurface,
                         ) {
                             drawerContent()
                         }
@@ -111,9 +114,9 @@ fun GenesysPage(
                             bottomBar = bottomBar,
                             floatingActionButton = floatingActionButton,
                             containerColor = GenesysTheme.colors.background,
-                            content = { contentWithPadding(it) }
+                            content = { contentWithPadding(it) },
                         )
-                    }
+                    },
                 )
             } else {
                 Scaffold(
@@ -121,7 +124,7 @@ fun GenesysPage(
                     bottomBar = bottomBar,
                     floatingActionButton = floatingActionButton,
                     containerColor = GenesysTheme.colors.background,
-                    content = { contentWithPadding(it) }
+                    content = { contentWithPadding(it) },
                 )
             }
         }

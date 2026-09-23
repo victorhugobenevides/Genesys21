@@ -39,42 +39,39 @@ import com.itbenevides.genesys21.triggerPrint
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
+import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightSpacer
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysRowText
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.booking.ServiceCard
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.input.GenesysSearchBar
 import com.itbenevides.genesys21.ui.components.molecules.payment.ValuedActionComponent
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
-import com.itbenevides.genesys21.ui.theme.GenesysDimens
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysMotion
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.ui.util.staggeredEntry
 import com.itbenevides.genesys21.util.AnalyticsManager
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.math.roundToLong
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun PageComponentRenderer(
     component: PageComponent,
-    storeId: String = "", // NOVO: Necessário para vincular itens ao lojista correto
+    /** NOVO: Necessário para vincular itens ao lojista correto */
+    storeId: String = "",
     onProductClick: ((Product) -> Unit)? = null,
     onServiceClick: ((BookingService) -> Unit)? = null,
     filterQuery: String = "",
@@ -177,8 +174,11 @@ fun PageComponentRenderer(
                 is PageComponent.SingleProduct -> !isCategoryFilterActive && component.product.name.contains(filterQuery, ignoreCase = true)
                 is PageComponent.SingleService -> !isCategoryFilterActive && component.service.name.contains(filterQuery, ignoreCase = true)
                 is PageComponent.Skills -> {
-                    if (filterQuery.isBlank()) true
-                    else component.tags.any { it.contains(filterQuery, ignoreCase = true) }
+                    if (filterQuery.isBlank()) {
+                        true
+                    } else {
+                        component.tags.any { it.contains(filterQuery, ignoreCase = true) }
+                    }
                 }
                 else -> true
             }
@@ -209,7 +209,7 @@ fun PageComponentRenderer(
                                         ServiceCard(
                                             service = service,
                                             onClick = { onServiceClick?.invoke(service) },
-                                            showPrice = component.showPrice
+                                            showPrice = component.showPrice,
                                         )
                                     }
                                 }
@@ -222,7 +222,7 @@ fun PageComponentRenderer(
                             ServiceCard(
                                 service = service,
                                 onClick = { onServiceClick?.invoke(service) },
-                                showPrice = component.showPrice
+                                showPrice = component.showPrice,
                             )
                             GenesysSpacer(GenesysTheme.spacing.s)
                         }
@@ -241,14 +241,14 @@ fun PageComponentRenderer(
                 GenesysColumn(
                     modifier = Modifier.fillMaxWidth().padding(vertical = if (isCompact) 16.dp else 24.dp).clickable { onComponentClick() },
                     horizontalAlignment = GenesysAlignment.Center,
-                    usePadding = true
+                    usePadding = true,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         // Halo decorativo
                         Surface(
                             modifier = Modifier.size((effectiveImageSize + 12).dp),
                             shape = if (component.isCircular) CircleShape else RoundedCornerShape(24.dp),
-                            color = GenesysTheme.colors.brand.copy(alpha = 0.05f)
+                            color = GenesysTheme.colors.brand.copy(alpha = 0.05f),
                         ) {}
 
                         GenesysImage(
@@ -274,7 +274,7 @@ fun PageComponentRenderer(
                             textAlign = GenesysTextAlign.Center,
                             modifier = Modifier.padding(horizontal = if (isCompact) 16.dp else 32.dp),
                             fontSize = if (isCompact) 14.sp else 16.sp,
-                            color = GenesysTheme.colors.onSurfaceVariant
+                            color = GenesysTheme.colors.onSurfaceVariant,
                         )
                     }
                 }
@@ -327,13 +327,14 @@ fun PageComponentRenderer(
                         text = component.text,
                         onClick = onComponentClick,
                         fillWidth = true,
-                        icon = when {
-                            component.text.contains("PDF", true) -> GenesysIcons.Description
-                            component.text.contains("GitHub", true) -> GenesysIcons.Language
-                            component.text.contains("LinkedIn", true) -> GenesysIcons.Share
-                            component.text.contains("Showcase", true) -> GenesysIcons.Magic
-                            else -> null
-                        }
+                        icon =
+                            when {
+                                component.text.contains("PDF", true) -> GenesysIcons.Description
+                                component.text.contains("GitHub", true) -> GenesysIcons.Language
+                                component.text.contains("LinkedIn", true) -> GenesysIcons.Share
+                                component.text.contains("Showcase", true) -> GenesysIcons.Magic
+                                else -> null
+                            },
                     )
                 }
             }
@@ -397,7 +398,7 @@ fun PageComponentRenderer(
                     GenesysSearchBar(
                         query = filterQuery,
                         onQueryChange = { onFilterQueryChange(it) },
-                        placeholder = component.placeholder
+                        placeholder = component.placeholder,
                     )
                 }
             }
@@ -586,7 +587,7 @@ fun PageComponentRenderer(
                 GenesysRow(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    usePadding = true
+                    usePadding = true,
                 ) {
                     component.components.forEach { child ->
                         GenesysWeightBox(1f) {
@@ -601,7 +602,7 @@ fun PageComponentRenderer(
                                 allProducts = allProducts,
                                 allServices = allServices,
                                 isEditMode = isEditMode,
-                                onEditClick = onEditClick
+                                onEditClick = onEditClick,
                             )
                         }
                     }
@@ -610,56 +611,63 @@ fun PageComponentRenderer(
 
             is PageComponent.Hero -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(component.height.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(component.height.dp),
                 ) {
-                    val displayUrl = remember(component.imageUrl, backendUrl) {
-                        if (component.imageUrl.startsWith("/") && !component.imageUrl.startsWith("http")) "$backendUrl${component.imageUrl}" else component.imageUrl
-                    }
+                    val displayUrl =
+                        remember(component.imageUrl, backendUrl) {
+                            if (component.imageUrl.startsWith("/") && !component.imageUrl.startsWith("http")) "$backendUrl${component.imageUrl}" else component.imageUrl
+                        }
                     AsyncImage(
                         model = displayUrl,
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
                     )
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f))
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
                     )
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(24.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
                         verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = when (component.textAlign) {
-                            "CENTER" -> Alignment.CenterHorizontally
-                            "END" -> Alignment.End
-                            else -> Alignment.Start
-                        }
+                        horizontalAlignment =
+                            when (component.textAlign) {
+                                "CENTER" -> Alignment.CenterHorizontally
+                                "END" -> Alignment.End
+                                else -> Alignment.Start
+                            },
                     ) {
                         GenesysText(
                             text = component.title,
                             style = GenesysTextStyle.Headline,
                             color = Color.White,
-                            textAlign = when (component.textAlign) {
-                                "CENTER" -> GenesysTextAlign.Center
-                                "END" -> GenesysTextAlign.End
-                                else -> GenesysTextAlign.Start
-                            },
-                            fontWeight = GenesysFontWeight.ExtraBold
+                            textAlign =
+                                when (component.textAlign) {
+                                    "CENTER" -> GenesysTextAlign.Center
+                                    "END" -> GenesysTextAlign.End
+                                    else -> GenesysTextAlign.Start
+                                },
+                            fontWeight = GenesysFontWeight.ExtraBold,
                         )
                         component.subtitle?.let {
                             GenesysText(
                                 text = it,
                                 style = GenesysTextStyle.Title,
                                 color = Color.White.copy(alpha = 0.9f),
-                                textAlign = when (component.textAlign) {
-                                    "CENTER" -> GenesysTextAlign.Center
-                                    "END" -> GenesysTextAlign.End
-                                    else -> GenesysTextAlign.Start
-                                }
+                                textAlign =
+                                    when (component.textAlign) {
+                                        "CENTER" -> GenesysTextAlign.Center
+                                        "END" -> GenesysTextAlign.End
+                                        else -> GenesysTextAlign.Start
+                                    },
                             )
                         }
                         val btnText = component.buttonText
@@ -667,7 +675,7 @@ fun PageComponentRenderer(
                             GenesysSpacer(GenesysTheme.spacing.l)
                             GenesysLoadingButton(
                                 text = btnText,
-                                onClick = onComponentClick
+                                onClick = onComponentClick,
                             )
                         }
                     }
@@ -682,18 +690,20 @@ fun PageComponentRenderer(
                     }
                     component.items.forEach { item ->
                         Row(modifier = Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            val icon = when (item.iconName) {
-                                "Check" -> GenesysIcons.Check
-                                "Magic" -> GenesysIcons.Magic
-                                "Inventory" -> GenesysIcons.Inventory
-                                "Payments" -> GenesysIcons.Payments
-                                else -> GenesysIcons.Info
-                            }
+                            val icon =
+                                when (item.iconName) {
+                                    "Check" -> GenesysIcons.Check
+                                    "Magic" -> GenesysIcons.Magic
+                                    "Inventory" -> GenesysIcons.Inventory
+                                    "Payments" -> GenesysIcons.Payments
+                                    else -> GenesysIcons.Info
+                                }
                             Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(GenesysTheme.colors.brandContainer, CircleShape),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .size(40.dp)
+                                        .background(GenesysTheme.colors.brandContainer, CircleShape),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Icon(icon, null, tint = GenesysTheme.colors.brand, modifier = Modifier.size(20.dp))
                             }
@@ -719,7 +729,7 @@ fun PageComponentRenderer(
                         GenesysText(
                             text = "\"${component.quote}\"",
                             style = GenesysTextStyle.Body,
-                            fontWeight = GenesysFontWeight.Normal
+                            fontWeight = GenesysFontWeight.Normal,
                         )
                         GenesysSpacer(GenesysTheme.spacing.m)
                         Column {
@@ -732,7 +742,7 @@ fun PageComponentRenderer(
                 }
             }
             is PageComponent.Grid -> {
-                 GenesysColumn(usePadding = true) {
+                GenesysColumn(usePadding = true) {
                     component.title?.let {
                         GenesysText(text = it, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
                         GenesysSpacer(GenesysTheme.spacing.m)
@@ -758,7 +768,7 @@ fun PageComponentRenderer(
                         GenesysRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            usePadding = false
+                            usePadding = false,
                         ) {
                             rowItems.forEach { gridItem ->
                                 GenesysWeightBox(gridItem.span.toFloat()) {
@@ -775,7 +785,7 @@ fun PageComponentRenderer(
                                                 allProducts = allProducts,
                                                 allServices = allServices,
                                                 isEditMode = isEditMode,
-                                                onEditClick = onEditClick
+                                                onEditClick = onEditClick,
                                             )
                                         }
                                     }
@@ -799,22 +809,26 @@ fun PageComponentRenderer(
                     onClick = onProductClick,
                     onAddToCart = { router.viewModel.addToCart(component.product) },
                     onHover = { router.viewModel.prefetchProductDetails(component.product) },
-                    isEditMode = isEditMode
+                    isEditMode = isEditMode,
                 )
             }
 
             is PageComponent.SingleService -> {
                 ServiceCard(
                     service = component.service,
-                    onClick = { onServiceClick?.invoke(component.service) }
+                    onClick = { onServiceClick?.invoke(component.service) },
                 )
             }
 
             is PageComponent.Skills -> {
-                val filteredTags = remember(component.tags, filterQuery) {
-                    if (filterQuery.isBlank()) component.tags
-                    else component.tags.filter { it.contains(filterQuery, ignoreCase = true) }
-                }
+                val filteredTags =
+                    remember(component.tags, filterQuery) {
+                        if (filterQuery.isBlank()) {
+                            component.tags
+                        } else {
+                            component.tags.filter { it.contains(filterQuery, ignoreCase = true) }
+                        }
+                    }
 
                 if (filteredTags.isNotEmpty()) {
                     GenesysColumn(usePadding = true) {
@@ -826,46 +840,47 @@ fun PageComponentRenderer(
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             filteredTags.forEach { tag ->
-                                val tagColor = remember(tag) {
-                                    val t = tag.lowercase()
-                                    when {
-                                        // VERMELHO: iOS / Apple
-                                        t.contains("ios") || t.contains("swift") || t.contains("xcode") || t.contains("apple") -> Color(0xFFE57373)
+                                val tagColor =
+                                    remember(tag) {
+                                        val t = tag.lowercase()
+                                        when {
+                                            // VERMELHO: iOS / Apple
+                                            t.contains("ios") || t.contains("swift") || t.contains("xcode") || t.contains("apple") -> Color(0xFFE57373)
 
-                                        // AMARELO: Multiplataforma
-                                        t.contains("multiplatform") || t.contains("kmp") || t.contains("flutter") ||
-                                        t.contains("dart") || t.contains("ktor") || t.contains("wasm") -> Color(0xFFFFD54F)
+                                            // AMARELO: Multiplataforma
+                                            t.contains("multiplatform") || t.contains("kmp") || t.contains("flutter") ||
+                                                t.contains("dart") || t.contains("ktor") || t.contains("wasm") -> Color(0xFFFFD54F)
 
-                                        // VERDE: Android, CI/CD, IA, Infra, Segurança, Ferramentas de IA e IDEs
-                                        t.contains("android") || t.contains("compose") || t.contains("kotlin") ||
-                                        t.contains("java") || t.contains("ci/cd") || t.contains("docker") ||
-                                        t.contains("ia") || t.contains("ai") || t.contains("pci") ||
-                                        t.contains("dexguard") || t.contains("rasp") || t.contains("test") ||
-                                        t.contains("sql") || t.contains("firebase") || t.contains("analytics") ||
-                                        t.contains("mcp") || t.contains("devin") || t.contains("copilot") ||
-                                        t.contains("studio") || t.contains("windsurf") || t.contains("cascade") ||
-                                        t.contains("speckit") || t.contains("antigravity") -> Color(0xFF81C784)
+                                            // VERDE: Android, CI/CD, IA, Infra, Segurança, Ferramentas de IA e IDEs
+                                            t.contains("android") || t.contains("compose") || t.contains("kotlin") ||
+                                                t.contains("java") || t.contains("ci/cd") || t.contains("docker") ||
+                                                t.contains("ia") || t.contains("ai") || t.contains("pci") ||
+                                                t.contains("dexguard") || t.contains("rasp") || t.contains("test") ||
+                                                t.contains("sql") || t.contains("firebase") || t.contains("analytics") ||
+                                                t.contains("mcp") || t.contains("devin") || t.contains("copilot") ||
+                                                t.contains("studio") || t.contains("windsurf") || t.contains("cascade") ||
+                                                t.contains("speckit") || t.contains("antigravity") -> Color(0xFF81C784)
 
-                                        // PADRÃO: Cinza/Azul suave
-                                        else -> Color.LightGray
+                                            // PADRÃO: Cinza/Azul suave
+                                            else -> Color.LightGray
+                                        }
                                     }
-                                }
 
                                 Surface(
                                     color = tagColor.copy(alpha = 0.2f),
                                     contentColor = tagColor,
                                     shape = CircleShape,
                                     border = androidx.compose.foundation.BorderStroke(1.dp, tagColor.copy(alpha = 0.5f)),
-                                    modifier = Modifier.padding(vertical = 2.dp)
+                                    modifier = Modifier.padding(vertical = 2.dp),
                                 ) {
                                     Text(
                                         text = tag,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                         style = GenesysTheme.typography.label,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
                                     )
                                 }
                             }
@@ -890,7 +905,7 @@ fun PageComponentRenderer(
                         text = component.title,
                         style = GenesysTextStyle.Title,
                         fontWeight = GenesysFontWeight.Bold,
-                        color = GenesysTheme.colors.brand
+                        color = GenesysTheme.colors.brand,
                     )
                     GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -900,19 +915,19 @@ fun PageComponentRenderer(
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     GenesysText(
                                         text = day.day,
                                         style = GenesysTextStyle.Body,
                                         fontWeight = GenesysFontWeight.Bold,
-                                        color = if (day.isClosed) GenesysTheme.colors.onSurfaceVariant else GenesysTheme.colors.onSurface
+                                        color = if (day.isClosed) GenesysTheme.colors.onSurfaceVariant else GenesysTheme.colors.onSurface,
                                     )
                                     GenesysText(
                                         text = if (day.isClosed) "Fechado" else day.hours,
                                         style = GenesysTextStyle.Body,
                                         color = if (day.isClosed) GenesysTheme.colors.error else GenesysTheme.colors.brand,
-                                        fontWeight = if (day.isClosed) GenesysFontWeight.Normal else GenesysFontWeight.Bold
+                                        fontWeight = if (day.isClosed) GenesysFontWeight.Normal else GenesysFontWeight.Bold,
                                     )
                                 }
                                 if (index < component.items.size - 1) {
@@ -929,7 +944,7 @@ fun PageComponentRenderer(
                     component = component,
                     onActionClick = { name, price ->
                         router.viewModel.addValuedActionToCart(name, price, storeId)
-                    }
+                    },
                 )
             }
         }
@@ -1070,7 +1085,8 @@ fun ProductCard(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Box(
-                    modifier = Modifier
+                    modifier =
+                        Modifier
                             .fillMaxWidth()
                             .aspectRatio(0.9f) // Mais vertical para destaque
                             .clip(MaterialTheme.shapes.medium)
@@ -1086,16 +1102,19 @@ fun ProductCard(
                     AsyncImage(
                         model = imageUrl,
                         contentDescription = product.name,
-                        modifier = Modifier.fillMaxSize().then(
-                            if (sharedTransitionScope != null && animatedContentScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedElement(
-                                        rememberSharedContentState(key = "prod_img_${product.id}"),
-                                        animatedVisibilityScope = animatedContentScope
-                                    )
-                                }
-                            } else Modifier
-                        ),
+                        modifier =
+                            Modifier.fillMaxSize().then(
+                                if (sharedTransitionScope != null && animatedContentScope != null) {
+                                    with(sharedTransitionScope) {
+                                        Modifier.sharedElement(
+                                            rememberSharedContentState(key = "prod_img_${product.id}"),
+                                            animatedVisibilityScope = animatedContentScope,
+                                        )
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            ),
                         contentScale = ContentScale.Crop,
                     )
 

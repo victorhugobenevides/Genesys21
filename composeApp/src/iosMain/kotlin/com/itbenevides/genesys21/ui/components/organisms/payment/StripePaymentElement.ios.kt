@@ -11,7 +11,7 @@ actual fun StripePaymentElement(
     publishableKey: String,
     appearanceJson: String,
     onPaymentConfirmed: () -> Unit,
-    onPaymentError: (String) -> Unit
+    onPaymentError: (String) -> Unit,
 ) {
     Text("Stripe Payment Element não implementado para iOS nativo.")
 }

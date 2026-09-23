@@ -60,10 +60,11 @@ class ResponsivenessSnapshotTest {
             val appearance = com.itbenevides.genesys21.util.StripeThemeMapper.mapToAppearance(appTheme, colorScheme)
 
             CartContent(
-                state = CartScreenState(
-                    total = 899.90,
-                    stripeClientSecret = "pi_test_secret"
-                ),
+                state =
+                    CartScreenState(
+                        total = 899.90,
+                        stripeClientSecret = "pi_test_secret",
+                    ),
                 store = null,
                 backendUrl = "",
                 stripeAppearance = appearance,
@@ -77,16 +78,16 @@ class ResponsivenessSnapshotTest {
         genesysResponsiveSnapshot(paparazzi) {
             androidx.compose.foundation.layout.Column(
                 modifier = androidx.compose.ui.Modifier.padding(16.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
             ) {
                 com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText(
                     text = "Headline Responsive",
                     style = com.itbenevides.genesys21.ui.theme.GenesysTextStyle.Headline,
-                    fontWeight = com.itbenevides.genesys21.ui.theme.GenesysFontWeight.ExtraBold
+                    fontWeight = com.itbenevides.genesys21.ui.theme.GenesysFontWeight.ExtraBold,
                 )
                 com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText(
                     text = "Body standard remains consistent.",
-                    style = com.itbenevides.genesys21.ui.theme.GenesysTextStyle.Body
+                    style = com.itbenevides.genesys21.ui.theme.GenesysTextStyle.Body,
                 )
             }
         }

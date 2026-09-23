@@ -12,9 +12,9 @@ import com.itbenevides.genesys21.navigateBack
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.syncUrlWithScreen
 import com.itbenevides.genesys21.util.AnalyticsManager
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Router re-arquitetado: O Navegador é o Boss.

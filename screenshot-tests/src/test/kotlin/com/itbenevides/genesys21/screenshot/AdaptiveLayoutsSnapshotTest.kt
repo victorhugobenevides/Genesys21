@@ -18,15 +18,16 @@ class AdaptiveLayoutsSnapshotTest {
     @get:Rule
     val paparazzi = createGenesysPaparazzi()
 
-    private val sampleProduct = Product(
-        id = "1",
-        storeId = "store-1",
-        name = "Smartphone Genesys X",
-        price = 2999.0,
-        imageUrls = listOf("https://picsum.photos/800/800"),
-        description = "Premium device with AI capabilities.",
-        stock = 10
-    )
+    private val sampleProduct =
+        Product(
+            id = "1",
+            storeId = "store-1",
+            name = "Smartphone Genesys X",
+            price = 2999.0,
+            imageUrls = listOf("https://picsum.photos/800/800"),
+            description = "Premium device with AI capabilities.",
+            stock = 10,
+        )
 
     private val samplePage = Page(id = "test-page", storeId = "store-1", title = "Minha Vitrine")
 
@@ -36,39 +37,52 @@ class AdaptiveLayoutsSnapshotTest {
             ProductDetailsContent(
                 state = ProductDetailsState(product = sampleProduct),
                 backendUrl = "",
-                onEvent = {}
+                onEvent = {},
             )
         }
     }
 
     @Test
     fun testCartResponsive() {
-        val sampleService = com.itbenevides.genesys21.domain.model.BookingService(
-            id = "s1", storeId = "store-1", name = "Corte de Cabelo", price = 50.0, durationMinutes = 30
-        )
-        val sampleAppointment = com.itbenevides.genesys21.domain.model.Appointment(
-            id = "a1", storeId = "store-1", serviceId = "s1", customerName = "Victor", customerPhone = "11999999999",
-            startTime = kotlinx.datetime.Instant.fromEpochMilliseconds(1735689600000), // Fixed date for snapshots
-            endTime = kotlinx.datetime.Instant.fromEpochMilliseconds(1735691400000)
-        )
+        val sampleService =
+            com.itbenevides.genesys21.domain.model.BookingService(
+                id = "s1",
+                storeId = "store-1",
+                name = "Corte de Cabelo",
+                price = 50.0,
+                durationMinutes = 30,
+            )
+        val sampleAppointment =
+            com.itbenevides.genesys21.domain.model.Appointment(
+                id = "a1",
+                storeId = "store-1",
+                serviceId = "s1",
+                customerName = "Victor",
+                customerPhone = "11999999999",
+                // Fixed date for snapshots
+                startTime = kotlinx.datetime.Instant.fromEpochMilliseconds(1735689600000),
+                endTime = kotlinx.datetime.Instant.fromEpochMilliseconds(1735691400000),
+            )
 
         genesysResponsiveSnapshot(paparazzi) {
             CartContent(
-                state = CartScreenState(
-                    cartItems = listOf(
-                        com.itbenevides.genesys21.domain.model.CartItem(product = sampleProduct, quantity = 1),
-                        com.itbenevides.genesys21.domain.model.CartItem(service = sampleService, appointment = sampleAppointment, quantity = 1)
+                state =
+                    CartScreenState(
+                        cartItems =
+                            listOf(
+                                com.itbenevides.genesys21.domain.model.CartItem(product = sampleProduct, quantity = 1),
+                                com.itbenevides.genesys21.domain.model.CartItem(service = sampleService, appointment = sampleAppointment, quantity = 1),
+                            ),
+                        total = 3049.0,
+                        customerName = "Victor Hugo",
+                        customerPhone = "11999999999",
+                        paymentMethod = com.itbenevides.genesys21.domain.model.PaymentMethod.APP,
                     ),
-                    total = 3049.0,
-                    customerName = "Victor Hugo",
-                    customerPhone = "11999999999",
-                    paymentMethod = com.itbenevides.genesys21.domain.model.PaymentMethod.APP
-                ),
                 store = null,
                 backendUrl = "",
                 stripeAppearance = "{}",
                 onEvent = {},
-                timeZone = kotlinx.datetime.TimeZone.UTC
+                timeZone = kotlinx.datetime.TimeZone.UTC,
             )
         }
     }
@@ -77,13 +91,18 @@ class AdaptiveLayoutsSnapshotTest {
     fun testEditorResponsive() {
         genesysResponsiveSnapshot(paparazzi) {
             WhiteLabelContent(
-                state = WhiteLabelState(
-                    page = samplePage.copy(components = listOf(
-                        com.itbenevides.genesys21.domain.model.PageComponent.Header("Editor Responsivo"),
-                        com.itbenevides.genesys21.domain.model.PageComponent.Text("Edite em qualquer lugar.")
-                    )),
-                    editingComponentIndex = 0
-                ),
+                state =
+                    WhiteLabelState(
+                        page =
+                            samplePage.copy(
+                                components =
+                                    listOf(
+                                        com.itbenevides.genesys21.domain.model.PageComponent.Header("Editor Responsivo"),
+                                        com.itbenevides.genesys21.domain.model.PageComponent.Text("Edite em qualquer lugar."),
+                                    ),
+                            ),
+                        editingComponentIndex = 0,
+                    ),
                 viewModel = koinInject(),
                 onEvent = {},
                 originalPage = samplePage,
@@ -91,7 +110,7 @@ class AdaptiveLayoutsSnapshotTest {
                 allProducts = emptyList(),
                 onManageCategories = {},
                 onPickImage = {},
-                onDiscardClicked = {}
+                onDiscardClicked = {},
             )
         }
     }

@@ -5,7 +5,10 @@ import platform.Foundation.NSUserDefaults
 class IosSecureStorage : SecureStorage {
     private val defaults = NSUserDefaults.standardUserDefaults
 
-    override suspend fun save(key: String, value: String) {
+    override suspend fun save(
+        key: String,
+        value: String,
+    ) {
         defaults.setObject(value, key)
     }
 

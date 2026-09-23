@@ -32,7 +32,7 @@ fun PaymentsTab(
     viewModel: PageViewModel,
     userProfile: UserProfile?,
     uriHandler: UriHandler,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ) {
     val storeId = userProfile?.id ?: "admin"
     var store by remember { mutableStateOf<Store?>(null) }
@@ -61,32 +61,33 @@ fun PaymentsTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
                 title = "Pagamentos e Gateways",
-                subtitle = "Gerencie como você recebe pelas suas vendas e serviços."
+                subtitle = "Gerencie como você recebe pelas suas vendas e serviços.",
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 GenesysCard {
                     Column {
                         GenesysText(
                             text = "Stripe Connect",
                             style = GenesysTextStyle.Title,
-                            fontWeight = GenesysFontWeight.Bold
+                            fontWeight = GenesysFontWeight.Bold,
                         )
                         GenesysText(
                             text = "Receba pagamentos diretamente em sua conta bancária via Checkout Seguro.",
                             style = GenesysTextStyle.Label,
-                            color = GenesysTheme.colors.onSurfaceVariant
+                            color = GenesysTheme.colors.onSurfaceVariant,
                         )
 
                         GenesysSpacer(GenesysTheme.spacing.m)
@@ -102,7 +103,7 @@ fun PaymentsTab(
                                     }
                                 },
                                 isLoading = isLoading,
-                                fillWidth = true
+                                fillWidth = true,
                             )
                         } else {
                             StripeConnectedUI(store, viewModel, storeId, isLoading, scope) { secret, component ->
@@ -117,14 +118,14 @@ fun PaymentsTab(
                                 componentName = if (store?.stripeAccountId.isNullOrBlank()) "account-onboarding" else activeConnectComponent,
                                 publishableKey = stripePublic.ifBlank { "pk_test_placeholder" },
                                 clientSecret = connectSessionSecret!!,
-                                modifier = Modifier.fillMaxWidth().height(600.dp).background(Color.White, RoundedCornerShape(8.dp))
+                                modifier = Modifier.fillMaxWidth().height(600.dp).background(Color.White, RoundedCornerShape(8.dp)),
                             )
 
                             GenesysSpacer(GenesysTheme.spacing.s)
                             GenesysTextButton(
                                 text = "Fechar Gestão Stripe",
                                 onClick = { connectSessionSecret = null },
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
                             )
                         }
                     }
@@ -151,7 +152,7 @@ fun PaymentsTab(
                                 }
                             },
                             isLoading = isLoading,
-                            fillWidth = true
+                            fillWidth = true,
                         )
                     }
                 }
@@ -169,16 +170,17 @@ private fun StripeConnectedUI(
     storeId: String,
     isLoading: Boolean,
     scope: CoroutineScope,
-    onShowComponent: (String, String) -> Unit
+    onShowComponent: (String, String) -> Unit,
 ) {
     Column {
         GenesysRow(
-            modifier = Modifier.fillMaxWidth().background(
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                RoundedCornerShape(GenesysTheme.spacing.s)
-            ).padding(GenesysTheme.spacing.s),
+            modifier =
+                Modifier.fillMaxWidth().background(
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    RoundedCornerShape(GenesysTheme.spacing.s),
+                ).padding(GenesysTheme.spacing.s),
             verticalAlignment = Alignment.CenterVertically,
-            usePadding = false
+            usePadding = false,
         ) {
             Icon(GenesysIcons.Check, null, tint = Color(0xFF34C759), modifier = Modifier.size(20.dp))
             GenesysSpacer(GenesysTheme.spacing.xs)
@@ -199,7 +201,7 @@ private fun StripeConnectedUI(
                             viewModel.getAccountSession(storeId).onSuccess { onShowComponent(it, "payments") }
                         }
                     },
-                    isLoading = isLoading
+                    isLoading = isLoading,
                 )
             }
             Box(modifier = Modifier.weight(1f)) {
@@ -210,7 +212,7 @@ private fun StripeConnectedUI(
                             viewModel.getAccountSession(storeId).onSuccess { onShowComponent(it, "payouts") }
                         }
                     },
-                    isLoading = isLoading
+                    isLoading = isLoading,
                 )
             }
         }

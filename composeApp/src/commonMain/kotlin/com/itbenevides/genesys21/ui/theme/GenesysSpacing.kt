@@ -20,7 +20,7 @@ data class GenesysSpacing(
     val l: Dp = 24.dp,
     val xl: Dp = 32.dp,
     val xxl: Dp = 48.dp,
-    val huge: Dp = 64.dp
+    val huge: Dp = 64.dp,
 )
 
 val LocalGenesysSpacing = staticCompositionLocalOf { GenesysSpacing() }

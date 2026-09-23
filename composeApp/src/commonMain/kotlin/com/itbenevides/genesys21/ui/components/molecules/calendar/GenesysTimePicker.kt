@@ -17,13 +17,13 @@ fun GenesysTimePicker(
     FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs),
-        verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs)
+        verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.xs),
     ) {
         availableSlots.forEach { slot ->
             GenesysTimeChip(
                 time = slot,
                 isSelected = slot == selectedSlot,
-                onClick = { onSlotSelected(slot) }
+                onClick = { onSlotSelected(slot) },
             )
         }
     }

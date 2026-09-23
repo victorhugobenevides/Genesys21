@@ -10,11 +10,11 @@ import com.itbenevides.genesys21.screenshot.util.createGenesysPaparazzi
 import com.itbenevides.genesys21.screenshot.util.genesysResponsiveSnapshot
 import com.itbenevides.genesys21.ui.components.organisms.product.GenesysProductList
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
+import org.junit.Rule
+import org.junit.Test
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import org.junit.Rule
-import org.junit.Test
 
 class OrganismsSnapshotTest {
     @get:Rule
@@ -71,31 +71,33 @@ class OrganismsSnapshotTest {
                 availableSlots = listOf("09:00", "11:00", "15:00"),
                 onDateSelected = {},
                 onDateTimeSelected = {},
-                today = fixedDate
+                today = fixedDate,
             )
         }
     }
 
     @Test
     fun testGridComponent() {
-        val grid = com.itbenevides.genesys21.domain.model.PageComponent.Grid(
-            columns = 2,
-            title = "Layout em Grade",
-            items = listOf(
-                com.itbenevides.genesys21.domain.model.PageComponent.GridItem(
-                    components = listOf(com.itbenevides.genesys21.domain.model.PageComponent.Text("Célula 1"))
-                ),
-                com.itbenevides.genesys21.domain.model.PageComponent.GridItem(
-                    components = listOf(com.itbenevides.genesys21.domain.model.PageComponent.Text("Célula 2"))
-                )
+        val grid =
+            com.itbenevides.genesys21.domain.model.PageComponent.Grid(
+                columns = 2,
+                title = "Layout em Grade",
+                items =
+                    listOf(
+                        com.itbenevides.genesys21.domain.model.PageComponent.GridItem(
+                            components = listOf(com.itbenevides.genesys21.domain.model.PageComponent.Text("Célula 1")),
+                        ),
+                        com.itbenevides.genesys21.domain.model.PageComponent.GridItem(
+                            components = listOf(com.itbenevides.genesys21.domain.model.PageComponent.Text("Célula 2")),
+                        ),
+                    ),
             )
-        )
         genesysResponsiveSnapshot(paparazzi) {
             com.itbenevides.genesys21.presentation.screens.viewer.PageComponentRenderer(
                 component = grid,
                 storeId = "store-1",
                 onProductClick = {},
-                onServiceClick = {}
+                onServiceClick = {},
             )
         }
     }

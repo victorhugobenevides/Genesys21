@@ -11,7 +11,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysTextStyle
 @Composable
 fun DividerComponentEditor(
     component: PageComponent.Divider,
-    onSave: (PageComponent.Divider) -> Unit
+    onSave: (PageComponent.Divider) -> Unit,
 ) {
     var usePadding by remember(component) { mutableStateOf(component.usePadding) }
 

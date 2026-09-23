@@ -23,7 +23,7 @@ fun GenesysQuantitySelector(
         QuantityCircleButton(
             icon = GenesysIcons.Remove,
             onClick = onDecrease,
-            contentDescription = "Diminuir quantidade"
+            contentDescription = "Diminuir quantidade",
         )
 
         GenesysSpacer(GenesysTheme.spacing.s)
@@ -39,7 +39,7 @@ fun GenesysQuantitySelector(
             icon = GenesysIcons.Add,
             onClick = onIncrease,
             isPrimary = true,
-            contentDescription = "Aumentar quantidade"
+            contentDescription = "Aumentar quantidade",
         )
     }
 }

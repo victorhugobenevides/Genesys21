@@ -6,23 +6,37 @@ import kotlin.js.Promise
 external fun stripeInitializeSafe(publishableKey: String)
 
 @JsFun("(secret, appearance, id) => { if (typeof window.stripeMountPaymentElement === 'function') return window.stripeMountPaymentElement(secret, appearance, id); return Promise.reject('JS Not Ready'); }")
-external fun stripeMountPaymentElementSafe(clientSecret: String, appearanceJson: String, elementId: String): Promise<JsAny?>
+external fun stripeMountPaymentElementSafe(
+    clientSecret: String,
+    appearanceJson: String,
+    elementId: String,
+): Promise<JsAny?>
 
 @JsFun("(url) => { if (typeof window.stripeConfirmPayment === 'function') return window.stripeConfirmPayment(url); return Promise.reject('JS Not Ready'); }")
 external fun stripeConfirmPaymentSafe(returnUrl: String): Promise<JsAny?>
 
 @JsFun("(key, secret) => { if (typeof window.stripeConnectInitialize === 'function') return window.stripeConnectInitialize(key, secret); return Promise.reject('JS Not Ready'); }")
-external fun stripeConnectInitializeSafe(publishableKey: String, clientSecret: String): Promise<JsAny?>
+external fun stripeConnectInitializeSafe(
+    publishableKey: String,
+    clientSecret: String,
+): Promise<JsAny?>
 
 @JsFun("(name, id) => { if (typeof window.stripeConnectMountComponent === 'function') return window.stripeConnectMountComponent(name, id); return Promise.reject('JS Not Ready'); }")
-external fun stripeConnectMountComponentSafe(componentName: String, containerId: String): Promise<JsAny?>
+external fun stripeConnectMountComponentSafe(
+    componentName: String,
+    containerId: String,
+): Promise<JsAny?>
 
 object StripeBridge {
     fun initialize(publishableKey: String) {
         stripeInitializeSafe(publishableKey)
     }
 
-    suspend fun mountPaymentElement(clientSecret: String, appearanceJson: String, elementId: String): Result<Unit> {
+    suspend fun mountPaymentElement(
+        clientSecret: String,
+        appearanceJson: String,
+        elementId: String,
+    ): Result<Unit> {
         return try {
             stripeMountPaymentElementSafe(clientSecret, appearanceJson, elementId).await()
             Result.success(Unit)
@@ -40,7 +54,10 @@ object StripeBridge {
         }
     }
 
-    suspend fun initializeConnect(publishableKey: String, clientSecret: String): Result<Unit> {
+    suspend fun initializeConnect(
+        publishableKey: String,
+        clientSecret: String,
+    ): Result<Unit> {
         return try {
             stripeConnectInitializeSafe(publishableKey, clientSecret).await()
             Result.success(Unit)
@@ -49,7 +66,10 @@ object StripeBridge {
         }
     }
 
-    suspend fun mountConnectComponent(componentName: String, containerId: String): Result<Unit> {
+    suspend fun mountConnectComponent(
+        componentName: String,
+        containerId: String,
+    ): Result<Unit> {
         return try {
             stripeConnectMountComponentSafe(componentName, containerId).await()
             Result.success(Unit)

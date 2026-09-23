@@ -1,9 +1,9 @@
 package com.itbenevides.genesys21.routes
 
+import com.itbenevides.genesys21.data.service.StripeService
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.OrderRepository
 import com.itbenevides.genesys21.domain.repository.StoreRepository
-import com.itbenevides.genesys21.data.service.StripeService
 import com.itbenevides.genesys21.util.PrivacyUtils
 import com.stripe.net.Webhook
 import io.ktor.http.*
@@ -18,11 +18,10 @@ import kotlinx.coroutines.flow.first
 fun Route.orderRoutes(
     orderRepository: OrderRepository,
     storeRepository: StoreRepository,
-    stripeService: StripeService
+    stripeService: StripeService,
 ) {
     // 1. Rotas Públicas (Acesso sem Login)
     route("/public/orders") {
-
         // WEBHOOK DA STRIPE (Suporte a PaymentIntent)
         post("/webhook") {
             val payload = call.receiveText()
@@ -30,8 +29,9 @@ fun Route.orderRoutes(
 
             // SEGURANÇA: Nunca usar segredos hardcoded em produção.
             // O segredo deve vir de variável de ambiente segura.
-            val endpointSecret = System.getenv("STRIPE_WEBHOOK_SECRET")
-                ?: "whsec_test_internal_placeholder" // Somente para dev local
+            val endpointSecret =
+                System.getenv("STRIPE_WEBHOOK_SECRET")
+                    ?: "whsec_test_internal_placeholder" // Somente para dev local
 
             try {
                 val event = Webhook.constructEvent(payload, sigHeader, endpointSecret)
@@ -91,36 +91,39 @@ fun Route.orderRoutes(
                         val envSecretKey = System.getenv("STRIPE_SECRET_KEY")
                         val envPublishableKey = System.getenv("STRIPE_PUBLIC_KEY")
 
-                        val secretKey = if (!envSecretKey.isNullOrBlank() && !envSecretKey.contains("default")) {
-                            envSecretKey
-                        } else {
-                            store?.stripeSecretKey?.takeIf { !it.contains("default") && it.length > 20 }
-                        }
+                        val secretKey =
+                            if (!envSecretKey.isNullOrBlank() && !envSecretKey.contains("default")) {
+                                envSecretKey
+                            } else {
+                                store?.stripeSecretKey?.takeIf { !it.contains("default") && it.length > 20 }
+                            }
 
-                        val publishableKey = if (!envPublishableKey.isNullOrBlank() && !envPublishableKey.contains("default")) {
-                            envPublishableKey
-                        } else {
-                            store?.stripePublicKey?.takeIf { !it.contains("default") && it.length > 20 }
-                        }
+                        val publishableKey =
+                            if (!envPublishableKey.isNullOrBlank() && !envPublishableKey.contains("default")) {
+                                envPublishableKey
+                            } else {
+                                store?.stripePublicKey?.takeIf { !it.contains("default") && it.length > 20 }
+                            }
 
                         if (!secretKey.isNullOrBlank() && !secretKey.contains("default")) {
                             try {
                                 val maskedKey = secretKey.take(7) + "..." + secretKey.takeLast(4)
                                 println("STRIPE DEBUG: Enviando cobrança com chave: $maskedKey (Env found: ${!envSecretKey.isNullOrBlank()})")
 
-                                val clientSecret = stripeService.createPaymentIntent(
-                                    order = order.copy(id = generatedId),
-                                    secretKey = secretKey,
-                                    connectedAccountId = store?.stripeAccountId
-                                )
+                                val clientSecret =
+                                    stripeService.createPaymentIntent(
+                                        order = order.copy(id = generatedId),
+                                        secretKey = secretKey,
+                                        connectedAccountId = store?.stripeAccountId,
+                                    )
 
                                 call.respond(
                                     HttpStatusCode.Created,
                                     OrderResponse(
                                         orderId = generatedId,
                                         stripeClientSecret = clientSecret,
-                                        stripePublishableKey = publishableKey
-                                    )
+                                        stripePublishableKey = publishableKey,
+                                    ),
                                 )
                             } catch (e: Exception) {
                                 println("STRIPE ERROR: ${e.message}")
@@ -146,15 +149,17 @@ fun Route.orderRoutes(
             orderRepository.getOrderById(orderId)
                 .onSuccess { order ->
                     // LGPD: Mascarar PII (Informações Pessoais) em rastreio público
-                    val maskedOrder = order.copy(
-                        customerName = order.customerName?.take(3) + "****",
-                        customerPhone = PrivacyUtils.maskPhone(order.customerPhone),
-                        shippingAddress = order.shippingAddress?.copy(
-                            street = PrivacyUtils.maskAddress(order.shippingAddress?.street, order.shippingAddress?.number),
-                            complement = null,
-                            zipCode = order.shippingAddress?.zipCode?.take(5) + "-***"
+                    val maskedOrder =
+                        order.copy(
+                            customerName = order.customerName?.take(3) + "****",
+                            customerPhone = PrivacyUtils.maskPhone(order.customerPhone),
+                            shippingAddress =
+                                order.shippingAddress?.copy(
+                                    street = PrivacyUtils.maskAddress(order.shippingAddress?.street, order.shippingAddress?.number),
+                                    complement = null,
+                                    zipCode = order.shippingAddress?.zipCode?.take(5) + "-***",
+                                ),
                         )
-                    )
                     call.respond(maskedOrder)
                 }
                 .onFailure { call.respond(HttpStatusCode.NotFound, it.message ?: "Pedido não encontrado") }

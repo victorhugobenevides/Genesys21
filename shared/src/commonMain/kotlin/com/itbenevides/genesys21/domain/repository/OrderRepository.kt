@@ -1,10 +1,10 @@
 package com.itbenevides.genesys21.domain.repository
 
+import com.itbenevides.genesys21.domain.model.B2BAnalytics
+import com.itbenevides.genesys21.domain.model.MerchantAnalytics
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.domain.model.OrderResponse
 import com.itbenevides.genesys21.domain.model.OrderStatus
-import com.itbenevides.genesys21.domain.model.MerchantAnalytics
-import com.itbenevides.genesys21.domain.model.B2BAnalytics
 import kotlinx.coroutines.flow.Flow
 
 interface OrderRepository {

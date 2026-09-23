@@ -7,12 +7,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.itbenevides.genesys21.data.database.DatabaseFactory
 import com.itbenevides.genesys21.data.database.PagesTable
 import com.itbenevides.genesys21.data.database.UsersTable
-import org.jetbrains.exposed.sql.selectAll
 import com.itbenevides.genesys21.data.repository.*
 import com.itbenevides.genesys21.data.service.BackupService
 import com.itbenevides.genesys21.data.service.GoogleCalendarService
 import com.itbenevides.genesys21.data.service.StripeService
-import com.itbenevides.genesys21.domain.model.PageComponent
 import com.itbenevides.genesys21.domain.service.PageAIGeneratorService
 import com.itbenevides.genesys21.domain.service.ReceiptParserService
 import com.itbenevides.genesys21.routes.*
@@ -35,13 +33,14 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.selectAll
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 const val SERVER_PORT = 8080
 
@@ -160,7 +159,14 @@ fun Application.module() {
     }
 
     install(ContentNegotiation) {
-        json(Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true; coerceInputValues = true })
+        json(
+            Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+                encodeDefaults = true
+                coerceInputValues = true
+            },
+        )
     }
 
     install(DefaultHeaders) {
@@ -197,14 +203,17 @@ fun Application.module() {
     install(Authentication) {
         bearer("firebase") {
             authenticate { credential ->
-                val principal = if (isTesting && (credential.token == "dummy-token" || credential.token == "valid-token")) {
-                    UserIdPrincipal(if (credential.token == "dummy-token") "attacker-id" else "test-user")
-                } else {
-                    try {
-                        val decodedToken = FirebaseAuth.getInstance().verifyIdToken(credential.token)
-                        UserIdPrincipal(decodedToken.uid)
-                    } catch (e: Exception) { null }
-                }
+                val principal =
+                    if (isTesting && (credential.token == "dummy-token" || credential.token == "valid-token")) {
+                        UserIdPrincipal(if (credential.token == "dummy-token") "attacker-id" else "test-user")
+                    } else {
+                        try {
+                            val decodedToken = FirebaseAuth.getInstance().verifyIdToken(credential.token)
+                            UserIdPrincipal(decodedToken.uid)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
 
                 // DETAILED LOGGING FOR LOGIN/AUTHENTICATION
                 if (principal != null) {
@@ -234,18 +243,21 @@ fun Application.module() {
 
             println("[DIAGNOSTIC] Check: Owner=$ownerEmailEnv, Stripe=$stripeKeyPresent")
 
-            val stats = DatabaseFactory.dbQuery {
-                val userCount = UsersTable.selectAll().count()
-                val pageCount = PagesTable.selectAll().count()
-                mapOf("users" to userCount, "pages" to pageCount)
-            }
+            val stats =
+                DatabaseFactory.dbQuery {
+                    val userCount = UsersTable.selectAll().count()
+                    val pageCount = PagesTable.selectAll().count()
+                    mapOf("users" to userCount, "pages" to pageCount)
+                }
 
-            call.respond(mapOf(
-                "ownerEmailEnv" to ownerEmailEnv,
-                "stripeKeyPresent" to stripeKeyPresent,
-                "databaseStats" to stats,
-                "version" to "5.1.3-DIAGNOSTIC-V3"
-            ))
+            call.respond(
+                mapOf(
+                    "ownerEmailEnv" to ownerEmailEnv,
+                    "stripeKeyPresent" to stripeKeyPresent,
+                    "databaseStats" to stats,
+                    "version" to "5.1.3-DIAGNOSTIC-V3",
+                ),
+            )
         }
 
         route("/api") {
@@ -296,7 +308,10 @@ private fun Application.initBackups(logger: org.slf4j.Logger) {
     val dbPath = jdbcUrl.substringAfter("jdbc:sqlite:").substringBefore("?")
     (this as kotlinx.coroutines.CoroutineScope).launch {
         while (true) {
-            try { BackupService.performBackup(dbPath) } catch (e: Exception) { }
+            try {
+                BackupService.performBackup(dbPath)
+            } catch (e: Exception) {
+            }
             kotlinx.coroutines.delay(24.hours)
         }
     }

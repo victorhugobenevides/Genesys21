@@ -14,11 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreen
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
@@ -27,30 +26,28 @@ import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingBu
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.theme.*
-import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
-import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.ui.util.ProvideWindowSizeClass
-import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreen
 import org.koin.compose.koinInject
 
 @Composable
 fun ExperienceScreen(
-    onStartNow: () -> Unit
+    onStartNow: () -> Unit,
 ) {
     var currentTheme by remember { mutableStateOf(PageThemeConfig.ELEGANCE) }
     var deviceType by remember { mutableStateOf("phone") } // phone, tablet, desktop
 
-    val samplePage = remember(currentTheme) {
-        Page.createFromTemplate("premium_store", "demo", "demo", "Minha Loja Interativa").copy(
-            theme = currentTheme
-        )
-    }
+    val samplePage =
+        remember(currentTheme) {
+            Page.createFromTemplate("premium_store", "demo", "demo", "Minha Loja Interativa").copy(
+                theme = currentTheme,
+            )
+        }
 
     AppTheme(themeConfig = currentTheme) {
         GenesysPage(usePadding = false) {
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // 1. HERO SECTION
                 HeroSection()
@@ -62,7 +59,7 @@ fun ExperienceScreen(
                     currentTheme = currentTheme,
                     onThemeChange = { currentTheme = it },
                     currentDevice = deviceType,
-                    onDeviceChange = { deviceType = it }
+                    onDeviceChange = { deviceType = it },
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.l)
@@ -70,7 +67,7 @@ fun ExperienceScreen(
                 // 3. DEVICE SANDBOX (THE PREVIEW)
                 DeviceSandbox(
                     deviceType = deviceType,
-                    page = samplePage
+                    page = samplePage,
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.xl)
@@ -96,26 +93,26 @@ private fun HeroSection() {
 
     AnimatedVisibility(
         visible = visible,
-        enter = fadeIn(animationSpec = tween(1000)) + slideInVertically(initialOffsetY = { it / 2 })
+        enter = fadeIn(animationSpec = tween(1000)) + slideInVertically(initialOffsetY = { it / 2 }),
     ) {
         GenesysColumn(
             modifier = Modifier.fillMaxWidth().padding(top = 64.dp),
             horizontalAlignment = GenesysAlignment.Center,
-            usePadding = true
+            usePadding = true,
         ) {
             GenesysText(
                 text = "A Revolução White-Label",
                 style = GenesysTextStyle.Headline,
                 fontWeight = GenesysFontWeight.ExtraBold,
                 color = GenesysTheme.colors.brand,
-                textAlign = GenesysTextAlign.Center
+                textAlign = GenesysTextAlign.Center,
             )
             GenesysSpacer(GenesysTheme.spacing.s)
             GenesysText(
                 text = "Experimente o poder do Genesys21. Customize, visualize e venda em minutos.",
                 style = GenesysTextStyle.Title,
                 textAlign = GenesysTextAlign.Center,
-                color = GenesysTheme.colors.onSurfaceVariant
+                color = GenesysTheme.colors.onSurfaceVariant,
             )
         }
     }
@@ -126,11 +123,11 @@ private fun ControlPanel(
     currentTheme: PageThemeConfig,
     onThemeChange: (PageThemeConfig) -> Unit,
     currentDevice: String,
-    onDeviceChange: (String) -> Unit
+    onDeviceChange: (String) -> Unit,
 ) {
     GenesysCard(
         modifier = Modifier.widthIn(max = 800.dp).padding(horizontal = 16.dp),
-        elevation = 8.dp
+        elevation = 8.dp,
     ) {
         Column(Modifier.padding(16.dp)) {
             GenesysText(text = "Magic Customizer", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
@@ -165,57 +162,74 @@ private fun ControlPanel(
 }
 
 @Composable
-private fun ThemeBubble(theme: PageThemeConfig, isSelected: Boolean, onClick: (PageThemeConfig) -> Unit) {
-    val color = when(theme) {
-        PageThemeConfig.ELEGANCE -> Color(0xFF1A1C1E)
-        PageThemeConfig.VIBRANT -> Color(0xFF0061A4)
-        PageThemeConfig.NATURE -> Color(0xFF006D39)
-        PageThemeConfig.MONO -> Color(0xFF000000)
-        PageThemeConfig.MIDNIGHT -> Color(0xFF191C1E)
-        PageThemeConfig.CANDY -> Color(0xFF9042A4)
-        PageThemeConfig.DEFAULT -> Color(0xFF1A1C1E)
-    }
+private fun ThemeBubble(
+    theme: PageThemeConfig,
+    isSelected: Boolean,
+    onClick: (PageThemeConfig) -> Unit,
+) {
+    val color =
+        when (theme) {
+            PageThemeConfig.ELEGANCE -> Color(0xFF1A1C1E)
+            PageThemeConfig.VIBRANT -> Color(0xFF0061A4)
+            PageThemeConfig.NATURE -> Color(0xFF006D39)
+            PageThemeConfig.MONO -> Color(0xFF000000)
+            PageThemeConfig.MIDNIGHT -> Color(0xFF191C1E)
+            PageThemeConfig.CANDY -> Color(0xFF9042A4)
+            PageThemeConfig.DEFAULT -> Color(0xFF1A1C1E)
+        }
 
     Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(color)
-            .border(
-                width = if (isSelected) 3.dp else 0.dp,
-                color = if (isSelected) GenesysTheme.colors.brand else Color.Transparent,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .clickable { onClick(theme) }
+        modifier =
+            Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(color)
+                .border(
+                    width = if (isSelected) 3.dp else 0.dp,
+                    color = if (isSelected) GenesysTheme.colors.brand else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .clickable { onClick(theme) },
     )
 }
 
 @Composable
-private fun DeviceIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, type: String, isSelected: Boolean, onClick: (String) -> Unit) {
+private fun DeviceIcon(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    type: String,
+    isSelected: Boolean,
+    onClick: (String) -> Unit,
+) {
     IconButton(
         onClick = { onClick(type) },
-        modifier = Modifier.background(
-            if (isSelected) GenesysTheme.colors.brandContainer else Color.Transparent,
-            RoundedCornerShape(8.dp)
-        )
+        modifier =
+            Modifier.background(
+                if (isSelected) GenesysTheme.colors.brandContainer else Color.Transparent,
+                RoundedCornerShape(8.dp),
+            ),
     ) {
-        Icon(icon, null, tint = if(isSelected) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
+        Icon(icon, null, tint = if (isSelected) GenesysTheme.colors.brand else GenesysTheme.colors.onSurfaceVariant)
     }
 }
 
 @Composable
-private fun DeviceSandbox(deviceType: String, page: Page) {
-    val width = when(deviceType) {
-        "phone" -> 360.dp
-        "tablet" -> 600.dp
-        else -> 1000.dp
-    }
+private fun DeviceSandbox(
+    deviceType: String,
+    page: Page,
+) {
+    val width =
+        when (deviceType) {
+            "phone" -> 360.dp
+            "tablet" -> 600.dp
+            else -> 1000.dp
+        }
 
-    val height = when(deviceType) {
-        "phone" -> 640.dp
-        "tablet" -> 800.dp
-        else -> 600.dp
-    }
+    val height =
+        when (deviceType) {
+            "phone" -> 640.dp
+            "tablet" -> 800.dp
+            else -> 600.dp
+        }
 
     val animatedWidth by animateDpAsState(targetValue = width, animationSpec = spring(stiffness = Spring.StiffnessLow))
     val animatedHeight by animateDpAsState(targetValue = height, animationSpec = spring(stiffness = Spring.StiffnessLow))
@@ -225,19 +239,20 @@ private fun DeviceSandbox(deviceType: String, page: Page) {
         GenesysSpacer(GenesysTheme.spacing.s)
 
         Box(
-            modifier = Modifier
-                .size(width = animatedWidth + 24.dp, height = animatedHeight + 24.dp)
-                .background(Color.DarkGray, RoundedCornerShape(24.dp))
-                .padding(12.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
+            modifier =
+                Modifier
+                    .size(width = animatedWidth + 24.dp, height = animatedHeight + 24.dp)
+                    .background(Color.DarkGray, RoundedCornerShape(24.dp))
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White),
         ) {
             ProvideWindowSizeClass(width) {
                 // Injetamos um roteador fake para o preview
                 PageViewerScreen(
                     page = page,
                     router = koinInject(),
-                    onOpenDashboard = {}
+                    onOpenDashboard = {},
                 )
             }
         }
@@ -251,7 +266,7 @@ private fun StripeDemoSection() {
     GenesysColumn(
         modifier = Modifier.widthIn(max = 600.dp).padding(horizontal = 16.dp),
         horizontalAlignment = GenesysAlignment.Center,
-        usePadding = true
+        usePadding = true,
     ) {
         GenesysText(text = "Checkout Transparente", style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
         GenesysText(text = "Seus clientes compram sem sair da sua vitrine.", style = GenesysTextStyle.Label, color = GenesysTheme.colors.outline)
@@ -260,7 +275,7 @@ private fun StripeDemoSection() {
 
         GenesysCard(
             modifier = Modifier.fillMaxWidth(),
-            elevation = 4.dp
+            elevation = 4.dp,
         ) {
             Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (paymentStatus == "idle") {
@@ -274,7 +289,7 @@ private fun StripeDemoSection() {
                     GenesysLoadingButton(
                         text = "Simular Pagamento Seguro",
                         onClick = { paymentStatus = "processing" },
-                        fillWidth = true
+                        fillWidth = true,
                     )
                 } else if (paymentStatus == "processing") {
                     LaunchedEffect(Unit) {
@@ -302,7 +317,7 @@ private fun StripeDemoSection() {
 private fun CTASection(onStartNow: () -> Unit) {
     GenesysColumn(
         modifier = Modifier.fillMaxWidth().padding(32.dp),
-        horizontalAlignment = GenesysAlignment.Center
+        horizontalAlignment = GenesysAlignment.Center,
     ) {
         GenesysText(text = "Pronto para decolar?", style = GenesysTextStyle.Headline, fontWeight = GenesysFontWeight.ExtraBold)
         GenesysSpacer(GenesysTheme.spacing.m)
@@ -311,7 +326,7 @@ private fun CTASection(onStartNow: () -> Unit) {
             onClick = onStartNow,
             fillWidth = false,
             modifier = Modifier.height(56.dp).width(280.dp),
-            containerColor = MaterialTheme.colorScheme.tertiary
+            containerColor = MaterialTheme.colorScheme.tertiary,
         )
     }
 }

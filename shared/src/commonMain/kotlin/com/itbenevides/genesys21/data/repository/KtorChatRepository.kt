@@ -9,24 +9,29 @@ import io.ktor.http.*
 
 class KtorChatRepository(
     private val client: HttpClient,
-    private val baseUrl: String
+    private val baseUrl: String,
 ) : ChatRepository {
-
-    override suspend fun getMessagesByRefId(refId: String): Result<List<ChatMessage>> = try {
-        val messages = client.get("$baseUrl/api/chat/$refId").body<List<ChatMessage>>()
-        Result.success(messages)
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun sendMessage(message: ChatMessage): Result<Unit> = try {
-        val response = client.post("$baseUrl/api/chat") {
-            contentType(ContentType.Application.Json)
-            setBody(message)
+    override suspend fun getMessagesByRefId(refId: String): Result<List<ChatMessage>> =
+        try {
+            val messages = client.get("$baseUrl/api/chat/$refId").body<List<ChatMessage>>()
+            Result.success(messages)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        if (response.status.isSuccess()) Result.success(Unit)
-        else Result.failure(Exception("Erro ao enviar mensagem"))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+
+    override suspend fun sendMessage(message: ChatMessage): Result<Unit> =
+        try {
+            val response =
+                client.post("$baseUrl/api/chat") {
+                    contentType(ContentType.Application.Json)
+                    setBody(message)
+                }
+            if (response.status.isSuccess()) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Erro ao enviar mensagem"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 }

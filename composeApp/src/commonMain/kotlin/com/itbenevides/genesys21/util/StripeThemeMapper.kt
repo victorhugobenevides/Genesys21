@@ -6,15 +6,18 @@ import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import kotlinx.serialization.json.*
 
 object StripeThemeMapper {
-
-    fun mapToAppearance(theme: PageThemeConfig, colorScheme: ColorScheme): String {
-        val variables = buildJsonObject {
-            put("colorPrimary", colorToHex(colorScheme.primary))
-            put("colorBackground", colorToHex(colorScheme.surface))
-            put("colorText", colorToHex(colorScheme.onSurface))
-            put("colorDanger", colorToHex(colorScheme.error))
-            put("borderRadius", "12px")
-        }
+    fun mapToAppearance(
+        theme: PageThemeConfig,
+        colorScheme: ColorScheme,
+    ): String {
+        val variables =
+            buildJsonObject {
+                put("colorPrimary", colorToHex(colorScheme.primary))
+                put("colorBackground", colorToHex(colorScheme.surface))
+                put("colorText", colorToHex(colorScheme.onSurface))
+                put("colorDanger", colorToHex(colorScheme.error))
+                put("borderRadius", "12px")
+            }
 
         return buildJsonObject {
             put("theme", "flat")

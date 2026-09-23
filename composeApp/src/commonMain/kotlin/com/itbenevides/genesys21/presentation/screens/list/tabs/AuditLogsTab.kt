@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
-import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.theme.*
@@ -33,20 +32,21 @@ fun AuditLogsTab(viewModel: PageViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             AdminTabHeader(
                 title = "Logs de Auditoria",
-                subtitle = "Histórico de ações críticas realizadas no sistema."
+                subtitle = "Histórico de ações críticas realizadas no sistema.",
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 if (isLoading && logs.isEmpty()) {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
@@ -78,10 +78,11 @@ private fun AuditLogCard(log: Map<String, String>) {
     val details = log["details"] ?: "Sem detalhes."
     val userId = log["userId"] ?: "Sistema"
 
-    val dateTime = remember(timestamp) {
-        val instant = Instant.fromEpochMilliseconds(timestamp)
-        instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    }
+    val dateTime =
+        remember(timestamp) {
+            val instant = Instant.fromEpochMilliseconds(timestamp)
+            instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        }
 
     GenesysCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {

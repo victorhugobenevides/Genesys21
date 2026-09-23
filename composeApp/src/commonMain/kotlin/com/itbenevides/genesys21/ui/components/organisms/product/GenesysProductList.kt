@@ -30,7 +30,8 @@ fun GenesysProductList(
     products: List<Product>,
     modifier: Modifier = Modifier,
     isHorizontal: Boolean = false,
-    showPrice: Boolean = true, // NOVO: Controle de visibilidade do preço
+    /** NOVO: Controle de visibilidade do preço */
+    showPrice: Boolean = true,
     isEditMode: Boolean = false,
     onProductClick: ((Product) -> Unit)? = null,
     onAddToCart: ((Product) -> Unit)? = null,
@@ -41,23 +42,24 @@ fun GenesysProductList(
     val windowSizeClass = LocalWindowSizeClass.current
     val scope = rememberCoroutineScope()
 
-    val maxColumns = when (windowSizeClass) {
-        GenesysWindowSizeClass.EXPANDED -> 4
-        GenesysWindowSizeClass.MEDIUM -> 3
-        GenesysWindowSizeClass.COMPACT -> 2
-    }
+    val maxColumns =
+        when (windowSizeClass) {
+            GenesysWindowSizeClass.EXPANDED -> 4
+            GenesysWindowSizeClass.MEDIUM -> 3
+            GenesysWindowSizeClass.COMPACT -> 2
+        }
 
-    val horizontalItemWidth = when (windowSizeClass) {
-        GenesysWindowSizeClass.EXPANDED -> GenesysTheme.spacing.huge * 3.5f // ~220dp
-        GenesysWindowSizeClass.MEDIUM -> GenesysTheme.spacing.huge * 2.8f // ~180dp
-        GenesysWindowSizeClass.COMPACT -> GenesysTheme.spacing.huge * 2.3f // ~150dp
-    }
+    val horizontalItemWidth =
+        when (windowSizeClass) {
+            GenesysWindowSizeClass.EXPANDED -> GenesysTheme.spacing.huge * 3.5f // ~220dp
+            GenesysWindowSizeClass.MEDIUM -> GenesysTheme.spacing.huge * 2.8f // ~180dp
+            GenesysWindowSizeClass.COMPACT -> GenesysTheme.spacing.huge * 2.3f // ~150dp
+        }
 
     val spacing = if (windowSizeClass == GenesysWindowSizeClass.COMPACT) GenesysTheme.spacing.xs else GenesysTheme.spacing.m
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     Box(modifier = modifier.fillMaxWidth().padding(vertical = GenesysTheme.spacing.s)) {
-
         if (isHorizontal) {
             val listState = rememberLazyListState()
             Box(modifier = Modifier.fillMaxWidth()) {

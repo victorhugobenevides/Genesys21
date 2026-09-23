@@ -19,13 +19,14 @@ class ThemesSnapshotTest {
     fun testAllThemesVisualIntegrity() {
         val themes = PageThemeConfig.entries.filter { it != PageThemeConfig.DEFAULT }
 
-        val basePage = Page(
-            id = "theme-test",
-            storeId = "test-store",
-            title = "Teste de Tema",
-            theme = PageThemeConfig.ELEGANCE,
-            components = emptyList()
-        )
+        val basePage =
+            Page(
+                id = "theme-test",
+                storeId = "test-store",
+                title = "Teste de Tema",
+                theme = PageThemeConfig.ELEGANCE,
+                components = emptyList(),
+            )
 
         themes.forEach { theme ->
             genesysResponsiveSnapshotWithPrefix(paparazzi, "Theme_${theme.name}") {
@@ -37,7 +38,7 @@ class ThemesSnapshotTest {
                         state = PageViewerScreenState(page = basePage.copy(theme = theme)),
                         currentFilterQuery = "",
                         isCompact = isCompact,
-                        onEvent = {}
+                        onEvent = {},
                     )
                 }
             }

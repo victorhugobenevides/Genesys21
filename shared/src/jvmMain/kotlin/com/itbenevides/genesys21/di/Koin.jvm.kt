@@ -1,9 +1,9 @@
 package com.itbenevides.genesys21.di
 
 import com.itbenevides.genesys21.data.repository.*
-import com.itbenevides.genesys21.domain.repository.*
 import com.itbenevides.genesys21.data.storage.SecureStorage
 import com.itbenevides.genesys21.data.storage.createSecureStorage
+import com.itbenevides.genesys21.domain.repository.*
 import io.ktor.client.HttpClient
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -18,14 +18,14 @@ actual fun platformModule(): Module =
                 getBaseUrl(),
                 get<Json>(),
                 get<AuthRepository>(),
-                get<SecureStorage>()
+                get<SecureStorage>(),
             )
         }
         single<PageDraftRepository> {
             HybridPageDraftRepository(
                 localRepository = InMemoryPageDraftRepository(),
                 remoteRepository = get(),
-                authRepository = get()
+                authRepository = get(),
             )
         }
     }

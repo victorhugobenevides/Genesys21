@@ -3,21 +3,21 @@ package com.itbenevides.genesys21.util
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.itbenevides.genesys21.domain.model.PageThemeConfig
-import kotlinx.serialization.json.*
 import kotlin.test.Test
-import kotlin.test.assertTrue
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlinx.serialization.json.*
 
 class StripeThemeMapperTest {
-
     @Test
     fun testMapToAppearance_ColorsAreCorrect() {
-        val colorScheme = lightColorScheme(
-            primary = Color(0xFF123456),
-            surface = Color(0xFFFFFFFF),
-            onSurface = Color(0xFF000000),
-            error = Color(0xFFFF0000)
-        )
+        val colorScheme =
+            lightColorScheme(
+                primary = Color(0xFF123456),
+                surface = Color(0xFFFFFFFF),
+                onSurface = Color(0xFF000000),
+                error = Color(0xFFFF0000),
+            )
 
         val jsonString = StripeThemeMapper.mapToAppearance(PageThemeConfig.ELEGANCE, colorScheme)
         val json = Json.parseToJsonElement(jsonString).jsonObject

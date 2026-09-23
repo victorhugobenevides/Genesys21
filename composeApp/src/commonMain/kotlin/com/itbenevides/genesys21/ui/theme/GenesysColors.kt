@@ -28,9 +28,10 @@ data class GenesysColors(
     val onError: Color,
     val error: Color,
     val errorContainer: Color,
-    val isDark: Boolean
+    val isDark: Boolean,
 )
 
-val LocalGenesysColors = staticCompositionLocalOf<GenesysColors> {
-    error("No GenesysColors provided")
-}
+val LocalGenesysColors =
+    staticCompositionLocalOf<GenesysColors> {
+        error("No GenesysColors provided")
+    }

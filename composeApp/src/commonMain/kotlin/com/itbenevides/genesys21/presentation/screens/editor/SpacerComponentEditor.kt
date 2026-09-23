@@ -10,7 +10,7 @@ import com.itbenevides.genesys21.ui.theme.GenesysTheme
 @Composable
 fun SpacerComponentEditor(
     component: PageComponent.Spacer,
-    onSave: (PageComponent.Spacer) -> Unit
+    onSave: (PageComponent.Spacer) -> Unit,
 ) {
     var height by remember(component) { mutableStateOf(component.height.toFloat()) }
 
@@ -23,7 +23,7 @@ fun SpacerComponentEditor(
             value = height,
             onValueChange = { height = it },
             label = "Altura do Espaço (px)",
-            valueRange = 4f..200f
+            valueRange = 4f..200f,
         )
 
         GenesysSpacer(GenesysTheme.spacing.m)

@@ -1,7 +1,7 @@
 package com.itbenevides.genesys21.di
 
-import com.itbenevides.genesys21.data.repository.InMemoryCartRepository
 import com.itbenevides.genesys21.data.repository.*
+import com.itbenevides.genesys21.data.repository.InMemoryCartRepository
 import com.itbenevides.genesys21.data.storage.SecureStorage
 import com.itbenevides.genesys21.data.storage.createSecureStorage
 import com.itbenevides.genesys21.domain.repository.*
@@ -17,7 +17,7 @@ actual fun platformModule() =
             HybridPageDraftRepository(
                 localRepository = InMemoryPageDraftRepository(),
                 remoteRepository = get(),
-                authRepository = get()
+                authRepository = get(),
             )
         }
     }

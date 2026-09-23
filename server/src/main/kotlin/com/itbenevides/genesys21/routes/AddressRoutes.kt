@@ -23,7 +23,7 @@ fun Route.addressRoutes(repository: AddressRepository) {
                 val address = call.receive<Address>().copy(userId = principal.name)
                 repository.saveAddress(address).fold(
                     onSuccess = { call.respond(HttpStatusCode.Created, it) },
-                    onFailure = { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar endereço") }
+                    onFailure = { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar endereço") },
                 )
             }
 
@@ -31,7 +31,7 @@ fun Route.addressRoutes(repository: AddressRepository) {
                 val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
                 repository.deleteAddress(id).fold(
                     onSuccess = { call.respond(HttpStatusCode.OK) },
-                    onFailure = { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao excluir endereço") }
+                    onFailure = { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao excluir endereço") },
                 )
             }
         }

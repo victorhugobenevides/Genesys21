@@ -9,8 +9,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Clock.System.now
+import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PageViewModelTest {
@@ -47,10 +47,12 @@ class PageViewModelTest {
         fakeStoreRepository = FakeStoreRepository()
         fakeShippingRepository = FakeShippingRepository()
         fakeDomainRepository = FakeDomainRepository()
-        fakeChatRepository = object : ChatRepository {
-            override suspend fun getMessagesByRefId(refId: String) = Result.success(emptyList<ChatMessage>())
-            override suspend fun sendMessage(message: ChatMessage) = Result.success(Unit)
-        }
+        fakeChatRepository =
+            object : ChatRepository {
+                override suspend fun getMessagesByRefId(refId: String) = Result.success(emptyList<ChatMessage>())
+
+                override suspend fun sendMessage(message: ChatMessage) = Result.success(Unit)
+            }
 
         viewModel =
             PageViewModel(
@@ -103,9 +105,9 @@ class PageViewModelTest {
                 sendChatMessageUseCase = SendChatMessageUseCase(fakeChatRepository),
                 getB2BAnalyticsUseCase = GetB2BAnalyticsUseCase(fakeOrderRepository),
                 getAuditLogsUseCase = GetAuditLogsUseCase(fakeOrderRepository),
-                aiGeneratorService = com.itbenevides.genesys21.domain.service.PageAIGeneratorService()
+                aiGeneratorService = com.itbenevides.genesys21.domain.service.PageAIGeneratorService(),
             )
-        }
+    }
 
     @AfterTest
     fun tearDown() {
@@ -200,31 +202,34 @@ class PageViewModelTest {
     fun `createAppointment should fail when slot is overlapping`() =
         runTest {
             val futureTime = now().plus(kotlin.time.Duration.parse("2h"))
-            val app1 = Appointment(
-                id = "1",
-                storeId = "s1",
-                serviceId = "s1",
-                customerName = "C1",
-                customerPhone = "1",
-                startTime = futureTime,
-                endTime = futureTime.plus(kotlin.time.Duration.parse("30m"))
-            )
+            val app1 =
+                Appointment(
+                    id = "1",
+                    storeId = "s1",
+                    serviceId = "s1",
+                    customerName = "C1",
+                    customerPhone = "1",
+                    startTime = futureTime,
+                    endTime = futureTime.plus(kotlin.time.Duration.parse("30m")),
+                )
             fakeBookingRepository.createAppointment(app1)
 
-            val app2 = Appointment(
-                id = "2",
-                storeId = "s1",
-                serviceId = "s1",
-                customerName = "C2",
-                customerPhone = "2",
-                startTime = futureTime,
-                endTime = futureTime.plus(kotlin.time.Duration.parse("30m"))
-            )
+            val app2 =
+                Appointment(
+                    id = "2",
+                    storeId = "s1",
+                    serviceId = "s1",
+                    customerName = "C2",
+                    customerPhone = "2",
+                    startTime = futureTime,
+                    endTime = futureTime.plus(kotlin.time.Duration.parse("30m")),
+                )
 
             var capturedError: AppError? = null
-            val errorJob = launch {
-                viewModel.errorEvents.collect { capturedError = it }
-            }
+            val errorJob =
+                launch {
+                    viewModel.errorEvents.collect { capturedError = it }
+                }
 
             var success = false
             viewModel.createAppointment("s1", app2) { success = true }

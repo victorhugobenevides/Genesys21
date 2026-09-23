@@ -15,7 +15,6 @@ import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import org.junit.Rule
 import org.junit.Test
-import org.koin.compose.koinInject
 
 class TemplatesSnapshotTest {
     @get:Rule
@@ -37,7 +36,7 @@ class TemplatesSnapshotTest {
                         state = PageViewerScreenState(page = page),
                         currentFilterQuery = "",
                         isCompact = isCompact,
-                        onEvent = {}
+                        onEvent = {},
                     )
                 }
             }
@@ -59,36 +58,38 @@ class TemplatesSnapshotTest {
                     com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton(
                         text = "Usar este Template",
                         onClick = {},
-                        fillWidth = true
+                        fillWidth = true,
                     )
                 },
                 dismissButton = {
                     com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton(
                         text = "Fechar",
-                        onClick = {}
+                        onClick = {},
                     )
-                }
+                },
             ) {
                 com.itbenevides.genesys21.ui.theme.AppTheme(themeConfig = previewPage.theme, customTheme = previewPage.customTheme) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(650.dp)
-                            .background(androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f), androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
-                            .padding(12.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(650.dp)
+                                .background(androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f), androidx.compose.foundation.shape.RoundedCornerShape(32.dp))
+                                .padding(12.dp),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
-                                .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
-                                .border(4.dp, androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.surface)
+                                    .border(4.dp, androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f), androidx.compose.foundation.shape.RoundedCornerShape(24.dp)),
                         ) {
                             PageViewerContent(
                                 state = PageViewerScreenState(page = previewPage),
                                 currentFilterQuery = "",
                                 isCompact = true,
-                                onEvent = {}
+                                onEvent = {},
                             )
                         }
                     }

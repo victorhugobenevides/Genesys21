@@ -22,12 +22,12 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.calendar.GenesysBookingEngine
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
@@ -84,7 +84,7 @@ fun ServiceBookingScreen(
             )
         },
     ) {
-         GenesysColumn(
+        GenesysColumn(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = GenesysAlignment.Center,
             usePadding = false,
@@ -107,7 +107,7 @@ fun ServiceBookingScreen(
                                 GenesysSpacer(GenesysTheme.spacing.s)
                                 com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysBadge(
                                     label = "ONLINE",
-                                    color = GenesysTheme.colors.accent
+                                    color = GenesysTheme.colors.accent,
                                 )
                             }
                         }
@@ -164,7 +164,7 @@ fun ServiceBookingScreen(
                     onValueChange = { customerNotes = it },
                     label = "Algum comentário ou pedido especial?",
                     placeholder = "Ex: Gostaria de lavar o cabelo também...",
-                    minLines = 2
+                    minLines = 2,
                 )
 
                 if (service.isHomeService) {
@@ -191,7 +191,7 @@ fun ServiceBookingScreen(
                             }
                         },
                         label = "CEP do Local",
-                        icon = GenesysIcons.Search
+                        icon = GenesysIcons.Search,
                     )
 
                     if (selectedAddress != null) {
@@ -199,7 +199,7 @@ fun ServiceBookingScreen(
                         com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
                             value = selectedAddress!!.street,
                             onValueChange = { selectedAddress = selectedAddress!!.copy(street = it) },
-                            label = "Logradouro"
+                            label = "Logradouro",
                         )
                         GenesysSpacer(GenesysTheme.spacing.s)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -207,14 +207,14 @@ fun ServiceBookingScreen(
                                 com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
                                     value = selectedAddress!!.number,
                                     onValueChange = { selectedAddress = selectedAddress!!.copy(number = it) },
-                                    label = "Número"
+                                    label = "Número",
                                 )
                             }
                             Box(Modifier.weight(2f)) {
                                 com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField(
                                     value = selectedAddress!!.neighborhood,
                                     onValueChange = { selectedAddress = selectedAddress!!.copy(neighborhood = it) },
-                                    label = "Bairro"
+                                    label = "Bairro",
                                 )
                             }
                         }
@@ -233,7 +233,7 @@ fun ServiceBookingScreen(
                                 GenesysText(
                                     text = "${GenesysStrings.PricePrefix}$travelFee",
                                     fontWeight = GenesysFontWeight.ExtraBold,
-                                    color = GenesysTheme.colors.accent
+                                    color = GenesysTheme.colors.accent,
                                 )
                             }
                         }
@@ -248,7 +248,7 @@ fun ServiceBookingScreen(
                     availableSlots = availableSlotsForDate,
                     onDateSelected = { updateAvailableSlots(it) },
                     onDateTimeSelected = { selectedDateTime = it },
-                    today = currentToday
+                    today = currentToday,
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.huge)
@@ -262,29 +262,33 @@ fun ServiceBookingScreen(
                             val startInstant = dt.toInstant(TimeZone.currentSystemDefault())
                             val endInstant = startInstant.plus(service.durationMinutes.minutes)
 
-                            val appointment = Appointment(
-                                id = com.itbenevides.genesys21.util.GenesysUUID.randomUUID(),
-                                storeId = page.storeId,
-                                serviceId = service.id,
-                                customerId = viewModel.userProfile.value?.id,
-                                customerName = customerName,
-                                customerPhone = customerPhone,
-                                startTime = startInstant,
-                                endTime = endInstant,
-                                travelFee = travelFee,
-                                address = selectedAddress,
-                                notes = if (customerNotes.isNotBlank()) {
-                                    listOf(
-                                        BookingNote(
-                                            id = "",
-                                            content = customerNotes,
-                                            createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
-                                            authorName = customerName,
-                                            isPrivate = false
-                                        )
-                                    )
-                                } else emptyList()
-                            )
+                            val appointment =
+                                Appointment(
+                                    id = com.itbenevides.genesys21.util.GenesysUUID.randomUUID(),
+                                    storeId = page.storeId,
+                                    serviceId = service.id,
+                                    customerId = viewModel.userProfile.value?.id,
+                                    customerName = customerName,
+                                    customerPhone = customerPhone,
+                                    startTime = startInstant,
+                                    endTime = endInstant,
+                                    travelFee = travelFee,
+                                    address = selectedAddress,
+                                    notes =
+                                        if (customerNotes.isNotBlank()) {
+                                            listOf(
+                                                BookingNote(
+                                                    id = "",
+                                                    content = customerNotes,
+                                                    createdAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                                                    authorName = customerName,
+                                                    isPrivate = false,
+                                                ),
+                                            )
+                                        } else {
+                                            emptyList()
+                                        },
+                                )
 
                             viewModel.addServiceToCart(service, appointment)
                             router.navigateTo(com.itbenevides.genesys21.navigation.Route.Cart(page))
@@ -302,7 +306,7 @@ fun ServiceBookingScreen(
         com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog(
             onDismissRequest = { showLoginDialog = false },
             title = "Acesse sua conta",
-            confirmButton = {}
+            confirmButton = {},
         ) {
             com.itbenevides.genesys21.presentation.components.auth.GoogleSignInButton(
                 modifier = Modifier.fillMaxWidth(),
@@ -315,10 +319,10 @@ fun ServiceBookingScreen(
                             showLoginDialog = false
                             // Agora o usuário está logado, podemos prosseguir com a reserva
                         },
-                        onError = { /* erro tratado no viewModel */ }
+                        onError = { /* erro tratado no viewModel */ },
                     )
                 },
-                onError = { /* erro tratado no viewModel */ }
+                onError = { /* erro tratado no viewModel */ },
             )
         }
     }
@@ -335,7 +339,7 @@ fun ServiceBookingScreen(
                     showSuccessDialog = false
                     router.goBack()
                 })
-            }
+            },
         ) {
             GenesysText(text = "Seu agendamento para ${service.name} foi confirmado com sucesso.", style = GenesysTextStyle.Body)
         }

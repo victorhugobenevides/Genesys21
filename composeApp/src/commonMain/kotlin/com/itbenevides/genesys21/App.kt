@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
 import com.itbenevides.genesys21.domain.model.PageComponent
-import com.itbenevides.genesys21.domain.model.PageThemeConfig
 import com.itbenevides.genesys21.domain.model.PageTemplateRegistry
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
@@ -25,6 +23,7 @@ import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysTheme
 import com.itbenevides.genesys21.ui.util.ProvideWindowSizeClass
 import org.koin.compose.koinInject
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -41,7 +40,7 @@ fun App() {
                 snackbarHostState.showSnackbar(
                     message = "${error.title}: ${error.message}",
                     actionLabel = "OK",
-                    duration = SnackbarDuration.Long
+                    duration = SnackbarDuration.Long,
                 )
             }
         }
@@ -49,7 +48,7 @@ fun App() {
             router.viewModel.uiMessages.collect { message ->
                 snackbarHostState.showSnackbar(
                     message = message,
-                    duration = SnackbarDuration.Short
+                    duration = SnackbarDuration.Short,
                 )
             }
         }
@@ -102,14 +101,16 @@ fun App() {
                                             val duration = com.itbenevides.genesys21.ui.theme.GenesysMotion.DurationMedium4
                                             val easing = com.itbenevides.genesys21.ui.theme.GenesysMotion.Emphasized
 
-                                            (slideInHorizontally(
-                                                animationSpec = tween(duration, easing = easing),
-                                                initialOffsetX = { it / 10 }
-                                            ) + fadeIn(animationSpec = tween(duration))).togetherWith(
+                                            (
+                                                slideInHorizontally(
+                                                    animationSpec = tween(duration, easing = easing),
+                                                    initialOffsetX = { it / 10 },
+                                                ) + fadeIn(animationSpec = tween(duration))
+                                            ).togetherWith(
                                                 slideOutHorizontally(
                                                     animationSpec = tween(duration, easing = easing),
-                                                    targetOffsetX = { -it / 10 }
-                                                ) + fadeOut(animationSpec = tween(duration))
+                                                    targetOffsetX = { -it / 10 },
+                                                ) + fadeOut(animationSpec = tween(duration)),
                                             )
                                         }
                                     },
@@ -117,7 +118,7 @@ fun App() {
                                 ) { route ->
                                     CompositionLocalProvider(
                                         LocalSharedTransitionScope provides this@SharedTransitionLayout,
-                                        LocalAnimatedContentScope provides this@AnimatedContent
+                                        LocalAnimatedContentScope provides this@AnimatedContent,
                                     ) {
                                         Box(Modifier.fillMaxSize()) {
                                             when (route) {
@@ -157,7 +158,7 @@ fun App() {
                                                         },
                                                         onEditService = { service, componentIndex ->
                                                             router.navigateTo(Route.ServiceEditor(editingPage, service, componentIndex))
-                                                        }
+                                                        },
                                                     )
                                                 }
                                                 is Route.PublicViewer ->
@@ -228,7 +229,7 @@ fun App() {
                                                         onBack = { router.goBack() },
                                                         onAddNewService = {
                                                             router.navigateTo(Route.ServiceEditor(route.page, null, route.componentIndex))
-                                                        }
+                                                        },
                                                     )
                                                 is Route.ProductDetails ->
                                                     ProductDetailsScreen(
@@ -298,7 +299,7 @@ fun App() {
                                                 is Route.Profile ->
                                                     ProfileScreen(
                                                         viewModel = router.viewModel,
-                                                        router = router
+                                                        router = router,
                                                     )
                                                 is Route.DesignSystemShowcase ->
                                                     DesignSystemShowcaseScreen(
@@ -322,17 +323,18 @@ fun App() {
                                                             router.viewModel.savePage(newPage, false) {
                                                                 router.navigateTo(Route.WhiteLabel(newPage), replace = true)
                                                             }
-                                                        }
+                                                        },
                                                     )
                                                 is Route.Receipts -> {
                                                     com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen(
                                                         viewModel = koinInject(),
-                                                        onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
+                                                        onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) },
                                                     )
                                                 }
-                                                is Route.Experience -> ExperienceScreen(
-                                                    onStartNow = { router.navigateTo(Route.Login) }
-                                                )
+                                                is Route.Experience ->
+                                                    ExperienceScreen(
+                                                        onStartNow = { router.navigateTo(Route.Login) },
+                                                    )
                                             }
                                         }
 
@@ -343,14 +345,14 @@ fun App() {
                                                 onLoginClick = {
                                                     accountLinkingEmail = null
                                                     router.navigateTo(Route.Login)
-                                                }
+                                                },
                                             )
                                         }
                                     }
                                 }
                             }
                         }
-                    }
+                    },
                 )
             }
         }

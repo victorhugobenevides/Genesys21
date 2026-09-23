@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.dp
 
 enum class GenesysWindowSizeClass {
     COMPACT, // Phone (up to 600dp)
-    MEDIUM,  // Tablet/Small Laptop (600dp to 840dp)
-    EXPANDED // Desktop/Large Tablet (840dp+)
+    MEDIUM, // Tablet/Small Laptop (600dp to 840dp)
+    EXPANDED, // Desktop/Large Tablet (840dp+)
 }
 
 val LocalWindowSizeClass = compositionLocalOf { GenesysWindowSizeClass.COMPACT }
@@ -35,12 +35,16 @@ fun isTestMode(): Boolean {
 expect fun isSystemTestPropertyEnabled(): Boolean
 
 @Composable
-fun ProvideWindowSizeClass(width: Dp, content: @Composable () -> Unit) {
-    val sizeClass = when {
-        width < 600.dp -> GenesysWindowSizeClass.COMPACT
-        width < 840.dp -> GenesysWindowSizeClass.MEDIUM
-        else -> GenesysWindowSizeClass.EXPANDED
-    }
+fun ProvideWindowSizeClass(
+    width: Dp,
+    content: @Composable () -> Unit,
+) {
+    val sizeClass =
+        when {
+            width < 600.dp -> GenesysWindowSizeClass.COMPACT
+            width < 840.dp -> GenesysWindowSizeClass.MEDIUM
+            else -> GenesysWindowSizeClass.EXPANDED
+        }
 
     CompositionLocalProvider(LocalWindowSizeClass provides sizeClass) {
         content()

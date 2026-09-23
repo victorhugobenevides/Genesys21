@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,12 +17,11 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabData
 import com.itbenevides.genesys21.ui.components.molecules.navigation.GenesysTabRow
-import com.itbenevides.genesys21.ui.theme.GenesysStrings
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun ServiceListComponentEditor(
@@ -67,15 +65,15 @@ fun ServiceListComponentEditor(
             val filteredServices =
                 component.services.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
-             GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
+            GenesysColumn(usePadding = false, modifier = Modifier.heightIn(max = 300.dp), useScroll = true) {
                 filteredServices.forEach { service ->
                     val index = component.services.indexOf(service)
                     GenesysCard(modifier = Modifier.padding(bottom = 4.dp)) {
                         GenesysRow(verticalAlignment = Alignment.CenterVertically) {
                             GenesysWeightBox(1f) { GenesysText(service.name) }
                             GenesysRow(fillWidth = false) {
-                                 GenesysIconButton(icon = GenesysIcons.Edit, onClick = { onEditService(service) })
-                                 GenesysIconButton(
+                                GenesysIconButton(icon = GenesysIcons.Edit, onClick = { onEditService(service) })
+                                GenesysIconButton(
                                     icon = GenesysIcons.Remove,
                                     tint = Color.Red.copy(alpha = 0.6f),
                                     onClick = { onServicesUpdated(component.services.filter { it.id != service.id }) },
@@ -91,7 +89,7 @@ fun ServiceListComponentEditor(
                     onClick = { onEditService(null) },
                     fillWidth = true,
                 )
-             }
+            }
         } else {
             // ABA 2: Catálogo Global
             val catalogToDisplay =
@@ -134,7 +132,7 @@ fun ServiceListComponentEditor(
         GenesysLoadingButton(
             text = "Salvar Alterações",
             fillWidth = true,
-            onClick = { onSaveTitle(title) }
+            onClick = { onSaveTitle(title) },
         )
     }
 }

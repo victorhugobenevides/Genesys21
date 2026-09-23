@@ -80,25 +80,27 @@ class FakeOrderRepository : OrderRepository {
         status: OrderStatus,
     ) = Result.success(Unit)
 
-    override suspend fun getAnalytics(token: String) = Result.success(
-        MerchantAnalytics(
-            dailyRevenue = emptyList(),
-            topProducts = emptyList(),
-            bookingSummary = BookingSummary(0, 0, 0, 0),
-            totalOrders = 0,
-            averageTicket = 0.0
+    override suspend fun getAnalytics(token: String) =
+        Result.success(
+            MerchantAnalytics(
+                dailyRevenue = emptyList(),
+                topProducts = emptyList(),
+                bookingSummary = BookingSummary(0, 0, 0, 0),
+                totalOrders = 0,
+                averageTicket = 0.0,
+            ),
         )
-    )
 
-    override suspend fun getB2BAnalytics(token: String) = Result.success(
-        B2BAnalytics(
-            totalMerchants = 0,
-            platformGMV = 0.0,
-            globalAverageTicket = 0.0,
-            topMerchants = emptyList(),
-            globalDailyRevenue = emptyList()
+    override suspend fun getB2BAnalytics(token: String) =
+        Result.success(
+            B2BAnalytics(
+                totalMerchants = 0,
+                platformGMV = 0.0,
+                globalAverageTicket = 0.0,
+                topMerchants = emptyList(),
+                globalDailyRevenue = emptyList(),
+            ),
         )
-    )
 
     override suspend fun getAuditLogs(token: String) = Result.success(emptyList<Map<String, String>>())
 }
@@ -112,17 +114,26 @@ class FakeBookingRepository : BookingRepository {
 
     override suspend fun getServiceById(id: String): BookingService? = servicesList.find { it.id == id }
 
-    override suspend fun saveService(service: BookingService, token: String) {
+    override suspend fun saveService(
+        service: BookingService,
+        token: String,
+    ) {
         servicesList.add(service)
     }
 
-    override suspend fun deleteService(id: String, token: String) {
+    override suspend fun deleteService(
+        id: String,
+        token: String,
+    ) {
         servicesList.removeAll { it.id == id }
     }
 
     override suspend fun getAvailability(storeId: String): MerchantAvailability? = merchantAvailability
 
-    override suspend fun saveAvailability(availability: MerchantAvailability, token: String) {
+    override suspend fun saveAvailability(
+        availability: MerchantAvailability,
+        token: String,
+    ) {
         this.merchantAvailability = availability
     }
 
@@ -140,7 +151,10 @@ class FakeBookingRepository : BookingRepository {
         appointmentsList.add(appointment)
     }
 
-    override suspend fun updateAppointment(appointment: Appointment, token: String) {
+    override suspend fun updateAppointment(
+        appointment: Appointment,
+        token: String,
+    ) {
         val index = appointmentsList.indexOfFirst { it.id == appointment.id }
         if (index != -1) {
             appointmentsList[index] = appointment
@@ -167,15 +181,27 @@ class FakeUserRepository : UserRepository {
 
     override suspend fun getAllUsers(token: String): Result<List<UserProfile>> = Result.success(users)
 
-    override suspend fun updateUserRole(token: String, userId: String, role: UserRole): Result<Unit> {
+    override suspend fun updateUserRole(
+        token: String,
+        userId: String,
+        role: UserRole,
+    ): Result<Unit> {
         return Result.success(Unit)
     }
 
-    override suspend fun updateUserStatus(token: String, userId: String, status: UserStatus): Result<Unit> {
+    override suspend fun updateUserStatus(
+        token: String,
+        userId: String,
+        status: UserStatus,
+    ): Result<Unit> {
         return Result.success(Unit)
     }
 
-    override suspend fun updateUserPermissions(token: String, userId: String, permissions: Set<UserPermission>): Result<Unit> {
+    override suspend fun updateUserPermissions(
+        token: String,
+        userId: String,
+        permissions: Set<UserPermission>,
+    ): Result<Unit> {
         return Result.success(Unit)
     }
 
@@ -211,30 +237,49 @@ class FakeStoreRepository : StoreRepository {
             ?: Result.failure(Exception("Store not found"))
     }
 
-    override suspend fun saveStore(store: Store, token: String): Result<Unit> {
+    override suspend fun saveStore(
+        store: Store,
+        token: String,
+    ): Result<Unit> {
         stores.add(store)
         return Result.success(Unit)
     }
 
-    override suspend fun createConnectAccount(storeId: String, email: String, token: String): Result<String> {
+    override suspend fun createConnectAccount(
+        storeId: String,
+        email: String,
+        token: String,
+    ): Result<String> {
         return Result.success("acct_mock_123")
     }
 
-    override suspend fun getConnectOnboardingLink(storeId: String, token: String): Result<String> {
+    override suspend fun getConnectOnboardingLink(
+        storeId: String,
+        token: String,
+    ): Result<String> {
         return Result.success("https://connect.stripe.com/setup/s/mock")
     }
 
-    override suspend fun getConnectLoginLink(storeId: String, token: String): Result<String> {
+    override suspend fun getConnectLoginLink(
+        storeId: String,
+        token: String,
+    ): Result<String> {
         return Result.success("https://connect.stripe.com/express/mock")
     }
 
-    override suspend fun getAccountSession(storeId: String, token: String): Result<String> {
+    override suspend fun getAccountSession(
+        storeId: String,
+        token: String,
+    ): Result<String> {
         return Result.success("account_session_secret_mock")
     }
 }
 
 class FakeShippingRepository : ShippingRepository {
-    override suspend fun calculateShipping(storeId: String, zipCode: String): Result<List<ShippingOption>> {
+    override suspend fun calculateShipping(
+        storeId: String,
+        zipCode: String,
+    ): Result<List<ShippingOption>> {
         return Result.success(listOf(ShippingOption("1", "Sedex", 15.0, 2)))
     }
 }

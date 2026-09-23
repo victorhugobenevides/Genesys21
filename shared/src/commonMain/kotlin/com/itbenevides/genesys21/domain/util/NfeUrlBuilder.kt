@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.domain.util
 
 object NfeUrlBuilder {
-
     private val KEY_REGEX = Regex("""(?:\d[ \.\-]?){44}""")
     private val DIGITS_ONLY = Regex("""\D""")
 
@@ -52,7 +51,10 @@ object NfeUrlBuilder {
         return "https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumo&nfe=$cleanKey"
     }
 
-    private fun getSefazNfceUrl(ufCode: String, cleanKey: String): String {
+    private fun getSefazNfceUrl(
+        ufCode: String,
+        cleanKey: String,
+    ): String {
         return when (ufCode) {
             "52" -> "https://nfe.sefaz.go.gov.br/nfeweb/sites/nfce/consulta-publica?chNFe=$cleanKey"
             "35" -> "https://www.nfce.fazenda.sp.gov.br/NFCeConsultaPublica/Paginas/ConsultaQRCode.aspx?p=$cleanKey"

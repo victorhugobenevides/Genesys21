@@ -8,7 +8,7 @@ enum class AdminMenuCategory(val label: String) {
     DASHBOARD("DASHBOARD"),
     OPERATIONS("OPERAÇÕES"),
     FINANCIAL("FINANCEIRO"),
-    SYSTEM("SISTEMA")
+    SYSTEM("SISTEMA"),
 }
 
 data class AdminMenuItem(
@@ -18,7 +18,7 @@ data class AdminMenuItem(
     val category: AdminMenuCategory,
     val requiredRole: UserRole = UserRole.MERCHANT,
     val requiredPermission: com.itbenevides.genesys21.domain.model.UserPermission? = null,
-    val badgeCount: Int = 0
+    val badgeCount: Int = 0,
 ) {
     companion object {
         // DASHBOARD
@@ -42,27 +42,32 @@ data class AdminMenuItem(
         val GlobalDomains = AdminMenuItem(12, "Domínios Global", GenesysIcons.Language, AdminMenuCategory.SYSTEM, UserRole.SUPERADMIN)
         val AuditLogs = AdminMenuItem(13, "Logs de Auditoria", GenesysIcons.List, AdminMenuCategory.SYSTEM, UserRole.SUPERADMIN)
 
-        fun getVisibleItems(user: com.itbenevides.genesys21.domain.model.UserProfile?, pendingOrders: Int = 0): List<AdminMenuItem> {
+        fun getVisibleItems(
+            user: com.itbenevides.genesys21.domain.model.UserProfile?,
+            pendingOrders: Int = 0,
+        ): List<AdminMenuItem> {
             // BYPASS DE FRONT-END (GOD MODE): Se o e-mail for o do proprietário, forçamos o cargo SuperAdmin
             // Isso blinda a UI contra qualquer atraso de sincronização com o banco de dados.
             val isOwner = user?.email?.lowercase()?.trim() == "victorkoto@gmail.com"
             val role = if (isOwner) UserRole.SUPERADMIN else (user?.role ?: UserRole.CUSTOMER)
             val permissions = user?.permissions ?: emptySet()
 
-            val all = listOf(
-                MainDashboard, B2BInsights,
-                Vitrines, Orders.copy(badgeCount = pendingOrders), Agenda, Services,
-                Receipts, Payments,
-                StoreSettings, Profile, GlobalUsers, GlobalDomains, AuditLogs
-            )
+            val all =
+                listOf(
+                    MainDashboard, B2BInsights,
+                    Vitrines, Orders.copy(badgeCount = pendingOrders), Agenda, Services,
+                    Receipts, Payments,
+                    StoreSettings, Profile, GlobalUsers, GlobalDomains, AuditLogs,
+                )
 
             return all.filter { item ->
                 // 1. Check Role Hierarchy
-                val roleMatch = when (item.requiredRole) {
-                    UserRole.SUPERADMIN -> role == UserRole.SUPERADMIN
-                    UserRole.ADMIN -> role == UserRole.ADMIN || role == UserRole.SUPERADMIN
-                    else -> role != UserRole.CUSTOMER
-                }
+                val roleMatch =
+                    when (item.requiredRole) {
+                        UserRole.SUPERADMIN -> role == UserRole.SUPERADMIN
+                        UserRole.ADMIN -> role == UserRole.ADMIN || role == UserRole.SUPERADMIN
+                        else -> role != UserRole.CUSTOMER
+                    }
 
                 // 2. Check Permission if defined
                 val permissionMatch = item.requiredPermission == null || permissions.contains(item.requiredPermission)

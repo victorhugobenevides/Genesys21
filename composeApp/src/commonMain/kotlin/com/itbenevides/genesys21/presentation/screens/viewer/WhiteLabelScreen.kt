@@ -2,7 +2,6 @@ package com.itbenevides.genesys21.presentation.screens.viewer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -294,7 +293,7 @@ fun WhiteLabelScreen(
                         onEvent(WhiteLabelEvent.OnPageUpdated(state.page.copy(components = newList)))
                     },
                     onDismiss = { onEvent(WhiteLabelEvent.OnShowAiRefinementChanged(false)) },
-                    refineAction = { comp, instr -> viewModel.refineComponent(comp, instr) }
+                    refineAction = { comp, instr -> viewModel.refineComponent(comp, instr) },
                 )
             }
         }
@@ -316,20 +315,23 @@ fun ComponentCatalogUI(
         title = "Adicionar Novo Bloco",
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.85f) // Aumentamos para caber o preview
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    /** Aumentamos para caber o preview */
+                    .fillMaxHeight(0.85f),
         ) {
             // 1. ÁREA DE PREVIEW (Topo)
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (isCompact) 200.dp else 250.dp)
-                    .padding(horizontal = 16.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(if (isCompact) 200.dp else 250.dp)
+                        .padding(horizontal = 16.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center,
             ) {
                 selectedItem?.let { item ->
                     val component = remember(item) { item.createComponent() }
@@ -337,7 +339,7 @@ fun ComponentCatalogUI(
                         PageComponentRenderer(
                             component = component,
                             storeId = storeId,
-                            isEditMode = true
+                            isEditMode = true,
                         )
                     }
                 } ?: run {
@@ -346,13 +348,13 @@ fun ComponentCatalogUI(
                             GenesysIcons.Magic,
                             null,
                             modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
                             "Selecione um bloco para ver o preview",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -361,44 +363,47 @@ fun ComponentCatalogUI(
             GenesysSpacer(GenesysTheme.spacing.m)
 
             // 2. GRADE DE ITENS (Scrollable)
-            val catalogItems = remember {
-                listOf(
-                    CatalogItem("Cabeçalho", GenesysIcons.Description) { PageComponent.Header(title = "Novo Cabeçalho") },
-                    CatalogItem("Texto", GenesysIcons.Edit) { PageComponent.Text(content = "Seu texto aqui...") },
-                    CatalogItem("Imagem", GenesysIcons.Image) { PageComponent.Image(url = "https://picsum.photos/800/400") },
-                    CatalogItem("Botão", GenesysIcons.Language) { PageComponent.Button(text = "Clique Aqui", url = "https://") },
-                    CatalogItem("Lista de Produtos", GenesysIcons.Inventory) { PageComponent.ProductList(products = emptyList()) },
-                    CatalogItem("Grade de Produtos", GenesysIcons.Inventory) { PageComponent.ProductGrid(productIds = emptyList()) },
-                    CatalogItem("Barra de Busca", GenesysIcons.Search) { PageComponent.Filter() },
-                    CatalogItem("Filtro de Categorias", GenesysIcons.Category) { PageComponent.CategoryFilter() },
-                    CatalogItem("Perfil", GenesysIcons.Person) { PageComponent.ProfileHeader(imageUrl = "", name = "Seu Nome") },
-                    CatalogItem("Links Sociais", GenesysIcons.Share) { PageComponent.SocialLinks() },
-                    CatalogItem("Carrinho", GenesysIcons.ShoppingBag) { PageComponent.CartComponent() },
-                    CatalogItem("Rastreio", GenesysIcons.List) { PageComponent.OrderTrackingComponent() },
-                    CatalogItem("Lista de Serviços", GenesysIcons.Schedule) { PageComponent.ServiceList() },
-                    CatalogItem("Banner Hero", GenesysIcons.Image) { PageComponent.Hero(title = "Destaque", imageUrl = "https://picsum.photos/1200/600") },
-                    CatalogItem("Benefícios", GenesysIcons.Check) { PageComponent.Benefits(items = listOf(PageComponent.BenefitItem("Título", "Descrição", "Check"))) },
-                    CatalogItem("Depoimento", GenesysIcons.Feedback) { PageComponent.Testimonial(quote = "Excelente serviço!", author = "Cliente Satisfeito") },
-                    CatalogItem("Grade Layout", GenesysIcons.GridView) {
-                        PageComponent.Grid(
-                            columns = 2,
-                            items = listOf(
-                                PageComponent.GridItem(components = listOf(PageComponent.Text(content = "Coluna 1"))),
-                                PageComponent.GridItem(components = listOf(PageComponent.Text(content = "Coluna 2")))
+            val catalogItems =
+                remember {
+                    listOf(
+                        CatalogItem("Cabeçalho", GenesysIcons.Description) { PageComponent.Header(title = "Novo Cabeçalho") },
+                        CatalogItem("Texto", GenesysIcons.Edit) { PageComponent.Text(content = "Seu texto aqui...") },
+                        CatalogItem("Imagem", GenesysIcons.Image) { PageComponent.Image(url = "https://picsum.photos/800/400") },
+                        CatalogItem("Botão", GenesysIcons.Language) { PageComponent.Button(text = "Clique Aqui", url = "https://") },
+                        CatalogItem("Lista de Produtos", GenesysIcons.Inventory) { PageComponent.ProductList(products = emptyList()) },
+                        CatalogItem("Grade de Produtos", GenesysIcons.Inventory) { PageComponent.ProductGrid(productIds = emptyList()) },
+                        CatalogItem("Barra de Busca", GenesysIcons.Search) { PageComponent.Filter() },
+                        CatalogItem("Filtro de Categorias", GenesysIcons.Category) { PageComponent.CategoryFilter() },
+                        CatalogItem("Perfil", GenesysIcons.Person) { PageComponent.ProfileHeader(imageUrl = "", name = "Seu Nome") },
+                        CatalogItem("Links Sociais", GenesysIcons.Share) { PageComponent.SocialLinks() },
+                        CatalogItem("Carrinho", GenesysIcons.ShoppingBag) { PageComponent.CartComponent() },
+                        CatalogItem("Rastreio", GenesysIcons.List) { PageComponent.OrderTrackingComponent() },
+                        CatalogItem("Lista de Serviços", GenesysIcons.Schedule) { PageComponent.ServiceList() },
+                        CatalogItem("Banner Hero", GenesysIcons.Image) { PageComponent.Hero(title = "Destaque", imageUrl = "https://picsum.photos/1200/600") },
+                        CatalogItem("Benefícios", GenesysIcons.Check) { PageComponent.Benefits(items = listOf(PageComponent.BenefitItem("Título", "Descrição", "Check"))) },
+                        CatalogItem("Depoimento", GenesysIcons.Feedback) { PageComponent.Testimonial(quote = "Excelente serviço!", author = "Cliente Satisfeito") },
+                        CatalogItem("Grade Layout", GenesysIcons.GridView) {
+                            PageComponent.Grid(
+                                columns = 2,
+                                items =
+                                    listOf(
+                                        PageComponent.GridItem(components = listOf(PageComponent.Text(content = "Coluna 1"))),
+                                        PageComponent.GridItem(components = listOf(PageComponent.Text(content = "Coluna 2"))),
+                                    ),
                             )
-                        )
-                    },
-                )
-            }
+                        },
+                    )
+                }
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
+                contentPadding = PaddingValues(bottom = 16.dp),
             ) {
                 items(catalogItems.size) { index ->
                     val item = catalogItems[index]
@@ -408,7 +413,7 @@ fun ComponentCatalogUI(
                         onClick = { selectedItem = item },
                         modifier = Modifier.height(90.dp),
                         backgroundColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
                     ) {
                         Column(
                             modifier = Modifier.fillMaxSize(),
@@ -419,13 +424,13 @@ fun ComponentCatalogUI(
                                 item.icon,
                                 null,
                                 tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(24.dp),
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 item.name,
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -445,7 +450,7 @@ fun ComponentCatalogUI(
                     },
                     fillWidth = true,
                     enabled = selectedItem != null,
-                    icon = GenesysIcons.Add
+                    icon = GenesysIcons.Add,
                 )
             }
         }

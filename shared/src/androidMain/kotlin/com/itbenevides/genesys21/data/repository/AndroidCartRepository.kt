@@ -25,7 +25,6 @@ class AndroidCartRepository(
     authRepository: AuthRepository,
     secureStorage: SecureStorage,
 ) : BaseCartRepository(httpClient, baseUrl, json, authRepository, secureStorage) {
-
     private val CART_KEY = stringPreferencesKey("genesys21_cart")
 
     override suspend fun saveToLocal(items: List<CartItem>) {

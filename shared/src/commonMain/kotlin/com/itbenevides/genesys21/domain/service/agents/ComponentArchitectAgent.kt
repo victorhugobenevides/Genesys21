@@ -1,8 +1,8 @@
 package com.itbenevides.genesys21.domain.service.agents
 
-import com.itbenevides.genesys21.domain.service.DevAgent
 import com.itbenevides.genesys21.domain.service.AgentTaskRequest
 import com.itbenevides.genesys21.domain.service.AgentTaskResponse
+import com.itbenevides.genesys21.domain.service.DevAgent
 
 /**
  * Subagente especializado em arquitetura de UI e componentes Compose.
@@ -21,21 +21,23 @@ class ComponentArchitectAgent : DevAgent {
 
         return when {
             task.contains("componente") -> generateComponentBoilerplate(request.task)
-            else -> AgentTaskResponse(
-                status = "success",
-                agentName = name,
-                message = "Entendi o pedido de UI, mas preciso de mais detalhes para gerar o código."
-            )
+            else ->
+                AgentTaskResponse(
+                    status = "success",
+                    agentName = name,
+                    message = "Entendi o pedido de UI, mas preciso de mais detalhes para gerar o código.",
+                )
         }
     }
 
     private fun generateComponentBoilerplate(description: String): AgentTaskResponse {
         val className = description.split(" ").lastOrNull()?.replaceFirstChar { it.uppercase() } ?: "NewComponent"
 
-        val code = """
+        val code =
+            """
             @Serializable
-            @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.${className}")
-            data class ${className}(
+            @SerialName("com.itbenevides.genesys21.domain.model.PageComponent.$className")
+            data class $className(
                 val title: String,
                 val subtitle: String? = null,
                 @Transient
@@ -47,21 +49,22 @@ class ComponentArchitectAgent : DevAgent {
             ) : PageComponent()
 
             // Lembre-se de adicionar no PageComponentRenderer.kt:
-            // is PageComponent.${className} -> {
+            // is PageComponent.$className -> {
             //     ${className}Widget(component)
             // }
-        """.trimIndent()
+            """.trimIndent()
 
         return AgentTaskResponse(
             status = "success",
             agentName = name,
-            message = "Boilerplate para o componente '${className}' gerado com sucesso.",
+            message = "Boilerplate para o componente '$className' gerado com sucesso.",
             generatedCode = code,
-            suggestions = listOf(
-                "Adicionar suporte a cores customizadas",
-                "Implementar clique para navegação",
-                "Registrar no Seeder.kt para testes"
-            )
+            suggestions =
+                listOf(
+                    "Adicionar suporte a cores customizadas",
+                    "Implementar clique para navegação",
+                    "Registrar no Seeder.kt para testes",
+                ),
         )
     }
 }

@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.data.database
 
 import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.Table
 
 object ProductsTable : BaseTable("products") {
     val id = varchar("id", 50) // UUID

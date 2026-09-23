@@ -1,62 +1,43 @@
 package com.itbenevides.genesys21.presentation.screens.list
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.navigationsuite.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
-import com.itbenevides.genesys21.getWebBaseUrl
 import com.itbenevides.genesys21.navigation.Route
 import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.receipt.ReceiptListScreen
 import com.itbenevides.genesys21.presentation.receipt.ReceiptViewModel
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
+import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
+import com.itbenevides.genesys21.presentation.screens.list.components.*
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminMenuItem
+import com.itbenevides.genesys21.presentation.screens.list.components.AdminSidebar
+import com.itbenevides.genesys21.presentation.screens.list.tabs.*
+import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
-import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysFilterChip
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
-import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
-import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
-import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
 import com.itbenevides.genesys21.ui.components.templates.pages.LocalGenesysDrawerState
-import com.itbenevides.genesys21.presentation.screens.profile.ProfileScreen
-import com.itbenevides.genesys21.presentation.screens.editor.AIPageBuilderDialog
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.downloadFile
 import com.itbenevides.genesys21.util.rememberFileHandler
-import com.itbenevides.genesys21.presentation.screens.list.components.AdminMenuItem
-import com.itbenevides.genesys21.presentation.screens.list.components.AdminSidebar
-import com.itbenevides.genesys21.presentation.screens.list.components.*
-import com.itbenevides.genesys21.presentation.screens.list.tabs.*
-import kotlin.math.roundToLong
+import org.koin.compose.koinInject
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -226,7 +207,7 @@ fun PageListScreen(
         onEditService = { router.navigateTo(Route.ServiceEditor(page = null, service = it)) },
         onDeleteService = { viewModel.deleteBookingService(it) },
         uriHandler = uriHandler,
-        scope = scope
+        scope = scope,
     )
 
     if (state.showCreateDialog) {
@@ -244,7 +225,7 @@ fun PageListScreen(
                 viewModel.savePage(generatedPage, false) {
                     onEditPage(generatedPage)
                 }
-            }
+            },
         )
     }
 }
@@ -273,29 +254,31 @@ private fun PageListContent(
     onEditService: (BookingService) -> Unit,
     onDeleteService: (String) -> Unit,
     uriHandler: androidx.compose.ui.platform.UriHandler,
-    scope: kotlinx.coroutines.CoroutineScope
+    scope: kotlinx.coroutines.CoroutineScope,
 ) {
     val services by viewModel.services.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
     val chatMessages by viewModel.chatMessages.collectAsState()
     val drawerState = LocalGenesysDrawerState.current
 
-    val allMenuItems = remember(userProfile, state.pendingOrdersCount) {
-        AdminMenuItem.getVisibleItems(
-            user = userProfile,
-            pendingOrders = state.pendingOrdersCount
-        )
-    }
+    val allMenuItems =
+        remember(userProfile, state.pendingOrdersCount) {
+            AdminMenuItem.getVisibleItems(
+                user = userProfile,
+                pendingOrders = state.pendingOrdersCount,
+            )
+        }
 
     // UX FIX: Força apenas os itens essenciais na barra inferior no mobile
-    val bottomBarItems = remember(allMenuItems, isExpanded) {
-        if (!isExpanded) {
-            // IDs: 0 (Dashboard), 1 (Vitrines), 2 (Pedidos), 3 (Agenda)
-            allMenuItems.filter { it.id in 0..3 }
-        } else {
-            allMenuItems
+    val bottomBarItems =
+        remember(allMenuItems, isExpanded) {
+            if (!isExpanded) {
+                // IDs: 0 (Dashboard), 1 (Vitrines), 2 (Pedidos), 3 (Agenda)
+                allMenuItems.filter { it.id in 0..3 }
+            } else {
+                allMenuItems
+            }
         }
-    }
 
     LaunchedEffect(allMenuItems) {
         if (allMenuItems.none { it.id == state.selectedTab }) {
@@ -322,13 +305,13 @@ private fun PageListContent(
                         BadgedBox(
                             badge = {
                                 if (item.badgeCount > 0) Badge { Text(item.badgeCount.toString()) }
-                            }
+                            },
                         ) {
                             Icon(item.icon, contentDescription = item.label)
                         }
                     },
                     label = { Text(item.label) },
-                    alwaysShowLabel = isExpanded
+                    alwaysShowLabel = isExpanded,
                 )
             }
 
@@ -339,7 +322,7 @@ private fun PageListContent(
                         scope.launch { drawerState?.open() }
                     },
                     icon = { Icon(GenesysIcons.MoreVert, contentDescription = "Mais") },
-                    label = { Text("Menu") }
+                    label = { Text("Menu") },
                 )
             }
         },
@@ -350,16 +333,19 @@ private fun PageListContent(
                 onItemClick = {
                     onEvent(PageListEvent.OnTabSelected(it.id))
                     scope.launch { drawerState?.close() }
-                }
+                },
             )
         },
         topBar = {
-             GenesysTopAppBar(
+            GenesysTopAppBar(
                 title = "Genesys Console",
                 onBack = null,
-                onMenuClick = if (!isExpanded) {
-                    { scope.launch { drawerState?.open() } }
-                } else null
+                onMenuClick =
+                    if (!isExpanded) {
+                        { scope.launch { drawerState?.open() } }
+                    } else {
+                        null
+                    },
             )
         },
     ) {
@@ -369,16 +355,17 @@ private fun PageListContent(
             0 -> MainDashboardTab(viewModel)
             9 -> B2BInsightsTab(viewModel)
             1 -> PagesTab(state, onEvent, onViewPage, onEditPage)
-            2 -> OrdersTab(
-                state = state,
-                viewModel = viewModel,
-                isExpanded = isExpanded,
-                selectedOrderIdForDetail = selectedOrderIdForDetail,
-                onSelectOrderForDetail = onSelectOrderForDetail,
-                onEvent = onEvent,
-                onContactCustomer = onContactCustomer,
-                chatMessages = chatMessages
-            )
+            2 ->
+                OrdersTab(
+                    state = state,
+                    viewModel = viewModel,
+                    isExpanded = isExpanded,
+                    selectedOrderIdForDetail = selectedOrderIdForDetail,
+                    onSelectOrderForDetail = onSelectOrderForDetail,
+                    onEvent = onEvent,
+                    onContactCustomer = onContactCustomer,
+                    chatMessages = chatMessages,
+                )
             3 -> AgendaTab(state, viewModel, onEvent)
             4 -> ServicesTab(services, onAddService, onEditService, onDeleteService)
             5 -> {
@@ -386,7 +373,7 @@ private fun PageListContent(
                 ReceiptListScreen(
                     viewModel = receiptViewModel,
                     isEmbedded = true,
-                    onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) }
+                    onOpenUrl = { url -> com.itbenevides.genesys21.openUrlInNewTab(url) },
                 )
             }
             6 -> PaymentsTab(viewModel, userProfile, uriHandler, scope)
@@ -395,9 +382,10 @@ private fun PageListContent(
             12 -> GlobalDomainsTab(viewModel)
             13 -> AuditLogsTab(viewModel)
             8 -> ProfileScreen(viewModel, router, isEmbedded = true)
-            else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Selecione uma opção no menu")
-            }
+            else ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Selecione uma opção no menu")
+                }
         }
     }
 }
@@ -439,7 +427,7 @@ private fun CreatePageDialog(
                     onClick = { onEvent(PageListEvent.OnAIDesignClicked) },
                     fillWidth = true,
                     containerColor = MaterialTheme.colorScheme.tertiary,
-                    icon = GenesysIcons.Magic
+                    icon = GenesysIcons.Magic,
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.m)

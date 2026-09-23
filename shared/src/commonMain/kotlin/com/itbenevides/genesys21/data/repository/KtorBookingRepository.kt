@@ -15,7 +15,6 @@ class KtorBookingRepository(
     private val client: HttpClient,
     private val baseUrl: String,
 ) : BookingRepository {
-
     override suspend fun getServices(): List<BookingService> {
         return try {
             val response = client.get("$baseUrl/api/booking/services")
@@ -42,21 +41,29 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun saveService(service: BookingService, token: String) {
-        val response = client.post("$baseUrl/api/booking/services") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            contentType(ContentType.Application.Json)
-            setBody(service)
-        }
+    override suspend fun saveService(
+        service: BookingService,
+        token: String,
+    ) {
+        val response =
+            client.post("$baseUrl/api/booking/services") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(service)
+            }
         if (!response.status.isSuccess()) {
             throw Exception("Erro ao salvar serviço: ${response.status}")
         }
     }
 
-    override suspend fun deleteService(id: String, token: String) {
-        val response = client.delete("$baseUrl/api/booking/services/$id") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-        }
+    override suspend fun deleteService(
+        id: String,
+        token: String,
+    ) {
+        val response =
+            client.delete("$baseUrl/api/booking/services/$id") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+            }
         if (!response.status.isSuccess()) {
             throw Exception("Erro ao excluir serviço")
         }
@@ -74,24 +81,33 @@ class KtorBookingRepository(
         }
     }
 
-    override suspend fun saveAvailability(availability: MerchantAvailability, token: String) {
-        val response = client.post("$baseUrl/api/booking/availability") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            contentType(ContentType.Application.Json)
-            setBody(availability)
-        }
+    override suspend fun saveAvailability(
+        availability: MerchantAvailability,
+        token: String,
+    ) {
+        val response =
+            client.post("$baseUrl/api/booking/availability") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(availability)
+            }
         if (!response.status.isSuccess()) {
             throw Exception("Erro ao salvar disponibilidade")
         }
     }
 
-    override suspend fun getAppointments(serviceId: String?, storeId: String?, date: LocalDate): List<Appointment> {
+    override suspend fun getAppointments(
+        serviceId: String?,
+        storeId: String?,
+        date: LocalDate,
+    ): List<Appointment> {
         return try {
-            val response = client.get("$baseUrl/api/booking/appointments") {
-                if (serviceId != null) parameter("serviceId", serviceId)
-                if (storeId != null) parameter("storeId", storeId)
-                parameter("date", date.toString())
-            }
+            val response =
+                client.get("$baseUrl/api/booking/appointments") {
+                    if (serviceId != null) parameter("serviceId", serviceId)
+                    if (storeId != null) parameter("storeId", storeId)
+                    parameter("date", date.toString())
+                }
             if (response.status.isSuccess()) {
                 response.body()
             } else {
@@ -104,9 +120,10 @@ class KtorBookingRepository(
 
     override suspend fun getAllAppointments(storeId: String): List<Appointment> {
         return try {
-            val response = client.get("$baseUrl/api/booking/appointments/all") {
-                parameter("storeId", storeId)
-            }
+            val response =
+                client.get("$baseUrl/api/booking/appointments/all") {
+                    parameter("storeId", storeId)
+                }
             if (response.status.isSuccess()) response.body() else emptyList()
         } catch (e: Exception) {
             emptyList()
@@ -115,9 +132,10 @@ class KtorBookingRepository(
 
     override suspend fun getUpcomingAppointments(storeId: String): List<Appointment> {
         return try {
-            val response = client.get("$baseUrl/api/booking/appointments/upcoming") {
-                parameter("storeId", storeId)
-            }
+            val response =
+                client.get("$baseUrl/api/booking/appointments/upcoming") {
+                    parameter("storeId", storeId)
+                }
             if (response.status.isSuccess()) response.body() else emptyList()
         } catch (e: Exception) {
             emptyList()
@@ -126,9 +144,10 @@ class KtorBookingRepository(
 
     override suspend fun getAppointmentsByPhone(phone: String): List<Appointment> {
         return try {
-            val response = client.get("$baseUrl/api/booking/appointments") {
-                parameter("phone", phone)
-            }
+            val response =
+                client.get("$baseUrl/api/booking/appointments") {
+                    parameter("phone", phone)
+                }
             if (response.status.isSuccess()) {
                 response.body()
             } else {
@@ -140,23 +159,33 @@ class KtorBookingRepository(
     }
 
     override suspend fun createAppointment(appointment: Appointment) {
-        val response = client.post("$baseUrl/api/booking/appointments") {
-            contentType(ContentType.Application.Json)
-            setBody(appointment)
-        }
+        val response =
+            client.post("$baseUrl/api/booking/appointments") {
+                contentType(ContentType.Application.Json)
+                setBody(appointment)
+            }
         if (!response.status.isSuccess()) {
-            val errorBody = try { response.bodyAsText() } catch (e: Exception) { response.status.toString() }
+            val errorBody =
+                try {
+                    response.bodyAsText()
+                } catch (e: Exception) {
+                    response.status.toString()
+                }
             println("KtorBookingRepository: ERRO SERVIDOR ($response.status): $errorBody")
             throw Exception("Erro ao criar agendamento: $errorBody")
         }
     }
 
-    override suspend fun updateAppointment(appointment: Appointment, token: String) {
-        val response = client.put("$baseUrl/api/booking/appointments/${appointment.id}") {
-            header(HttpHeaders.Authorization, "Bearer $token")
-            contentType(ContentType.Application.Json)
-            setBody(appointment)
-        }
+    override suspend fun updateAppointment(
+        appointment: Appointment,
+        token: String,
+    ) {
+        val response =
+            client.put("$baseUrl/api/booking/appointments/${appointment.id}") {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                contentType(ContentType.Application.Json)
+                setBody(appointment)
+            }
         if (!response.status.isSuccess()) {
             throw Exception("Erro ao atualizar agendamento")
         }

@@ -1,7 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,8 +15,8 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 
 @Composable
@@ -34,12 +33,14 @@ fun TextComponentEditor(
 
     // LIVE PREVIEW: Sincroniza as mudanças locais com o estado pai em tempo real
     LaunchedEffect(content, alignment, fontSize, weight) {
-        onSave(component.copy(
-            content = content,
-            textAlign = alignment,
-            fontSize = fontSize.toInt(),
-            fontWeight = weight
-        ))
+        onSave(
+            component.copy(
+                content = content,
+                textAlign = alignment,
+                fontSize = fontSize.toInt(),
+                fontWeight = weight,
+            ),
+        )
     }
 
     GenesysColumn(usePadding = false) {
@@ -48,12 +49,13 @@ fun TextComponentEditor(
 
         // CORREÇÃO: Usando o renderizador real para que a pre-visualização seja IDÊNTICA ao resultado final
         PageComponentRenderer(
-            component = component.copy(
-                content = content,
-                textAlign = alignment,
-                fontSize = fontSize.toInt(),
-                fontWeight = weight
-            ),
+            component =
+                component.copy(
+                    content = content,
+                    textAlign = alignment,
+                    fontSize = fontSize.toInt(),
+                    fontWeight = weight,
+                ),
             storeId = "admin",
             isEditMode = false,
         )

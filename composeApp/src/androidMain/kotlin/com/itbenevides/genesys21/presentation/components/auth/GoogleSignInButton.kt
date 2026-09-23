@@ -1,9 +1,9 @@
 package com.itbenevides.genesys21.presentation.components.auth
 
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -15,7 +15,7 @@ import com.mmk.kmpauth.google.GoogleButtonUiContainer
 actual fun GoogleSignInButton(
     modifier: Modifier,
     onTokenReceived: (idToken: String, accessToken: String?) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     if (LocalTestMode.current) {
         GenesysLoadingButton(
@@ -23,7 +23,7 @@ actual fun GoogleSignInButton(
             icon = Icons.Default.Language,
             onClick = { },
             modifier = modifier.heightIn(min = 48.dp),
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
         )
     } else {
         GoogleButtonUiContainer(
@@ -35,14 +35,14 @@ actual fun GoogleSignInButton(
                 } else {
                     onError("Login cancelado ou falhou")
                 }
-            }
+            },
         ) {
             GenesysLoadingButton(
                 text = "Entrar com Google",
                 icon = Icons.Default.Language,
                 onClick = { this.onClick() },
                 modifier = modifier.heightIn(min = 48.dp),
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
             )
         }
     }

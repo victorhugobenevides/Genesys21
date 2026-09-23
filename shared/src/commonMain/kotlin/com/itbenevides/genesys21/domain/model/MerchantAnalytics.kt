@@ -8,20 +8,21 @@ data class MerchantAnalytics(
     val topProducts: List<TopProduct>,
     val bookingSummary: BookingSummary,
     val totalOrders: Int,
-    val averageTicket: Double
+    val averageTicket: Double,
 )
 
 @Serializable
 data class DailyRevenue(
-    val date: String, // ISO format
-    val amount: Double
+    /** ISO format */
+    val date: String,
+    val amount: Double,
 )
 
 @Serializable
 data class TopProduct(
     val name: String,
     val quantity: Int,
-    val revenue: Double
+    val revenue: Double,
 )
 
 @Serializable
@@ -29,5 +30,5 @@ data class BookingSummary(
     val pending: Int,
     val confirmed: Int,
     val cancelled: Int,
-    val upcoming: Int
+    val upcoming: Int,
 )

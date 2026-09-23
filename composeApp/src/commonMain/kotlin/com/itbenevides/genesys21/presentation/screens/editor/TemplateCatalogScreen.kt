@@ -1,18 +1,14 @@
 package com.itbenevides.genesys21.presentation.screens.editor
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.PageTemplate
@@ -20,18 +16,16 @@ import com.itbenevides.genesys21.domain.model.PageTemplateRegistry
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerContent
 import com.itbenevides.genesys21.presentation.screens.viewer.PageViewerScreenState
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.images.GenesysImage
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
-import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
@@ -41,7 +35,7 @@ import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 fun TemplateCatalogScreen(
     viewModel: PageViewModel,
     onBack: () -> Unit,
-    onTemplateSelected: (PageTemplate) -> Unit
+    onTemplateSelected: (PageTemplate) -> Unit,
 ) {
     val templates by viewModel.templates.collectAsState()
     val allProducts by viewModel.allAvailableProducts.collectAsState()
@@ -54,9 +48,10 @@ fun TemplateCatalogScreen(
 
     if (previewTemplate != null) {
         val template = previewTemplate!!
-        val previewPage = remember(template) {
-            PageTemplateRegistry.createPageFromTemplate(template.id, "preview", "preview")
-        }
+        val previewPage =
+            remember(template) {
+                PageTemplateRegistry.createPageFromTemplate(template.id, "preview", "preview")
+            }
 
         AppTheme(themeConfig = previewPage.theme, customTheme = previewPage.customTheme) {
             GenesysPage(
@@ -70,11 +65,11 @@ fun TemplateCatalogScreen(
                                 onClick = {
                                     onTemplateSelected(template)
                                     previewTemplate = null
-                                }
+                                },
                             )
-                        }
+                        },
                     )
-                }
+                },
             ) {
                 PageViewerContent(
                     state = PageViewerScreenState(page = previewPage),
@@ -83,7 +78,7 @@ fun TemplateCatalogScreen(
                     allProducts = allProducts,
                     allServices = allServices,
                     allCategories = allCategories,
-                    onEvent = {}
+                    onEvent = {},
                 )
             }
         }
@@ -92,20 +87,20 @@ fun TemplateCatalogScreen(
             topBar = {
                 GenesysTopAppBar(
                     title = "Catálogo de Templates",
-                    onBack = onBack
+                    onBack = onBack,
                 )
-            }
+            },
         ) {
             GenesysColumn(usePadding = true, modifier = Modifier.fillMaxSize()) {
                 GenesysText(
                     text = "Escolha um ponto de partida",
                     style = GenesysTextStyle.Headline,
-                    fontWeight = GenesysFontWeight.ExtraBold
+                    fontWeight = GenesysFontWeight.ExtraBold,
                 )
                 GenesysText(
                     text = "Selecione um layout pronto para começar a vender em minutos.",
                     style = GenesysTextStyle.Body,
-                    color = GenesysTheme.colors.onSurfaceVariant
+                    color = GenesysTheme.colors.onSurfaceVariant,
                 )
 
                 GenesysSpacer(GenesysTheme.spacing.l)
@@ -115,13 +110,13 @@ fun TemplateCatalogScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(bottom = 24.dp)
+                    contentPadding = PaddingValues(bottom = 24.dp),
                 ) {
                     items(templates) { template ->
                         TemplateCard(
                             template = template,
                             onSelect = { onTemplateSelected(template) },
-                            onPreview = { previewTemplate = template }
+                            onPreview = { previewTemplate = template },
                         )
                     }
                 }
@@ -134,11 +129,11 @@ fun TemplateCatalogScreen(
 private fun TemplateCard(
     template: PageTemplate,
     onSelect: () -> Unit,
-    onPreview: () -> Unit
+    onPreview: () -> Unit,
 ) {
     GenesysCard(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onPreview
+        onClick = onPreview,
     ) {
         val thumb = template.thumbnailUrl
         Column {
@@ -148,18 +143,18 @@ private fun TemplateCard(
                         url = thumb,
                         contentDescription = template.title,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
                     )
                 } else {
                     Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Icon(
                             imageVector = GenesysIcons.WebAssetOff,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
-                            tint = GenesysTheme.colors.outline
+                            tint = GenesysTheme.colors.outline,
                         )
                     }
                 }
@@ -167,12 +162,12 @@ private fun TemplateCard(
                 Surface(
                     color = GenesysTheme.colors.surfaceVariant.copy(alpha = 0.8f),
                     shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.padding(8.dp).align(Alignment.TopEnd)
+                    modifier = Modifier.padding(8.dp).align(Alignment.TopEnd),
                 ) {
                     Text(
                         text = template.category.name,
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                     )
                 }
             }
@@ -181,20 +176,20 @@ private fun TemplateCard(
                 GenesysText(
                     text = template.title,
                     style = GenesysTextStyle.Title,
-                    fontWeight = GenesysFontWeight.Bold
+                    fontWeight = GenesysFontWeight.Bold,
                 )
                 GenesysText(
                     text = template.description,
                     style = GenesysTextStyle.Label,
                     color = GenesysTheme.colors.onSurfaceVariant,
-                    maxLines = 2
+                    maxLines = 2,
                 )
                 GenesysSpacer(GenesysTheme.spacing.m)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
                         onClick = onPreview,
                         modifier = Modifier.weight(1f),
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         Text("Preview")
                     }
@@ -202,7 +197,7 @@ private fun TemplateCard(
                         text = "Criar",
                         onClick = onSelect,
                         modifier = Modifier.weight(1f),
-                        containerColor = GenesysTheme.colors.accent
+                        containerColor = GenesysTheme.colors.accent,
                     )
                 }
             }

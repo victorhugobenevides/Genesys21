@@ -18,7 +18,7 @@ fun GenesysCopyableText(
     text: String,
     label: String? = null,
     style: GenesysTextStyle = GenesysTextStyle.Body,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val clipboardManager = LocalClipboardManager.current
 
@@ -30,13 +30,13 @@ fun GenesysCopyableText(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             GenesysText(
                 text = text,
                 style = style,
                 isSelectable = true,
-                modifier = Modifier.weight(1f, fill = false)
+                modifier = Modifier.weight(1f, fill = false),
             )
 
             GenesysIconButton(
@@ -45,7 +45,7 @@ fun GenesysCopyableText(
                     clipboardManager.setText(AnnotatedString(text))
                 },
                 tint = GenesysTheme.colors.brand,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
         }
     }

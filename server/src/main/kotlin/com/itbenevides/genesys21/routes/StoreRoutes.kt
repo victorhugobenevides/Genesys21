@@ -15,7 +15,7 @@ fun Route.storeRoutes(repository: StoreRepository) {
             val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             repository.getStore(id).fold(
                 onSuccess = { call.respond(it) },
-                onFailure = { call.respond(HttpStatusCode.NotFound) }
+                onFailure = { call.respond(HttpStatusCode.NotFound) },
             )
         }
 
@@ -25,7 +25,7 @@ fun Route.storeRoutes(repository: StoreRepository) {
                 val store = call.receive<Store>()
                 repository.saveStore(store, principal.name).fold(
                     onSuccess = { call.respond(HttpStatusCode.Created) },
-                    onFailure = { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar loja") }
+                    onFailure = { call.respond(HttpStatusCode.InternalServerError, it.message ?: "Erro ao salvar loja") },
                 )
             }
         }

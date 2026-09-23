@@ -26,19 +26,20 @@ fun GenesysTimeChip(
     val textColor = if (isSelected) GenesysTheme.colors.onBrand else GenesysTheme.colors.onSurface
 
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
-            .background(backgroundColor)
-            .border(GenesysTheme.spacing.xxxs, borderColor, RoundedCornerShape(GenesysTheme.config.cornerRadius))
-            .clickable(onClick = onClick)
-            .padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.xs),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(GenesysTheme.config.cornerRadius))
+                .background(backgroundColor)
+                .border(GenesysTheme.spacing.xxxs, borderColor, RoundedCornerShape(GenesysTheme.config.cornerRadius))
+                .clickable(onClick = onClick)
+                .padding(horizontal = GenesysTheme.spacing.m, vertical = GenesysTheme.spacing.xs),
+        contentAlignment = Alignment.Center,
     ) {
         GenesysText(
             text = time,
             style = GenesysTextStyle.Body,
             fontWeight = if (isSelected) GenesysFontWeight.Bold else null,
-            color = textColor
+            color = textColor,
         )
     }
 }

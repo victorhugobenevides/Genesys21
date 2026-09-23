@@ -13,7 +13,6 @@ import com.itbenevides.genesys21.domain.model.Category
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysAlignment
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
@@ -21,10 +20,10 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysRowText
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
+import com.itbenevides.genesys21.ui.theme.*
 
 @Composable
 fun CategoryManagementDialog(

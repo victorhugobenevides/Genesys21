@@ -19,7 +19,7 @@ actual fun platformModule() =
             HybridPageDraftRepository(
                 localRepository = InMemoryPageDraftRepository(),
                 remoteRepository = get(),
-                authRepository = get()
+                authRepository = get(),
             )
         }
         single<ShareManager> { AndroidShareManager(androidContext()) }

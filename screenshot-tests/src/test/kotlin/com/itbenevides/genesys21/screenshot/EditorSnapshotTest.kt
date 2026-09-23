@@ -37,7 +37,7 @@ class EditorSnapshotTest {
             ThemeSelectorBottomSheet(
                 currentTheme = PageThemeConfig.ELEGANCE,
                 onThemeSelected = {},
-                onDismiss = {}
+                onDismiss = {},
             )
         }
     }

@@ -2,8 +2,8 @@ package com.itbenevides.genesys21.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.data.repository.HybridPageDraftRepository
+import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.repository.CartRepository
 import com.itbenevides.genesys21.domain.repository.CustomerRepository
@@ -141,16 +141,18 @@ class PageViewModel(
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
 
-    val productSuggestions: StateFlow<List<String>> = _pages.map { allPages ->
-        allPages.flatMap { p -> p.components.filterIsInstance<PageComponent.ProductList>() }
-            .flatMap { comp -> comp.products.map { it.name } }
-            .distinct()
-            .sorted()
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val productSuggestions: StateFlow<List<String>> =
+        _pages.map { allPages ->
+            allPages.flatMap { p -> p.components.filterIsInstance<PageComponent.ProductList>() }
+                .flatMap { comp -> comp.products.map { it.name } }
+                .distinct()
+                .sorted()
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val categorySuggestions: StateFlow<List<String>> = _categories.map { allCats ->
-        allCats.map { it.name }.distinct().sorted()
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val categorySuggestions: StateFlow<List<String>> =
+        _categories.map { allCats ->
+            allCats.map { it.name }.distinct().sorted()
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _isLoading = MutableStateFlow(value = false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -244,28 +246,35 @@ class PageViewModel(
         return true
     }
 
-    fun addServiceToCart(service: BookingService, appointment: Appointment) {
+    fun addServiceToCart(
+        service: BookingService,
+        appointment: Appointment,
+    ) {
         viewModelScope.launch {
             cartRepository.addToCart(
                 CartItem(
                     service = service,
                     appointment = appointment,
-                    quantity = 1
-                )
+                    quantity = 1,
+                ),
             )
             _uiMessages.emit("Serviço adicionado ao carrinho!")
         }
     }
 
-    fun addValuedActionToCart(name: String, price: Double, storeId: String) {
+    fun addValuedActionToCart(
+        name: String,
+        price: Double,
+        storeId: String,
+    ) {
         viewModelScope.launch {
             cartRepository.addToCart(
                 CartItem(
                     customName = name,
                     customPrice = price,
                     product = Product(id = "valued_action", storeId = storeId, name = name, price = price),
-                    quantity = 1
-                )
+                    quantity = 1,
+                ),
             )
             _uiMessages.emit("Contribuição adicionada ao carrinho!")
         }
@@ -427,9 +436,10 @@ class PageViewModel(
                 val currentSessionId = cartRepository.getSessionId()
 
                 // Se a página for nula (acesso direto ao carrinho), tenta pegar o storeId do primeiro item do carrinho
-                val inferredStoreId = page?.storeId ?: cart.value.firstOrNull()?.product?.storeId
-                    ?: cart.value.firstOrNull()?.service?.storeId
-                    ?: ""
+                val inferredStoreId =
+                    page?.storeId ?: cart.value.firstOrNull()?.product?.storeId
+                        ?: cart.value.firstOrNull()?.service?.storeId
+                        ?: ""
 
                 println("VIEWMODEL: Submetendo pedido. StoreId inferido: [$inferredStoreId]")
 
@@ -437,8 +447,8 @@ class PageViewModel(
                     Order(
                         id = com.itbenevides.genesys21.util.GenesysUUID.randomUUID(),
                         storeId = inferredStoreId,
-                        customerId = currentUserId, // UID real se logado (ou null)
-                        sessionId = currentSessionId, // ID da sessão para visitantes
+                        customerId = currentUserId,
+                        sessionId = currentSessionId,
                         customerName = customerName.value,
                         customerEmail = authRepository.getCurrentUserEmail(),
                         customerPhone = customerPhone.value,
@@ -450,7 +460,7 @@ class PageViewModel(
                         shippingPrice = shippingPrice,
                         shippingMethod = shippingMethod,
                         whatsappContact = page?.whatsapp,
-                        theme = page?.theme ?: PageThemeConfig.ELEGANCE
+                        theme = page?.theme ?: PageThemeConfig.ELEGANCE,
                     )
                 submitOrderUseCase(order).onSuccess { response ->
                     // Limpa o carrinho apenas se for pagamento LOCAL
@@ -755,15 +765,16 @@ class PageViewModel(
                     val isBlockedByOtherService = overlappingAppts.any { it.serviceId != service.id }
                     val currentParticipants = overlappingAppts.count { it.serviceId == service.id }
 
-                    val isAvailable = if (isBlockedByOtherService) {
-                        false
-                    } else if (currentParticipants > 0) {
-                        // Se já tem gente, só permite se for o mesmo serviço e tiver vaga
-                        currentParticipants < service.maxParticipants
-                    } else {
-                        // Slot livre
-                        true
-                    }
+                    val isAvailable =
+                        if (isBlockedByOtherService) {
+                            false
+                        } else if (currentParticipants > 0) {
+                            // Se já tem gente, só permite se for o mesmo serviço e tiver vaga
+                            currentParticipants < service.maxParticipants
+                        } else {
+                            // Slot livre
+                            true
+                        }
 
                     if (isAvailable) {
                         val time = Instant.fromEpochMilliseconds(currentMs).toLocalDateTime(TimeZone.currentSystemDefault()).time
@@ -839,9 +850,12 @@ class PageViewModel(
                     ).getOrDefault(false)
 
                 if (isValid) {
-                    val finalAppointment = if (appointment.customerId == null) {
-                        appointment.copy(customerId = authRepository.getCurrentUserId())
-                    } else appointment
+                    val finalAppointment =
+                        if (appointment.customerId == null) {
+                            appointment.copy(customerId = authRepository.getCurrentUserId())
+                        } else {
+                            appointment
+                        }
 
                     createAppointmentUseCase(finalAppointment).onSuccess { _ ->
                         onSuccess()
@@ -899,7 +913,10 @@ class PageViewModel(
         return pageDraftRepository.getDraft(pageId)
     }
 
-    fun syncDraftFromServer(pageId: String, onSynced: (Page?) -> Unit) {
+    fun syncDraftFromServer(
+        pageId: String,
+        onSynced: (Page?) -> Unit,
+    ) {
         viewModelScope.launch {
             (pageDraftRepository as? HybridPageDraftRepository)?.syncFromRemote(pageId)?.let {
                 onSynced(it)
@@ -915,7 +932,10 @@ class PageViewModel(
         println("Prefetching details for: ${product.name}")
     }
 
-    suspend fun calculateShipping(storeId: String, zipCode: String): List<com.itbenevides.genesys21.domain.model.ShippingOption> {
+    suspend fun calculateShipping(
+        storeId: String,
+        zipCode: String,
+    ): List<com.itbenevides.genesys21.domain.model.ShippingOption> {
         return calculateShippingUseCase(storeId, zipCode).getOrDefault(emptyList())
     }
 
@@ -932,17 +952,21 @@ class PageViewModel(
 
                 println("VIEWMODEL: Checking God Mode for email: '$currentAuthEmail' against owner: '$ownerEmail'")
 
-                val isOwner = currentAuthEmail.lowercase().trim() == ownerEmail ||
-                             currentAuthEmail.lowercase().trim() == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
+                val isOwner =
+                    currentAuthEmail.lowercase().trim() == ownerEmail ||
+                        currentAuthEmail.lowercase().trim() == com.itbenevides.genesys21.domain.model.DogmaConstants.OWNER_EMAIL
 
-                val finalProfile = if (isOwner) {
-                    println("VIEWMODEL: [GOD MODE] Dono detectado ($currentAuthEmail). Forçando SuperAdmin.")
-                    profile.copy(
-                        email = currentAuthEmail,
-                        role = UserRole.SUPERADMIN,
-                        permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet()
-                    )
-                } else profile
+                val finalProfile =
+                    if (isOwner) {
+                        println("VIEWMODEL: [GOD MODE] Dono detectado ($currentAuthEmail). Forçando SuperAdmin.")
+                        profile.copy(
+                            email = currentAuthEmail,
+                            role = UserRole.SUPERADMIN,
+                            permissions = com.itbenevides.genesys21.domain.model.UserPermission.entries.toSet(),
+                        )
+                    } else {
+                        profile
+                    }
 
                 println("VIEWMODEL: Perfil carregado -> Email: ${finalProfile.email}, Role: ${finalProfile.role}, UID: ${finalProfile.id}")
                 _userProfile.value = finalProfile
@@ -968,14 +992,15 @@ class PageViewModel(
             return
         }
 
-        val newProfile = UserProfile(
-            id = userId,
-            email = email,
-            name = name,
-            role = UserRole.CUSTOMER,
-            status = UserStatus.APPROVED,
-            permissions = emptySet()
-        )
+        val newProfile =
+            UserProfile(
+                id = userId,
+                email = email,
+                name = name,
+                role = UserRole.CUSTOMER,
+                status = UserStatus.APPROVED,
+                permissions = emptySet(),
+            )
 
         saveUserProfileUseCase(newProfile).onSuccess {
             // Recarrega do servidor para garantir que promoções (como SUPERADMIN) sejam aplicadas imediatamente
@@ -1033,7 +1058,10 @@ class PageViewModel(
         }
     }
 
-    fun updateUserRole(userId: String, role: UserRole) {
+    fun updateUserRole(
+        userId: String,
+        role: UserRole,
+    ) {
         viewModelScope.launch {
             val token = authRepository.getCurrentUserToken() ?: return@launch
             _isLoading.value = true
@@ -1046,7 +1074,10 @@ class PageViewModel(
         }
     }
 
-    fun updateUserPermissions(userId: String, permissions: Set<UserPermission>) {
+    fun updateUserPermissions(
+        userId: String,
+        permissions: Set<UserPermission>,
+    ) {
         viewModelScope.launch {
             val token = authRepository.getCurrentUserToken() ?: return@launch
             _isLoading.value = true
@@ -1186,7 +1217,10 @@ class PageViewModel(
 
     suspend fun getStore(id: String) = storeRepository.getStore(id)
 
-    fun saveStore(store: com.itbenevides.genesys21.domain.model.Store, onComplete: () -> Unit) {
+    fun saveStore(
+        store: com.itbenevides.genesys21.domain.model.Store,
+        onComplete: () -> Unit,
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -1204,7 +1238,11 @@ class PageViewModel(
         }
     }
 
-    fun connectStripe(storeId: String, email: String, onUrlReady: (String) -> Unit) {
+    fun connectStripe(
+        storeId: String,
+        email: String,
+        onUrlReady: (String) -> Unit,
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -1230,7 +1268,10 @@ class PageViewModel(
         }
     }
 
-    fun openStripeDashboard(storeId: String, onUrlReady: (String) -> Unit) {
+    fun openStripeDashboard(
+        storeId: String,
+        onUrlReady: (String) -> Unit,
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -1261,7 +1302,10 @@ class PageViewModel(
         }
     }
 
-    fun saveDomainMapping(domain: String, targetPageId: String) {
+    fun saveDomainMapping(
+        domain: String,
+        targetPageId: String,
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             val mapping = DomainMapping(id = "", domain = domain, targetPageId = targetPageId)
@@ -1294,16 +1338,22 @@ class PageViewModel(
         }
     }
 
-    fun sendChatMessage(refId: String, nick: String, content: String, isFromMerchant: Boolean = false) {
+    fun sendChatMessage(
+        refId: String,
+        nick: String,
+        content: String,
+        isFromMerchant: Boolean = false,
+    ) {
         viewModelScope.launch {
-            val message = ChatMessage(
-                id = "",
-                refId = refId,
-                senderNick = nick,
-                content = content,
-                isFromMerchant = isFromMerchant,
-                createdAt = now().toEpochMilliseconds()
-            )
+            val message =
+                ChatMessage(
+                    id = "",
+                    refId = refId,
+                    senderNick = nick,
+                    content = content,
+                    isFromMerchant = isFromMerchant,
+                    createdAt = now().toEpochMilliseconds(),
+                )
             sendChatMessageUseCase(message).onSuccess {
                 loadChatMessages(refId)
             }.onFailure {
@@ -1312,7 +1362,10 @@ class PageViewModel(
         }
     }
 
-    suspend fun refineComponent(component: PageComponent, instruction: String): PageComponent {
+    suspend fun refineComponent(
+        component: PageComponent,
+        instruction: String,
+    ): PageComponent {
         return aiGeneratorService.refineComponent(component, instruction)
     }
 }

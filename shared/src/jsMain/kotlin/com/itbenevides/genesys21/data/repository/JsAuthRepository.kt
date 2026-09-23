@@ -1,7 +1,7 @@
 package com.itbenevides.genesys21.data.repository
 
-import com.itbenevides.genesys21.domain.repository.AuthRepository
 import com.itbenevides.genesys21.domain.model.UserRole
+import com.itbenevides.genesys21.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow

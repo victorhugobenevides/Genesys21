@@ -11,6 +11,6 @@ object GenesysUUID {
         val chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         val timestamp = Clock.System.now().toEpochMilliseconds().toString(36)
         val random = (1..8).map { chars.random() }.joinToString("")
-        return "${timestamp}-${random}"
+        return "$timestamp-$random"
     }
 }

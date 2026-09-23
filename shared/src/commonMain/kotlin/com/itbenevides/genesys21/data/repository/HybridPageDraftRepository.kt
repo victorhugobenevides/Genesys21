@@ -11,9 +11,8 @@ import kotlinx.coroutines.launch
 class HybridPageDraftRepository(
     private val localRepository: PageDraftRepository,
     private val remoteRepository: DraftRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
 ) : PageDraftRepository {
-
     private val scope = CoroutineScope(Dispatchers.Default)
 
     override fun saveDraft(page: Page) {

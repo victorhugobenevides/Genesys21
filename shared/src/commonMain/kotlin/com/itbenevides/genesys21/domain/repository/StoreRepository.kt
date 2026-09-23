@@ -17,11 +17,31 @@ data class AccountSessionResponse(val clientSecret: String)
 
 interface StoreRepository {
     suspend fun getStore(id: String): Result<Store>
-    suspend fun saveStore(store: Store, token: String): Result<Unit>
+
+    suspend fun saveStore(
+        store: Store,
+        token: String,
+    ): Result<Unit>
 
     // Stripe Connect
-    suspend fun createConnectAccount(storeId: String, email: String, token: String): Result<String>
-    suspend fun getConnectOnboardingLink(storeId: String, token: String): Result<String>
-    suspend fun getConnectLoginLink(storeId: String, token: String): Result<String>
-    suspend fun getAccountSession(storeId: String, token: String): Result<String>
+    suspend fun createConnectAccount(
+        storeId: String,
+        email: String,
+        token: String,
+    ): Result<String>
+
+    suspend fun getConnectOnboardingLink(
+        storeId: String,
+        token: String,
+    ): Result<String>
+
+    suspend fun getConnectLoginLink(
+        storeId: String,
+        token: String,
+    ): Result<String>
+
+    suspend fun getAccountSession(
+        storeId: String,
+        token: String,
+    ): Result<String>
 }

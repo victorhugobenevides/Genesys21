@@ -4,13 +4,13 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -18,12 +18,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader
+import com.itbenevides.genesys21.ui.components.atoms.animations.shimmer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
-import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysStatsCard
@@ -31,15 +30,10 @@ import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import com.itbenevides.genesys21.util.CurrencyUtils
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-
-import com.itbenevides.genesys21.ui.components.atoms.animations.shimmer
 
 @Composable
 fun MainDashboardTab(
-    viewModel: PageViewModel
+    viewModel: PageViewModel,
 ) {
     val analytics by viewModel.analytics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -52,20 +46,21 @@ fun MainDashboardTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 64.dp)
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             AdminTabHeader(
                 title = "Painel de Controle",
-                subtitle = "Visão geral da saúde do seu negócio."
+                subtitle = "Visão geral da saúde do seu negócio.",
             )
         }
 
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l),
             ) {
                 if (isLoading && analytics == null) {
                     DashboardSkeleton(isCompact)
@@ -76,13 +71,13 @@ fun MainDashboardTab(
                             GenesysStatsCard(
                                 label = "Pedidos",
                                 value = data.totalOrders.toString(),
-                                color = GenesysTheme.colors.brand
+                                color = GenesysTheme.colors.brand,
                             )
                             GenesysSpacer(GenesysTheme.spacing.m)
                             GenesysStatsCard(
                                 label = "Ticket Médio",
                                 value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
-                                color = GenesysTheme.colors.accent
+                                color = GenesysTheme.colors.accent,
                             )
                         } else {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.m)) {
@@ -90,13 +85,13 @@ fun MainDashboardTab(
                                     label = "Pedidos",
                                     value = data.totalOrders.toString(),
                                     color = GenesysTheme.colors.brand,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                                 GenesysStatsCard(
                                     label = "Ticket Médio",
                                     value = "R$ ${CurrencyUtils.formatDisplay(data.averageTicket)}",
                                     color = GenesysTheme.colors.accent,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         }
@@ -160,38 +155,42 @@ private fun DailyRevenueChart(dailyRevenue: List<DailyRevenue>) {
                     val height = size.height
                     val spacing = width / (dailyRevenue.size.coerceAtLeast(2) - 1).coerceAtLeast(1)
 
-                    val points = dailyRevenue.mapIndexed { index, data ->
-                        val x = index * spacing
-                        val y = height - (data.amount / maxRevenue * height).toFloat()
-                        Offset(x, y)
-                    }
+                    val points =
+                        dailyRevenue.mapIndexed { index, data ->
+                            val x = index * spacing
+                            val y = height - (data.amount / maxRevenue * height).toFloat()
+                            Offset(x, y)
+                        }
 
                     // Preenchimento gradiente abaixo da linha
-                    val fillPath = Path().apply {
-                        points.firstOrNull()?.let { moveTo(it.x, height) }
-                        points.forEach { lineTo(it.x, it.y) }
-                        points.lastOrNull()?.let { lineTo(it.x, height) }
-                        close()
-                    }
+                    val fillPath =
+                        Path().apply {
+                            points.firstOrNull()?.let { moveTo(it.x, height) }
+                            points.forEach { lineTo(it.x, it.y) }
+                            points.lastOrNull()?.let { lineTo(it.x, height) }
+                            close()
+                        }
 
                     drawPath(
                         path = fillPath,
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(brandColor.copy(alpha = 0.3f), Color.Transparent),
-                            startY = 0f,
-                            endY = height.toFloat()
-                        )
+                        brush =
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                colors = listOf(brandColor.copy(alpha = 0.3f), Color.Transparent),
+                                startY = 0f,
+                                endY = height.toFloat(),
+                            ),
                     )
 
-                    val path = Path().apply {
-                        points.firstOrNull()?.let { moveTo(it.x, it.y) }
-                        points.drop(1).forEach { lineTo(it.x, it.y) }
-                    }
+                    val path =
+                        Path().apply {
+                            points.firstOrNull()?.let { moveTo(it.x, it.y) }
+                            points.drop(1).forEach { lineTo(it.x, it.y) }
+                        }
 
                     drawPath(
                         path = path,
                         color = brandColor,
-                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                        style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
                     )
 
                     // Draw circles
@@ -224,11 +223,11 @@ private fun TopProductsCard(products: List<TopProduct>) {
                 products.forEachIndexed { index, product ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
                             modifier = Modifier.size(24.dp).background(GenesysTheme.colors.brandContainer, CircleShape),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Text((index + 1).toString(), style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.brand)
                         }
@@ -240,7 +239,7 @@ private fun TopProductsCard(products: List<TopProduct>) {
                         GenesysText(
                             text = "R$ ${CurrencyUtils.formatDisplay(product.revenue)}",
                             fontWeight = GenesysFontWeight.ExtraBold,
-                            color = GenesysTheme.colors.brand
+                            color = GenesysTheme.colors.brand,
                         )
                     }
                     if (index < products.size - 1) GenesysDivider()
@@ -267,13 +266,17 @@ private fun BookingStatusCard(summary: BookingSummary) {
 }
 
 @Composable
-private fun StatusItem(label: String, count: Int, color: Color) {
+private fun StatusItem(
+    label: String,
+    count: Int,
+    color: Color,
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = count.toString(),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold,
-            color = color
+            color = color,
         )
         Text(label, style = MaterialTheme.typography.labelSmall, color = GenesysTheme.colors.outline)
     }

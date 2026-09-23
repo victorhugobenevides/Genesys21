@@ -4,17 +4,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.Appointment
 import com.itbenevides.genesys21.domain.model.Order
 import com.itbenevides.genesys21.navigation.Route
@@ -22,7 +22,6 @@ import com.itbenevides.genesys21.navigation.Router
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysIconButton
 import com.itbenevides.genesys21.ui.components.atoms.indicators.GenesysStatusBadge
-import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysBox
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysColumn
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysDivider
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysRow
@@ -30,12 +29,12 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
 import com.itbenevides.genesys21.util.AnalyticsManager
@@ -75,9 +74,9 @@ fun CustomerOrderHistoryScreen(
                 actions = {
                     GenesysIconButton(
                         icon = GenesysIcons.Person,
-                        onClick = { router.navigateTo(Route.Profile) }
+                        onClick = { router.navigateTo(Route.Profile) },
                     )
-                }
+                },
             )
         },
     ) {
@@ -98,14 +97,14 @@ fun CustomerOrderHistoryScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().widthIn(max = GenesysDimens.ContentMaxWidth).padding(horizontal = 16.dp),
                     contentPadding = PaddingValues(vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (appointments.isNotEmpty()) {
                         item {
                             GenesysText(
                                 text = "Seus Agendamentos",
                                 style = GenesysTextStyle.Title,
-                                fontWeight = GenesysFontWeight.Bold
+                                fontWeight = GenesysFontWeight.Bold,
                             )
                         }
                         items(appointments) { appointment ->
@@ -119,7 +118,7 @@ fun CustomerOrderHistoryScreen(
                             GenesysText(
                                 text = "Seus Pedidos",
                                 style = GenesysTextStyle.Title,
-                                fontWeight = GenesysFontWeight.Bold
+                                fontWeight = GenesysFontWeight.Bold,
                             )
                         }
                         items(orders) { order ->
@@ -160,16 +159,17 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                 }
                 Surface(
                     shape = CircleShape,
-                    color = when (appointment.status.name) {
-                        "CONFIRMED" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
-                        "CANCELLED" -> Color(0xFFF44336).copy(alpha = 0.1f)
-                        else -> GenesysTheme.colors.surfaceVariant
-                    }
+                    color =
+                        when (appointment.status.name) {
+                            "CONFIRMED" -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                            "CANCELLED" -> Color(0xFFF44336).copy(alpha = 0.1f)
+                            else -> GenesysTheme.colors.surfaceVariant
+                        },
                 ) {
                     Text(
                         appointment.status.name,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
                     )
                 }
             }
@@ -179,7 +179,7 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                 GenesysSpacer(GenesysTheme.spacing.m)
                 GenesysCard(
                     backgroundColor = GenesysTheme.colors.accent.copy(alpha = 0.1f),
-                    onClick = { uriHandler.openUri(link) }
+                    onClick = { uriHandler.openUri(link) },
                 ) {
                     GenesysRow(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(GenesysIcons.Language, null, tint = GenesysTheme.colors.accent)
@@ -203,7 +203,7 @@ private fun HistoryAppointmentCard(appointment: Appointment) {
                     GenesysText(
                         text = "${note.authorName}: ${note.content}",
                         style = GenesysTextStyle.Label,
-                        color = GenesysTheme.colors.onSurfaceVariant
+                        color = GenesysTheme.colors.onSurfaceVariant,
                     )
                 }
             }

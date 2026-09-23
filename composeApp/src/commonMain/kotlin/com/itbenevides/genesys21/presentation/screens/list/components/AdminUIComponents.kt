@@ -1,8 +1,6 @@
 package com.itbenevides.genesys21.presentation.screens.list.components
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -36,7 +34,6 @@ import com.itbenevides.genesys21.ui.components.organisms.feedback.GenesysDialog
 import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
-import com.itbenevides.genesys21.util.CurrencyUtils
 import kotlin.math.roundToLong
 
 @Composable
@@ -45,13 +42,13 @@ fun OrderCardUI(
     isSelected: Boolean = false,
     onStatusUpdate: (OrderStatus) -> Unit,
     onContact: () -> Unit,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
 ) {
     GenesysCard(
         modifier = Modifier.fillMaxWidth(),
         elevation = if (isSelected) 4.dp else 1.dp,
         border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, GenesysTheme.colors.brand) else null,
-        onClick = onClick
+        onClick = onClick,
     ) {
         Column(modifier = Modifier.padding(GenesysTheme.spacing.s)) {
             Row(
@@ -179,7 +176,7 @@ fun OrderDetailContent(
                 messages = chatMessages,
                 currentNick = "Lojista",
                 isMerchantView = true,
-                onSendMessage = onSendMessage
+                onSendMessage = onSendMessage,
             )
 
             GenesysSpacer(GenesysTheme.spacing.l)
@@ -213,7 +210,7 @@ fun OrderDetailContent(
                     text = "Falar com o cliente",
                     onClick = onContact,
                     icon = GenesysIcons.Chat,
-                    fillWidth = true
+                    fillWidth = true,
                 )
             }
         }
@@ -335,11 +332,15 @@ fun PageItemRow(
 }
 
 @Composable
-fun ToggleOptionRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun ToggleOptionRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         GenesysText(text = label, style = GenesysTextStyle.Body)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -350,7 +351,7 @@ fun ToggleOptionRow(label: String, checked: Boolean, onCheckedChange: (Boolean) 
 fun GenesysAdaptiveGrid(
     modifier: Modifier = Modifier,
     spacing: Dp = GenesysTheme.spacing.m,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
@@ -358,7 +359,7 @@ fun GenesysAdaptiveGrid(
     if (isCompact) {
         Column(
             modifier = modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(spacing)
+            verticalArrangement = Arrangement.spacedBy(spacing),
         ) {
             // No mobile, empilhamos os itens. Como o content espera um RowScope,
             // precisamos de um pequeno truque ou refatorar o content.
@@ -369,7 +370,7 @@ fun GenesysAdaptiveGrid(
         Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(spacing),
-            content = content
+            content = content,
         )
     }
 }
@@ -381,34 +382,35 @@ fun GenesysAdaptiveGrid(
 fun AdminTabHeader(
     title: String,
     subtitle: String,
-    action: (@Composable () -> Unit)? = null
+    action: (@Composable () -> Unit)? = null,
 ) {
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
-            .padding(top = GenesysTheme.spacing.l, bottom = GenesysTheme.spacing.m)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = if (isCompact) GenesysTheme.spacing.m else GenesysTheme.spacing.l)
+                .padding(top = GenesysTheme.spacing.l, bottom = GenesysTheme.spacing.m),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
                 GenesysText(
                     text = title,
                     style = if (isCompact) GenesysTextStyle.Title else GenesysTextStyle.Headline,
                     fontWeight = GenesysFontWeight.ExtraBold,
-                    color = GenesysTheme.colors.onBackground
+                    color = GenesysTheme.colors.onBackground,
                 )
                 GenesysSpacer(GenesysTheme.spacing.xxs)
                 GenesysText(
                     text = subtitle,
                     style = GenesysTextStyle.Label,
-                    color = GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.8f)
+                    color = GenesysTheme.colors.onSurfaceVariant.copy(alpha = 0.8f),
                 )
             }
             if (action != null && !isCompact) {
@@ -435,7 +437,7 @@ fun AdminTabHeader(
 fun UserAdminCard(
     user: UserProfile,
     onRoleChange: (UserRole) -> Unit,
-    onPermissionChange: (UserPermission, Boolean) -> Unit
+    onPermissionChange: (UserPermission, Boolean) -> Unit,
 ) {
     val windowSizeClass = LocalWindowSizeClass.current
     val isCompact = windowSizeClass == GenesysWindowSizeClass.COMPACT
@@ -450,7 +452,7 @@ fun UserAdminCard(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     UserInfoSection(user, modifier = Modifier.weight(1f))
                     UserActionsSection(user, onRoleChange)
@@ -467,21 +469,22 @@ fun UserAdminCard(
             // Grid de Permissões
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 UserPermission.entries.forEach { permission ->
                     PermissionCheckbox(
-                        label = when(permission) {
-                            UserPermission.MANAGE_VITRINES -> "Vitrines"
-                            UserPermission.MANAGE_ORDERS -> "Pedidos"
-                            UserPermission.MANAGE_AGENDA -> "Agenda"
-                            UserPermission.MANAGE_SERVICES -> "Serviços"
-                            UserPermission.MANAGE_STORE -> "Loja"
-                            UserPermission.MANAGE_RECEIPTS -> "Notas"
-                            UserPermission.ACCESS_ADMIN_PANEL -> "Painel Adm"
-                        },
+                        label =
+                            when (permission) {
+                                UserPermission.MANAGE_VITRINES -> "Vitrines"
+                                UserPermission.MANAGE_ORDERS -> "Pedidos"
+                                UserPermission.MANAGE_AGENDA -> "Agenda"
+                                UserPermission.MANAGE_SERVICES -> "Serviços"
+                                UserPermission.MANAGE_STORE -> "Loja"
+                                UserPermission.MANAGE_RECEIPTS -> "Notas"
+                                UserPermission.ACCESS_ADMIN_PANEL -> "Painel Adm"
+                            },
                         checked = user.permissions.contains(permission),
-                        onCheckedChange = { onPermissionChange(permission, it) }
+                        onCheckedChange = { onPermissionChange(permission, it) },
                     )
                 }
             }
@@ -490,22 +493,30 @@ fun UserAdminCard(
 }
 
 @Composable
-private fun PermissionCheckbox(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun PermissionCheckbox(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = CheckboxDefaults.colors(
-                checkedColor = GenesysTheme.colors.brand,
-                uncheckedColor = GenesysTheme.colors.outline
-            )
+            colors =
+                CheckboxDefaults.colors(
+                    checkedColor = GenesysTheme.colors.brand,
+                    uncheckedColor = GenesysTheme.colors.outline,
+                ),
         )
         Text(text = label, style = MaterialTheme.typography.bodySmall, color = GenesysTheme.colors.onSurface)
     }
 }
 
 @Composable
-private fun UserInfoSection(user: UserProfile, modifier: Modifier = Modifier) {
+private fun UserInfoSection(
+    user: UserProfile,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier) {
         GenesysText(text = user.name, style = GenesysTextStyle.Title, fontWeight = GenesysFontWeight.Bold)
         GenesysText(text = user.email, style = GenesysTextStyle.Label, color = GenesysTheme.colors.onSurfaceVariant)
@@ -521,7 +532,7 @@ private fun UserInfoSection(user: UserProfile, modifier: Modifier = Modifier) {
 private fun UserActionsSection(
     user: UserProfile,
     onRoleChange: (UserRole) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var showRoleDialog by remember { mutableStateOf(false) }
 
@@ -531,7 +542,7 @@ private fun UserActionsSection(
             onClick = { showRoleDialog = true },
             fillWidth = modifier != Modifier,
             containerColor = GenesysTheme.colors.brandContainer,
-            contentColor = GenesysTheme.colors.brand
+            contentColor = GenesysTheme.colors.brand,
         )
     }
 
@@ -542,7 +553,7 @@ private fun UserActionsSection(
             confirmButton = {},
             dismissButton = {
                 GenesysTextButton(text = "Cancelar", onClick = { showRoleDialog = false })
-            }
+            },
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 UserRole.entries.forEach { role ->
@@ -554,22 +565,23 @@ private fun UserActionsSection(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         backgroundColor = if (isSelected) GenesysTheme.colors.brandContainer else GenesysTheme.colors.surface,
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, GenesysTheme.colors.brand) else null
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, GenesysTheme.colors.brand) else null,
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             RadioButton(selected = isSelected, onClick = null)
                             Spacer(Modifier.width(8.dp))
                             Column {
                                 Text(role.name, style = GenesysTheme.typography.body, fontWeight = FontWeight.Bold)
-                                val desc = when(role) {
-                                    UserRole.SUPERADMIN -> "Acesso total ao sistema e gestão de usuários."
-                                    UserRole.ADMIN -> "Pode gerenciar vitrines, pedidos e domínios."
-                                    UserRole.MERCHANT -> "Acesso ao painel de lojista e vendas."
-                                    UserRole.CUSTOMER -> "Apenas cliente (compras e pedidos)."
-                                }
+                                val desc =
+                                    when (role) {
+                                        UserRole.SUPERADMIN -> "Acesso total ao sistema e gestão de usuários."
+                                        UserRole.ADMIN -> "Pode gerenciar vitrines, pedidos e domínios."
+                                        UserRole.MERCHANT -> "Acesso ao painel de lojista e vendas."
+                                        UserRole.CUSTOMER -> "Apenas cliente (compras e pedidos)."
+                                    }
                                 Text(desc, style = GenesysTheme.typography.label, color = GenesysTheme.colors.onSurfaceVariant)
                             }
                         }

@@ -4,9 +4,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DomainMapping(
-    val id: String, // UUID
-    val domain: String, // e.g. "my-custom-site.com"
-    val targetPageId: String, // Page.id
+    /** UUID */
+    val id: String,
+    /** e.g. "my-custom-site.com" */
+    val domain: String,
+    /** Page.id */
+    val targetPageId: String,
     val createdAt: Long = 0,
-    val updatedAt: Long = 0
+    val updatedAt: Long = 0,
 )

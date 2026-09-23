@@ -1,21 +1,15 @@
 package com.itbenevides.genesys21.presentation.screens.list.tabs
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.unit.dp
 import com.itbenevides.genesys21.domain.model.*
 import com.itbenevides.genesys21.presentation.PageViewModel
 import com.itbenevides.genesys21.presentation.screens.list.components.ToggleOptionRow
-import com.itbenevides.genesys21.ui.components.StripeConnectComponent
-import com.itbenevides.genesys21.ui.components.atoms.buttons.GenesysTextButton
 import com.itbenevides.genesys21.ui.components.atoms.inputs.GenesysTextField
 import com.itbenevides.genesys21.ui.components.atoms.primitives.*
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
@@ -26,7 +20,6 @@ import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.util.GenesysWindowSizeClass
 import com.itbenevides.genesys21.ui.util.LocalWindowSizeClass
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
  * Tab de Configurações da Loja.
@@ -36,7 +29,7 @@ fun StoreSettingsTab(
     viewModel: PageViewModel,
     userProfile: UserProfile?,
     uriHandler: UriHandler,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ) {
     val storeId = userProfile?.id ?: "admin"
     var store by remember { mutableStateOf<Store?>(null) }
@@ -86,12 +79,12 @@ fun StoreSettingsTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 120.dp)
+        contentPadding = PaddingValues(bottom = 120.dp),
     ) {
         item {
             com.itbenevides.genesys21.presentation.screens.list.components.AdminTabHeader(
                 title = "Configurações da Loja",
-                subtitle = "Dados de remetente e opções do checkout."
+                subtitle = "Dados de remetente e opções do checkout.",
             )
         }
 
@@ -107,13 +100,13 @@ fun StoreSettingsTab(
                             value = originZip,
                             onValueChange = { originZip = it },
                             label = "CEP de Origem",
-                            icon = GenesysIcons.Search
+                            icon = GenesysIcons.Search,
                         )
                         GenesysSpacer(GenesysTheme.spacing.m)
                         GenesysTextField(
                             value = originStreet,
                             onValueChange = { originStreet = it },
-                            label = "Rua/Logradouro"
+                            label = "Rua/Logradouro",
                         )
                         GenesysSpacer(GenesysTheme.spacing.m)
 
@@ -168,7 +161,7 @@ fun StoreSettingsTab(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = GenesysTheme.spacing.m),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
                         )
 
                         ToggleOptionRow("Permitir Retirada no Local", allowPickup) { allowPickup = it }
@@ -187,27 +180,28 @@ fun StoreSettingsTab(
                     text = "Salvar Configurações",
                     onClick = {
                         val currentStore = store ?: Store(id = storeId, ownerId = "", name = "Minha Loja")
-                        val updated = currentStore.copy(
-                            originZipCode = originZip,
-                            originStreet = originStreet,
-                            originNumber = originNumber,
-                            originNeighborhood = originNeighborhood,
-                            originCity = originCity,
-                            originState = originState,
-                            allowPayOnLocation = allowPayLocal,
-                            allowPayInApp = allowPayApp,
-                            allowPickup = allowPickup,
-                            allowDelivery = allowDelivery,
-                            stripePublicKey = if (selectedGateway == "STRIPE") stripePublic else null,
-                            stripeSecretKey = if (selectedGateway == "STRIPE") stripeSecret else null,
-                            stripeAccountId = currentStore.stripeAccountId,
-                            asaasApiKey = asaasKey,
-                            paymentGateway = selectedGateway
-                        )
+                        val updated =
+                            currentStore.copy(
+                                originZipCode = originZip,
+                                originStreet = originStreet,
+                                originNumber = originNumber,
+                                originNeighborhood = originNeighborhood,
+                                originCity = originCity,
+                                originState = originState,
+                                allowPayOnLocation = allowPayLocal,
+                                allowPayInApp = allowPayApp,
+                                allowPickup = allowPickup,
+                                allowDelivery = allowDelivery,
+                                stripePublicKey = if (selectedGateway == "STRIPE") stripePublic else null,
+                                stripeSecretKey = if (selectedGateway == "STRIPE") stripeSecret else null,
+                                stripeAccountId = currentStore.stripeAccountId,
+                                asaasApiKey = asaasKey,
+                                paymentGateway = selectedGateway,
+                            )
                         viewModel.saveStore(updated) { }
                     },
                     fillWidth = true,
-                    isLoading = isLoading
+                    isLoading = isLoading,
                 )
             }
         }

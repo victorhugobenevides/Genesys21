@@ -7,5 +7,5 @@ import androidx.compose.ui.Modifier
 expect fun GoogleSignInButton(
     modifier: Modifier = Modifier,
     onTokenReceived: (idToken: String, accessToken: String?) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 )

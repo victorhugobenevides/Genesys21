@@ -11,7 +11,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-fun Route.systemRoutes(domainRepository: DomainRepository, userRepository: UserRepository) {
+fun Route.systemRoutes(
+    domainRepository: DomainRepository,
+    userRepository: UserRepository,
+) {
     authenticate("firebase") {
         route("/admin/system") {
             // SuperAdmin Protection Interceptor

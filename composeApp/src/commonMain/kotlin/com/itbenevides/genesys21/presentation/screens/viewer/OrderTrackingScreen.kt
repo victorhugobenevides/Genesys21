@@ -27,7 +27,6 @@ import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysSpacer
 import com.itbenevides.genesys21.ui.components.atoms.primitives.GenesysWeightBox
 import com.itbenevides.genesys21.ui.components.atoms.tokens.GenesysIcons
 import com.itbenevides.genesys21.ui.components.atoms.typography.GenesysText
-import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.components.molecules.button.GenesysLoadingButton
 import com.itbenevides.genesys21.ui.components.molecules.card.GenesysCard
 import com.itbenevides.genesys21.ui.components.molecules.feedback.GenesysEmptyState
@@ -36,6 +35,7 @@ import com.itbenevides.genesys21.ui.components.organisms.chat.OrderChatComponent
 import com.itbenevides.genesys21.ui.components.organisms.navigation.GenesysTopAppBar
 import com.itbenevides.genesys21.ui.components.organisms.status.GenesysTrackingTimeline
 import com.itbenevides.genesys21.ui.components.templates.pages.GenesysPage
+import com.itbenevides.genesys21.ui.theme.*
 import com.itbenevides.genesys21.ui.theme.AppTheme
 import com.itbenevides.genesys21.ui.theme.GenesysDimens
 import com.itbenevides.genesys21.ui.theme.GenesysStrings
@@ -117,7 +117,7 @@ fun OrderTrackingScreen(
                     viewModel.sendChatMessage(it.id, it.customerName ?: "Cliente", content)
                 }
             },
-            onOpenCalendar = { link -> uriHandler.openUri(link) }
+            onOpenCalendar = { link -> uriHandler.openUri(link) },
         )
     }
 }
@@ -184,7 +184,7 @@ private fun OrderTrackingContent(
                                             text = "${GenesysStrings.OrderPrefix}${currentOrder.id.uppercase()}",
                                             style = GenesysTextStyle.Title,
                                             fontWeight = GenesysFontWeight.ExtraBold,
-                                            isSelectable = true
+                                            isSelectable = true,
                                         )
                                         GenesysSpacer(GenesysTheme.spacing.s)
                                         GenesysIconButton(
@@ -221,11 +221,11 @@ private fun OrderTrackingContent(
                                         GenesysText(
                                             text = "Aguardando confirmação de pagamento...",
                                             style = GenesysTextStyle.Body,
-                                            fontWeight = GenesysFontWeight.Bold
+                                            fontWeight = GenesysFontWeight.Bold,
                                         )
                                         GenesysText(
                                             text = "Isso pode levar alguns segundos após a conclusão na Stripe.",
-                                            style = GenesysTextStyle.Label
+                                            style = GenesysTextStyle.Label,
                                         )
                                     }
                                 }
@@ -241,7 +241,7 @@ private fun OrderTrackingContent(
                                 messages = chatMessages,
                                 currentNick = currentOrder.customerName ?: "Cliente",
                                 isMerchantView = false,
-                                onSendMessage = onSendMessage
+                                onSendMessage = onSendMessage,
                             )
 
                             GenesysSpacer(GenesysTheme.spacing.l)
@@ -264,14 +264,15 @@ private fun OrderTrackingContent(
                                                             text = "Adicionar ao Google Calendar",
                                                             icon = GenesysIcons.Schedule,
                                                             onClick = {
-                                                                val link = CalendarUtils.generateGoogleCalendarLink(
-                                                                    title = "Agendamento: ${item.name} (Genesys21)",
-                                                                    description = "Seu atendimento foi confirmado!\nPedido: #${currentOrder.id}",
-                                                                    startTime = appt.startTime,
-                                                                    endTime = appt.endTime
-                                                                )
+                                                                val link =
+                                                                    CalendarUtils.generateGoogleCalendarLink(
+                                                                        title = "Agendamento: ${item.name} (Genesys21)",
+                                                                        description = "Seu atendimento foi confirmado!\nPedido: #${currentOrder.id}",
+                                                                        startTime = appt.startTime,
+                                                                        endTime = appt.endTime,
+                                                                    )
                                                                 onOpenCalendar(link)
-                                                            }
+                                                            },
                                                         )
                                                     }
                                                 }
@@ -320,7 +321,7 @@ private fun OrderTrackingShimmer() {
     GenesysColumn(
         maxWidth = GenesysDimens.ContentMaxWidth,
         usePadding = true,
-        verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.l)
+        verticalArrangement = Arrangement.spacedBy(GenesysTheme.spacing.l),
     ) {
         // Card de Status Shimmer
         GenesysCard {

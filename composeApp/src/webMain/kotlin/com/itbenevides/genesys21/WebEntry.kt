@@ -53,7 +53,6 @@ fun startComposeApp() {
             overlay?.remove()
             null
         }, 1000)
-
     } catch (e: Exception) {
         if (statusText != null) {
             statusText.setAttribute("style", "color: orange; margin-top: 20px;")
